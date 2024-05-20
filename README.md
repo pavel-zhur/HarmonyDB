@@ -1,4 +1,4 @@
-# HarmonyDB
+п»ї# HarmonyDB
 Musical harmony analysis database, song chord library, jam club library, and more
 
 Used:
@@ -8,5 +8,5 @@ Used:
 
 Thanks for the inspiration:
 - Adam Neely, https://www.youtube.com/@AdamNeely
-- Нескучный Саунд, https://www.youtube.com/@NeSkuSound
+- РќРµСЃРєСѓС‡РЅС‹Р№ РЎР°СѓРЅРґ, https://www.youtube.com/@NeSkuSound
 - Vitaly Pavlenko, https://github.com/vpavlenko
