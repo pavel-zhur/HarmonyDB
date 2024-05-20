@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="OpenAI-DotNet" Version="7.4.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\OneShelf.Billing\OneShelf.Billing.Api.Client\OneShelf.Billing.Api.Client.csproj" />
+		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+	</ItemGroup>
+
+</Project>

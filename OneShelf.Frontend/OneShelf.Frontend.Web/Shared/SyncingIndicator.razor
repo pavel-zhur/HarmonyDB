@@ -1,0 +1,37 @@
+﻿@inject CollectionIndexProvider CollectionIndexProvider
+@using OneShelf.Frontend.Web.Services
+@inject CollectionNavigation CollectionNavigation
+@inject NavigationManager NavigationManager
+@inject IdentityProvider IdentityProvider
+@implements IDisposable
+
+@if (IdentityProvider.Identity != null)
+{
+    <li class="nav-item ms-lg-2">
+        <a class="navbar-nav-link navbar-nav-link-icon rounded-pill my-link" @onclick="Sync">
+            <i class="ph-arrows-clockwise @(CollectionIndexProvider.IsSyncing ? "my-rotating" : "opacity-50")"></i>
+        </a>
+    </li>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        CollectionIndexProvider.SyncingChanged += StateHasChanged;
+        IdentityProvider.IdentityChange += StateHasChanged;
+        await base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        CollectionIndexProvider.SyncingChanged -= StateHasChanged;
+        IdentityProvider.IdentityChange -= StateHasChanged;
+    }
+
+    private void Sync()
+    {
+        CollectionNavigation.Synced();
+        CollectionIndexProvider.Sync(true);
+    }
+
+}

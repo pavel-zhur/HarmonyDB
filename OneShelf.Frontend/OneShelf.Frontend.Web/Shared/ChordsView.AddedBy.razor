@@ -1,0 +1,13 @@
+﻿@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+
+@if (VersionId.HasValue && CollectionIndex?.VersionsById.TryGetValue(VersionId.Value, out var version) == true)
+{
+    <div>Добавлены: @CollectionIndex.UsersById[version.version.UserId].Title</div>
+}
+
+@code {
+
+    [Parameter]
+    public int? VersionId { get; set; }
+
+}

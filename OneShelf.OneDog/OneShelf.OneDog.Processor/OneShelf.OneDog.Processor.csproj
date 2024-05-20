@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+    <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Database\OneShelf.OneDog.Database.csproj" />
+    <PackageReference Include="Telegram.BotAPI" Version="6.9.2" />
+  </ItemGroup>
+
+</Project>

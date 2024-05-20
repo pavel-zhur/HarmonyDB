@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Cosmos\OneShelf.Common.Cosmos.csproj" />
+		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,267 @@
+﻿@page "/categories"
+@using OneShelf.Common
+@using OneShelf.Frontend.Api.Model.V3
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject IdentityProvider IdentityProvider
+@inject CollectionIndexProvider CollectionIndexProvider
+@inject Api Api
+@inject ILogger<Categories> Logger
+@inject NavigationManager NavigationManager
+@inject CollectionNavigation CollectionNavigation
+
+<h3 class="@(_applying == null ? null : "text-success")">@(_applying ?? "Списочки")</h3>
+
+<div class="">Песни можно присоединять к спискам (на страницах песен). Поддерживается @Constants.TotalLikeCategories.</div>
+<div class="mt-2">Это как лайки, только с индивидуальными смыслами и гибче. <span class="opacity-75">Например "люблю петь", "хочу играть", "заявки на рэпчик", и т.д.</span></div>
+<div class="mb-4 mt-2">Вы можете создать или изменить видимость своих списков здесь.</div>
+
+@if (CollectionIndexFailed && _applying == null)
+{
+    <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+    <button class="btn btn-outline-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null || _likes == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    <h5 class="mt-4">Видимые списки друзей</h5>
+    <ul>
+        @foreach (var likeCategory in CollectionIndex.Collection.LikeCategories.Where(c => c.UserId != IdentityProvider.RequiredIdentity.Id))
+        {
+            <li class="mb-1">@CollectionIndex.UsersById[likeCategory.UserId].Title: @(likeCategory.Access switch {
+                   LikeCategoryAccess.Private => "Приватный",
+                   LikeCategoryAccess.SharedView => "Виден всем",
+                   LikeCategoryAccess.SharedEditMulti => "Меняют все",
+                   LikeCategoryAccess.SharedEditSingle => "Меняет каждый",
+                    _ => string.Empty
+                })
+                <span class="badge bg-indigo bg-opacity-10 border-start border-width-3 text-body rounded-start-0 border-indigo my-link" @onclick="() => NavigationManager.NavigateTo(CollectionNavigation.GetExternalNavigationLink(likeCategory.Id))">@likeCategory.Name</span>
+            </li>
+        }
+    </ul>
+
+    @foreach (var (like, i) in _likes.WithIndices())
+    {
+        var iCopy = i;
+        <h5 class="mt-4">
+            Ваш №@(i + 1)
+            @if (!string.IsNullOrWhiteSpace(like.Name) != null)
+            {
+                <span class="badge bg-indigo bg-opacity-10 border-start border-width-3 text-body rounded-start-0 border-indigo ms-2 @(like.Id > 0 ? "my-link" : null)" @onclick="() => GoTo(like.Id)">@like.Name</span>
+            }
+        </h5>
+        <div class=" mb-3">
+            Имя:
+            <input type="text" maxlength="@Constants.MaxLikeCategoryNameLength" class="form-control" placeholder="Дайте мне имя..." value="@like?.Name" @oninput="x => SetName(iCopy, x.Value?.ToString())">
+        </div>
+        <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="r-@i" value="" checked="@(like?.Access == NoLike)" @onchange="_ => SetAccess(iCopy, NoLike)">
+            <span class="form-check-label"><span class="my-bolder">Нет его.</span> Список пока не создан / хотите удалить его, тыкайте.</span>
+        </label>
+        <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="r-@i" value="@LikeCategoryAccess.Private" checked="@(like?.Access == LikeCategoryAccess.Private)" @onchange="_ => SetAccess(iCopy, LikeCategoryAccess.Private)">
+            <span class="form-check-label"><span class="my-bolder">Приватный.</span> Виден только вам.</span>
+        </label>
+        <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="r-@i" value="@LikeCategoryAccess.SharedView" checked="@(like?.Access == LikeCategoryAccess.SharedView)" @onchange="_ => SetAccess(iCopy, LikeCategoryAccess.SharedView)">
+            <span class="form-check-label"><span class="my-bolder">Виден всем.</span> Другие не могут добавлять песни.</span>
+        </label>
+        <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="r-@i" value="@LikeCategoryAccess.SharedEditSingle" checked="@(like?.Access == LikeCategoryAccess.SharedEditSingle)" @onchange="_ => SetAccess(iCopy, LikeCategoryAccess.SharedEditSingle)">
+            <span class="form-check-label"><span class="my-bolder">Меняют все, один на всех.</span> Другие могут добавлять/удалять песни.</span>
+        </label>
+        <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="r-@i" value="@LikeCategoryAccess.SharedEditMulti" checked="@(like?.Access == LikeCategoryAccess.SharedEditMulti)" @onchange="_ => SetAccess(iCopy, LikeCategoryAccess.SharedEditMulti)">
+            <span class="form-check-label"><span class="my-bolder">Меняют все, каждый своё.</span> Другие могут добавлять песни и удалять свои добавленные, одну песню может добавить несколько человек, каждый видит кто какие добавил и может удалять из списка свои, не влияя на чужие.</span>
+        </label>
+        <div class="mt-1 mb-2">
+            @if (_actions[i].HasValue)
+            {
+                <button class="btn @_actions[i]!.Value.css" @onclick="() => Apply(iCopy)">@_actions[i]!.Value.title</button>
+            }
+            @if (_names[i] != null || _accesses[i] != null)
+            {
+                <button class="btn btn-light @(_actions[i].HasValue ? "ms-2" : null)" @onclick="() => Revert(iCopy)">Отмена</button>
+            }
+        </div>
+    }
+}
+
+@code {
+
+    private const LikeCategoryAccess NoLike = (LikeCategoryAccess)88;
+
+    private List<LikeCategory>? _likes;
+    private string? _applying;
+
+    private readonly string?[] _names = new string?[Constants.TotalLikeCategories];
+    private readonly LikeCategoryAccess?[] _accesses = new LikeCategoryAccess?[Constants.TotalLikeCategories];
+    private readonly (string title, string css)?[] _actions = new (string title, string css)?[Constants.TotalLikeCategories];
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        Updated();
+    }
+
+    private void SetName(int i, string? newName)
+    {
+        _names[i] = (newName?.Trim()).SelectSingle(x => string.IsNullOrWhiteSpace(x) ? string.Empty : x);
+        _applying = null;
+        Updated();
+    }
+
+    private void SetAccess(int i, LikeCategoryAccess access)
+    {
+        _accesses[i] = access;
+        _applying = null;
+        Updated();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Updated();
+    }
+
+    private void Updated()
+    {
+        if (CollectionIndex == null)
+        {
+            _likes = null;
+
+            for (var i = 0; i < Constants.TotalLikeCategories; i++)
+            {
+                _accesses[i] = null;
+                _names[i] = null;
+            }
+
+            StateHasChanged();
+            return;
+        }
+
+        var originalLikes = CollectionIndex.Collection.LikeCategories
+            .OrderBy(x => x.Order)
+            .Where(c => c.UserId == IdentityProvider.RequiredIdentity.Id)
+            .ToList();
+
+        var likes = originalLikes
+            .Concat(Enumerable.Repeat((LikeCategory?)null, Constants.TotalLikeCategories - originalLikes.Count))
+            .WithIndices()
+            .Select(x => new LikeCategory
+            {
+                Order = x.x?.Order ?? (originalLikes.MaxBy(x => x.Order)?.Order ?? 0) + x.i + 1,
+                Access = _accesses[x.i] ?? x.x?.Access ?? NoLike,
+                CssColor = "any",
+                CssIcon = "any",
+                Name = _names[x.i] ?? x.x?.Name ?? null!,
+                PrivateWeight = 2,
+                UserId = IdentityProvider.RequiredIdentity.Id,
+                Id = x.x?.Id ?? 0, 
+            })
+            .ToList();
+
+        _likes = likes;
+
+        for (var i = 0; i < Constants.TotalLikeCategories; i++)
+        {
+            _actions[i] = null;
+
+            var original = originalLikes.Count > i ? originalLikes[i] : null;
+            var updated = _likes[i];
+
+            if (original == null)
+            {
+                if (updated.Access == NoLike && string.IsNullOrWhiteSpace(updated.Name))
+                {
+                }
+                else if (updated.Access == NoLike)
+                {
+                    _actions[i] = ("...выберите видимость...", "btn-light disabled");
+                }
+                else if (string.IsNullOrWhiteSpace(updated.Name))
+                {
+                    _actions[i] = ("...выберите имя...", "btn-light disabled");
+                }
+                else
+                {
+                    _actions[i] = ("Создать", "btn-success");
+                }
+            }
+            else if (updated.Access == NoLike)
+            {
+                _actions[i] = ("Удалить", "btn-danger");
+            }
+            else if (updated.Name != original.Name && updated.Access != original.Access)
+            {
+                _actions[i] = ("Переименовать и сменить видимость", "btn-warning");
+            }
+            else if (updated.Name != original.Name)
+            {
+                _actions[i] = ("Переименовать", "btn-warning");
+            }
+            else if (updated.Access != original.Access)
+            {
+                _actions[i] = ("Сменить видимость", "btn-warning");
+            }
+        }
+
+        _likes = _likes.Take(originalLikes.Count + 1).ToList();
+
+        StateHasChanged();
+    }
+
+    private void Revert(int i)
+    {
+        _names[i] = null;
+        _accesses[i] = null;
+        Updated();
+    }
+
+    private async Task Apply(int i)
+    {
+        if (_likes == null) return;
+        var like = _likes[i];
+        var access = _accesses[i];
+
+        _applying = "Сохраняем изменения...";
+        StateHasChanged();
+        try
+        {
+            await CollectionIndexProvider.Clear(false);
+
+            if (access == NoLike)
+            {
+                _applying = await Api.DeleteLikeCategory(like.Id) ? "Списочек удален успешно." : "Такого списочка нет.";
+            }
+            else if (like.Id == 0)
+            {
+                _applying = await Api.CreateLikeCategory(like) ? "Списочек создан." : "У вас уже есть 5 штук.";
+            }
+            else
+            {
+                _applying = await Api.UpdateLikeCategory(like) ? "Изменения сохранены." : "Такого списочка нет.";
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error applying changes.");
+            _applying = "Не получилось :(";
+        }
+        finally
+        {
+            CollectionIndexProvider.Sync();
+        }
+    }
+
+    private void GoTo(int likeCategoryId)
+    {
+        if (likeCategoryId == 0) return;
+
+        NavigationManager.NavigateTo(CollectionNavigation.GetExternalNavigationLink(likeCategoryId));
+    }
+
+}

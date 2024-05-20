@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" class="notranslate" translate="no">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
+
+    <meta name="google" content="notranslate">
+
+    <title>Один Шкаф</title>
+
+    <base href="/" />
+
+    <link href="css/app.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="OneShelf.Frontend.Web.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+
+    <!-- Global stylesheets -->
+    <link href="assets/fonts/inter/inter.css" rel="stylesheet" type="text/css">
+    <link href="assets/icons/phosphor/styles.min.css" rel="stylesheet" type="text/css">
+    <link href="assets/icons/fontawesome/styles.min.css" rel="stylesheet" type="text/css">
+    <link href="dist/css/all.min.css" id="stylesheet" rel="stylesheet" type="text/css">
+    <!-- /global stylesheets -->
+    <!-- Core JS files -->
+    <script src="assets/js/bootstrap/bootstrap.bundle.min.js"></script>
+    <!-- /core JS files -->
+    <!-- Theme JS files -->
+    <script src="dist/js/app.js"></script>
+    <!-- /theme JS files -->
+</head>
+
+<body>
+
+    <script>
+
+        function getWasmReleaseVersion() {
+            return '{#CACHE_VERSION#}';
+        }
+
+    </script>
+
+    <script>
+        window.downloadFileFromStream = async (fileName, contentStreamReference) => {
+            const arrayBuffer = await contentStreamReference.arrayBuffer();
+            const blob = new Blob([arrayBuffer]);
+            const url = URL.createObjectURL(blob);
+            const anchorElement = document.createElement('a');
+            anchorElement.href = url;
+            anchorElement.download = fileName ?? '';
+            anchorElement.click();
+            anchorElement.remove();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+<script>
+
+        function illustrationFullscreenClicked(el, url1024) {
+            if (!document.fullscreen) {
+                el.saved = el.getAttribute('src');
+                el.requestFullscreen();
+                setTimeout(function () {
+                    el.setAttribute('src', url1024);
+                }, 50);
+            } else {
+                el.setAttribute('src', el.saved);
+                document.exitFullscreen();
+            }
+        }
+
+    </script>
+
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+        <div class="loading-progress-logo"></div>
+        <div style="
+                 position: absolute;
+                 bottom: 10%;
+                 left: 0;
+                 right: 0;
+                 text-align: center;
+                 padding: 1em; 
+                 display: none;
+             " class="long-load-fadein">Первый раз грузимся из интернета около минуты, <strong>следующие — без интернета</strong> несколько секунд.</div>
+    </div>
+
+    <script src="_content/DnetIndexedDbTs/rxjs.min.js"></script>
+    <script src="_content/DnetIndexedDbTs/dnet-indexeddb.js"></script>
+
+<script>
+
+    // https://stackoverflow.com/questions/152975/how-do-i-detect-a-click-outside-an-element
+
+    (function () {
+        const outsideClickListener = event => {
+
+            var element = document.querySelector('.sidebar-mobile-expanded');
+            if (!element) return;
+
+            const sidebarMainMobileToggler = document.querySelectorAll('.sidebar-mobile-main-toggle');
+
+            var contains = false;
+            sidebarMainMobileToggler.forEach(function (toggler) {
+                if (toggler.contains(event.target)) {
+                    contains = true;
+                }
+            });
+
+            if (contains) return;
+
+            if (!element.contains(event.target)) { // or use: event.target.closest(selector) === null
+                element.classList.remove('sidebar-mobile-expanded');
+            }
+        }
+
+        document.addEventListener('click', outsideClickListener);
+        document.addEventListener('touchstart', outsideClickListener);
+    })();
+
+</script>
+
+    <div id="blazor-error-ui">
+        Случилась ошибка.
+        <a href="" class="reload">Обновить</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="sw-registrator.js"></script>
+</body>
+
+</html>

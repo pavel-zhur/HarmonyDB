@@ -1,0 +1,60 @@
+﻿@using OneShelf.Frontend.Api.Model.V3.Databasish
+@inject InstantActions InstantActions
+@inject CollectionIndexProvider CollectionIndexProvider
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject IdentityProvider IdentityProvider
+
+@if (!CollectionIndexFailed && CollectionIndex.Collection.LikeCategories.Any(IsSuitable))
+{
+    <span class="dropdown me-1">
+        <a href="#" class="my-link badge bg-indigo bg-opacity-75 border-start border-width-3 rounded-start-0 border-indigo d-inline-flex align-items-center dropdown-toggle mb-1 mt-1" data-bs-toggle="dropdown" aria-expanded="false">Списочки</a>
+
+        <div class="dropdown-menu dropdown-menu-end" style="">
+            @foreach (var category in CollectionIndex.Collection.LikeCategories.Where(IsSuitable).OrderBy(x => x.UserId == IdentityProvider.RequiredIdentity.Id ? 1 : 2).ThenBy(x => x.Order))
+            {
+                <a @onclick="() => Click(category.Id)" class="dropdown-item my-link">
+                    <span class="border border-width-1 border-@(Exists(category.Id) ? "pink" : "info") ph-@(Exists(category.Id) ? "minus" : "plus") rounded-pill me-2"></span>
+                    @category.Name
+                </a>
+            }
+        </div>
+    </span>
+}
+
+@code {
+    [Parameter]
+    public int? VersionId { get; set; }
+
+    [Parameter]
+    public required int? SongId { get; set; }
+
+    [Parameter]
+    public required int? CurrentTranspose { get; set; }
+
+    [Parameter]
+    public required EventCallback<(byte? level, int likeCategoryId)> Update { get; set; }
+
+    private async Task Click(int categoryId)
+    {
+        var exists = Exists(categoryId);
+        await Update.InvokeAsync((exists ? null : 0, categoryId));
+    }
+
+    private bool Exists(int categoryId)
+    {
+        if (!SongId.HasValue) return false;
+
+        var category = CollectionIndex.LikeCategoriesById[categoryId];
+
+        var exists = CollectionIndex.SongsById[SongId.Value].Likes.Any(x =>
+            x.LikeCategoryId == categoryId && x.VersionId == VersionId &&
+            (category.Access == LikeCategoryAccess.SharedEditSingle || x.UserId == IdentityProvider.RequiredIdentity.Id) &&
+            x.Transpose == CurrentTranspose);
+        return exists;
+    }
+
+    private bool IsSuitable(LikeCategory c)
+    {
+        return c.Access is (LikeCategoryAccess.SharedEditMulti or LikeCategoryAccess.SharedEditSingle) || c.UserId == IdentityProvider.RequiredIdentity.Id;
+    }
+}

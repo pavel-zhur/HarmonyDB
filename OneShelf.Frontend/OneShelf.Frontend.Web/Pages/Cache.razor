@@ -1,0 +1,191 @@
+﻿@page "/cache"
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject IdentityProvider IdentityProvider
+@inject DataProvider DataProvider
+@inject InstantActions InstantActions
+@inject CollectionIndexProvider CollectionIndexProvider
+@inject ChordsCacheLoader ChordsCacheLoader
+@inject IllustrationsProvider IllustrationsProvider
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+@inject JsFunctions JsFunctions
+
+<h1>Аккорды офлайн и прогрессии</h1>
+
+<div style="margin-bottom: 20px">
+    На этой странице можно управлять двумя штуками:
+</div>
+
+<ul style="margin-bottom: 20px">
+    <li>1. Вы можете скачать все аккорды из библиотеки клуба офлайн к себе на телефон, они будут открываться без интернета.</li>
+    <li>2. Вы можете запустить анализ аккордов и построение последовательностей, если вас интересует поиск по ним.</li>
+</ul>
+
+<div style="margin-bottom: 20px">
+    Жмите нужную кнопку и пользуйтесь приложением (с этой страницы можно уйти, но лучше остаться в приложении), скачивание (1) или построение (2) будет в фоне, <i>пока вы пользуетесь приложением и телефон не спит.</i> Занимает минуты три-пять. Оно немножко подглючивает, так что иногда возвращайтесь, пожалуйста, сюда и глядите, всё ли хорошо, и жмите кнопку снова если оно что-то остановилось, не дойдя до конца.
+</div>
+
+@if (CollectionIndexFailed)
+{
+    <span>Не получилось загрузить, может нету интернета, библиотеку.</span>
+    <button class="btn btn-outline-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null || _counters == null)
+{
+    <span><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..."/></span>
+}
+else
+{
+    <div>Песен в библиотеке клуба: <b>@(_counters.Value.songs)</b></div>
+    <div>Аккордов в библиотеке клуба: <b>@(_counters.Value.chords)</b></div>
+    <div>
+        Аккордов офлайн у вас: <b>@(_counters.Value.chordsCached)</b>
+        <br/>
+        <small class="text-warning">(eсли их чуть-чуть меньше, это нормально).</small>
+    </div>
+    <div>Дополнительно аккордов не из библиотеки офлайн у вас: <b>@(_counters.Value.additionalChordsCached)</b></div>
+    <div>
+        Построено аккордовых прогрессий для анализа: <b>@(_counters.Value.progressionsBuilt)</b>
+        <br />
+        <small class="text-warning">(eсли их чуть-чуть меньше, это нормально).</small>
+    </div>
+
+    @if (ChordsCacheLoader.IsRunning)
+    {
+        <div class="text-success mt-3">
+            <b>Скачиваем (приложение может быть немного медленное пока идет скачивание)...</b>
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="ChordsCacheLoader.Stop">Стоп</button>
+    }
+    else if (ProgressionsCacheLoader.IsRunning)
+    {
+        <div class="text-success mt-3">
+            <b>Строим прогрессии (приложение может быть немного медленное пока они строятся)...</b>
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="ProgressionsCacheLoader.Stop">Стоп</button>
+    }
+    else
+    {
+        <div class="mt-2">
+            <button class="btn btn-primary mt-2" @onclick="ChordsCacheLoader.Start">1. Скачать все аккорды библиотеки офлайн</button>
+            <button class="btn btn-primary mt-2" @onclick="StartBuildingProgressions">2. Построить аккордовые прогрессии для поиска</button>
+            <button class="btn btn-outline-danger mt-2" @onclick="Reload">Почистить сохраненные данные если что-то идёт не так</button>
+            <button class="btn btn-outline-danger mt-2" @onclick="ReloadProgressions">Почистить прогрессии</button>
+        </div>
+    }
+}
+
+@code {
+
+    private (int songs, int chords, int chordsCached, int additionalChordsCached, int progressionsBuilt)? _counters;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        IdentityProvider.EnsureAuthorized();
+
+        await Recalculate();
+
+        ChordsCacheLoader.Updated += RecalculateChords;
+        ProgressionsCacheLoader.Updated += RecalculateProgressions;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        ChordsCacheLoader.Updated -= RecalculateChords;
+        ProgressionsCacheLoader.Updated -= RecalculateProgressions;
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        await Recalculate();
+        StateHasChanged();
+    }
+
+    private async Task Recalculate()
+    {
+        if (CollectionIndex == null) return;
+
+        var availableChords = await DataProvider.GetChordsExternalIdsAvailableInCache();
+        var availableProgressions = await DataProvider.GetProgressionsExternalIdsAvailableInCache();
+
+        var collectionExternalIds = CollectionIndex.SongsById.SelectMany(x => x.Value.Versions.Where(x => x.ExternalId != null).Select(x => x.ExternalId)).ToList();
+
+        var chordsCached = collectionExternalIds.Count(x => availableChords.Contains(x));
+        var progressionsBuilt = collectionExternalIds.Count(x => availableProgressions.Contains(x));
+
+        _counters = (
+            CollectionIndex.SongsById.Count,
+            CollectionIndex.SongsById.Sum(x => x.Value.Versions.Count(x => x.Source != null)),
+            chordsCached,
+            availableChords.Count - chordsCached,
+            progressionsBuilt);
+
+        StateHasChanged();
+    }
+
+    private async Task RecalculateChords(IReadOnlyCollection<string>? availableExternalIds)
+    {
+        if (CollectionIndex == null) return;
+
+        availableExternalIds ??= await DataProvider.GetChordsExternalIdsAvailableInCache();
+
+        var chordsCached = CollectionIndex.SongsById.SelectMany(x => x.Value.Versions.Where(x => x.ExternalId != null).Select(x => x.ExternalId)).Count(availableExternalIds.Contains);
+
+        _counters = !_counters.HasValue ? null : _counters.Value with
+        {
+            chordsCached = chordsCached,
+            additionalChordsCached = availableExternalIds.Count - chordsCached,
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task RecalculateProgressions(IReadOnlyCollection<string>? availableExternalIds)
+    {
+        if (CollectionIndex == null) return;
+
+        availableExternalIds ??= await DataProvider.GetProgressionsExternalIdsAvailableInCache();
+
+        var progressionsBuilt = CollectionIndex.SongsById.SelectMany(x => x.Value.Versions.Where(x => x.ExternalId != null).Select(x => x.ExternalId)).Count(availableExternalIds.Contains);
+
+        _counters = !_counters.HasValue ? null : _counters.Value with
+        {
+            progressionsBuilt = progressionsBuilt,
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task Reload()
+    {
+        await DataProvider.Clear();
+        await InstantActions.Clear();
+        await CollectionIndexProvider.Clear();
+        await IllustrationsProvider.Clear();
+    }
+
+    private async Task ReloadProgressions()
+    {
+        await DataProvider.ClearProgressions();
+    }
+
+    private async Task StartBuildingProgressions()
+    {
+        if (!_counters.HasValue) return;
+
+        if (_counters.Value.chords - _counters.Value.chordsCached > CacheLoaderBase.MissingChordsThresholdForProgressionsSlowFail)
+        {
+            if (await JsFunctions.Confirm("Сначала необходимо скачать все аккорды. Начать?"))
+            {
+                ChordsCacheLoader.Start();
+            }
+
+            return;
+        }
+        
+        ProgressionsCacheLoader.Start();
+    }
+
+}

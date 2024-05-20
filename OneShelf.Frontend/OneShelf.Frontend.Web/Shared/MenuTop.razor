@@ -1,0 +1,69 @@
+﻿@inject IdentityProvider IdentityProvider
+@inject LogoImageSequencer LogoImageSequencer
+@using OneShelf.Frontend.Web.Services
+@implements IDisposable
+
+<div class="my-navbar-black-image"></div>
+<div class="container-fluid">
+    <div class="d-flex d-lg-none me-2 my-ms--1">
+        <button type="button" class="navbar-toggler sidebar-mobile-main-toggle rounded">
+            <i class="ph-list"></i>
+        </button>
+    </div>
+
+    <div class="navbar-brand">
+        <a href="/" class="d-inline-flex align-items-center my-logo">
+            <div class="@LogoImageSequencer.Current"></div>
+            <h5 class="ms-2" alt="" id="my-top-title">
+                <span>Один Шкаф</span>
+                <ChordsCacheLoaderProgress />
+            </h5>
+        </a>
+    </div>
+
+    <ul class="nav gap-sm-2 order-1 order-lg-2 ms-auto">
+
+        <UpdateAvailableDetector />
+        
+        <SyncingIndicator />
+		
+        <FingeringIndicator />
+
+        <li class="nav-item">
+            <a class="navbar-nav-link align-items-center rounded p-1" href="/user">
+                <div class="h-32px my-userpic">
+                    @if (string.IsNullOrWhiteSpace(IdentityProvider.Identity?.PhotoUrl))
+                    {
+                        <i class="ph-user pt-1"></i>
+                    }
+                    else
+                    {
+                        <img style="background-image: url('@IdentityProvider.Identity.PhotoUrl')" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="w-32px h-32px rounded" alt="">
+                        <div><i class="ph-user pt-1"></i></div>
+                    }
+                </div>
+					
+                @if (!string.IsNullOrWhiteSpace(IdentityProvider.Identity?.Title))
+                {
+                    <span class="d-none d-lg-inline-block mx-lg-2">@IdentityProvider.Identity.Title</span>
+                }
+            </a>
+        </li>
+    </ul>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        LogoImageSequencer.Change += StateHasChanged;
+        IdentityProvider.IdentityChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        LogoImageSequencer.Change -= StateHasChanged;
+        IdentityProvider.IdentityChange -= StateHasChanged;
+    }
+
+}

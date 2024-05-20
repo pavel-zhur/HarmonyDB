@@ -1,0 +1,567 @@
+﻿@using OneShelf.Common
+@using OneShelf.Common.Songs
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Databasish.Interfaces
+@using OneShelf.Frontend.Api.Model.V3.Illustrations
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Services
+@inject NavigationManager NavigationManager
+@inject CollectionNavigation CollectionNavigation
+@inject SearchContext SearchContext
+@inject DataProvider DataProvider
+@inject IdentityProvider IdentityProvider
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject IllustrationsProvider IllustrationsProvider
+@inject ProgressionsSearchContext ProgressionsSearchContext
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+
+@if (CollectionIndexFailed)
+{
+    <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+    <button class="btn btn-outline-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null || _songs == null && _songsGroups == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    @if (ProgressionsSearchContext.Results == null)
+    {
+        <div class="input-group">
+            <div class="d-inline-block me-1">
+                <select class="my-dropdown-top border-indigo mb-2 @(Mode is SongsMode.WithIllustrations or SongsMode.WithoutIllustrations or SongsMode.WithMyCollectives ? "bg-success bg-opacity-25" : null)" @onchange="args => NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalMode(Enum.Parse<SongsMode>(args.Value.ToString())))" value="@Mode">
+                    @foreach (var songsMode in Enum.GetValues<SongsMode>())
+                    {
+                        if (songsMode is SongsMode.MyRating && !ShortlistedUserId.HasValue)
+                            continue;
+                        <option value="@songsMode" selected="@(songsMode == Mode)">@songsMode.GetHumanTitle()</option>
+                    }
+                </select>
+            </div>
+            <div class="d-inline-block me-1">
+                @if (_usersWithLikes != null)
+                {
+                    <select class="my-dropdown-top border-indigo col selectusers mb-2 @(ShortlistedUserId.HasValue ? "bg-success bg-opacity-25" : null)" @onchange="args => NavigationManager.NavigateTo((string)args.Value! == (-1).ToString() ? CollectionNavigation.SearchResultsLocalShortlistedUserNone(Mode is SongsMode.MyRating or SongsMode.NewestLike ? SongsMode.RatingAll : Mode) : CollectionNavigation.SearchResultsLocalShortlistedUser(long.Parse(args.Value!.ToString())))" value="@(ShortlistedUserId ?? -1)">
+                        @foreach (var user in _usersWithLikes.OrderBy(x => x.Title).Prepend(null))
+                        {
+                            <option value="@(user?.Id ?? -1)">@(user?.Title ?? "Все шортлисты")</option>
+                        }
+                    </select>
+                }
+            </div>
+            @if (CollectionIndex.Collection.LikeCategories.Any())
+            {
+                <div class="d-inline-block">
+                    <select class="my-dropdown-top border-indigo mb-2 @(LikeCategoryId.HasValue ? "bg-success bg-opacity-25" : null)" @onchange="args => NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalLikeCategoryId(int.Parse(args.Value.ToString()).SelectSingle(x => x == -1 ? null : (int?)x)))" value="@(LikeCategoryId ?? -1)">
+                        @foreach (var likeCategory in CollectionIndex.Collection.LikeCategories.Prepend(null))
+                        {
+                            <option value="@(likeCategory?.Id ?? -1)" selected="@(likeCategory?.Id == LikeCategoryId)">@(likeCategory == null ? "Все списочки" : likeCategory?.Name + (likeCategory.UserId == IdentityProvider.RequiredIdentity.Id ? "" : $" - {CollectionIndex.UsersById[likeCategory.UserId].Title}"))</option>
+                        }
+                    </select>
+                </div>
+            }
+            @if (ShortlistedUserId.HasValue || Mode is SongsMode.NewestLike or SongsMode.MyRating or SongsMode.WithIllustrations or SongsMode.WithoutIllustrations or SongsMode.WithMyCollectives || LikeCategoryId.HasValue)
+            {
+                <button class="btn btn-secondary btn-secondary-close col-auto" @onclick="() => NavigationManager.NavigateTo(CollectionNavigation.NoShortlistOrLikeCategory())"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg></button>
+            }
+        </div>
+    }
+
+    if (Mode is SongsMode.ArtistCompact)
+    {
+        <table class="mt-3 songs table  table-artistcompact ">
+
+            @foreach (var artist in _songsGroups)
+            {
+                <tr>
+                    <td class="artistname-td">
+                        <span class="hyperlink artistname" @onclick="() => NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalArtist(artistId: artist.Key.artistId, Query, artist.Key.artistName))">@RenderHighlighting(artist.Key.artistName)</span>
+                    </td>
+                    <td class="songs-td">
+                        <div>
+                            @foreach (var (_, _, song) in artist)
+                            {
+                                <span class="song-name @MaybeHighlighted(song.Id) my-link" @onclick="() => GoTo(song)">
+                                    <b><span class="songtitle">@RenderHighlighting(song.Title)</span></b>
+                                    @if (song.AdditionalKeywords != null)
+                                    {
+                                        <span>&nbsp;(@RenderHighlighting(song.AdditionalKeywords))</span>
+                                    }
+                                    @foreach (var like in song.Likes.Where(x => !x.LikeCategoryId.HasValue).OrderByDescending(x => x.Level).Where(x => x.UserId != ShortlistedUserId).GroupBy(x => x.UserId).Select(g => (userId: g.Key, level: g.Max(x => x.Level))))
+                                    {
+                                        <span title="&nbsp;@CollectionIndex.UsersById[like.userId].Title">&nbsp;<span class="fas fa-heart heart-@like.level"></span></span>
+                                    }
+                                    <span>; </span>
+                                </span>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+    else
+    {
+        <CssNthOfType @ref="_cssNthOfType" />
+        <table class="mt-3 songs table table-one-column mb-0 local">
+            <Virtualize Items="_songs" Context="item">
+                <tr songid="@item.song.Id">
+                    <td align="left" valign="middle">
+                        <div class="my-link inline-non-touch" @onclick="() => GoTo(item.song)">
+                            @{
+                                var likes = item.song.Likes.Where(x => x.UserId == (ShortlistedUserId ?? IdentityProvider.RequiredIdentity.Id)).ToList();
+                                if (likes.Any())
+                                {
+                                    string level;
+                                    if (LikeCategoryId.HasValue) // if we're looking for a category
+                                    {
+                                        if (likes.Any(x => x.LikeCategoryId == LikeCategoryId)) // if category found by this user, show it
+                                        {
+                                            level = "x1";
+                                        }
+                                        else // or if any like is found by this user
+                                        {
+                                            level = likes.Max(x => x.Level).ToString(); // show it, showing different categories as white
+                                        }
+                                    }
+                                    else // not looking for a category
+                                    {
+                                        var maxNonCategory = likes.Where(x => !x.LikeCategoryId.HasValue && x.Level > 0).Max(x => (byte?)x.Level); // non-category non-white is a priority
+                                        if (maxNonCategory.HasValue)
+                                        {
+                                            level = maxNonCategory.Value.ToString();
+                                        }
+                                        else if (likes.Any(x => x.LikeCategoryId.HasValue)) // some category is a priority
+                                        {
+                                            level = "x1";
+                                        }
+                                        else // whites remain
+                                        {
+                                            level = "0";
+                                        }
+                                    }
+
+                                    if (level == "0") // show whites as white correctly
+                                    {
+                                        level = "x0";
+                                    }
+
+                                    <span class="flyout-heart">
+                                        <span class="fas fa-heart heart-@level"></span>
+                                    </span>
+                                }
+                            }
+
+                            @if (ProgressionsSearchContext.Results.HasValue)
+                            {
+                                <span class="active-content songtitle">@_coverages[item.song]%. </span>
+                            }
+                            else if (Mode is SongsMode.Index or SongsMode.IndexDesc or SongsMode.IndexWithChords or SongsMode.VersionCreationDesc)
+                            {
+                                <span class="active-content">@item.song.Index. </span>
+                            }
+
+                            @if (Mode == SongsMode.Title)
+                            {
+                                <b><span class="active-content songtitle">@RenderHighlighting(item.song.Title)</span></b>
+                                @if (item.song.AdditionalKeywords != null)
+                                {
+                                    <span> (@RenderHighlighting(item.song.AdditionalKeywords))</span>
+                                }
+                                <span> (</span>
+                                @foreach (var ((id, artist), j) in item.song.Artists.Select(x => (x, a: CollectionIndex.ArtistsById[x])).OrderBy(x => x.a.Name).WithIndices())
+                                {
+                                    if (j > 0)
+                                    {
+                                        <span>, </span>
+                                    }
+                                    <span class="active-content artistname">@RenderHighlighting(artist.Name)</span>
+                                }
+                                <span>)</span>
+                            }
+                            else
+                            {
+                                <span>
+                                    @if (item.artistId.HasValue)
+                                    {
+                                        <span class="artistname">@RenderHighlighting(item.artistName)</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var ((id, artist), j) in item.song.Artists.Select(x => (x, a: CollectionIndex.ArtistsById[x])).OrderBy(x => x.a.Name).WithIndices())
+                                        {
+                                            if (j > 0)
+                                            {
+                                                <span>, </span>
+                                            }
+                                            <span class="active-content">@RenderHighlighting(artist.Name)</span>
+                                        }
+                                    }
+                                    <span> &mdash; </span>
+                                </span>
+                                <b><span class="songtitle">@RenderHighlighting(item.song.Title)</span></b>
+                                @if (item.song.AdditionalKeywords != null)
+                                {
+                                    <span> (@RenderHighlighting(item.song.AdditionalKeywords))</span>
+                                }
+                            }
+
+                            @if (Mode is SongsMode.IndexWithChords)
+                            {
+                                <span style="white-space: nowrap">
+                                    @foreach (var version in item.song.Versions)
+                                    {
+                                        <span> </span>
+                                        <span class="source">@((version.Source?.ToString() ?? version.Uri.Host).ToLowerInvariant())</span>
+                                    }
+                                </span>
+                            }
+
+                            <span class="hearts-span">
+                                @foreach (var like in item.song.Likes.Where(x => !x.LikeCategoryId.HasValue).GroupBy(x => x.UserId).Where(x => x.Key != (ShortlistedUserId ?? IdentityProvider.RequiredIdentity.Id)).Select(g => g.Max(x => x.Level)).OrderByDescending(x => x))
+                                {
+                                    <span class="fas fa-heart heart-@like"></span>
+                                }
+                                @if (item.song.Likes.Any(x => x.LikeCategoryId.HasValue && x.UserId != (ShortlistedUserId ?? IdentityProvider.RequiredIdentity.Id)))
+                                {
+                                    <span class="fas fa-heart heart-x0"></span>
+                                }
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            </Virtualize>
+        </table>
+        if (string.IsNullOrWhiteSpace(Query))
+        {
+            <button class="btn btn-secondary col-auto" @onclick='() => NavigationManager.NavigateTo($"/print?indices={string.Join(",", _songs.Select(x => x.song.Index))}")'>В книжку!</button>
+        }
+    }
+}
+
+@code {
+
+    private List<(string? artistName, int? artistId, ISong song)>? _songs;
+    private List<User>? _usersWithLikes;
+    private List<IGrouping<(string? artistName, int? artistId), (string? artistName, int? artistId, ISong x)>>? _songsGroups;
+    private readonly object _songsLockObject = new();
+    private CssNthOfType? _cssNthOfType;
+    private Dictionary<ISong, int> _coverages = new();
+
+    private int _updateHash;
+    private int _renderedHash;
+    private AllIllustrations? _illustrations;
+
+    [Parameter]
+    public SongsMode Mode { get; set; }
+
+    [Parameter]
+    public int? LikeCategoryId { get; set; }
+
+    [Parameter]
+    public string? Query { get; set; }
+
+    [Parameter]
+    public int? SongId { get; set; }
+
+    [Parameter]
+    public int? ArtistId { get; set; }
+
+    [Parameter]
+    public long? ShortlistedUserId { get; set; }
+
+    public enum SongsMode
+    {
+        [HumanTitle("С иллюстрациями")]
+        WithIllustrations,
+
+        [HumanTitle("Без иллюстраций")]
+        WithoutIllustrations,
+
+        [HumanTitle("С моими версиями")]
+        WithMyCollectives,
+
+        [HumanTitle("По исполнителю")]
+        Artist,
+
+        [HumanTitle("По исполнителю, компактно")]
+        ArtistCompact,
+
+        [HumanTitle("По названию")]
+        Title,
+
+        [HumanTitle("По порядку")]
+        Index,
+        
+        [HumanTitle("По порядку, с аккордами")]
+        IndexWithChords,
+        
+        [HumanTitle("Новые")]
+        IndexDesc,
+        
+        [HumanTitle("Новые аккорды")]
+        VersionCreationDesc,
+
+        [HumanTitle("По рейтингу")]
+        RatingAll,
+
+        [HumanTitle("Личный шортлист - по рейтингу")]
+        MyRating,
+
+        [HumanTitle("Шортлист - недавние")]
+        NewestLike,
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        SearchContext.Update(Query);
+        _illustrations = IllustrationsProvider.Peek();
+        if (_illustrations == null && Mode is SongsMode.WithIllustrations or SongsMode.WithoutIllustrations)
+        {
+            AddIllustrations();
+        }
+
+        Update();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ProgressionsSearchContext.SearchResultsChanged += ProgressionsSearchContextOnSearchResultsChanged;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+
+        ProgressionsSearchContext.SearchResultsChanged -= ProgressionsSearchContextOnSearchResultsChanged;
+    }
+
+    private void ProgressionsSearchContextOnSearchResultsChanged(ProgressionsSearchSource source)
+    {
+        Update();
+    }
+
+    private async void AddIllustrations()
+    {
+        _illustrations = await IllustrationsProvider.Get();
+        if (_illustrations != null && Mode is SongsMode.WithIllustrations or SongsMode.WithoutIllustrations)
+        {
+            Update();
+        }
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        _illustrations = IllustrationsProvider.Peek();
+        Update();
+        Console.WriteLine($"{nameof(OnNewCollectionIndexReceived)} -> {nameof(StateHasChanged)}");
+    }
+
+    protected override bool ShouldRender()
+    {
+        _cssNthOfType?.Updated(SongId);
+
+        if (_renderedHash == _updateHash) return false;
+        _renderedHash = _updateHash;
+        return true;
+    }
+
+    private void Update()
+    {
+        if (CollectionIndex == null) return;
+
+        lock (_songsLockObject)
+        {
+            var hash = GetHash();
+            if (hash == _updateHash) return;
+            _updateHash = hash;
+        }
+
+        _usersWithLikes = CollectionIndex.Collection.Songs.SelectMany(x => x.Likes.Select(x => x.UserId)).Distinct().Select(x => CollectionIndex.UsersById[x]).OrderBy(x => x.Title).ToList();
+
+        var songs = CollectionIndex.Collection.Songs.AsEnumerable();
+
+        if (ProgressionsSearchContext.Results.HasValue)
+        {
+            var progressionsByVersionId = ProgressionsCacheLoader.Peek()!.ToDictionary(x => x.version.Id, x => x.progression);
+            var foundProgressionsWithCoverage = ProgressionsSearchContext.Results.Value.foundProgressionsWithCoverage;
+            songs = songs
+                .Select(x =>
+                {
+                    var coverages = x.Versions
+                        .Select(x => progressionsByVersionId.GetValueOrDefault(x.Id))
+                        .Where(x => x != null)
+                        .Select(x => foundProgressionsWithCoverage!.GetValueOrDefault(x))
+                        .Where(x => x > 0)
+                        .Select(x => x)
+                        .ToList();
+
+                    if (!coverages.Any())
+                    {
+                        return (x, coverage: (float?)null);
+                    }
+
+                    _coverages[x] = (int)(coverages.Max() * 100);
+
+                    return (x, coverage: coverages.Max());
+                })
+                .Where(x => x.coverage.HasValue)
+                .OrderByDescending(x => x.coverage)
+                .Select(x => x.x)
+                .ToList();
+        }
+        else
+        {
+            if (ArtistId.HasValue)
+            {
+                songs = songs.Where(x => x.Artists.Contains(ArtistId.Value));
+            }
+
+            if (Query != null)
+            {
+                var found = CollectionIndex.Find(Query).ToHashSet();
+                songs = songs.Where(x => found.Contains(x));
+            }
+
+            if (ShortlistedUserId.HasValue)
+            {
+                songs = songs.Where(x => x.Likes.Any(x => x.UserId == ShortlistedUserId && (x.Level > 0 || x.LikeCategoryId.HasValue)));
+            }
+            else if (Mode is SongsMode.MyRating)
+            {
+                songs = songs.Where(x => x.Likes.Any());
+            }
+            else if (Mode is SongsMode.NewestLike)
+            {
+                songs = songs.Where(x => x.Likes.Any());
+
+                if (ShortlistedUserId.HasValue)
+                {
+                    songs = songs.Where(x => x.Likes.Any(x => x.UserId == ShortlistedUserId));
+                }
+
+                if (LikeCategoryId.HasValue)
+                {
+                    songs = songs.Where(x => x.Likes.Any(x => x.LikeCategoryId == LikeCategoryId));
+                }
+            }
+
+            if (Mode == SongsMode.WithIllustrations)
+            {
+                songs = _illustrations == null
+                    ? songs.Where(_ => false)
+                    : songs.Where(x => _illustrations.Songs.ContainsKey(x.Id));
+            }
+
+            if (Mode == SongsMode.WithoutIllustrations)
+            {
+                songs = _illustrations == null
+                    ? songs.Where(_ => false)
+                    : songs.Where(x => !_illustrations.Songs.ContainsKey(x.Id) && _illustrations.UnderGeneration?.Contains(x.Id) == false);
+            }
+
+            if (Mode == SongsMode.WithMyCollectives)
+            {
+                songs = songs.Where(x => x.Versions.Any(x => x.UserId == IdentityProvider.RequiredIdentity.Id && x.CollectiveId.HasValue));
+            }
+
+            if (LikeCategoryId.HasValue)
+            {
+                songs = songs.Where(x => x.Likes.Any(x => x.LikeCategoryId == LikeCategoryId));
+            }
+        }
+
+        _songs = (Mode switch
+        {
+            (not SongsMode.ArtistCompact) when ProgressionsSearchContext.Results.HasValue => songs.Select(x => ((string?)null, (int?)null, x)),
+
+            SongsMode.Artist => songs
+                .SelectMany(x => x.Artists.Select(x => CollectionIndex.ArtistsById[x]).Select(a => (artistName: a.Name, (int?)a.Id, x)))
+                .OrderBy(x => x.artistName)
+                .ThenBy(x => x.x.Title),
+
+            SongsMode.Title => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderBy(x => x.x.Title),
+            SongsMode.Index or SongsMode.IndexWithChords => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderBy(x => x.x.Index),
+            SongsMode.RatingAll or SongsMode.WithoutIllustrations => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Likes.GetRating())
+                .ThenByDescending(x => x.x.Likes.Max(x => (DateTime?)x.CreatedOn)),
+            SongsMode.MyRating => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Likes.Where(x => x.UserId == ShortlistedUserId).Max(x => x.Level))
+                .ThenByDescending(x => x.x.Likes.Where(x => x.UserId == ShortlistedUserId).Min(x => x.CreatedOn)),
+            SongsMode.NewestLike => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Likes.Where(ShortlistedUserId.HasValue ? x => x.UserId == ShortlistedUserId : LikeCategoryId.HasValue ? x => x.LikeCategoryId == LikeCategoryId : x => true).Max(x => x.CreatedOn)),
+            SongsMode.IndexDesc => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Index),
+            SongsMode.VersionCreationDesc => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Versions.Select(x => x.CreatedOn).Append(x.x.CreatedOn).Max()),
+
+            SongsMode.WithIllustrations => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => _illustrations?.Songs.GetValueOrDefault(x.x.Id)?.LatestCreatedOn)
+                .ThenByDescending(x => x.x.Index),
+
+            SongsMode.WithMyCollectives => songs
+                .Select(x => ((string?)null, (int?)null, x))
+                .OrderByDescending(x => x.x.Versions.Where(x => x.CollectiveId.HasValue && x.UserId == IdentityProvider.RequiredIdentity.Id).Select(x => x.CreatedOn).Max()),
+
+            SongsMode.ArtistCompact when ProgressionsSearchContext.Results.HasValue => songs
+                .SelectMany(x => x.Artists.Select(x => CollectionIndex.ArtistsById[x]).Select(a => (artistName: a.Name, (int?)a.Id, x))),
+
+            SongsMode.ArtistCompact => songs
+                .SelectMany(x => x.Artists.Select(x => CollectionIndex.ArtistsById[x]).Select(a => (artistName: a.Name, (int?)a.Id, x)))
+                .OrderBy(x => x.x.Title),
+
+            _ => throw new ArgumentOutOfRangeException(),
+        }).ToList();
+
+        _songsGroups = Mode is SongsMode.ArtistCompact
+            ? _songs.GroupBy(x => (x.artistName, x.artistId)).OrderBy(x => x.Key.artistName).ToList() 
+            : null;
+
+        StateHasChanged();
+    }
+
+    private int GetHash()
+    {
+        return HashCode.Combine(Mode, Query, Mode is SongsMode.ArtistCompact ? SongId : 0, ArtistId, ShortlistedUserId, 
+            HashCode.Combine(CollectionIndex, CollectionIndexFailed, ProgressionsSearchContext.Results?.foundProgressionsWithCoverage.GetHashCode()), 
+            LikeCategoryId, _illustrations == null ? 1 : 0);
+    }
+
+    private string? MaybeHighlighted(int songId) => songId == SongId ? "last-highlighted" : null;
+
+    private void GoTo(ISong song)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalJustHighlight(song.Id), replace: true);
+        
+        if (Mode == SongsMode.WithIllustrations)
+        {
+            NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalIllustrationsLink(song));
+        }
+        else
+        {
+            NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalLink(song));
+        }
+    }
+
+    private RenderFragment RenderHighlighting(string text) => string.IsNullOrWhiteSpace(Query)
+        ? builder => builder.AddContent(0, text)
+        : @<SearchHighlighting Text="@text" Query="@Query" />;
+
+}
+
+

@@ -1,0 +1,19 @@
+﻿@if (_songId.HasValue)
+{
+    <style>
+        table.songs.table-one-column.local tr[songid="@_songId"] {
+            background-color: #ebf1fb !important;
+        }
+    </style>
+}
+
+@code {
+    private int? _songId;
+
+    public void Updated(int? songId)
+    {
+        if (_songId == songId) return;
+        _songId = songId;
+        StateHasChanged();
+    }
+}

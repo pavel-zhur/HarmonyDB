@@ -1,0 +1,350 @@
+﻿@page "/collection"
+@using SongsMode=Shared.SearchResultsLocal.SongsMode
+@using OneShelf.Common
+@using OneShelf.Frontend.Web.Components
+@using OneShelf.Frontend.Web.Shared
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Databasish.Interfaces
+@using OneShelf.Frontend.Web.Models
+@using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Common.Representations.OneShelf
+@inject NavigationManager NavigationManager
+@inject IdentityProvider IdentityProvider
+@inject CollectionNavigation CollectionNavigation
+@inject ProgressionsSearchContext ProgressionsSearchContext
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject ProgressionsSearch ProgressionsSearch
+@inject ProgressionsBuilder ProgressionsBuilder
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+@inject ChordDataParser ChordDataParser
+
+<SecondarySidebar IsJust="@(!IsOpen)">
+    <div id="sidebar-search" style="">
+        <div class="sidebar-section-body">
+            <div class="form-control-feedback form-control-feedback-end mt-2">
+                @if (ProgressionsSearchContext.Results == null && !_searchMode)
+                {
+                    <input type="search" class="form-control my-search" placeholder="Поиск..." @bind="@Query" @ref="_searchInput" @oninput="@(e => Change((string)e.Value))">
+                }
+                else
+                {
+                    <input type="search" class="form-control my-search" placeholder="@(ProgressionsSearchContext.Results?.title ?? (_progressions == null ? "Инициализация..." : _progressionSearchChord ?? "Жмите на аккорды, пожалуйста..."))" disabled="disabled">
+                }
+
+                @if (string.IsNullOrEmpty(Query) && ProgressionsSearchContext.Results == null && !_searchMode)
+                {
+                    <div class="form-control-feedback-icon">
+                        <i class="ph-magnifying-glass opacity-50"></i>
+                        <i class="ph-line-segments ms-2 progressions-search-button my-link my-bigger-link" @onclick="EnableProgressionsSearch"></i>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-control-feedback-icon">
+                        <a @onclick="ClearSearch" class="my-link my-bigger-link">
+                            <i class="ph-x @(_searchMode || ProgressionsSearchContext.Results != null ? "progressions-search-button" : null)"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+            
+            @if (_searchMode)
+            {
+                @if (_progressions == null)
+                {
+                    <div class="search-note badge bg-light border-width-3 border-start border-yellow text-body rounded-start-0 mb-2 mt-3">
+                        <span class="ph-line-segments"></span>
+                        @if (_needProgressionsCache)
+                        {
+                            <span>Надо сначала построить прогрессии. Для этого <a href="/cache">сходите в кэш</a>, пожалуйста.</span>
+                        }
+                        else
+                        {
+                            <span>Инициализация поиска прогрессий (прогресс в шапке)...</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <CircleOfFifths Chords="_progressionSearchChords" PlayOnClick="false" Played="ProgressionAdd"></CircleOfFifths>
+                }
+            }
+            
+            @if (!_searchMode || ProgressionsSearchContext.Results != null)
+            {
+                <div class="mt-4">
+                    <SearchResultsLocal Query="@Query"
+                                        Mode="@ModeLocal"
+                                        ArtistId="@ArtistId"
+                                        ShortlistedUserId="@ShortlistedUserId"
+                                        LikeCategoryId="@LikeCategoryId"
+                                        SongId="@(VirtualSongArtist == null ? SongId : null)"
+                                        @ref="_searchResultsLocal"></SearchResultsLocal>
+                </div>
+            }
+        </div>
+    </div>
+    
+    @if (ProgressionsSearchContext.Results == null && (ArtistId.HasValue
+         || !string.IsNullOrWhiteSpace(Query) && (!Query.All(c => char.IsDigit(c) || char.IsWhiteSpace(c)) || Query.Count(char.IsDigit) == 6)))
+    {
+        <SearchResultsInternet ModeInternet="@ModeInternet"
+                               VirtualSongArtist="@VirtualSongArtist"
+                               VirtualSongTitle="@VirtualSongTitle"
+                               IsCompact="@(ModeLocal is SongsMode.ArtistCompact)"
+                               GoogleSearchLink="@GetGoogleSearchLink()">
+        </SearchResultsInternet>
+    }
+</SecondarySidebar>
+
+@if (IsOpen)
+{
+    <ChordsList
+        Title="@GetSelectedSongTitle()"
+        SongId="@SongId"
+        VirtualSongArtist="@VirtualSongArtist"
+        VirtualSongTitle="@VirtualSongTitle"
+        ExternalId="@ExternalId"
+        VersionId="@VersionId"
+        IsOpen2="@IsOpen2"
+        SearchInternet="@SearchInternet"
+        StateChanged="LayoutStateChanged"></ChordsList>
+}
+
+@code {
+
+    private ElementReference _searchInput;
+    private SearchResultsLocal? _searchResultsLocal;
+    private bool _searchMode;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Query { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = nameof(ModeLocal))]
+    public string? ModeLocalRaw { get; set; }
+
+    public SongsMode ModeLocal => ModeLocalRaw == null ? SongsMode.RatingAll : Enum.Parse<SongsMode>(ModeLocalRaw).SelectSingle(x => GetAvailableModes().Contains(x) ? x : SongsMode.RatingAll);
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ModeInternet { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? ArtistId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public long? ShortlistedUserId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? LikeCategoryId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? SongId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? VirtualSongArtist { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? VirtualSongTitle { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool IsOpen2 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ExternalId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? VersionId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ProgressionsSearchContext.SearchResultsChanged += ProgressionsSearchContextOnSearchResultsChanged;
+
+        await Task.Yield();
+        IdentityProvider.EnsureAuthorized();
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+
+        ProgressionsSearchContext.SearchResultsChanged -= ProgressionsSearchContextOnSearchResultsChanged;
+    }
+
+    private void ProgressionsSearchContextOnSearchResultsChanged(ProgressionsSearchSource source)
+    {
+        if (_searchMode && source == ProgressionsSearchSource.ChordsView)
+        {
+            _searchMode = false;
+            _progressionSearchChords.Clear();
+            _progressionSearchChord = null;
+            _needProgressionsCache = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private void Change(string? newValue)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.CollectionQueryChange(newValue, ArtistId, !ArtistId.HasValue || CollectionIndex == null ? null : CollectionIndex.ArtistsById[ArtistId.Value].Name), false, true);
+    }
+
+    private void ClearSearch()
+    {
+        if (_searchMode)
+        {
+            switch (_progressionSearchChords.Count)
+            {
+                case 0:
+                    _searchMode = false;
+                    break;
+                case 1:
+                    _progressionSearchChords.Clear();
+                    _progressionSearchChord = null;
+                    _searchMode = true;
+                    break;
+                case > 1:
+                    ProgressionsSearchContext.Clear(ProgressionsSearchSource.Collection);
+                    _searchMode = true;
+                    _progressionSearchChords.Clear();
+                    _progressionSearchChord = null;
+                    _needProgressionsCache = false;
+                    break;
+            }
+            
+            return;
+        }
+
+        if (ProgressionsSearchContext.Results != null)
+        {
+            ProgressionsSearchContext.Clear(ProgressionsSearchSource.Collection);
+            _progressionSearchChords.Clear();
+            _progressionSearchChord = null;
+            _needProgressionsCache = false;
+            return;
+        }
+
+        NavigationManager.NavigateTo(CollectionNavigation.CollectionClearSearch(Query, ArtistId, !ArtistId.HasValue || CollectionIndex == null ? null : CollectionIndex.ArtistsById[ArtistId.Value].Name));
+    }
+
+    private string? GetSelectedSongTitle()
+    {
+        if (CollectionIndex == null)
+        {
+            return null;
+        }
+
+        if (SongId.HasValue)
+        {
+            var song = CollectionIndex.SongsById[SongId.Value];
+            return $"{song.Index}. {string.Join(", ", song.Artists.Select(x => CollectionIndex.ArtistsById[x].Name))} — {song.Title}";
+        }
+
+        return $"{VirtualSongArtist} – {VirtualSongTitle}";
+    }
+
+    private void SearchInternet()
+    {
+        var query = SongId.HasValue
+            ? string.Join(" ",
+                CollectionIndex.SongsById[SongId.Value].Artists.Select(x => CollectionIndex.ArtistsById[x].Name)
+                    .Append(CollectionIndex.SongsById[SongId.Value].Title))
+            : $"{VirtualSongArtist} {VirtualSongTitle}";
+
+        NavigationManager.NavigateTo(CollectionNavigation.CollectionSearchInternet(query));
+    }
+
+    private string? GetGoogleSearchLink()
+    {
+        if (CollectionIndex == null)
+        {
+            return null;
+        }
+
+        return $"https://www.google.com/search?q={Uri.EscapeDataString($"{(ArtistId.HasValue ? CollectionIndex.ArtistsById[ArtistId.Value].Name : null)} {Query} аккорды".Trim())}";
+    }
+
+    private void LayoutStateChanged((bool isOpen, bool isOpen2) arg)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.CollectionLayoutStateChanged(arg.isOpen, arg.isOpen2), false, true);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            if (!string.IsNullOrWhiteSpace(Query))
+            {
+                await _searchInput.FocusAsync();
+            }
+        }
+    }
+
+    private IEnumerable<SongsMode> GetAvailableModes() => Enum.GetValues<SongsMode>();
+    private readonly List<string> _progressionSearchChords = new();
+    private string? _progressionSearchChord;
+    private List<(ISong song, Version version, ChordsProgression progression)>? _progressions;
+    private bool _needProgressionsCache;
+
+    private void ProgressionAdd(Note note, ChordType chordType)
+    {
+        _progressionSearchChords.Add($"[!{note.Value}!]{chordType.ChordTypeToString()}");
+        _progressionSearchChord = _progressionSearchChords.Count != 1 ? null : $"{note.Representation(new())}{chordType.ChordTypeToString()}";
+
+        if (_progressionSearchChords.Count > 1)
+        {
+            ProgressionsSearchContext.Start(
+                ProgressionsSearchSource.Collection,
+                ProgressionsSearch.ExtractSearch(
+                    ProgressionsBuilder.BuildProgression(
+                        _progressionSearchChords
+                            .Select(x => ChordDataParser.GetProgressionData(x))
+                            .ToList()),
+                    0,
+                    _progressionSearchChords.Count - 1)!);
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task EnableProgressionsSearch()
+    {
+        _searchMode = true;
+        StateHasChanged();
+
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+
+        _progressions = await ProgressionsCacheLoader.Get();
+        if (_progressions == null)
+        {
+            _needProgressionsCache = true;
+            StateHasChanged();
+            return;
+        }
+    }
+
+}

@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var url = 'http://localhost:7213/api/VPublicGetPublic';
+            var urlParams = new URLSearchParams(window.location.search);
+            var tonality = 0;
+            $('#minus').click(function () {
+                tonality--;
+                $('#current').text(tonality);
+                go();
+            });
+            $('#plus').click(function () {
+                tonality++;
+                $('#current').text(tonality);
+                go();
+            });
+
+            function go() {
+                $('.chords-block').hide();
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify({ Url: urlParams.get('cheat') || document.URL, Transpose: tonality }),
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.redirect) location.href = data.redirect;
+                        else if (data.error) $('h2').text(data.error);
+                        else {
+                            $('.chords-block').show();
+                            $('h2, title').text(data.artists.join(', ') + ' — ' + data.title);
+                            $('.chords-block').html(data.html);
+                            $('#buttons').show();
+                        }
+                    }
+                });
+            }
+
+            go();
+        });
+    </script>
+
+    <style>
+        div.chords-block div.pre-variable-width {
+            white-space: pre-wrap;
+            font-family: Tahoma, Roboto, Arial, Helvetica, sans-serif;
+        }
+
+        .chords-block {
+            margin-left: 16px;
+            margin-top: 30px;
+        }
+
+            div.chords-block div.pre-variable-width span.flying2 {
+                top: -20px;
+            }
+
+            div.chords-block div.pre-variable-width .chord {
+                border-left: 1px solid white;
+                font-size: 90%;
+            }
+
+        div.chords-block pre {
+            white-space: pre-wrap;
+            padding-bottom: 6px;
+            overflow: visible;
+            padding-right: 1.25rem;
+        }
+
+        div.chords-block .chord {
+            background-color: #d5f5ff;
+            font-weight: normal;
+            padding: 0 3px;
+            cursor: pointer;
+            /* ReSharper disable once InvalidValue */
+            text-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        div.chords-block div.bold-div {
+            font-weight: bold;
+        }
+
+        div.chords-block span.chords-line {
+            line-height: inherit;
+        }
+
+        div.chords-block div.chords-double-line {
+            margin-bottom: 0.142917em;
+            padding-right: 1.15em;
+        }
+
+        div.chords-block span.chords-double-line {
+            line-height: 2.5725em;
+            position: relative;
+            top: 0.57167em;
+            display: inline-block;
+        }
+
+        div.chords-block span.flying {
+            position: absolute;
+            margin-right: -1.25rem;
+        }
+
+        div.chords-block span.flying2 {
+            position: relative;
+            top: -1.28625em;
+            margin-right: -1.4375em;
+        }
+
+        #buttons {
+            font-size: 150%;
+            margin-left: 16px;
+            margin-top: 25px;
+        }
+
+        #buttons button {
+            font-size: 120%;
+        }
+
+        #current {
+            margin: 10px;
+        }
+
+        body {
+            font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+            padding-top: 62px;
+        }
+
+        .my-navbar-black {
+            background-color: #000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 62px;
+            z-index: 10;
+        }
+
+        .my-navbar-black .my-navbar-black-image {
+            background-image: url(header.png);
+            z-index: -100;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            opacity: .35;
+            -webkit-animation-name: floating-image;
+            animation-name: floating-image;
+            -webkit-animation-duration: 360s;
+            animation-duration: 360s;
+            -webkit-animation-timing-function: linear;
+            animation-timing-function: linear;
+            -webkit-animation-iteration-count: infinite;
+            animation-iteration-count: infinite;
+        }
+
+        @-webkit-keyframes floating-image {
+            0% {
+                background-position-x: 0
+            }
+
+            100% {
+                background-position-x: -1216px
+            }
+        }
+
+        @keyframes floating-image {
+            0% {
+                background-position-x: 0
+            }
+
+            100% {
+                background-position-x: -1216px
+            }
+        }
+
+        h2 {
+            margin-top: 12px;
+            margin-left: 23px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="my-navbar-black">
+        <div class="my-navbar-black-image"></div>
+        <h2>загрузка...</h2>
+    </div>
+
+<div id="buttons" style="display: none">
+    <button id="minus">&ndash;</button><span id="current">0</span><button id="plus">+</button>
+</div>
+<div class="chords-block"></div>
+</body>
+</html>

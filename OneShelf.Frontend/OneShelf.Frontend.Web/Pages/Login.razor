@@ -1,0 +1,92 @@
+﻿@page "/login"
+@implements IDisposable
+@inject IJSRuntime Js
+@inject ILogger<Index> Logger
+@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@using OneShelf.Frontend.Web.Interop
+@inject Receiver Receiver
+@inject NavigationManager NavigationManager
+@inject IdentityProvider IdentityProvider
+@inject IWebAssemblyHostEnvironment WebAssemblyHostEnvironment
+
+<PageTitle>Вход</PageTitle>
+
+<h1>Вход</h1>
+
+<div class="my-hide-standalone d-block d-lg-none mb-3">Чтобы шкаф работал не в браузере, а как приложение офлайн, <a href="/how-to-install">установите его на телефон</a>.</div>
+
+<div>
+    <p>Привет! Тут можно:</p>
+    <ul>
+        <li>Искать и добавлять любые песни и тональности,</li>
+        <li>Выбирать свои любимые,</li>
+        <li>Доступно без интернета,</li>
+        <li>С телефона и с компьютера,</li>
+        <li>Включать упрощенные аккорды, смотреть аппликатуры,</li>
+        <li>Искать прогрессии,</li>
+        <li>Управлять шортлистами,</li>
+        <li>Генерить книжки,</li>
+        <li>Менять бемоли на диезы, итд.</li>
+        <li>
+            В клубах (чтобы присоединиться, попросите своего админа):
+            <ul>
+                <li>Глядеть шортлисты, списки, тональности друзей,</li>
+            </ul>
+        </li>
+    </ul>
+    <p>Пожалуйста, войдите через телеграм.</p>
+</div>
+
+<div id="telegram-widget"></div>
+
+<div>
+    <p class="mt-1">Сначала авторизуйтесь этой кнопкой, вам придёт сообщение в телеграме с вопросом о том, хотите ли вы войти сюда через ваш телеграм аккаунт. <span style="font-weight: 600">Нажмите в телеграме "разрешить" и возвращайтесь сюда.</span></p>
+    <p class="opacity-75">Иногда <b>на айфонах</b> вы увидите красненькое <small class="text-danger">Server error.</small> Просто пробуйте подтверждать еще раз и возвращайтесь в приложение, всё получится.</p>
+    <p class="opacity-75">Если что-то не работает &mdash; <a href="https://t.me/pizdanucca">пишите мне :)</a>.</p>
+</div>
+
+@if (WebAssemblyHostEnvironment.Environment.StartsWith("Development"))
+{
+    <span>Чтобы войти без телеграма (при локальной разработке вход не работает), <a href="#" @onclick="TempLogin">нажмите здесь</a>. Этот &lt;span&gt; не виден на продакшне :)</span>
+}
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        IdentityProvider.IdentityChange += IdentityProviderOnIdentityChange;
+    }
+
+    private void IdentityProviderOnIdentityChange()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            StateHasChanged();
+            var module = await Js.InvokeAsync<IJSObjectReference>("import", $"./Pages/{GetType().Name}.razor.js");
+            var telegramBotId = Configuration.GetValue<string>("TelegramBotId");
+            Logger.LogInformation($"telegramBotId: {telegramBotId}");
+            await module.InvokeVoidAsync("InjectWidgetHere", Receiver.Reference, "div#telegram-widget", telegramBotId);
+        }
+    }
+
+    private async Task TempLogin()
+    {
+        var tempAuth = $"{{\"id\":6074255334,\"first_name\":\"Кто-то\",\"username\":\"none\",\"photo_url\":\"https://t.me/i/userpic/320/q74ikpgxikYev-rFGCjqQfwDNJHUO-kW7LOzIOdQURY.jpg\",\"auth_date\":123,\"hash\":\"{Configuration.GetValue<string>("BadHash")}\"}}";
+        await IdentityProvider.Set(tempAuth);
+        NavigationManager.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        IdentityProvider.IdentityChange -= IdentityProviderOnIdentityChange;
+    }
+
+}

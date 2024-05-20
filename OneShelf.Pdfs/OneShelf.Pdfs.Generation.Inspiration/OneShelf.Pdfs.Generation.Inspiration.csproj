@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Comfortaa-Bold.ttf" />
+    <None Remove="Resources\Comfortaa-Light.ttf" />
+    <None Remove="Resources\Comfortaa-Medium.ttf" />
+    <None Remove="Resources\Comfortaa-Regular.ttf" />
+    <None Remove="Resources\Comfortaa-SemiBold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Comfortaa-Bold.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Comfortaa-Light.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Comfortaa-Medium.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Comfortaa-Regular.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Comfortaa-SemiBold.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="itext7" Version="7.2.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Database.Songs\OneShelf.Common.Database.Songs.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Resources\OneShelf.Pdfs.Generation.Resources.csproj" />
+	</ItemGroup>
+
+</Project>

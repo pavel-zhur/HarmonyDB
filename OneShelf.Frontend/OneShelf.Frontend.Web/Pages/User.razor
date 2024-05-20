@@ -1,0 +1,48 @@
+﻿@page "/user"
+@inject IdentityProvider IdentityProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Профиль</PageTitle>
+
+<h1>Добрый день, @_title</h1>
+
+@if (!Unauthorized)
+{
+    <div>Не знаю, зачем нужна эта страница, обычно она везде есть. Вы можете присоединяться к клубам, напишите админам. Можно выйти (ваш шортлист будет с вами при следующем входе):</div>
+}
+
+<button class="btn btn-primary" @onclick="Logout">Выйти</button>
+
+@if (Unauthorized)
+{
+    <div>Может быть, вы видите это сообщение по ошибке. Если вам кажется, что доступ должен быть, тем более, напишите, пожалуйста. Спасибо.</div>
+}
+
+@code {
+    private string? _title;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool Unauthorized { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (!IdentityProvider.EnsureAuthorized()) return;
+
+        _title = IdentityProvider.RequiredIdentity.Title;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task Logout()
+    {
+        await IdentityProvider.Set(null);
+        NavigationManager.NavigateTo("/");
+    }
+
+}

@@ -1,0 +1,80 @@
+﻿@inject IdentityProvider IdentityProvider
+@using OneShelf.Frontend.Web.Services
+@using OneShelf.Frontend.Web.Components
+@implements IDisposable
+
+<!-- Footer -->
+<div class="navbar-sm border-top bg-white my-footer">
+	<div class="navbar container-fluid bg-primary bg-opacity-25 justify-content-between">
+		<div class="container-fluid">
+            <button type="button" class="navbar-toggler sidebar-mobile-main-toggle rounded my-ms--1 d-lg-none">
+                <i class="ph-list"></i>
+			</button>
+			<div class="d-none d-lg-block"></div>
+            <ul class="nav">
+                @if (IdentityProvider.Identity != null)
+                {
+                    <li class="nav-item">
+                        <NavLink href="" Match="NavLinkMatch.All" ActiveClass="text-primary bg-primary bg-opacity-10 fw-semibold" class="navbar-nav-link navbar-nav-link-icon rounded">
+                            <div class="d-flex align-items-center mx-md-1">
+                                <i class="ph-house"></i>
+                                <span class="d-none d-md-inline-block ms-2">Главная</span>
+                            </div>
+                        </NavLink>
+                    </li>
+                    <li class="nav-item ms-md-1">
+                        <CollectionNavLink href="collection" IsMy="false" ActiveClass="text-primary bg-primary bg-opacity-10 fw-semibold" class="navbar-nav-link navbar-nav-link-icon rounded">
+                            <div class="d-flex align-items-center mx-md-1">
+                                <i class="ph-playlist my-red"></i>
+                                <span class="d-none d-md-inline-block ms-2">Библиотека</span>
+                            </div>
+                        </CollectionNavLink>
+                    </li>
+                    <li class="nav-item ms-md-1">
+                        <CollectionNavLink href="mycollection" IsMy="true" ActiveClass="text-primary bg-primary bg-opacity-10 fw-semibold" class="navbar-nav-link navbar-nav-link-icon rounded">
+                            <div class="d-flex align-items-center mx-md-1">
+                                <i class="fas fa-heart my-red"></i>
+                                <span class="d-none d-md-inline-block ms-2">Мой шортлист</span>
+                            </div>
+                        </CollectionNavLink>
+                    </li>
+                    <li class="nav-item ms-md-1">
+                        <VisitedNavLink href="visitedsearch" ActiveClass="text-primary bg-primary bg-opacity-10 fw-semibold" class="navbar-nav-link navbar-nav-link-icon rounded">
+                            <div class="d-flex align-items-center mx-md-1">
+                                <i class="ph-clock-counter-clockwise"></i>
+                                <span class="d-none d-md-inline-block ms-2">Недавнее</span>
+                            </div>
+                        </VisitedNavLink>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <NavLink href="login" ActiveClass="text-primary bg-primary bg-opacity-10 fw-semibold" class="navbar-nav-link navbar-nav-link-icon rounded">
+                            <div class="d-flex align-items-center mx-md-1">
+                                <i class="ph-house"></i>
+                                <span class="d-none d-md-inline-block ms-2">Вход</span>
+                            </div>
+                        </NavLink>
+                    </li>
+                }
+            </ul>
+            <div></div>
+		</div>
+	</div>
+</div>
+<!-- /footer -->
+
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        IdentityProvider.IdentityChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        IdentityProvider.IdentityChange -= StateHasChanged;
+    }
+}

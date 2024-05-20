@@ -1,0 +1,23 @@
+﻿@using OneShelf.Common
+@using OneShelf.Frontend.SpecificModel
+@using HarmonyDB.Sources.Api.Model.V1
+
+@foreach (var (group, i) in Headers.GroupBy(x => (x.Source, x.SpecificAttributes.ToFrontendAttributesV1().SourceColor)).WithIndices())
+{
+    <span class="badge @(group.Key.SourceColor switch {
+                           SourceColor.Success => "bg-success",
+                           SourceColor.Primary => "bg-primary",
+                           SourceColor.Warning => "bg-warning", 
+                           _ => throw new ArgumentOutOfRangeException() }) ms-2 opacity-50">
+        @group.Key.Source
+        @if (group.Count() > 1)
+        {
+            <span>&nbsp;&times;@group.Count()</span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter]
+    public List<SearchHeader> Headers { get; set; }
+}

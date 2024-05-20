@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "OneShelf.OneDog.Runner.Functions": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7103",
+      "launchBrowser": false
+    }
+  }
+}

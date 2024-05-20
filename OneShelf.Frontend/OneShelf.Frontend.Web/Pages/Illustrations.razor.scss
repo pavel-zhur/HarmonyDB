@@ -1,0 +1,21 @@
+.my-images {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+
+    .img-box {
+        padding: 1em;
+        padding-right: 0.3125rem !important;
+        padding-left: 0.3125rem !important;
+        width: 29vmin;
+
+        img {
+            max-width: 100%;
+            min-width: 100%;
+            cursor: pointer;
+        }
+
+        span {
+            display: none;
+        }
+    }
+}

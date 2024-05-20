@@ -1,0 +1,205 @@
+﻿@page "/progressions"
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+@using OneShelf.Common
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Databasish.Interfaces
+@using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Services
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject ProgressionsSearch ProgressionsSearch
+
+@if (CollectionIndexFailed)
+{
+    <p><em>Не получилось загрузить, может нету интернета, исполнителей.</em></p>
+    <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else if (_data == null)
+{
+    if (_needCache)
+    {
+        <div>
+            Надо сначала построить прогрессии.
+            Для этого <a href="/cache">сходите в кэш</a>, пожалуйста.
+        </div>
+    }
+    else
+    {
+        <div>Построение прогрессий...</div>
+        <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..."/></div>
+    }
+}
+else
+{
+    <div class="my-header-fixed">
+        Count: @_data.Count
+        <input id="original" type="checkbox" @onchange="SetHarmonyView" />
+        <label for="original">
+            Гармоническое представление
+        </label>
+        @if (_found != null)
+        {
+            <button @onclick="Reset">Сбросить поиск</button>
+        }
+    </div>
+    <div class="mt-5"></div>
+
+    @if (_found != null)
+    {
+        <h1>Найдено</h1>
+        <ul>
+            @foreach (var (song, coverage) in _preparedData
+                !.GroupBy(x => x.song)
+                .Select(x => (song: x.Key, coverage: x.Max(x => _found.Value.foundProgressionsWithCoverage[x.progression])))
+                .OrderByDescending(x => x.coverage))
+            {
+                <li>@GetSongTitle(song) @((int)(coverage * 100))%</li>
+            }
+        </ul>
+    }
+    
+    <Virtualize Items="_preparedData" Context="item">
+        <div class="element">
+            <h3 class="mt-3 @(item.progression.OriginalSequence.Any(x => x.original.HarmonyData?.ChordType is null or ChordType.Unknown) ? "chord-error" : item.progression.OriginalSequence.Any(x => !x.original.IsStandard) ? "chord-yellow" : null)">@GetSongTitle(item.song)</h3>
+            <div class="chords-block">
+                <span>Оригинальные: </span>
+                @foreach (var (chord, i) in item.progression.OriginalSequence.WithIndices())
+                {
+                    <b 
+                        chord-custom="@(_searchingFrom?.progression == item.progression && _searchingFrom?.chordIndex == i ? "search-first" : null)"
+                        @onclick="() => ChordClick(item.progression, i)" 
+                        class="chord me-2 @(chord.extendedMovementsSequence == null ? "no-click" : "") @(chord.indexInHarmonyGroup == 0 ? "my-bolder" : null) @(_searchingFrom?.progression == item.progression && _searchingFrom?.chordIndex == i ? null : chord.original.HarmonyData?.ChordType is null or ChordType.Unknown ? "chord-error" : chord.original.IsStandard ? null : "chord-yellow")"
+                        >@(_harmonyView ? chord.original.HarmonyRepresentation : chord.original.OriginalRepresentation)</b>
+                }
+            </div>
+            <div class="chords-block">
+                <span>Гармония: </span>
+                @foreach (var (harmonyGroup, _, _) in item.progression.HarmonySequence)
+                {
+                    <b 
+                        chord-custom="@(_found?.harmonyGroupsWithIsFirst.TryGetValue(harmonyGroup, out var isFirst) == true ? isFirst ? "search-first" : "search" : null)" 
+                        class="chord no-click me-2 my-bolder @(_found?.harmonyGroupsWithIsFirst.ContainsKey(harmonyGroup) == true ? null : harmonyGroup.HarmonyData == null ? "chord-error" : harmonyGroup.IsStandard ? null : "chord-yellow")"
+                        >@harmonyGroup.HarmonyRepresentation</b>
+                }
+            </div>
+            @if (item.progression.StandardHarmonyMovementsSequences != null)
+            {
+                <div class="chords-block">
+                    <span>Стандартные секвенции: </span>
+                    @foreach (var (isFirst, movement) in item.progression.StandardHarmonyMovementsSequences.SelectMany(s => s.Movements.WithIsFirst().Select(m => (m.isFirst, m: m.x))))
+                    {
+                        <b class="chord no-click me-2 @(isFirst ? "my-bolder" : null)">@movement.Title</b>
+                    }
+                </div>
+            }
+            <div class="chords-block">
+                <span>Расширенные секвенции: </span>
+                @foreach (var (isFirst, movement) in item.progression.ExtendedHarmonyMovementsSequences.SelectMany(s => s.Movements.WithIsFirst().Select(m => (m.isFirst, m: m.x))))
+                {
+                    <b class="chord no-click me-2 @(isFirst ? "my-bolder" : null)">@movement.Title</b>
+                }
+            </div>
+        </div>
+    </Virtualize>
+}
+
+@code {
+
+    private bool _loadInitiated;
+    private List<(ISong song, Version version, ChordsProgression progression)>? _data;
+    private List<(ISong song, Version version, ChordsProgression progression)> _preparedData;
+    private bool _harmonyView;
+
+    private (ChordsProgression progression, int chordIndex)? _searchingFrom;
+    private (Dictionary<ChordsProgression, float> foundProgressionsWithCoverage, Dictionary<HarmonyGroup, bool> harmonyGroupsWithIsFirst)? _found;
+    private bool _needCache;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender && CollectionIndex != null)
+        {
+            await Update();
+        }
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        if (CollectionIndex != null)
+        {
+            await Update();
+        }
+    }
+
+    private async Task Update()
+    {
+        if (_loadInitiated)
+        {
+            return;
+        }
+
+        _loadInitiated = true;
+
+        _preparedData = _data = await ProgressionsCacheLoader.Get();
+        if (_data == null)
+        {
+            _needCache = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SetHarmonyView(ChangeEventArgs args)
+    {
+        _harmonyView = args.Value?.Equals(true) == true;
+    }
+
+    private async Task ChordClick(ChordsProgression progression, int chordIndex)
+    {
+        if (_searchingFrom.HasValue)
+        {
+            if (_searchingFrom.Value.progression == progression)
+            {
+                if (_searchingFrom.Value.chordIndex < chordIndex)
+                {
+                    Console.WriteLine($"Search initiated {_searchingFrom.Value.chordIndex} -> {chordIndex}");
+
+                    var search = ProgressionsSearch.ExtractSearch(progression, _searchingFrom.Value.chordIndex, chordIndex);
+                    if (search == null)
+                    {
+                        Console.WriteLine("Extraction failed.");
+                    }
+                    else
+                    {
+                        Console.WriteLine(string.Join(", ", search.Movements.Select(x => x.Title)));
+                        _found = ProgressionsSearch.Search(_data!.Select(x => x.progression).ToList(), search);
+                        _preparedData = _data!.Where(x => _found?.foundProgressionsWithCoverage.ContainsKey(x.progression) != false).ToList();
+                    }
+
+                    _searchingFrom = null;
+                    return;
+                }
+            }
+        }
+
+        _searchingFrom = (progression, chordIndex);
+    }
+
+    private async Task Reset()
+    {
+        _preparedData = _data;
+        _found = null;
+    }
+
+    private string GetSongTitle(ISong song)
+    {
+        return $"{song.Index:000}. {string.Join(", ", song.Artists.Select(a => CollectionIndex.ArtistsById[a].Name))} — {song.Title}";
+    }
+
+}

@@ -1,0 +1,87 @@
+﻿@using OneShelf.Common
+@using OneShelf.Frontend.Api.Model.V3.Illustrations
+@using OneShelf.Frontend.Web.Services
+@inject IllustrationsProvider IllustrationsProvider
+
+<div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
+
+    <div class="page-header-content d-block">
+        <div class="d-flex justify-content-between">
+            <div class="breadcrumb">
+                <h5 class="my-pt-25">Иллюстрации</h5>
+            </div>
+
+            <div class="d-flex">
+                <a class="d-flex align-items-center text-body py-2 ms-2 collapsed my-link" @onclick="() => StateChanged((true, false))">
+                    <i class="ph-x-circle my-white"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@if (SongId.HasValue && _illustrations?.Songs.TryGetValue(SongId.Value, out var songIllustrations) == true)
+{
+    @foreach (var grouping in songIllustrations.Illustrations.GroupBy(x => x.AlterationTitle).OrderBy(x => x.Key == null ? 1 : 2))
+    {
+        if (grouping.Key != null)
+        {
+            <div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
+
+                <div class="page-header-content d-block">
+                    <div class="d-flex justify-content-between">
+                        <div class="breadcrumb">
+                            <h5 class="my-pt-25">@(grouping.Key ?? "Иллюстрации")</h5>
+                        </div>
+
+                        <div class="d-flex">
+                            <a class="d-flex align-items-center text-body py-2 ms-2 collapsed my-link" @onclick="() => StateChanged((true, false))">
+                                <i class="ph-x-circle my-white"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+        foreach (var row in grouping.Chunk(2))
+        {
+            <div class="row">
+                @foreach (var ((illustration, i), isLast) in row.WithIndices().WithIsLast())
+                {
+                    <div class="col p-0">
+                        <div class="img-box">
+                            <img src="@illustration.PublicUrls.Url256" onclick=" illustrationFullscreenClicked(this, '@illustration.PublicUrls.Url1024') ">
+                            <span>@($"v{illustration.Version} i{illustration.I + 1} j{illustration.J + 1} #{illustration.K + 1}")</span>
+                        </div>
+                    </div>
+
+                    @if (isLast && i == 0)
+                    {
+                        <div class="col p-0">
+                        </div>
+                    }
+                }
+            </div>
+        }
+    }
+}
+
+@code {
+    
+    private AllIllustrations? _illustrations;
+
+    [Parameter]
+    public required int? SongId { get; set; }
+
+    [Parameter]
+    public required Action<(bool isOpen, bool isOpen2)> StateChanged { get; set; }
+
+    protected override Task OnParametersSetAsync()
+    {
+        _illustrations = IllustrationsProvider.Peek();
+        return base.OnParametersSetAsync();
+    }
+}

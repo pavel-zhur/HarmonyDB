@@ -1,0 +1,23 @@
+#my-preview {
+    padding: calc(1rem + 2px);
+    background: rgba(255, 255, 224, .5);
+}
+
+#my-editor {
+    width: 100%;
+    border: 2px solid rgba(5, 150, 105, 0.75);
+    padding: 1rem;
+    font-family: var(--font-monospace);
+    font-size: 14px;
+    height: calc(100% - 60px);
+    min-height: 60vh;
+}
+
+#my-row {
+    //max-width: 800px;
+    align-items: stretch;
+}
+
+#my-col1, #my-col2 {
+    //max-width: 380px;
+}

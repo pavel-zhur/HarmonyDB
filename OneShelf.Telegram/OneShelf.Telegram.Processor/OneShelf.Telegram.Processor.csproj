@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CS1998</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;CS1998</NoWarn>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Telegram.Bot" Version="19.0.0" />
+		<PackageReference Include="Telegram.BotAPI" Version="6.9.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Database.Songs\OneShelf.Common.Database.Songs.csproj" />
+		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
+		<ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Api.Client\OneShelf.Illustrations.Api.Client.csproj" />
+		<ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
+		<ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
+		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Inspiration\OneShelf.Pdfs.Generation.Inspiration.csproj" />
+	</ItemGroup>
+
+</Project>

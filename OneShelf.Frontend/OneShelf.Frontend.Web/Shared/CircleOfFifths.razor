@@ -1,0 +1,69 @@
+﻿@using OneShelf.Common
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Services
+@using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Common.Representations.OneShelf
+@inject ChordDataParser ChordDataParser
+@inject Player Player
+
+<div class="circle-of-fifths mb-4 mt-2">
+    @foreach (var (currentMajor, currentMinor, _) in Note.CircleOfFifths)
+    {
+        <div class="key">
+            <div class="major" @onclick="() => Play(currentMajor, ChordType.Major)">
+                <div style="@GetStyle(currentMajor.Value, ChordType.Major)">@currentMajor.Representation(new())</div>
+            </div>
+            <div class="minor" @onclick="() => Play(currentMinor, ChordType.Minor)">
+                <div style="@GetStyle(currentMinor.Value, ChordType.Minor)">@currentMinor.Representation(new())m</div>
+            </div>
+        </div>
+    }
+</div>
+        
+@code {
+
+    private HashSet<(int note, ChordType type)>? _chords;
+
+    [Parameter]
+    public required Action<Note, ChordType> Played { get; set; }
+
+    [Parameter]
+    public required bool PlayOnClick { get; set; }
+
+    [Parameter]
+    public List<string>? Chords 
+    {
+        set => _chords = value
+            ?.Distinct()
+            .Select(x => ChordDataParser.GetChord(x))
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .SelectMany(x => (note: x.root, x.chordTypeForCircleOfFifths).Once().SelectSingle(y => !x.bass.HasValue ? y : y.Append((note: x.bass.Value, chordTypeForCircleOfFifths: ChordType.Unknown))))
+            .Distinct()
+            .GroupBy(x => x.note)
+            .SelectMany(g => g.Any(x => x.chordTypeForCircleOfFifths is ChordType.Major or ChordType.Minor) ? g.Where(x => x.chordTypeForCircleOfFifths is not ChordType.Unknown) : g)
+            .ToHashSet();
+    }
+
+    private string GetStyle(int note, ChordType chordType)
+    {
+        if (_chords == null) return string.Empty;
+
+        if (_chords.Contains((note, chordType))) return "background: lightblue; box-shadow: 0px 0px 5px 5px lightblue";
+        if (_chords.Contains((note, ChordType.Unknown))) return "background: lightyellow; box-shadow: 0px 0px 5px 5px lightyellow";
+
+        return string.Empty;
+    }
+
+    private async Task Play(Note note, ChordType chordType)
+    {
+        if (PlayOnClick)
+        {
+            await Player.PlayChord($"[!{note.Value}!]{(chordType == ChordType.Major ? "" : "m")}");
+        }
+
+        Played(note, chordType);
+    }
+
+}
