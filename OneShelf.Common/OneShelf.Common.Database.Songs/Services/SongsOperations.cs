@@ -161,6 +161,7 @@ public class SongsOperations
                 .Include(x => x.Song)
                 .ThenInclude(x => x.Artists)
                 .ThenInclude(x => x.Synonyms)
+                .Where(v => v.Song.Index < 1000 && v.Song.Status == SongStatus.Live)
                 .ToListAsync();
 
             var artists = versions.SelectMany(v => v.Song.Artists).Distinct().ToDictionary(a => a, a => new Artist
@@ -176,7 +177,6 @@ public class SongsOperations
             SongsDatabase.Artists.AddRange(artists.Values);
             await SongsDatabase.SaveChangesAsyncX();
 
-            var index = 1;
             versions = versions.Select(v => new Version
             {
                 CreatedOn = DateTime.Now,
@@ -185,7 +185,7 @@ public class SongsOperations
                 Song = new()
                 {
                     TenantId = tenantId,
-                    Index = index++,
+                    Index = v.Song.Index,
                     CreatedByUser = user,
                     CreatedOn = DateTime.Now,
                     SourceUniqueIdentifier = Guid.NewGuid().ToString(),
