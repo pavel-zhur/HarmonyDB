@@ -72,6 +72,7 @@ public class CollectionReaderV3
                 .Select(x => new Song
                 {
                     Id = x.Id,
+                    TemplateRating = x.TemplateRating,
                     Index = x.Index,
                     Title = x.Title,
                     CreatedByUserId = x.CreatedByUserId,

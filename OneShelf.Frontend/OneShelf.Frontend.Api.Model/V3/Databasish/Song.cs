@@ -13,6 +13,8 @@ public class Song : ISearchableSong, ISong
 
     public required string Title { get; init; }
 
+    public float? TemplateRating { get; init; }
+
     public required List<int> Artists { get; init; }
     IReadOnlyList<int> ISong.Artists => Artists;
 
@@ -37,6 +39,7 @@ public class Song : ISearchableSong, ISong
         Id
             .Once()
             .Append(Index)
+            .Append(TemplateRating?.GetHashCode() ?? 0)
             .Append(Title.GetHashCode())
             .Concat(Artists)
             .Append(AdditionalKeywords?.GetHashCode() ?? 0)
@@ -59,5 +62,6 @@ public class Song : ISearchableSong, ISong
             CreatedByUserId = CreatedByUserId,
             CreatedOn = CreatedOn,
             Index = Index,
+            TemplateRating = TemplateRating,
         };
 }

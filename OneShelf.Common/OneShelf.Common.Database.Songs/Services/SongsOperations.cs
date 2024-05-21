@@ -161,6 +161,8 @@ public class SongsOperations
                 .Include(x => x.Song)
                 .ThenInclude(x => x.Artists)
                 .ThenInclude(x => x.Synonyms)
+                .Include(x => x.Song)
+                .ThenInclude(x => x.Likes)
                 .Where(v => v.Song.Index < 1000 && v.Song.Status == SongStatus.Live)
                 .ToListAsync();
 
@@ -188,6 +190,7 @@ public class SongsOperations
                 CategoryOverride = s.CategoryOverride,
                 Title = s.Title,
                 Artists = s.Artists.Select(a => artists[a]).ToList(),
+                TemplateRating = (float)s.Likes.GetRating(),
             });
             SongsDatabase.Songs.AddRange(songs.Values);
             await SongsDatabase.SaveChangesAsyncX();
