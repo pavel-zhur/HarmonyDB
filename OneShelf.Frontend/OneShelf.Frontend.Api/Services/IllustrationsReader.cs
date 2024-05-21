@@ -71,7 +71,9 @@ public class IllustrationsReader
                         .OrderByDescending(v => v.Key.TenantId == tenantId)
                         .ThenBy(v => v.Key.Id)
                         .First())
-                    .Select(x => (songId: x.Key.Id, illustrations: x.AsEnumerable()));
+                    .Select(x => (songId: x.Key.Id, illustrations: x.AsEnumerable()))
+                    .GroupBy(x => x.songId)
+                    .Select(g => g.MaxBy(g => g.illustrations.Count()));
             })
             .Select(
                 x => (x.songId, value: new SongIllustrations
