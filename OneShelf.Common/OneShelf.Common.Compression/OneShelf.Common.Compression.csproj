@@ -10,7 +10,7 @@
     <PackageReference Include="System.Memory.Data" Version="8.0.0" />
   </ItemGroup>
 
-	<Target Name="NugetPackAutoVersioning" AfterTargets="Build">
+	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
 		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
 	</Target>
 
