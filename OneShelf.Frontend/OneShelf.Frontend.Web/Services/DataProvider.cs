@@ -31,22 +31,23 @@ public class DataProvider
 
     public async Task<Chords> GetChords(string externalId, bool reloadUnstable = true)
         => await Cache(
+            ChordsKeyPrefix,
             $"{ChordsKeyPrefix}{externalId}", 
-            async () => (await _api.GetChords(externalId.Once().ToList())).Single().Value, 1,
+            async () => (await _api.GetChords(externalId.Once().ToList())).Single().Value, 2,
             c => !c.IsStable && reloadUnstable);
 
     public async Task ClearProgressions()
     {
         await Task.Yield();
         await _myIndexedDb.OpenIndexedDb();
-        var progressions = await GetItemsRange(ChordsProgressionKeyPrefix);
+        var keysRange = await GetKeysRange(ChordsProgressionKeyPrefix);
 
-        foreach (var progression in progressions)
+        foreach (var key in keysRange)
         {
             using var _ = await _savingLock.LockAsync();
             try
             {
-                await _myIndexedDb.DeleteByKey<string, IndexedItemKey>(progression.item.Key);
+                await _myIndexedDb.DeleteByKey<string, IndexedItemKey>(key.key.Key);
             }
             catch (Exception e)
             {
@@ -54,7 +55,7 @@ public class DataProvider
             }
             try
             {
-                await _myIndexedDb.DeleteByKey<string, IndexedItem>(progression.item.Key);
+                await _myIndexedDb.DeleteByKey<string, IndexedItem>(key.key.Key);
             }
             catch (Exception e)
             {
@@ -125,12 +126,12 @@ public class DataProvider
     }
 
     public async Task<List<SearchHeader>> Search(string query)
-        => await Cache($"{SearchKeyPrefix}{query}", () => _api.Search(query), 2);
+        => await Cache(SearchKeyPrefix, $"{SearchKeyPrefix}{query}", () => _api.Search(query), 2);
 
     public List<SearchHeader>? SearchPeek(string query)
         => _deserialized.TryGetValue($"{SearchKeyPrefix}{query}", out var result) ? (List<SearchHeader>)result : null;
 
-    private async Task<TItem> Cache<TItem>(string key, Func<Task<TItem>> getter, int version, Func<TItem, bool>? forceReload = null)
+    private async Task<TItem> Cache<TItem>(string prefix, string key, Func<Task<TItem>> getter, int version, Func<TItem, bool>? forceReload = null)
     {
         if (_deserialized.TryGetValue(key, out var value))
         {
@@ -151,8 +152,11 @@ public class DataProvider
 
             if (item != null && (forceReload != null && forceReload(item) || (indexedItem?.Version ?? version) != version))
             {
-                await _myIndexedDb.DeleteByKey<string, IndexedItem>(key);
-                await _myIndexedDb.DeleteByKey<string, IndexedItemKey>(key);
+                if (indexedItem != null && indexedItem.Version != version)
+                {
+                    await Clear(prefix, version);
+                }
+
                 item = default;
             }
         }
@@ -179,6 +183,34 @@ public class DataProvider
         _deserialized[key] = item!;
 
         return item;
+    }
+
+    private async Task Clear(string prefix, int version)
+    {
+        var keys = await GetKeysRange(prefix);
+        foreach (var key in keys)
+        {
+            if (key.key.Version != version)
+            {
+                try
+                {
+                    await _myIndexedDb.DeleteByKey<string, IndexedItem>(key.key.Key);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error deleting the key.");
+                }
+
+                try
+                {
+                    await _myIndexedDb.DeleteByKey<string, IndexedItemKey>(key.key.Key);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error deleting the item.");
+                }
+            }
+        }
     }
 
     public async Task Clear()
