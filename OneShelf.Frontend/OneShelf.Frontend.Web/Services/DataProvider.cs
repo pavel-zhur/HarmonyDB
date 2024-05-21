@@ -145,18 +145,18 @@ public class DataProvider
             await Task.Yield();
             await _myIndexedDb.OpenIndexedDb();
             var indexedItem = await _myIndexedDb.GetByKey<string, IndexedItem>(key);
+            if (indexedItem != null && indexedItem.Version != version)
+            {
+                await Clear(prefix, version);
+            }
+
             if (indexedItem != null)
             {
                 item = JsonSerializer.Deserialize<TItem>(indexedItem.Contents);
             }
 
-            if (item != null && (forceReload != null && forceReload(item) || (indexedItem?.Version ?? version) != version))
+            else if (item != null && forceReload != null && forceReload(item))
             {
-                if (indexedItem != null && indexedItem.Version != version)
-                {
-                    await Clear(prefix, version);
-                }
-
                 item = default;
             }
         }
