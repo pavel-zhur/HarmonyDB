@@ -19,7 +19,7 @@ namespace OneShelf.Authorization.Api.Functions
         }
 
         [Function(nameof(CheckIdentity))]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Admin, "post")] HttpRequest req, [FromBody] Identity identity) => await RunHandler(identity);
+        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] Identity identity) => await RunHandler(identity);
 
         protected override async Task<CheckIdentityResponse> Execute(Identity request)
         {
