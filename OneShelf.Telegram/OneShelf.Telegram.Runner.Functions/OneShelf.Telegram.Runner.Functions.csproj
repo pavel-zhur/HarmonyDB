@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CS1998</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;CS1998</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+	  <FrameworkReference Include="Microsoft.AspNetCore.App" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.22.0" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.1.0" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.2.1" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.4.0" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.0" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.17.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Processor\OneShelf.Telegram.Processor.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+	<ItemGroup>
+		<Using Include="Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute" Alias="FromBodyAttribute" />
+		<Using Include="Microsoft.Azure.Functions.Worker.Http" />
+	</ItemGroup>
+</Project>

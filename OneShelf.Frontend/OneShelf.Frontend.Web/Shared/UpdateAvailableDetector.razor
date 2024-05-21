@@ -1,0 +1,60 @@
+﻿@inject IJSRuntime JsRuntime
+@inject ILogger<UpdateAvailableDetector> Logger
+
+@if (_newVersionAvailable)
+{
+    <li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2">
+        <a href="#" class="navbar-nav-link navbar-nav-link-icon rounded-pill" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+            <i class="ph-bell"></i>
+            <span class="badge bg-yellow text-black position-absolute top-0 end-0 translate-middle-top zindex-1 rounded-pill mt-1 me-1">1</span>
+        </a>
+
+        <div class="dropdown-menu dropdown-menu-right wmin-lg-400 p-0">
+            <div class="d-flex align-items-center p-3 text-success">
+                <h6 class="mb-0">Есть обновление!</h6>
+            </div><div class="d-flex align-items-center p-3 pt-0">
+                <span class="mb-0">Вышла новая версия приложения. Обновите страницу, чтобы её использовать.</span>
+            </div>
+            <div class="d-flex py-2 px-3 my-link" onclick="window.location.reload()">
+                <h6 href="#" class="text-body ms-auto mb-1">Обновить<i class="ph-arrow-circle-right ms-1"></i>
+                </h6>
+            </div>
+        </div>
+    </li>
+}
+
+@code {
+
+    private bool _newVersionAvailable = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RegisterForUpdateAvailableNotification();
+    }
+
+    private async Task RegisterForUpdateAvailableNotification()
+    {
+        try
+        {
+            await JsRuntime.InvokeAsync<object>(
+                identifier: "registerForUpdateAvailableNotification",
+                DotNetObjectReference.Create(this),
+                nameof(OnUpdateAvailable));
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error detecting the notifications.");
+        }
+    }
+
+    [JSInvokable(nameof(OnUpdateAvailable))]
+    public Task OnUpdateAvailable()
+    {
+        _newVersionAvailable = true;
+
+        StateHasChanged();
+
+        return Task.CompletedTask;
+    }
+
+}

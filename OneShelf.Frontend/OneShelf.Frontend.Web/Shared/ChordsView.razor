@@ -1,0 +1,1053 @@
+﻿@using System.Timers
+@using HarmonyDB.Common
+@using HarmonyDB.Common.Representations.OneShelf
+@using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Sources.Api.Model.V1
+@using Microsoft.Extensions.Options
+@using OneShelf.Common
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Databasish.Interfaces
+@using OneShelf.Frontend.Web.Interop
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Tools
+@using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@inject DataProvider DataProvider
+@inject CollectionIndexProvider CollectionIndexProvider
+@inject ILogger<ChordsView> Logger
+@inject IdentityProvider IdentityProvider
+@inject InstantActions InstantActions
+@inject JsFunctions JsFunctions
+@inject NavigationManager NavigationManager
+@inject CollectionNavigation CollectionNavigation
+@inject SearchContext SearchContext
+@inject Receiver Receiver
+@inject ReceiverInstance ReceiverInstance
+@inject IJSRuntime JsRuntime
+@inject Player Player
+@inject IConfiguration Configuration
+@inject Preferences Preferences
+@inject ProgressionsSearch ProgressionsSearch
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject ProgressionsSearchContext ProgressionsSearchContext
+@inject ProgressionsBuilder ProgressionsBuilder
+@inject ChordDataParser ChordDataParser
+@inject IOptions<FrontendOptions> Options
+
+<div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
+
+    <div class="page-header-content d-block">
+        <div class="d-flex justify-content-between">
+            <div class="breadcrumb">
+                <h5 class="my-pt-25">@Title</h5>
+            </div>
+
+            <div class="d-flex">
+                @if (PreviousVisible)
+                {
+                    <a class="d-flex align-items-center text-body py-2 ms-2 collapsed my-link" @onclick="OnPrevious">
+                        <i class="ph-arrow-left my-white"></i>
+                    </a>
+                }
+                @if (NextVisible)
+                {
+                    <a class="d-flex align-items-center text-body py-2 ms-2 collapsed my-link" @onclick="OnNext">
+                        <i class="ph-arrow-right my-white"></i>
+                    </a>
+                }
+                <a class="d-flex align-items-center text-body py-2 ms-2 collapsed my-link" @onclick="() => StateChanged((true, false))">
+                    <i class="ph-x-circle my-white"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@if (CollectionIndexFailed)
+{
+    <p><em>Не получилось загрузить, может нету интернета, исполнителей.</em></p>
+    <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    <div class="likes-links">
+    @if (_state == State.Success)
+    {
+        <div class=" row transpose-group  ">
+            <div class="col col-auto ">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <button @onclick="Down" class="btn btn-secondary rounded-0 rounded-start"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg></button>
+                    </div>
+                    <span class="transpose form-control @(_representationSettings.Transpose == 0 ? null : "transpose-highlighted")"> @_representationSettings.Transpose.Transposition()</span>
+
+                    <div class="input-group-prepend">
+                        <button @onclick="Up" class="btn btn-secondary  rounded-0 rounded-end"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg></button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-auto ps-0">
+                <div class="input-group mb-3 songsconstants">
+                    <div class="input-group-prepend">
+                        <input class=" btn-check" name="SongsConstants" checked="@(_representationSettings.Alteration == NoteAlteration.Flat)" type="radio" @onchange="Flat" id="preferFlat"/>
+
+                        <label class="btn btn-outline-secondary rounded-0 rounded-start" for="preferFlat">@SignsConstants.SignFlat@SignsConstants.SignFlat@SignsConstants.SignFlat</label>
+
+                    </div>
+                    <div class="input-group-prepend">
+                        <input class="btn-check" name="SongsConstants" checked="@(_representationSettings.Alteration == NoteAlteration.Sharp)" type="radio" @onchange="Sharp" id="preferSharp"/>
+
+                        <label class="btn btn-outline-secondary rounded-0 rounded-end" for="preferSharp">@SignsConstants.SignSharp@SignsConstants.SignSharp@SignsConstants.SignSharp</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-auto ps-0">
+                <div class="input-group mb-3 songsconstants">
+                    @if (!_zooming)
+                    {
+                        <div class="input-group-prepend">
+                            <button @onclick="ZoomInit" class="btn btn-outline-secondary  rounded-0 rounded-end rounded-start">
+                                <span class="ph-magnifying-glass-plus"></span>
+                            </button>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="input-group-prepend">
+                            <button @onclick="_ => Zoom(-5)" class="btn btn-outline-secondary  rounded-0 rounded-start">
+                                <span class="ph-magnifying-glass-minus"></span>
+                                <span class="ph-magnifying-glass-minus"></span>
+                            </button>
+
+                        </div>
+                        <div class="input-group-prepend">
+                            <button @onclick="_ => Zoom(-1)" class="btn btn-outline-secondary  rounded-0">
+                                <span class="ph-magnifying-glass-minus"></span>
+                            </button>
+
+                        </div>
+                        <div class="input-group-prepend">
+                            <button @onclick="_ => Zoom(100 - _zoom)" class="btn btn-outline-secondary  rounded-0">
+                                <span class="ph-arrow-counter-clockwise"></span>
+                            </button>
+
+                        </div>
+                        <div class="input-group-prepend">
+                            <button @onclick="_ => Zoom(1)" class="btn btn-outline-secondary  rounded-0">
+                                <span class="ph-magnifying-glass-plus"></span>
+                            </button>
+
+                        </div>
+                        <div class="input-group-prepend">
+                            <button @onclick="_ => Zoom(5)" class="btn btn-outline-secondary  rounded-0 rounded-end">
+                                <span class="ph-magnifying-glass-plus"></span>
+                                <span class="ph-magnifying-glass-plus"></span>
+                            </button>
+
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    }
+        
+    @if (_chords != null)
+    {
+        <span class="badge bg-light border-start border-width-3 text-body rounded-start-0 border-yellow me-2 mb-1 mt-1">
+            <span>Ссылка:</span>
+            <a href="@_chords.SourceUri" target="_blank">@_chords.Source</a>
+        </span>
+    }
+
+    @if (SongId.HasValue)
+    {
+        <span class="badge bg-light border-start border-width-3 text-body rounded-start-0 border-yellow me-2 mb-1 mt-1">
+            <ChordsView_AddedBy VersionId="@VersionId"></ChordsView_AddedBy>
+        </span>
+    }
+
+    @if ((SongId != null || ExternalId != null) && _state == State.Success)
+    {
+        <CategoriesButton VersionId="@VersionId" Update="OnLikesUpdate" SongId="SongId" CurrentTranspose="@_representationSettings.Transpose"/>
+                
+        <span class="dropdown me-1">
+            <a href="#" class="my-link badge @(_representationSettings.Simplification > 0 ? "bg-danger border-danger bg-opacity-75" : "bg-light text-body border-indigo") border-start border-width-3 rounded-start-0 d-inline-flex align-items-center dropdown-toggle mb-1 mt-1" data-bs-toggle="dropdown" aria-expanded="false">Проще</a>
+            <div class="dropdown-menu dropdown-menu-end" style="">
+                @if (_representationSettings.Simplification != SimplificationMode.None)
+                {
+                    <a @onclick="() => SetSimplification(SimplificationMode.None)" class="dropdown-item my-link">
+                        Сделать оригинальные!
+                    </a>
+                }
+                @if (_representationSettings.Simplification != SimplificationMode.All)
+                {
+                    <a @onclick="() => SetSimplification(SimplificationMode.All)" class="dropdown-item my-link">
+                        Am
+                        <span class="opacity-75">&nbsp;совсем простые</span>
+                    </a>
+                }
+                @if (_representationSettings.Simplification != (SimplificationMode.Remove7 | SimplificationMode.Remove6 | SimplificationMode.RemoveSus))
+                {
+                    <a @onclick="() => SetSimplification(SimplificationMode.Remove7 | SimplificationMode.Remove6 | SimplificationMode.RemoveSus)" class="dropdown-item my-link">
+                        Am/G
+                        <span class="opacity-75">&nbsp;простые + басы</span>
+                    </a>
+                }
+                @if (_representationSettings.Simplification != (SimplificationMode.RemoveBass | SimplificationMode.Remove6 | SimplificationMode.RemoveSus))
+                {
+                    <a @onclick="() => SetSimplification(SimplificationMode.RemoveBass | SimplificationMode.Remove6 | SimplificationMode.RemoveSus)" class="dropdown-item my-link">
+                        Am7
+                        <span class="opacity-75">&nbsp;простые 7</span>
+                    </a>
+                }
+                @if (_representationSettings.Simplification != (SimplificationMode.Remove9AndMore | SimplificationMode.Remove6 | SimplificationMode.RemoveSus))
+                {
+                    <a @onclick="() => SetSimplification(SimplificationMode.Remove9AndMore | SimplificationMode.Remove6 | SimplificationMode.RemoveSus)" class="dropdown-item my-link">
+                        Am7/G
+                    </a>
+                }
+                <div class="dropdown-divider"></div>
+                @foreach (var (mode, title) in new[]
+                {
+                    (mode: SimplificationMode.Remove6, title: "6"),
+                    (mode: SimplificationMode.Remove7, title: "7"),
+                    (mode: SimplificationMode.Remove9AndMore, title: "9…"),
+                    (mode: SimplificationMode.RemoveBass, title: "/"),
+                    (mode: SimplificationMode.RemoveSus, title: "sus"),
+                })
+                {
+                    <a @onclick="() => Simplify(mode)" class="dropdown-item my-link">
+                        <span class="border border-width-1 @(!_representationSettings.Simplification.HasFlag(mode) ? "border-info ph-plus" : "border-ping ph-minus") rounded-pill me-2"></span>
+                        @(_representationSettings.Simplification.HasFlag(mode) ? "Показать " : "Спрятать ") @title
+                    </a>
+                }
+            </div>
+        </span>
+    }
+
+    @if (SongId.HasValue && VersionId.HasValue && CollectionIndex.VersionsById.TryGetValue(VersionId.Value, out var x) && x.version.UserId == IdentityProvider.RequiredIdentity.Id)
+    {
+        var version = x.version;
+        var tag = $"{version.CollectiveSearchTag / 1000:000} {version.CollectiveSearchTag % 1000:000}";
+        if (version.CollectiveId.HasValue)
+        {
+            <div class="dropdown me-2">
+                <a href="#" class="my-link badge bg-purple bg-opacity-75 border-start border-width-3 rounded-start-0 border-purple d-inline-flex align-items-center dropdown-toggle mb-1 mt-1" data-bs-toggle="dropdown" aria-expanded="false">
+                    @(version.CollectiveType switch {
+                        VersionCollectiveType.Private => $"Приватные {tag}",
+                        VersionCollectiveType.Public => "Публичные",
+                        _ => throw new ArgumentOutOfRangeException(),
+                        })
+                </a>
+
+                <div class="dropdown-menu" style="">
+                    <a @onclick="() => CollectiveUpdate(version.CollectiveId.Value)" class="dropdown-item my-link">
+                        <span class="ph-pen me-2"></span>
+                        Редактировать…
+                    </a>
+                    @if (version.CollectiveType == VersionCollectiveType.Private)
+                    {
+                            <a onclick="alert('Эти аккорды не видны в библиотеках других людей, но если вы скажете кому-то эти шесть цифр и они введут их в поиске, то они увидят ваши аккорды. Еще они доступны в интернете по ссылке, ею можно поделиться (@Options.Value.LocalSourceNameSafe). Собственно, чтобы отобрать доступ, если вы кому-то дали циферки или ссылку - обновите циферки.')" class="dropdown-item my-link">
+                            <span class="ph-question me-2"></span>
+                            Что такое @tag?
+                        </a>
+                        <a @onclick="() => CollectiveRefreshTag(version.CollectiveId.Value)" class="dropdown-item my-link">
+                            <span class="ph-arrows-counter-clockwise me-2"></span>
+                            Обновить номер @tag…
+                        </a>
+                    }
+                    <a @onclick="() => CollectiveDelete(version.CollectiveId.Value)" class="dropdown-item my-link">
+                        <span class="ph-x me-2"></span>
+                        Удалить…
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <span class="badge border-start border-width-3 text-body rounded-start-0 border-pink my-link me-2 bg-pink bg-opacity-20 mb-1 mt-1" @onclick="AdminRemoveVersion">Удалить аккорды</span>
+        }
+    }
+
+    @if (_state == State.Success
+         && SongId.HasValue 
+         && VersionId.HasValue
+         && !CollectionIndex.SongsById[SongId.Value].Versions.Any(x => x.CollectiveType.HasValue && x.UserId == IdentityProvider.RequiredIdentity.Id)
+         && CollectionIndex.SongsById[SongId.Value].Versions.Any(x => x.ExternalId != null))
+    {
+        <span class="badge border-start border-width-3 text-body rounded-start-0 border-purple my-link me-2 bg-purple bg-opacity-20 mb-1 mt-1" @onclick="CollectiveAdd">+ мой вариант</span>
+    }
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="likes-links row mt-3">
+                <div class="col-auto ">
+                    <LikesBlock
+                        CurrentLevel="@GetCurrentLevel()"
+                        Update="OnLikesUpdate"
+                        DisplayDislike="@SongId.HasValue"
+                        Level0Available="true"></LikesBlock>
+                </div>
+                    
+                @if (_state == State.Success)
+                {
+                    <button class="btn @((_circleOfFifths ? "btn-secondary" : "btn-outline-secondary")) col-auto mb-3 me-2" type="button" @onclick="InvertCircleOfFifths">
+                        <span>
+                            ккк
+                        </span>
+                    </button>
+
+                    <button class="btn @((_loops ? "btn-secondary" : "btn-outline-secondary")) col-auto mb-3 me-2" type="button" @onclick="InvertLoops">
+                        <span>
+                            прг
+                        </span>
+                    </button>
+
+                    @if (!string.IsNullOrWhiteSpace(ExternalId))
+                    {
+                        <button class="btn @((_searchMode ? "btn-secondary" : "btn-outline-secondary")) col-auto mb-3 me-2" type="button" @onclick="InvertSearch">
+                            <span class="ph-line-segments">
+                            </span>
+                        </button>
+                    }
+
+                    @if (_circleOfFifths && _specialTonicCandidate.HasValue)
+                    {
+                        <button class="btn @((_specialTonic ? "btn-secondary" : "btn-outline-secondary")) col-auto mb-3" type="button" @onclick="InvertSpecialTonic">
+                            <span>
+                                @("T = " + _specialTonicCandidate.Value.note.Representation(new()) + (_specialTonicCandidate.Value.chordType == ChordType.Minor ? "m" : ""))
+                            </span>
+                        </button>
+                    }
+                }
+
+            </div>
+        </div>
+    </div>
+        
+    @if (_state == State.Loading)
+    {
+        <div class="row">
+            <div class="col">
+                <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..."/></div> 
+            </div>
+        </div>
+    }
+    </div>
+
+    @if (_searchMode)
+    {
+        <div class="search-note badge bg-light border-width-3 border-start border-yellow text-body rounded-start-0 mb-3">
+            <span class="ph-line-segments"></span>
+            @if (_progression == null)
+            {
+                if (_needProgressionsCache)
+                {
+                    <span>Надо сначала построить прогрессии. Для этого <a href="/cache">сходите в кэш</a>, пожалуйста.</span>
+                }
+                else
+                {
+                    <span>Инициализация поиска прогрессий (прогресс в шапке)...</span>
+                }
+            }
+            else
+            {
+                <span>Чтобы воспользоваться поиском аккордовой последовательности, просто нажмите на аккорд начала, а потом на аккорд конца прогрессии. И произойдёт поиск. Если это зацикленная последовательность, лучше выберите один цикл, где аккорд начала такой же, как аккорд конца. Тогда результаты поиска будут лучше.</span>
+                @if (ProgressionsSearchContext.Results != null)
+                {
+                    <div class="mt-1">
+                        Найдено @ProgressionsSearchContext.Results.Value.foundProgressionsWithCoverage.Count песен.
+                        <span class="badge border-start border-width-3 text-body rounded-start-0 border-success my-link ms-1 bg-success bg-opacity-20 mb-1 mt-1" @onclick="() => StateChanged((false, false))">Смотреть</span>
+                        <span class="badge border-start border-width-3 text-body rounded-start-0 border-success my-link ms-1 bg-danger bg-opacity-10 mb-1 mt-1" @onclick="SearchClear">Очистить</span>
+                    </div>
+                }
+            }
+        </div>
+    }
+   
+    @if (_state == State.Success && _circleOfFifths)
+    {
+        <CircleOfFifths Chords="@_chords.Output.AsChords(_representationSettings)" PlayOnClick="true" Played="CircleOfFifthsPlayed"></CircleOfFifths>
+    }
+
+    @if (_loopTitles != null)
+    {
+        <div>
+            @foreach (var (id, title, chordsTitle, isCompound, _) in _loopTitles.OrderBy(x => x.length))
+            {
+                <div style="@(isCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
+                    <span>@title</span>
+                    <b><span>@chordsTitle</span></b>
+                </div>
+            }
+        </div>
+    }
+
+    @if (_state == State.Success)
+    {
+        <div class="chords-block mt-4" style="font-size: @_zoom%">
+            @(new MarkupString(_chords.Output.AsHtml(_representationSettings)))
+        </div>
+    }
+        
+    @switch (_state)
+    {
+        case State.Failed:
+            <span>
+                Не получилось загрузить, может нету интернета.
+                <span class="my-text-gray">
+                    Или редкая проблема конкретно с этими аккордами, напишите мне.
+                </span>
+                Попробуйте нажать:
+                <button class="btn btn-success mt-2 mb-2 ms-1" @onclick="RefreshChords">Повтор</button>
+            </span>
+
+            @if (VersionId.HasValue && CollectionIndex.VersionsById.TryGetValue(VersionId.Value, out var version))
+            {
+                <div>
+                    <span>
+                        Или же источник:
+                        <span> </span>
+                        <a href="@version.version.Uri" target="_blank">@version.version.Uri.Host</a>
+                    </span>
+                </div>
+            }
+
+            break;
+        case State.KnownUnsupported:
+            var versionUri = CollectionIndex.VersionsById[VersionId!.Value].version.Uri;
+            <span>
+                Этот источник не поддерживается. Смотрите напрямую: <a href="@versionUri" target="_blank">@versionUri</a>
+            </span>
+            break;
+        case State.HideUnstable:
+            versionUri = CollectionIndex.VersionsById[VersionId!.Value].version.Uri;
+            <span>
+                @_chords!.UnstableErrorMessage <a href="@versionUri" target="_blank">@(_chords!.Source)</a>
+            </span>
+            break;
+    }
+}
+
+@code {
+    
+    private Chords? _chords;
+    private State _state = State.Loading;
+    private RepresentationSettings _representationSettings = new();
+    
+    private bool _circleOfFifths;
+    
+    private bool _loops;
+    private int? _loopId;
+    private List<(int id, string title, string chordsTitle, bool isCompound, int length)>? _loopTitles;
+    private IReadOnlyDictionary<int, string>? _loopsCustomAttributes;
+    private (List<Loop> loops, ChordsProgression progression)? _loopsMemory;
+
+    private bool _specialTonic;
+    private (Note note, ChordType chordType)? _specialTonicCandidate;
+    private int _renderedHash;
+    private int _zoom;
+    private bool _zooming;
+
+    private int? _searchingFrom;
+    private ChordsProgression? _progression;
+    private bool _needProgressionsCache;
+    private bool _searchMode;
+
+    private readonly Timer _timer = new(650);
+
+    [Parameter]
+    public bool NextVisible { get; set; }
+
+    [Parameter]
+    public bool PreviousVisible { get; set; }
+
+    [Parameter]
+    public required Action OnNext { get; set; }
+
+    [Parameter]
+    public required Action OnPrevious { get; set; }
+
+    [Parameter]
+    public required string Title { get; set; }
+
+    [Parameter]
+    public string? ExternalId { get; set; }
+
+    [Parameter]
+    public int? VersionId { get; set; }
+
+    [Parameter]
+    public required int? SongId { get; set; }
+
+    [Parameter]
+    public required Action<(bool isOpen, bool isOpen2)> StateChanged { get; set; }
+
+    [Parameter]
+    public string? VirtualSongArtist { get; set; }
+
+    [Parameter]
+    public string? VirtualSongTitle { get; set; }
+
+    protected override bool ShouldRender()
+    {
+        var hash = GetHash();
+        if (_renderedHash == hash) return false;
+        _renderedHash = hash;
+        return true;
+    }
+
+    private int GetHash()
+    {
+        return HashCode.Combine(NextVisible, PreviousVisible, Title, ExternalId, VersionId, 
+            HashCode.Combine(SongId, VirtualSongArtist, VirtualSongTitle, _specialTonicCandidate?.note, _specialTonicCandidate?.chordType, _state, _representationSettings.GetHashCode(), _circleOfFifths),
+            HashCode.Combine(CollectionIndex?.GetHashCode() ?? 0, _specialTonic, _loops, _loopId),
+            HashCode.Combine(_chords?.GetHashCode(), _zooming, _zoom, _searchMode, _needProgressionsCache, _progression == null));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        var module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", $"./Shared/{GetType().Name}.razor.js");
+        await module.InvokeVoidAsync("bindAll", Receiver.Reference);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ProgressionsSearchContext.SearchResultsChanged += ProgressionsSearchContextOnSearchResultsChanged;
+
+        ReceiverInstance.SetChordClick(ChordClicked);
+
+        _circleOfFifths = await Preferences.IsCircleOfFifthsVisible();
+        _zoom = await Preferences.GetZoom();
+        _timer.AutoReset = false;
+        _timer.Elapsed += TimerElapsed;
+    }
+
+    private void ProgressionsSearchContextOnSearchResultsChanged(ProgressionsSearchSource searchSource)
+    {
+        if (_progression == null || ProgressionsSearchContext.Results == null)
+        {
+            _searchMode = false;
+        }
+
+        _representationSettings = _representationSettings with 
+        {
+            CustomAttributes = GetCustomAttributes()
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task ChordClicked(string chordData, int chordIndex)
+    {
+        if (!_searchMode || _progression == null)
+        {
+            await Player.PlayChord(chordData);
+            return;
+        }
+
+        if (_searchingFrom.HasValue)
+        {
+            if (_searchingFrom < chordIndex)
+            {
+                var search = ProgressionsSearch.ExtractSearch(_progression, _searchingFrom.Value, chordIndex);
+                if (search == null)
+                {
+                    Console.WriteLine($"Extraction failed {_searchingFrom} -> {chordIndex}.");
+                }
+                else
+                {
+                    ProgressionsSearchContext.Start(ProgressionsSearchSource.ChordsView, search);
+                }
+
+                _searchingFrom = null;
+
+                StateHasChanged();
+                return;
+            }
+        }
+
+        _searchingFrom = chordIndex;
+        _representationSettings = _representationSettings with 
+        {
+            CustomAttributes = new Dictionary<int, string>
+            {
+                [chordIndex] = "search-first"
+            }
+        };
+
+        StateHasChanged();
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        UpdateRepresentationSettings();
+    }
+
+    private void UpdateRepresentationSettings()
+    {
+        _specialTonicCandidate = null;
+        _searchingFrom = null;
+        _progression = null;
+        _needProgressionsCache = false;
+
+        if (CollectionIndex == null) return;
+        _representationSettings = new(transpose: !SongId.HasValue
+            ? 0
+            : CollectionIndex.SongsById[SongId.Value].Likes.OrderBy(x => x.LikeCategoryId.HasValue ? 2 : 1).FirstOrDefault(x =>
+                x.VersionId == VersionId && x.UserId == IdentityProvider.RequiredIdentity.Id)?.Transpose ?? 0, customAttributes: GetCustomAttributes());
+
+        Console.WriteLine(nameof(UpdateRepresentationSettings));
+    }
+
+    private IReadOnlyDictionary<int, string> GetCustomAttributes()
+    {
+        if (_loopId.HasValue && _loops)
+        {
+            SetLoopsCustomAttributes();
+            return _loopsCustomAttributes;
+        }
+
+        var none = new Dictionary<int, string>();
+        if (ProgressionsSearchContext.Results == null || string.IsNullOrWhiteSpace(ExternalId))
+            return none;
+
+        var progressions = ProgressionsCacheLoader.Peek();
+        if (progressions == null)
+            return none;
+
+        _progression = GetProgression(progressions);
+        if (_progression == null)
+            return none;
+
+        var result = _progression.OriginalSequence
+            .WithIndices()
+            .Select(x => (x.x, x.i, isFirst: ProgressionsSearchContext.Results.Value.harmonyGroupsWithIsFirst.TryGetValue(x.x.harmonyGroup, out var isFirst) ? x.x.indexInHarmonyGroup == 0 && isFirst : (bool?)null))
+            .Where(x => x.isFirst.HasValue)
+            .ToDictionary(x => x.i, x => x.isFirst!.Value ? "search-first" : "search");
+
+        return result;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        UpdateRepresentationSettings();
+
+        var externalId = ExternalId;
+        if (externalId != null)
+        {
+            try
+            {
+                _chords = null;
+                _loopTitles = null;
+                _loopId = null;
+                _state = State.Loading;
+                _loops = false;
+                try
+                {
+                    var chords = await DataProvider.GetChords(externalId);
+                    if (externalId == ExternalId)
+                    {
+                        _chords = chords;
+                        if (_representationSettings.IsVariableWidth != (_chords.Output.IsVariableWidth))
+                        {
+                            _representationSettings = _representationSettings with { IsVariableWidth = _chords.Output.IsVariableWidth };
+                        }
+
+                        if (Configuration.GetValue<bool>(nameof(State.HideUnstable)) && !_chords.IsStable)
+                        {
+                            _state = State.HideUnstable;
+                        }
+                        else
+                        {
+                            _state = State.Success;
+                        }
+                    }
+                }
+                catch (Exception) when (_state == State.Success)
+                {
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                _state = State.Failed;
+                _chords = null;
+                Logger.LogError(e, "Chords loading failed.");
+            }
+        }
+        else
+        {
+            _chords = null;
+            _state = State.KnownUnsupported;
+        }
+
+        await Visit();
+    }
+
+    private async Task RefreshChords()
+    {
+        await OnParametersSetAsync();
+    }
+
+    private void Flat()
+    {
+        _representationSettings = _representationSettings with { Alteration = NoteAlteration.Flat };
+        StateHasChanged();
+    }
+
+    private void Sharp()
+    {
+        _representationSettings = _representationSettings with { Alteration = NoteAlteration.Sharp };
+        StateHasChanged();
+    }
+
+    private async Task Up()
+    {
+        _representationSettings = _representationSettings.Up() with {
+            RelativeTo = null
+            };
+        _specialTonicCandidate = null;
+        _specialTonic = false;
+        await Visit();
+        StateHasChanged();
+    }
+
+    private async Task Down()
+    {
+        _representationSettings = _representationSettings.Down() with {
+            RelativeTo = null
+            };
+        _specialTonicCandidate = null;
+        _specialTonic = false;
+        await Visit();
+        StateHasChanged();
+    }
+
+    private async Task Visit()
+    {
+        if (SongId.HasValue && CollectionIndex == null) return;
+
+        await InstantActions.VisitedChords(
+            VersionId == null ? null : new(CollectionIndex.VersionsById[VersionId.Value].version.Uri.ToString()),
+            ExternalId,
+            SearchContext.PeekLastRequested(),
+            _representationSettings.Transpose,
+            SongId,
+            !SongId.HasValue ? VirtualSongArtist : string.Join(", ", CollectionIndex.SongsById[SongId.Value].Artists.Select(x => CollectionIndex.ArtistsById[x].Name)).SelectSingle(x => string.IsNullOrWhiteSpace(x) ? "n/a" : x),
+            !SongId.HasValue ? VirtualSongTitle : CollectionIndex.SongsById[SongId.Value].Title,
+            _chords?.Source);
+    }
+
+    private byte? GetCurrentLevel()
+    {
+        if (!SongId.HasValue) return CollectionIndex.VirtualLikeLevels.TryGetValue(ExternalId, out var level) && !level.likeCategoryId.HasValue ? level.level : null;
+        return CollectionIndex.SongsById[SongId.Value].Likes
+            .Where(x => x.LikeCategoryId == null)
+            .SingleOrDefault(x => x.UserId == IdentityProvider.RequiredIdentity.Id && x.VersionId == VersionId)
+            ?.SelectSingle(x => x.Transpose == _representationSettings.Transpose ? x.Level : (byte)60); // if it just doesn't match the Transpose, then let no button be selected
+    }
+
+    private Task OnLikesUpdate(byte? level)
+        => OnLikesUpdate(level, null);
+
+    private Task OnLikesUpdate((byte? level, int likeCategoryId) value)
+        => OnLikesUpdate(value.level, value.likeCategoryId);
+
+    private async Task OnLikesUpdate(byte? level, int? likeCategoryId)
+    {
+        if (SongId.HasValue)
+            await InstantActions.UpdateLike(
+                SongId!.Value,
+                VersionId!.Value,
+                level,
+                level.HasValue ? _representationSettings.Transpose : null,
+                likeCategoryId);
+        else
+            await InstantActions.VersionImport(
+                ExternalId,
+                level.Value,
+                _representationSettings.Transpose,
+                likeCategoryId);
+    }
+
+    private async Task AdminRemoveVersion()
+    {
+        if (await JsFunctions.Confirm("Точно хотите удалить эти аккорды из этой песни?"))
+        {
+            await InstantActions.VersionRemove(VersionId.Value);
+            NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalSongChordsRemoved(SongId.Value));
+        }
+    }
+
+    private async Task InvertCircleOfFifths()
+    {
+        _circleOfFifths = !_circleOfFifths;
+        if (!_circleOfFifths) _specialTonicCandidate = null;
+        await Preferences.CircleOfFifthsVisible(_circleOfFifths);
+    }
+
+    private async Task InvertLoops()
+    {
+        _loops = !_loops;
+        if (!_loops || _chords == null)
+        {
+            _loopId = null;
+            _loopTitles = null;
+            _loopsCustomAttributes = null;
+
+            _representationSettings = _representationSettings with
+            {
+                CustomAttributes = GetCustomAttributes(),
+            };
+        }
+        else
+        {
+            var chords = _chords.Output.AsChords(_representationSettings);
+            var progression = ProgressionsBuilder.BuildProgression(chords.Select(ChordDataParser.GetProgressionData).ToList());
+            var loops = ProgressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
+            _loopTitles = new();
+
+            foreach (var (loop, id) in loops.WithIndices())
+            {
+                var length = loop.EndMovement - loop.Start + 1;
+                var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, length)
+                    .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
+                    .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
+                var title = $"{loop.Successions}/{loop.Occurrences}, {loop.Coverage.Sum(h => progression.HarmonySequence[h].harmonyGroup.SelectSingle(x => x.EndChordIndex - x.StartChordIndex + 1)) * 100 / progression.OriginalSequence.Count}%";
+
+                _loopTitles.Add((id, title, chordsTitle, loop.IsCompound, length));
+            }
+
+            _loopsMemory = (loops, progression);
+
+            SetLoopsCustomAttributes();
+
+            _representationSettings = _representationSettings with
+            {
+                CustomAttributes = GetCustomAttributes(),
+            };
+        }
+    }
+
+    private void SetLoopsCustomAttributes()
+    {
+        var loopsCustomAttributes = new Dictionary<int, string>();
+
+        foreach (var x in _loopsMemory.Value.loops.WithIndices()
+                     .Where(x => x.i == _loopId)
+                     .SelectMany(l => l.x.Coverage
+                         .Select(i => _loopsMemory.Value.progression.HarmonySequence[i].harmonyGroup)
+                         .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
+        {
+            loopsCustomAttributes[x] = "search";
+        }
+
+        foreach (var x in _loopsMemory.Value.loops.WithIndices()
+                     .Where(x => x.i == _loopId)
+                     .SelectMany(l => l.x.FoundFirsts
+                         .Select(i => _loopsMemory.Value.progression.HarmonySequence[i].harmonyGroup)
+                         .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
+        {
+            loopsCustomAttributes[x] = "search-first";
+        }
+
+        _loopsCustomAttributes = loopsCustomAttributes;
+    }
+
+    private async Task InvertSearch()
+    {
+        if (_searchMode)
+        {
+            _searchMode = false;
+            _searchingFrom = null;
+            _needProgressionsCache = false;
+            _representationSettings = _representationSettings with
+            {
+                CustomAttributes = GetCustomAttributes(),
+            };
+            StateHasChanged();
+            return;
+        }
+
+        _searchMode = true;
+        StateHasChanged();
+
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+
+        var progressions = await ProgressionsCacheLoader.Get();
+        if (progressions == null)
+        {
+            _needProgressionsCache = true;
+            StateHasChanged();
+            return;
+        }
+
+        _progression = GetProgression(progressions);
+        if (_progression == null)
+        {
+            _searchMode = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private ChordsProgression? GetProgression(List<(ISong song, Version version, ChordsProgression progression)> progressions)
+    {
+        var result = progressions.SingleOrDefault(x => x.version.ExternalId == ExternalId).progression;
+        if (result != null)
+        {
+            return result;
+        }
+
+        if (_chords != null)
+        {
+            return ProgressionsBuilder.BuildProgression(_chords.Output.AsChords(_representationSettings).Select(ChordDataParser.GetProgressionData).ToList());
+        }
+
+        return null;
+    }
+
+    private async Task InvertSpecialTonic()
+    {
+        _specialTonic = !_specialTonic;
+        _representationSettings = _representationSettings with
+        {
+            RelativeTo = _specialTonic ? (_specialTonicCandidate.Value.note.Value, _specialTonicCandidate.Value.chordType == ChordType.Major) : null,
+        };
+    }
+
+    private void CircleOfFifthsPlayed(Note note, ChordType chordType)
+    {
+        _specialTonicCandidate = (note, chordType);
+        _specialTonic = note.Value == _representationSettings.RelativeTo?.note && (chordType == ChordType.Major) == _representationSettings.RelativeTo?.major;
+        StateHasChanged();
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Player.NoChord();
+        _timer.Dispose();
+        ProgressionsSearchContext.SearchResultsChanged -= ProgressionsSearchContextOnSearchResultsChanged;
+    }
+
+    private enum State
+    {
+        Loading,
+        KnownUnsupported,
+        HideUnstable,
+        Failed,
+        Success
+    }
+
+    private void ZoomInit()
+    {
+        _zooming = true;
+    }
+
+    private void Zoom(int delta)
+    {
+        _zoom += delta;
+        _timer.Stop();
+        _timer.Start();
+    }
+
+    private void TimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        Task.Run(() => Preferences.SetZoom(_zoom));
+    }
+
+    private void CollectiveUpdate(Guid collectiveId)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.CollectiveUpdate(collectiveId));
+    }
+
+    private void CollectiveDelete(Guid collectiveId)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.CollectiveDelete(collectiveId));
+    }
+
+    private void CollectiveRefreshTag(Guid collectiveId)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.CollectiveRefresh(collectiveId));
+    }
+
+    private void CollectiveAdd()
+    {
+        try
+        {
+            NavigationManager.NavigateTo(CollectionNavigation.CollectiveAdd(VersionId!.Value));
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error trying to add a collective.");
+        }
+    }
+
+    private void Simplify(SimplificationMode mode)
+    {
+        var adding = !_representationSettings.Simplification.HasFlag(mode);
+        Console.WriteLine($"{adding}, {mode}");
+
+        var mode2 = mode;
+        if (!adding && mode == SimplificationMode.Remove9AndMore)
+            mode2 = SimplificationMode.Remove7;
+
+        var newValue = adding
+            ? _representationSettings.Simplification | mode2
+            : _representationSettings.Simplification & ~mode2;
+
+        if (!adding && mode == SimplificationMode.Remove7)
+        {
+            newValue |= SimplificationMode.Remove9AndMore;
+        }
+
+        _representationSettings = _representationSettings with
+        {
+            Simplification = newValue
+        };
+    }
+
+    private void SetSimplification(SimplificationMode mode)
+    {
+        _representationSettings = _representationSettings with
+        {
+            Simplification = mode
+        };
+    }
+
+    private void SearchClear()
+    {
+        ProgressionsSearchContext.Clear(ProgressionsSearchSource.ChordsView);
+        _searchMode = false;
+        StateHasChanged();
+    }
+
+    private async Task LoopIdClick(int id)
+    {
+        _loopId = id;
+
+        _representationSettings = _representationSettings with
+        {
+            CustomAttributes = GetCustomAttributes(),
+        };
+    }
+}

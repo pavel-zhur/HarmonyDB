@@ -1,0 +1,105 @@
+﻿@using OneShelf.Frontend.Web.Components
+@inherits LayoutComponentBase
+@inject IJSRuntime Js
+
+<!-- Main navbar -->
+<div class="navbar navbar-dark navbar-expand-lg navbar-static border-bottom border-bottom-white border-opacity-10 my-navbar-black @(_just ? "my-navbar-black-body-just" : string.Empty)">
+    <MenuTop />
+</div>
+<!-- /main navbar -->
+
+
+<!-- Page content -->
+<div class="page-content">
+
+    <MenuLeft />
+	
+	@if (SecondarySidebarContent != null)
+	{
+	    <!-- secondary sidebar -->
+		<div class="sidebar sidebar-secondary d-none d-lg-flex sidebar-expand my-secondary-sidebar">
+            <div class="sidebar-content" id="my-secondary-sidebar-content" style="scroll-behavior: smooth">
+                @SecondarySidebarContent
+            </div>
+            <div class="btn-to-top2-cc">
+                <div class="btn-to-top2">
+                </div>
+            </div>
+        </div>
+	    <!-- /secondary sidebar -->
+	}
+
+    <!-- Main content -->
+    <div class="content-wrapper my-content-wrapper">
+
+        <CascadingValue Value="this">
+			
+            <!-- Inner content -->
+            <div class="content-inner my-content-inner">
+
+
+                <!-- Content area -->
+                <div class="content">
+					
+                    @Body
+
+                </div>
+                <!-- /content area -->
+				
+
+            </div>
+            <!-- /inner content -->
+        </CascadingValue>
+
+        <div class="btn-to-top"><button class="btn btn-secondary btn-icon rounded-pill" type="button"><i class="ph-arrow-up"></i></button></div>
+
+    </div>
+    <!-- /main content -->
+
+</div>
+<!-- /page content -->
+
+<MenuBottom />
+
+@code {
+	private RenderFragment? SecondarySidebarContent => _secondarySidebar?.ChildContent;
+
+	private SecondarySidebar? _secondarySidebar;
+
+    private bool _just;
+
+    public void SetSecondarySidebar(SecondarySidebar? secondarySidebar)
+	{
+		_secondarySidebar = secondarySidebar;
+		if (secondarySidebar == null)
+		{
+			SetSidebar(false);
+		}
+	
+        Update();
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await base.OnAfterRenderAsync(firstRender);
+		
+	    var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Shared/MainLayout.razor.js");
+		if (firstRender)
+		{
+			await module.InvokeVoidAsync("MainLayoutRendered");
+		}
+		
+		await module.InvokeVoidAsync("InitSecondToTop");
+	}
+
+	public void SetSidebar(bool just)
+	{
+		if (_just != just)
+		{
+		    _just = just;
+	        Update();
+		}
+	}
+
+    public void Update() => StateHasChanged();
+}

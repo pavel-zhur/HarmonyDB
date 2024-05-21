@@ -1,0 +1,20 @@
+.btn-to-top2 {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    align-self: flex-end;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 999;
+    transition: opacity ease-in-out 0.15s,visibility ease-in-out 0.15s,bottom ease-in-out 0.15s;
+}
+
+.btn-to-top2-visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+.btn-to-top2-cc {
+    position: relative;
+    align-self: flex-end;
+}

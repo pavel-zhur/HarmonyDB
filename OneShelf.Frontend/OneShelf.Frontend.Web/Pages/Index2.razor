@@ -1,0 +1,295 @@
+﻿@page "/index2"
+@using OneShelf.Frontend.Web.Components
+
+<PageTitle>Index</PageTitle>
+
+<SecondarySidebar>
+	<div class="border-bottom" id="sidebar-search" style="">
+		<div class="sidebar-section-body">
+			<div class="form-control-feedback form-control-feedback-end">
+				<input type="search" class="form-control" placeholder="Search">
+				<div class="form-control-feedback-icon">
+					<i class="ph-magnifying-glass opacity-50"></i>
+				</div>
+			</div>
+
+			<div class="btn-group pt-3">
+				<button type="button" class="btn btn-primary active">Новые</button>
+				<button type="button" class="btn btn-primary">Топ</button>
+
+				<div class="btn-group">
+					<button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
+					<div class="dropdown-menu" style="">
+						<a href="#" class="dropdown-item">Action</a>
+						<a href="#" class="dropdown-item">Another action</a>
+						<a href="#" class="dropdown-item">One more action</a>
+						<div class="dropdown-divider"></div>
+						<a href="#" class="dropdown-item">Separated line</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="btn-group pt-3 ps-3">
+				<button type="button" class="btn btn-primary btn-labeled btn-labeled-start dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+					<span class="btn-labeled-icon bg-black bg-opacity-20">
+						<i class="fas fa-heart my-yellow"></i>
+					</span>
+					шортлист
+				</button>
+
+				<button type="button" class="btn btn-icon">
+					<i class="ph-x"></i>
+				</button>
+				<div class="dropdown-menu" style="">
+					<a href="#" class="dropdown-item">Action</a>
+					<a href="#" class="dropdown-item">Another action</a>
+					<a href="#" class="dropdown-item">One more action</a>
+					<div class="dropdown-divider"></div>
+					<a href="#" class="dropdown-item">Separated line</a>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<!-- Sidebar content -->
+	<div class="sidebar-content">
+
+		<!-- Actions -->
+		<div class="sidebar-section">
+			<div class="sidebar-section-header border-bottom">
+				<span class="fw-semibold">Библиотека</span>
+				<div class="ms-auto">
+					<a href="#sidebar-actions" class="text-reset" data-bs-toggle="collapse" aria-expanded="true">
+						<i class="ph-caret-down collapsible-indicator"></i>
+					</a>
+				</div>
+			</div>
+
+			<div class="collapse show" id="sidebar-actions" style="">
+				<div class="sidebar-section-body">
+					<div class="list-group list-group-borderless my-list-1">
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex active">
+							A second item
+
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+							<span class="badge border border-teal text-teal rounded-pill ms-auto">добавлены</span>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /actions -->
+		<!-- Sub navigation -->
+		<div class="sidebar-section">
+			<div class="sidebar-section-header border-bottom">
+				<span class="fw-semibold">Интернет</span>
+				<div class="ms-auto">
+					<a href="#sidebar-navigation" class="text-reset" data-bs-toggle="collapse" aria-expanded="true">
+						<i class="ph-caret-down collapsible-indicator"></i>
+					</a>
+				</div>
+			</div>
+
+			<div class="collapse show" id="sidebar-navigation" style="">
+				<div class="sidebar-section-body">
+					<div class="list-group list-group-borderless my-list-2">
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action">
+							An item
+							<span class="">New New New New New New New New New New New New New New New</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A second item
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A third item
+							<span class="badge bg-teal rounded-pill ms-2">
+								очень хорошие
+							</span>
+						</a>
+						<a href="#" class="list-group-item list-group-item-action d-flex">
+							A fourth item
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /sub navigation -->
+
+	</div>
+	<!-- /sidebar content -->
+</SecondarySidebar>
+
+<!-- Page header -->
+<div class="page-header bg-indigo bg-opacity-75 my-header my-content-addition">
+					
+    <div class="page-header-content d-block">
+        <div class="d-flex">
+            <div class="breadcrumb">
+                <h5 class="my-pt-25">79. сурганова и оркестр - корабли</h5>
+            </div>
+
+            <a href="#bc_top_full" class="d-flex align-items-center text-body py-2 ms-auto collapsed" data-bs-toggle="collapse" aria-expanded="false">
+                <i class="ph-x-circle my-white"></i>
+            </a>
+        </div>
+									
+    </div>
+</div>
+<!-- /page header -->
+
+<p class="fw-bold border-bottom pb-2 mb-2">Badges in actionable items</p>
+<p class="mb-3">Be careful with styling the actionable item in active state and using badges with a solid bg color, due to contrast difference. Outline style or semi transparent background is recommended</p>
+
+<div class="list-group my-list-2">
+	<a href="#" class="list-group-item list-group-item-action">
+		An item
+		<span class="">New New New New New New New New New New New New New New New</span>
+	</a>
+	<a href="#" class="list-group-item list-group-item-action d-flex active">
+		A second item
+
+	</a>
+	<a href="#" class="list-group-item list-group-item-action d-flex">
+		A third item
+		<span class="badge bg-teal rounded-pill ms-2">
+			очень хорошие
+		</span>
+	</a>
+	<a href="#" class="list-group-item list-group-item-action d-flex">
+		A fourth item
+		<span class="badge border border-teal text-teal rounded-pill ms-auto">добавлены</span>
+	</a>
+</div>
+
+<div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
+
+	<div class="page-header-content d-block">
+		<div class="d-flex justify-content-between">
+			<div class="breadcrumb">
+				<h5 class="my-pt-25">B. Chords55</h5>
+			</div>
+
+			<div class="d-flex">
+				<a href="#bc_top_full" class="d-flex align-items-center text-body py-2 ms-auto collapsed" data-bs-toggle="collapse" aria-expanded="false">
+					<i class="ph-arrow-left my-white"></i>
+				</a>
+				<a href="#bc_top_full" class="d-flex align-items-center text-body py-2 ms-2 collapsed" data-bs-toggle="collapse" aria-expanded="false">
+					<i class="ph-x-circle my-white"></i>
+				</a>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+<div class="content my-content-addition">
+
+	<h6>Start your development with no hassle!</h6>
+	<p class="mb-3">Common problem of templates is that all code is deeply integrated into the core. This limits your freedom in decreasing amount of code, i.e. it becomes pretty difficult to remove unnecessary code from the project. Limitless allows you to remove unnecessary and extra code easily just by disabling styling of certain components in <code>_config.scss</code>. Styling of all 3rd party components are stored in separate SCSS files that begin with <code>$enable-[component]</code> condition, which checks if this component is enabled in SCSS configuration and either includes or excludes it from bundled CSS file. Use only components you actually need!</p>
+
+	<h6>What is this?</h6>
+	<p class="mb-3">Starter kit is a set of pages, useful for developers to start development process from scratch. Each layout includes base components only: layout, page kits, color system which is still optional, bootstrap files and bootstrap overrides. No extra CSS/JS files and markup. CSS files are compiled without any plugins or components. Starter kit is moved to a separate folder for better accessibility.</p>
+
+	<h6>How does it work?</h6>
+	<p>You open one of the starter pages, add necessary plugins, enable components in <code>_config.scss</code> file, compile new CSS. That's it. It's also recommended to open one of main pages with functionality you need and copy all paths/JS code from there to your new page, if you don't need to change file structure.</p>
+
+	<h6>What is this?</h6>
+	<p class="mb-3">Starter kit is a set of pages, useful for developers to start development process from scratch. Each layout includes base components only: layout, page kits, color system which is still optional, bootstrap files and bootstrap overrides. No extra CSS/JS files and markup. CSS files are compiled without any plugins or components. Starter kit is moved to a separate folder for better accessibility.</p>
+
+	<h6>How does it work?</h6>
+	<p>You open one of the starter pages, add necessary plugins, enable components in <code>_config.scss</code> file, compile new CSS. That's it. It's also recommended to open one of main pages with functionality you need and copy all paths/JS code from there to your new page, if you don't need to change file structure.</p>
+
+</div>

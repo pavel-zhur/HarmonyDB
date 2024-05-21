@@ -1,0 +1,452 @@
+﻿@page "/print"
+@using OneShelf.Common
+@using System.IO.Compression
+@using HarmonyDB.Common
+@using OneShelf.Frontend.Api.Model.V3.Api
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Databasish.Interfaces
+@using OneShelf.Frontend.Web.Models
+@using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject Api Api
+@inject IdentityProvider IdentityProvider
+@inject ILogger<Print> Logger
+@inject Preferences Preferences
+@inject IJSRuntime JS
+
+<h3>Генерация книжки из списка</h3>
+
+@if (_generating)
+{
+    <span>Генерация книжки...</span>
+}
+else if (_isError)
+{
+    <span>Генерация в процессе. В связи с техническими особенностями, это нормально :) Пожалуйста, жмите на повтор. После второго-десятого раза всё получится. Прошу прощения за неудобный интерфейс. Если после двадцати непрерывных повторов в течение пяти-десяти минут никак не удаётся заставить это работать, то это баг, <a href="https://t.me/pavel_zhur">напишите мне об этом, пожалуйста, и я его починю</a>.</span>
+    <button class="btn btn-outline-secondary" @onclick="Update">Повтор</button>
+}
+else if (_results == null)
+{
+    <span>Загрузка...</span>
+}
+else
+{
+    <button class="btn btn-outline-secondary" @onclick="ResetOrder">Сбросить порядок</button>
+    <button class="btn btn-outline-secondary" @onclick="Reset">Сбросить всё</button>
+    @if (_modified)
+    {
+        <button class="btn btn-outline-secondary" @onclick="Refresh">Обновить просмотр</button>
+    }
+    else if (_results.All(x => x.onePageCount.HasValue || _preferences.Exclusions.Contains(x.songId)))
+    {
+        <div>Если хотите готовую книжку, введите заголовок: <input type="text" value="@_caption" @onchange="e => _caption = (string)e.Value" /></div>
+        <div><input type="checkbox" checked="@_includeInspiration" @onchange="e => _includeInspiration = (bool)e.Value" id="includeInspiration" /><label for="includeInspiration">Включить содержание</label></div>
+        <div><input type="checkbox" checked="@_reindex" @onchange="e => _reindex = (bool)e.Value" id="reindex" /><label for="reindex">Перенумеровать с 1</label></div>
+        <button class="btn btn-outline-secondary" @onclick="Generate">Сгенерить книжку</button>
+    }
+    <div>
+        <span>Люблю:</span>
+        <input type="radio" name="alteration" id="preferSharp" value="@NoteAlteration.Sharp" checked="@(_preferences.Alteration == NoteAlteration.Sharp)" @onchange="e => SetAlteration(NoteAlteration.Sharp)"/>
+        <label for="preferSharp">###</label>
+        <input type="radio" name="alteration" id="preferFlat" value="@NoteAlteration.Flat" checked="@(_preferences.Alteration == NoteAlteration.Flat)" @onchange="e => SetAlteration(NoteAlteration.Flat)"/>
+        <label for="preferFlat">bbb</label>
+        <input type="radio" name="alteration" id="preferNone" value="null" checked="@(_preferences.Alteration == null)" @onchange="e => SetAlteration(null)"/>
+        <label for="preferNone">Что есть, то есть</label>
+    </div>
+    <div>
+        <table>
+            <tr class="header">
+                <td>Включаем?</td>
+                <td>Название</td>
+                <td>Сколько страниц занимает</td>
+                <td>Трнсп</td>
+                <td>Две колонки?</td>
+                <td>Памятка<br/>(не попадёт в книжку)</td>
+                <td>Порядок</td>
+            </tr>
+            @{
+                var leftFor1 = false;
+                var totalCount = 0;
+                var emptyCount = 0;
+            }
+            @foreach (var ((songId, artists, title, index, error, onePageCount, twoPageCount, previewLinkOne, previewLinkTwo, versionId, likeTransposition, externalId), i) in _results.OrderBy(x => _preferences.Order?.IndexOf(x.index) ?? 0).WithIndices())
+            {
+                var pageCount = _preferences.TwoColumns.Contains(versionId ?? 0) ? twoPageCount : onePageCount;
+                var previewLink = _preferences.TwoColumns.Contains(versionId ?? 0) ? previewLinkTwo : previewLinkOne;
+
+                if (!_preferences.Exclusions.Contains(songId))
+                {
+                if (pageCount > 1 && leftFor1)
+                {
+                    emptyCount++;
+                    totalCount++;
+                    <tr>
+                        <td colspan="7" class="empty">Пустая страница чтоб следующая песня не прерывалась</td>
+                    </tr>
+                }
+
+                if (pageCount.HasValue)
+                {
+                    leftFor1 = pageCount % 2 == 1 && !(leftFor1 && pageCount == 1);
+                    totalCount += pageCount.Value;
+                }
+                }
+
+                <tr>
+                    <td class="with-checkbox">
+                        <input type="checkbox" checked="@(!_preferences.Exclusions.Contains(songId) ? "checked" : null)" @onchange="e => SetExclusion(e, songId)"/>
+                    </td>
+                    <td class="@(_preferences.Exclusions.Contains(songId) ? "gray" : null)">@index. @artists - @title</td>
+                    @if (error == null)
+                    {
+                        var plural = pageCount == 1 ? "страница" : pageCount >= 5 ? "страниц" : "страницы";
+                        if (_preferences.Exclusions.Contains(songId))
+                        {
+                            <td class="gray">@pageCount @plural</td>
+                        }
+                        else if (_modified)
+                        {
+                            <td class="success">@pageCount @plural</td>
+                        }
+                        else
+                        {
+                            <td class="success"><a class="success" target="_new" href="@(_modified ? null : previewLink)">@pageCount @plural</a></td>
+                        }
+                    }
+                    else
+                    {
+                        <td class="@(_preferences.Exclusions.Contains(songId) ? "gray" : "error")">@error</td>
+                    }
+                    @if (versionId.HasValue && !_preferences.Exclusions.Contains(songId))
+                    {
+                        <td class="transpose">
+                            @if (_preferences.Transpositions.TryGetValue(versionId.Value, out var value) && value != likeTransposition)
+                            {
+                                <span>@Transposition(likeTransposition) → @Transposition(value)</span>
+                                <button class="btn btn-outline-secondary" @onclick="_ => Transpose(versionId.Value, value - 1)">&minus;</button>
+                                <button class="btn btn-outline-secondary" @onclick="_ => Transpose(versionId.Value, value + 1)">+</button>
+                            }
+                            else
+                            {
+                                <span>@Transposition(likeTransposition)</span>
+                                <button class="btn btn-outline-secondary" @onclick="_ => Transpose(versionId.Value, likeTransposition.Value - 1)">&minus;</button>
+                                <button class="btn btn-outline-secondary" @onclick="_ => Transpose(versionId.Value, likeTransposition.Value + 1)">+</button>
+                            }
+                        </td>
+                        <td class="with-checkbox @(onePageCount == twoPageCount ? null : pageCount == Math.Max(onePageCount.Value, twoPageCount.Value) ? "opportunity-unused" : "opportunity-used")">
+                            <input type="checkbox" checked="@(_preferences.TwoColumns.Contains(versionId.Value) ? "checked" : null)" @onchange="e => SetTwoColumns(e, versionId.Value)"/>
+                            <a href="@(_modified ? null : previewLinkOne)" target="_new">@onePageCount стр</a> → <a href="@(_modified ? null : previewLinkTwo)" target="_new">@twoPageCount стр</a>
+                        </td>
+                        <td>
+                            <input type="text" value="@(_preferences.Comments.TryGetValue(versionId.Value, out var comment) ? comment : null)" @onchange="e => ChangeComment(e, versionId.Value)"/>
+                        </td>
+                    }
+                    else
+                    {
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    }
+                    <td>
+                        @if (i != 0)
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="_ => Up(index)">Вверх</button>
+                        }
+                            
+                        @if (i != _results.Count - 1)
+                        {
+                            <button class="btn btn-outline-secondary" @onclick="_ => Down(index)">Вниз</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+    <h3>Итоги:</h3>
+    <div>Всего страниц: @(totalCount + 1), листов: @((int)Math.Ceiling((totalCount + 1) / 2f)), пустых страниц: @emptyCount</div>
+}
+
+@code {
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Indices { get; set; }
+
+    private List<(int songId, string artists, string title, int index, string? error, int? onePageCount, int? twoPageCount, string? previewLinkOne, string? previewLinkTwo, int? versionId, int? likeTransposition, string? externalId)>? _results;
+    private bool _isError;
+    private PrintPreferences _preferences;
+    private bool _modified;
+    private bool _generating;
+    private string _caption = string.Empty;
+    private bool _includeInspiration;
+    private bool _reindex;
+
+    private string Transposition(int? value) => (value ?? 0) == 0 ? "0" : value < 0 ? value.ToString().Replace("-", "−") : $"+{value}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _preferences = await Preferences.GetPrintPreferences();
+
+        await base.OnInitializedAsync();
+
+        await Update();
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+
+        await Update();
+    }
+
+    private async Task Update()
+    {
+        if (_modified) return;
+
+        _isError = false;
+        _results = null;
+        StateHasChanged();
+        try
+        {
+            if (CollectionIndex == null || string.IsNullOrWhiteSpace(Indices))
+            {
+                Console.WriteLine("Not initialized.");
+                return;
+            }
+
+            Console.WriteLine("Initializing...");
+            var results = new List<(int songId, string artists, string title, int index, string? error, int? onePageCount, int? twoPageCount, string? previewLinkOne, string? previewLinkTwo, int? versionId, int? likeTransposition, string? externalId)>();
+            var indices = Indices.Split(',').Select(int.Parse).ToList();
+
+            if (_preferences.Order != null && _preferences.Order.OrderBy(x => x).SequenceEqual(indices.OrderBy(x => x)))
+            {
+                indices = _preferences.Order;
+            }
+            else
+            {
+                _preferences.Order = indices;
+                await Preferences.SetPrintPreferences(_preferences);
+            }
+
+            var versionsToRequest = new List<(string artists, string title, ISong song, Version version, int likeTranspose)>();
+
+            foreach (var index in indices)
+            {
+                StateHasChanged();
+                var song = CollectionIndex.SongsById.Values.Single(x => x.Index == index);
+                var artists = string.Join(", ", song.Artists.Select(a => CollectionIndex.ArtistsById[a].Name));
+
+                var supportedVersions = song.Versions.Where(x => x.ExternalId != null).ToList();
+
+                switch (supportedVersions.Count)
+                {
+                    case 0:
+                        results.Add((song.Id, artists, song.Title, song.Index, "Нет аккордов.", null, null, null, null, null, null, null));
+                        continue;
+                    case 1:
+                        var single = supportedVersions.Single();
+                        versionsToRequest.Add((artists, song.Title, song, single, song.Likes.OrderByDescending(x => x.Level).ThenByDescending(x => x.Transpose.HasValue ? 1 : 0).FirstOrDefault(x => x.UserId == IdentityProvider.RequiredIdentity.Id && x.VersionId == single.Id && x.Transpose.HasValue)?.Transpose ?? 0));
+                        continue;
+                    default:
+                        var candidates = (song.Likes
+                            .Where(x => x.UserId == IdentityProvider.RequiredIdentity.Id && x.VersionId.HasValue && supportedVersions.Any(u => u.Id == x.VersionId))
+                            .GroupBy(x => x.Level).MaxBy(x => x.Key) ?? Enumerable.Empty<Like>()).ToList();
+                        switch (candidates.Count)
+                        {
+                            case 0:
+                                results.Add((song.Id, artists, song.Title, song.Index, "Несколько аккордов и нет лайков.", null, null, null, null, null, null, null));
+                                continue;
+                            case 1:
+                                versionsToRequest.Add((artists, song.Title, song, song.Versions.Single(x => candidates.Single().VersionId == x.Id), candidates.Single().Transpose ?? 0));
+                                continue;
+                            default:
+                                results.Add((song.Id, artists, song.Title, song.Index, "Несколько лайков максимальной красноты.", null, null, null, null, null, null, null));
+                                continue;
+                        }
+                }
+            }
+
+            var pdfsOne = await Api.GetPdfs(false, versionsToRequest.Select(x => new GetPdfsRequestVersion
+            {
+                VersionId = x.version.Id,
+                Alteration = _preferences.Alteration,
+                Transpose = _preferences.Transpositions.TryGetValue(x.version.Id, out var value) ? value : x.likeTranspose,
+                TwoColumns = false,
+            }).ToList());
+
+            var pdfsTwo = await Api.GetPdfs(false, versionsToRequest.Select(x => new GetPdfsRequestVersion
+            {
+                VersionId = x.version.Id,
+                Alteration = _preferences.Alteration,
+                Transpose = _preferences.Transpositions.TryGetValue(x.version.Id, out var value) ? value : x.likeTranspose,
+                TwoColumns = true,
+            }).ToList());
+
+            results.AddRange(versionsToRequest.Select(x => (x, pdfOne: pdfsOne.Pdfs.GetValueOrDefault(x.version.ExternalId!), pdfTwo: pdfsTwo.Pdfs.GetValueOrDefault(x.version.ExternalId!))).Select(x => (
+                x.x.song.Id,
+                    x.x.artists,
+                    x.x.title,
+                    x.x.song.Index,
+                    x.pdfOne == null || x.pdfTwo == null ? "Не удалось получить аккорды." : null,
+                    x.pdfOne?.PageCount,
+                    x.pdfTwo?.PageCount,
+                    x.pdfOne?.PreviewLink, 
+                    x.pdfTwo?.PreviewLink, 
+                    x.pdfOne == null || x.pdfTwo == null ? null : (int?)x.x.version.Id,
+                    (int?)x.x.likeTranspose,
+                    x.x.version.ExternalId)));
+
+            _results = results;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting the print details.");
+            _isError = true;
+            _results = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task Transpose(int versionId, int transposition)
+    {
+        _preferences.Transpositions[versionId] = transposition;
+        _modified = true;
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task ChangeComment(ChangeEventArgs arg, int versionId)
+    {
+        var value = arg.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(value)) _preferences.Comments.Remove(versionId);
+        else _preferences.Comments[versionId] = value;
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task SetTwoColumns(ChangeEventArgs arg, int versionId)
+    {
+        var value = arg.Value is true;
+        if (value) _preferences.TwoColumns.Add(versionId);
+        else _preferences.TwoColumns.Remove(versionId);
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task SetExclusion(ChangeEventArgs arg, int songId)
+    {
+        var value = arg.Value is true;
+        if (!value) _preferences.Exclusions.Add(songId);
+        else _preferences.Exclusions.Remove(songId);
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task Up(int index)
+    {
+        var indices = _preferences.Order;
+        var indexIndex = indices.IndexOf(index);
+        indices[indexIndex] = indices[indexIndex - 1];
+        indices[indexIndex - 1] = index;
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task Down(int index)
+    {
+        var indices = _preferences.Order;
+        var indexIndex = indices.IndexOf(index);
+        indices[indexIndex] = indices[indexIndex + 1];
+        indices[indexIndex + 1] = index;
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task SetAlteration(NoteAlteration? noteAlteration)
+    {
+        _preferences.Alteration = noteAlteration;
+        _modified = true;
+        await Preferences.SetPrintPreferences(_preferences);
+    }
+
+    private async Task Refresh()
+    {
+        _modified = false;
+        _results = null;
+        StateHasChanged();
+        await Update();
+    }
+
+    private async Task ResetOrder()
+    {
+        _preferences.Order = null;
+        _results = null;
+        StateHasChanged();
+        await Preferences.SetPrintPreferences(_preferences);
+        await Update();
+    }
+
+    private async Task Reset()
+    {
+        _preferences = new();
+        _results = null;
+        StateHasChanged();
+        await Preferences.SetPrintPreferences(_preferences);
+        await Update();
+    }
+
+    private async Task Generate()
+    {
+        try
+        {
+            _generating = true;
+            var results = _results
+                .Where(x => !_preferences.Exclusions.Contains(x.songId))
+                .OrderBy(x => _preferences.Order.IndexOf(x.index))
+                .ToList();
+
+            var pdfs = await Api.GetPdfs(true,
+                results
+                    .Select(x => new GetPdfsRequestVersion
+                    {
+                        VersionId = x.versionId.Value,
+                        Alteration = _preferences.Alteration,
+                        Transpose = _preferences.Transpositions.GetValueOrDefault(x.versionId.Value),
+                        TwoColumns = _preferences.TwoColumns.Contains(x.versionId.Value),
+                    })
+                    .ToList(),
+                _includeInspiration,
+                string.IsNullOrWhiteSpace(_caption) ? null : _caption,
+                _reindex);
+
+            using var stream = new MemoryStream();
+
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+            {
+                foreach (var ((_, artists, title, index, _, _, _, _, _, _, _, _), pdf, i) in results.Select((x, i) => (x, pdfs.Pdfs[x.externalId], i)))
+                {
+                    var entry = archive.CreateEntry(Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).Distinct().Aggregate($"{index} (i) {artists} - {title}.pdf", (n, c) => n.Replace(c, '_')));
+                    await using var entryStream = entry.Open();
+                    await entryStream.WriteAsync(pdf.PdfData);
+                }
+            }
+
+            stream.Position = 0;
+
+            await DownloadFileFromStream(stream, "book.zip");
+
+            if (pdfs.Volume != null)
+            {
+                using var stream2 = new MemoryStream(pdfs.Volume);
+                await DownloadFileFromStream(stream2, "book.pdf");
+            }
+        }
+        finally
+        {
+            _generating = false;
+        }
+    }
+
+    private async Task DownloadFileFromStream(Stream fileStream, string fileName)
+    {
+        using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
+
+}

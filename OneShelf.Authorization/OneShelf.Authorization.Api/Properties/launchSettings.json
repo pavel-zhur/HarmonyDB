@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "OneShelf.Authorization.Api": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7009"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "OneShelf.Sources.Self.Api": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7280",
+      "launchBrowser": false
+    }
+  }
+}

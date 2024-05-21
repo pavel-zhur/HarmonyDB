@@ -1,0 +1,144 @@
+﻿@page "/visitedsearch"
+@using OneShelf.Frontend.Api.Model.V3.Api
+@inject Api Api
+@inject ILogger<VisitedSearch> Logger
+@inject IdentityProvider IdentityProvider
+@inject NavigationManager NavigationManager
+@inject CollectionNavigation CollectionNavigation
+<div class="left-collection-col m-0">
+    <div class="row">
+        <div class="col-md-12 search-result-section-content">
+            <h3>Недавний поиск</h3>
+        </div>
+    </div>
+    <div class="align-content-sm-center">
+        <div class="row ">
+            <div class="col-md-auto">
+                <div class="row ">
+                    <div class="input-group artists-switch">
+                        <div class="input-group-prepend ">
+                            <a class="btn btn-secondary px-2" >Недавний поиск</a>
+                        </div>
+                        <div class="input-group-prepend ">
+                            <a class="btn btn-secondary  btn-secondary-active px-2" href="/visitedchords">Недавние аккорды</a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@if (_failed)
+{
+    <span>Не получилось загрузить, может нету интернета, историю.</span>
+    <button class="btn btn-outline-secondary" @onclick="RetryLoad">Повтор</button>
+}
+else if (_visits == null)
+{
+            <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+            <table class="mt-3 songs table  table-artistcompact ">
+        <thead>
+        <tr>
+            <td><span>Что</span></td>
+            <td><span class="px-2">Когда</span></td>
+        </tr>
+        </thead>
+        @foreach (var visit in _visits.VisitedSearches)
+        {
+            <tr>
+                <td><a href="@CollectionNavigation.GetExternalNavigationLink(visit.Query)">@visit.Query</a></td>
+                <td><span class="px-2">@visit.HappenedOn.ToLocalTime().ToLongDateString() @visit.HappenedOn.ToLocalTime().ToShortTimeString()</span></td>
+            </tr>
+        }
+    </table>
+
+            <nav aria-label="Page navigation example ">
+                <ul class="pagination mt-5">
+
+                    @if (Page > 0)
+                    {
+                        if (Page >= 4)
+                        {
+                            <li class="page-item page-previtem"><a class="page-link " tabindex="-1" href="@NavigationManager.GetUriWithQueryParameter(nameof(Page), 0)"> 1</a></li>
+                        }
+                        <li class="page-item page-previtem"><a class="page-link " tabindex="-1" href="@NavigationManager.GetUriWithQueryParameter(nameof(Page), (Page - 1))"> Назад</a></li>
+                    }
+                    @for (var i = 0; i < _visits.PagesCount; i++)
+                    {
+                        @if (i == Page)
+                        {
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    <span class="sr-only ">@(i + 1)</span>
+                                </span>
+                            </li>
+                        }
+                        else
+                        {
+                            @if (Page >= (i - 3) && Page <= (i + 3))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link " href="@NavigationManager.GetUriWithQueryParameter(nameof(Page), i)"> @(i + 1)</a>
+                                </li>
+                            }
+                        }
+                    }
+                    @if (Page < _visits.PagesCount - 1)
+                    {
+                        <li class="page-item page-nextitem"><a class="page-link " tabindex="-1" href="@NavigationManager.GetUriWithQueryParameter(nameof(Page), (Page + 1))"> Вперед</a></li>
+                        if (Page <= _visits.PagesCount - 5)
+                        {
+                            <li class="page-item page-nextitem"><a class="page-link " tabindex="-1" href="@NavigationManager.GetUriWithQueryParameter(nameof(Page), _visits.PagesCount - 1)"> @_visits.PagesCount</a></li>
+                        }
+                    }
+                </ul>
+            </nav>
+}
+</div>
+@code {
+    
+    private GetVisitedSearchesResponse? _visits;
+    private bool _failed;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int Page { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        await TryLoad();
+    }
+
+    private async Task TryLoad()
+    {
+        try
+        {
+            _visits = await Api.GetVisitedSearches(Page);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error retrieving the history items.");
+            _visits = null;
+            _failed = true;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        IdentityProvider.EnsureAuthorized();
+    }
+
+    private async Task RetryLoad()
+    {
+        _failed = false;
+        await TryLoad();
+    }
+
+}

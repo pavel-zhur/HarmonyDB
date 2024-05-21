@@ -1,0 +1,47 @@
+﻿@inject ChordsCacheLoader ChordsCacheLoader
+@inject ProgressionsCacheLoader ProgressionsCacheLoader
+@using OneShelf.Frontend.Web.Services
+@implements IDisposable
+
+@if (_progress.HasValue)
+{
+    <a href="/cache"><small class="text-success">@_progress.Value<span>%…</span></small></a>
+}
+else if (_failedAt.HasValue)
+{
+    <a href="/cache"><small class="text-warning">@_failedAt.Value<span>%💀</span></small></a>
+}
+
+@code {
+    
+    private int? _progress;
+    private int? _failedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ChordsCacheLoader.ProgressChanged += OnProgressChanged;
+        ProgressionsCacheLoader.ProgressChanged += OnProgressChanged;
+        await base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        ChordsCacheLoader.ProgressChanged -= OnProgressChanged;
+        ProgressionsCacheLoader.ProgressChanged -= OnProgressChanged;
+    }
+
+    private void OnProgressChanged(int? progress)
+    {
+        if (progress == null && _progress < 89)
+        {
+            _failedAt = _progress;
+        }
+        else
+        {
+            _failedAt = null;
+        }
+
+        _progress = progress;
+        StateHasChanged();
+    }
+}

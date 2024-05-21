@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Syncfusion.HtmlToPdfConverter.Net.Windows" Version="23.2.6" />
+	</ItemGroup>
+
+</Project>

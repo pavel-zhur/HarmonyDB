@@ -1,0 +1,108 @@
+﻿@inject Player Player
+@inject FingeringsProvider FingeringsProvider
+@using OneShelf.Frontend.Web.Services
+@using OneShelf.Frontend.Web.Models.Fingerings
+@implements IDisposable
+
+@if (_title != null)
+{
+	<li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2 fingering-shown">
+        <span class="my-link navbar-nav-link ps-1 pe-2" data-bs-toggle="dropdown" data-bs-auto-close="outside" @onclick="Load">
+            <small id="fingering-title">@_title</small>
+		</span>
+
+		<div class="dropdown-menu dropdown-menu-end wmin-lg-400 p-0" data-bs-popper="static">
+            <div class="d-flex align-items-center p-3">
+                <h6 class="mb-0">Аппликатуры</h6>
+            </div>
+            <div class="p-3 pt-0">
+                @if (_pictures == null)
+                {
+                    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+                }
+                else if (!_pictures.Any())
+                {
+                    <span>Аппликатуры такого аккорда автоматически не нашлись. Пожалуйста, поищите вручную.</span>
+                }
+                else
+                {
+                    foreach (var picture in _pictures)
+                    {
+                        <img class="pic" src="data:image/gif;base64,@picture"/>
+                    }
+                }
+            </div>
+            <div class="d-flex border-top py-2 px-3">
+                <a href="/fingerings" onclick="document.querySelector('#fingering-title').click(); return true;" class="text-body ms-auto">
+                    Смотреть все
+                    <i class="ph-arrow-circle-right ms-1"></i>
+                </a>
+            </div>
+		</div>
+	</li>
+}
+
+@code {
+    private string? _title;
+    private (int note, string fingering)? _e;
+    private IReadOnlyList<string>? _pictures;
+
+    protected override Task OnInitializedAsync()
+    {
+        Player.ChordPlayed += PlayerOnChordPlayed;
+        return base.OnInitializedAsync();
+    }
+
+    private async void PlayerOnChordPlayed(object? sender, (int note, string fingering)? e)
+    {
+        if (!e.HasValue)
+        {
+            _title = null;
+            _e = null;
+            _pictures = null;
+            StateHasChanged();
+            return;
+        }
+
+        _e = e;
+        _pictures = null;
+        var fingeringsNote = (FingeringsNote)e.Value.note;
+        _title = $"{FingeringsProvider.ReplaceTitle(fingeringsNote.ToString())}{e.Value.fingering}";
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Player.ChordPlayed -= PlayerOnChordPlayed;
+    }
+
+    private async Task Load()
+    {
+        if (!_e.HasValue) return;
+
+        await Task.Delay(100);
+        var model = await FingeringsProvider.GetModel();
+        if (!_e.HasValue)
+        {
+            _pictures = new List<string>();
+            return;
+        }
+
+        if (!model.TypesByChordText.TryGetValue("C" + _e.Value.fingering, out var type))
+        {
+            if (FingeringsProvider.SynonymsTextToText.TryGetValue("C" + _e.Value.fingering, out var text))
+            {
+                type = model.TypesByChordText[text];
+            }
+            else
+            {
+                _pictures = new List<string>();
+                return;
+            }
+        }
+
+        _pictures = type.Notes[(FingeringsNote)_e.Value.note].Select(x => model.Model.Pictures[x]).Select(Convert.ToBase64String).ToList();
+        StateHasChanged();
+    }
+
+}

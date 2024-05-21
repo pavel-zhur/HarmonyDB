@@ -1,0 +1,94 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/app.css",
+    "inputFile": "wwwroot/css/app.scss"
+  },
+  {
+    "outputFile": "Shared/ChordsList.razor.css",
+    "inputFile": "Shared/ChordsList.razor.scss"
+  },
+  {
+    "outputFile": "Shared/ChordsView.razor.css",
+    "inputFile": "Shared/ChordsView.razor.scss"
+  },
+  {
+    "outputFile": "Shared/SearchResultsInternet.razor.css",
+    "inputFile": "Shared/SearchResultsInternet.razor.scss"
+  },
+  {
+    "outputFile": "Shared/SearchResultsLocal.razor.css",
+    "inputFile": "Shared/SearchResultsLocal.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Artists.razor.css",
+    "inputFile": "Pages/Artists.razor.scss"
+  },
+  {
+    "outputFile": "Pages/VisitedChords.razor.css",
+    "inputFile": "Pages/VisitedChords.razor.scss"
+  },
+  {
+    "outputFile": "Pages/VisitedSearch.razor.css",
+    "inputFile": "Pages/VisitedSearch.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Index.razor.css",
+    "inputFile": "Pages/Index.razor.scss"
+  },
+  {
+    "outputFile": "Shared/CircleOfFifths.razor.css",
+    "inputFile": "Shared/CircleOfFifths.razor.less"
+  },
+  {
+    "outputFile": "Pages/Print.razor.css",
+    "inputFile": "Pages/Print.razor.scss"
+  },
+  {
+    "outputFile": "Pages/HowToInstall.razor.css",
+    "inputFile": "Pages/HowToInstall.razor.scss"
+  },
+  {
+    "outputFile": "Shared/MainLayout.razor.css",
+    "inputFile": "Shared/MainLayout.razor.scss"
+  },
+  {
+    "outputFile": "Shared/SearchHighlighting.razor.css",
+    "inputFile": "Shared/SearchHighlighting.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Tuner.razor.css",
+    "inputFile": "Pages/Tuner.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Fingerings.razor.css",
+    "inputFile": "Pages/Fingerings.razor.scss"
+  },
+  {
+    "outputFile": "Shared/FingeringIndicator.razor.css",
+    "inputFile": "Shared/FingeringIndicator.razor.scss"
+  },
+  {
+    "outputFile": "Shared/MenuTop.razor.css",
+    "inputFile": "Shared/MenuTop.razor.scss"
+  },
+  {
+    "outputFile": "Shared/IllustrationsView.razor.css",
+    "inputFile": "Shared/IllustrationsView.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Illustrations.razor.css",
+    "inputFile": "Pages/Illustrations.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Collective.razor.css",
+    "inputFile": "Pages/Collective.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Progressions.razor.css",
+    "inputFile": "Pages/Progressions.razor.scss"
+  },
+  {
+    "outputFile": "Pages/Collection.razor.css",
+    "inputFile": "Pages/Collection.razor.scss"
+  }
+]

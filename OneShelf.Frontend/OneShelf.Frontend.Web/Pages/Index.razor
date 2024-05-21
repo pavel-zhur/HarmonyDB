@@ -1,0 +1,133 @@
+﻿@page "/"
+@inject IdentityProvider IdentityProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject CollectionNavigation CollectionNavigation
+@inject CollectionIndexProvider CollectionIndexProvider
+@inject IllustrationsProvider IllustrationsProvider
+
+<PageTitle>Один Шкаф</PageTitle>
+
+@if (IdentityProvider.Identity == null)
+{
+}
+else
+{
+    <div class="my-hide-standalone d-block d-lg-none mb-3">Чтобы шкаф работал не в браузере, а как приложение офлайн, <a href="/how-to-install">установите его на телефон</a>.</div>
+
+    <div col="row">
+        <div class="col-md-6">
+            <div class="input-group mt-2">
+                <div class="input-field">
+                    <input type="text" class="form-control" placeholder="Поиск..." @oninput="@(e => { Change((string)e.Value); })"/>
+                </div>
+                <div class="info mt-1">Можно искать песню, исполнителя, номер, какие-то слова из песни...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="majorinfo">
+            <p>Добрый день!</p>
+            <p>На странице <a href="/cache">сохраненные данные</a> можно тыкнуть и вся библиотека станет доступна офлайн.</p>
+            <p>Последние новости:</p>
+            <ul>
+                <li>Поиск аккордовых последовательностей <span class="ph-line-segments"></span>,</li>
+                <li>Упрощенные аккорды,</li>
+                <li>Иллюстрации сгенеренные собакой :).</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <button class="btn btn-outline-primary my-bolder" @onclick='() => NavigationManager.NavigateTo("/collection")'>
+            →&nbsp;
+                <span class="ph-playlist my-red"></span>
+            Библиотека ←
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo(CollectionNavigation.GetExternalNavigationLinkMyRatingNewest())'>
+            <span class="fas fa-heart my-red"></span>
+            &nbsp;Мой шортлист
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/collective")'>
+            <span class="ph-music-notes-plus"></span>
+            &nbsp;Добавить мои аккорды
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/illustrations")'>
+            <span class="ph-sun"></span>
+            &nbsp;Иллюстрации
+        </button>
+        <button class="btn btn-outline-primary text-warning" @onclick='Tuner'>
+            <span class="ph-gauge text-warning"></span>
+            &nbsp;Тюнер
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/cache")'>
+            <span class="ph-cloud-arrow-down"></span>
+            &nbsp;Сохраненные данные
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/fingerings")'>
+            <span class="ph-kanban"></span>
+            &nbsp;Аппликатуры на гитаре
+        </button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/categories")'>Списочки</button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/visitedsearch")'>Недавний поиск</button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/visitedchords")'>Недавние аккорды</button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/user")'>Профиль</button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/artists")'>Исполнители</button>
+        <button class="btn btn-outline-primary" @onclick='() => NavigationManager.NavigateTo("/releasenotes")'>Что умеет этот шкаф?</button>
+    </div>
+
+    <div class="section">
+    </div>
+
+    <div class="section majorinfo">
+        <p>Спасибо за ваш интерес!</p>
+        <span>Номер версии: <b>@_releaseVersion</b></span>
+        <p>Если что-то плохо работает или можно улучшить, пожалуйста, <a target="_blank" href="https://t.me/pavel_zhur">пишите мне</a> или <a target="_blank" href="https://github.com/pavel-zhur/HarmonyDB/issues">репортите баг</a>. Очень хочу знать и сделать удобно.</p>
+        <p>Если кто любит дизайн, css и ux и вы хотите помочь, <a href="https://t.me/pavel_zhur">пишите!</a></p>
+        <p>Открытый исходный код, <a target="_blank" href="https://github.com/pavel-zhur/HarmonyDB">https://github.com/pavel-zhur/HarmonyDB</a>.</p>
+    </div>
+}
+
+@code {
+
+    private string? _releaseVersion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await using var jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", $"./Pages/{GetType().Name}.razor.js");
+        _releaseVersion = await jsModule.InvokeAsync<string>("getWasmReleaseVersion");
+
+        @if (IdentityProvider.Identity == null)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CollectionIndexProvider.MightSync();
+            IllustrationsProvider.MaybeInit();
+        }
+
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void Change(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            NavigationManager.NavigateTo(CollectionNavigation.GetExternalNavigationLink(value));
+        }
+    }
+
+    private void Tuner()
+    {
+        Pages.Tuner.Init();
+        NavigationManager.NavigateTo("/tuner");
+    }
+
+}

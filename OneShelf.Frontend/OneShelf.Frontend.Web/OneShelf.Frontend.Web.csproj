@@ -1,0 +1,77 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+	<TargetFramework>net8.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+	<InvariantGlobalization>true</InvariantGlobalization>
+	<RunAOTCompilation>true</RunAOTCompilation>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS4014</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS4014</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="compilerconfig.json" />
+    <Content Remove="Resources\fingerings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <None Remove="Pages\service-worker.published.js" />
+	  <None Remove="Resources\Tuner.html" />
+	  <None Remove="Shared\MainLayout.razor.js" />
+	  <None Remove="Shared\MenuLeft.razor.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Shared\MenuLeft.razor.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Shared\MainLayout.razor.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="DnetIndexedDbTs" Version="3.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.5" PrivateAssets="all" />
+    <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
+    <PackageReference Include="BuildWebCompiler2022" Version="1.14.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Collectives\OneShelf.Collectives.Api.Client\OneShelf.Collectives.Api.Client.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.Api.Client\OneShelf.Frontend.Api.Client.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.Api.Model\OneShelf.Frontend.Api.Model.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.SpecificModel\OneShelf.Frontend.SpecificModel.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Sources\OneShelf.Sources.Self.Api.Model\OneShelf.Sources.Self.Api.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="compilerconfig.json" />
+    <None Include="wwwroot\services-js\JsFunctions.js" />
+    <None Include="wwwroot\services-js\Player.js" />
+    <None Include="wwwroot\sw-registrator.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\fingerings.json" />
+    <EmbeddedResource Include="Resources\Tuner.html" />
+  </ItemGroup>
+
+</Project>

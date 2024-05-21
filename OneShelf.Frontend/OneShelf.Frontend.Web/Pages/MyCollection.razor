@@ -1,0 +1,15 @@
+﻿@page "/mycollection"
+
+@inject NavigationManager NavigationManager
+@inject CollectionNavigation CollectionNavigation
+
+<h3>MyCollection</h3>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        NavigationManager.NavigateTo(CollectionNavigation.GetExternalNavigationLinkMyRatingNewest());
+    }
+
+}

@@ -1,0 +1,635 @@
+﻿@page "/collective"
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject Api Api
+@using System.Timers;
+@using Microsoft.Extensions.Options
+@using OneShelf.Collectives.Api.Client
+@using OneShelf.Collectives.Api.Model.V2
+@using OneShelf.Collectives.Api.Model.V2.Sub
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Shared
+@implements IDisposable
+@inject ILogger<Collective> Logger
+@inject CollectionNavigation CollectionNavigation
+@inject CollectivesApiClient CollectivesApiClient
+@inject IdentityProvider IdentityProvider
+@inject NavigationManager NavigationManager
+@inject CollectionIndexProvider CollectionIndexProvider
+@inject DataProvider DataProvider
+@inject IOptions<FrontendOptions> Options
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+@if (_applying != null)
+{
+    <h3 class="text-success">@_applying</h3>
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else if (CollectionIndexFailed || _collectiveFailed)
+{
+    <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+    <button class="btn btn-outline-secondary" @onclick="Retry">Повтор</button>
+}
+else if (CollectionIndex == null || CollectiveId.HasValue && _collective == null || VersionId.HasValue && _content == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    <div>
+        <ul>
+            @switch (Action)
+            {
+                case ActionType.Add when VersionId.HasValue:
+                    <li><b>Вы добавляете новые аккорды к существующей песне.</b></li>
+                    break;
+                case ActionType.Add:
+                    <li><b>Вы добавляете новую песню и аккорды к ней.</b></li>
+                    break;
+                case ActionType.Delete:
+                    <li><b>Вы удаляете свои аккорды.</b></li>
+                    break;
+                case ActionType.Refresh:
+                    <li><b>Вы обновляете циферки @GetSearchTag().</b></li>
+                    break;
+                case ActionType.Update:
+                    <li><b>Вы редактируете свои аккорды.</b></li>
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            <li>Вы всегда можете изменить видимость аккордов, которые вы добавили &mdash; скрыть или показать, или удалить их.</li>
+            
+            @switch (Action)
+            {
+                case ActionType.Add:
+                case ActionType.Update:
+                    <li>Пока что удобнее это делать с компьютера.</li>
+                    <li>Вы можете редактировать свои аккорды, или добавить свою версию существующей песни.</li>
+                    <li>В будущем вы сможете откатить аккорды к одной из прошлой версий, если вы случайно внесли плохое изменение. Свои прошлые версии будете видеть только вы.</li>
+                    <li>
+                        Разметка:
+                        <ul>
+                            <li>Если поставить знак > в начале строки, вся строка будет состоять из аккордов.</li>
+                            <li>Обрамление строки целиком в [ ] &mdash; жирная строка.</li>
+                            <li>Аккорд внутри строки, где еще есть неаккорды обрамляем в &lt; &gt;, например &lt;Asus2/G&gt; вот так.</li>
+                        </ul>
+                    </li>
+                    break;
+            }
+
+            <li>Дизайн будет улучшаться, пока какой есть, простите. :)</li>
+            <li>Песни с вашими аккордами <b>&mdash; <a href="@CollectionNavigation.GetExternalMyCollectivesNavigationLink()">по фильтру в библиотеке</a></b>.</li>
+        </ul>
+    </div>
+    
+    @switch (Action)
+    {
+        case ActionType.Delete:
+
+            <div class="page-header bg-success bg-opacity-75 my-header my-content-addition mt-4">
+                <div class="page-header-content d-block">
+                    <div class="d-flex justify-content-between">
+                        <div class="breadcrumb">
+                            <h5 class="my-pt-25">Удаление: @GetTitle()</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-1 mb-1">
+                <button class="btn btn-danger me-1 mt-3" @onclick="Delete">Да, удалить навсегда</button>
+                <button class="btn btn-success mt-3" onclick="history.back()">Нет, вернуться назад</button>
+            </div>
+
+            break;
+
+        case ActionType.Refresh:
+
+            <div class="page-header bg-success bg-opacity-75 my-header my-content-addition mt-4">
+                <div class="page-header-content d-block">
+                    <div class="d-flex justify-content-between">
+                        <div class="breadcrumb">
+                            <h5 class="my-pt-25">Обновление поисковых циферок <b>@GetSearchTag()</b>: @GetTitle()</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <p>
+                    Эти аккорды приватные, не видны в библиотеках других людей,
+                    но если вы скажете кому-то циферки <b>@GetSearchTag()</b> и они введут их в поиске,
+                    то они увидят ваши аккорды.
+                </p>
+                <p>
+                    Еще эти аккорды доступны в интернете по ссылке, ею можно поделиться - <a href="@_collective!.Uri">@Options.Value.LocalSourceNameSafe</a>.
+                    Собственно, чтобы отобрать доступ, если вы кому-то дали циферки или ссылку - обновите циферки.
+                </p>
+            </div>
+
+            <div class="mt-1 mb-1">
+                <button class="btn btn-warning me-1 mt-3" @onclick="Refresh">Да, обновить циферки</button>
+                <button class="btn btn-success mt-3" onclick="history.back()">Нет, вернуться назад</button>
+            </div>
+
+            break;
+
+        case ActionType.Add:
+        case ActionType.Update:
+
+            <div class="page-header bg-success bg-opacity-75 my-header my-content-addition mt-4">
+                <div class="page-header-content d-block">
+                    <div class="d-flex justify-content-between">
+                        <div class="breadcrumb">
+                            <h5 class="my-pt-25">@(Action == ActionType.Add ? VersionId.HasValue ? $"Новые аккорды к песне: {GetTitle()}" : "Новые аккорды" : $@"Редактирование: {GetTitle()}")</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-1 mb-1">
+                <button class="btn me-1 mt-3 @(GetAddUpdateError() == null ? "btn-success" : "btn-light disabled")" @onclick="Create">@(GetAddUpdateError() ?? (Action == ActionType.Add ? "Создать!" : "Сохранить!"))</button>
+                <button class="btn btn-light mt-3" onclick="history.back()">Нет, вернуться назад</button>
+            </div>
+
+            <div class=" mb-1 mt-3">
+                Имя:
+                <input type="text" maxlength="100" class="form-control" placeholder="Дайте нам имя..." value="@(_newName ?? GetSongName())" @oninput="x => _newName = x.Value?.ToString()">
+            </div>
+
+            <div class=" mb-1 mt-3">
+                Автор <span class="opacity-75">(несколько &mdash; через запятую):</span>
+                <input type="text" maxlength="100" class="form-control" placeholder="Чьи мы?..." value="@(_newAuthor ?? GetAuthors())" @oninput="x => _newAuthor = x.Value?.ToString()">
+            </div>
+
+            <div class=" mb-3 mt-3">
+                Видимость:
+                <label class="form-check mt-2">
+                    <input type="radio" class="form-check-input" name="r-0" value="Private" checked="@(_collective?.Collective.Visibility is CollectiveVisibility.Private)" @onchange="() => _newAccess = CollectiveVisibility.Private">
+                    <span class="form-check-label"><span class="my-bolder">Приватные.</span> Видны только вам, либо тем, кому вы сами сказали шесть цифр или дали ссылку :)</span>
+                </label>
+
+                <label class="form-check mt-2">
+                    <input type="radio" class="form-check-input" name="r-0" value="Club" checked="@(_collective?.Collective.Visibility is null or CollectiveVisibility.Club)" @onchange="() => _newAccess = CollectiveVisibility.Club">
+                    <span class="form-check-label"><span class="my-bolder">Внутри клуба.</span> Видны всем в нашем клубе в Шкафу, и еще их можно найти в телеграм-боте поиском, можно генерить картинки, и падают в ветку Библиотека в телеге.</span>
+                </label>
+
+                <label class="form-check mt-2">
+                    <input type="radio" class="form-check-input" name="r-0" value="Public" checked="@(_collective?.Collective.Visibility is CollectiveVisibility.Public)" @onchange="() => _newAccess = CollectiveVisibility.Public">
+                    <span class="form-check-label"><span class="my-bolder">На весь интернет.</span> Пока что не публикуется, но когда-нибудь &mdash; да.</span>
+                </label>
+            </div>
+
+            <div class="row mt-0 pt-0" id="my-row">
+                <div class="col-12 col-lg-6" id="my-col1">
+                    <div class="page-header bg-success bg-opacity-75 my-header mt-3">
+                        <div class="page-header-content d-block">
+                            <div class="d-flex justify-content-between">
+                                <div class="breadcrumb">
+                                    <h5 class="my-pt-25">Пишем тут:</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea class="mt-0" id="my-editor" @oninput="x => ContentUpdated(x.Value?.ToString())">@(_collective?.Collective.Contents ?? _content)</textarea>
+                </div>
+                <div class="col-12 col-lg-6" id="my-col1">
+                    <div class="page-header bg-info bg-opacity-75 my-header mt-3">
+                        <div class="page-header-content d-block">
+                            <div class="d-flex justify-content-between">
+                                <div class="breadcrumb">
+                                    <h5 class="my-pt-25">
+                                        @if (_refreshing)
+                                        {
+                                            <i class="ph-arrows-clockwise my-rotating me-2"></i>
+                                        }
+                                        Получится так:
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="my-preview">
+                        <div class="chords-block">
+                            @(new MarkupString(_preview))
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
+    }
+
+}
+
+@code {
+
+    private readonly Timer _timer = new(300);
+
+    private string _preview = string.Empty;
+    private string? _content;
+    private Guid? _currently;
+    private string? _applying;
+
+    private bool _collectiveFailed;
+    private CollectiveVersion? _collective;
+    private Func<string>? _navigateOnSuccess;
+
+    private string? _newName;
+    private string? _newAuthor;
+    private CollectiveVisibility? _newAccess;
+    private bool _refreshing;
+
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public Guid? CollectiveId { get; set; }
+
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public int? VersionId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "action")]
+    [Parameter]
+    public string? ActionString { get; set; }
+
+    private ActionType Action => Enum.TryParse<ActionType>(ActionString, out var x) ? x : ActionType.Add;
+
+    public enum ActionType
+    {
+        Add,
+        Delete,
+        Refresh,
+        Update,
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _timer.AutoReset = false;
+        _timer.Elapsed += TimerElapsed;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        
+        _collective = null;
+        _navigateOnSuccess = null;
+        _newName = null;
+        _newAuthor = null;
+        _newAccess = null;
+        _collectiveFailed = false;
+        _applying = null;
+        _currently = null;
+        _content = Action == ActionType.Add && !VersionId.HasValue ? DummyContent : null;
+        _preview = string.Empty;
+
+        if (Action == ActionType.Add && VersionId.HasValue && CollectionIndex != null && _content == null)
+        {
+            try
+            {
+                var chords = await DataProvider.GetChords(CollectionIndex!.VersionsById[VersionId.Value].version.ExternalId!);
+                _content = chords.Output.AsOneShelf(new());
+                TimerElapsed(null, null);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error fetching the chords version {id}.", VersionId);
+                _collectiveFailed = true;
+            }
+        }
+        
+        try
+        {
+            if (CollectiveId.HasValue)
+            {
+                _collectiveFailed = false;
+                _collective = (await CollectivesApiClient.Get(CollectiveId.Value, IdentityProvider.RequiredIdentity) ?? throw new($"The collective {CollectiveId.Value} could not be found.")).Version;
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error fetching the collective {id}.", CollectiveId);
+            _collectiveFailed = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if ((_content == null && _collective != null || _content == DummyContent) && !_currently.HasValue)
+        {
+            _content ??= _collective?.Collective.Contents;
+            _refreshing = true;
+            TimerElapsed(null, null);
+        }
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _timer.Dispose();
+    }
+
+    private async Task ContentUpdated(string? content)
+    {
+        if (content != null)
+        {
+            _content = content;
+            _timer.Stop();
+            _timer.Start();
+            _refreshing = true;
+        }
+    }
+
+    private void TimerElapsed(object? sender, ElapsedEventArgs? e)
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                if (_content == null) return;
+                var currently = Guid.NewGuid();
+                _currently = currently;
+                var html = await Api.FormatPreview(_content);
+                if (_currently == currently)
+                {
+                    _refreshing = false;
+                    _preview = html.AsHtml(new());
+                    StateHasChanged();
+                }
+            }
+            catch (Exception e)
+            {
+                _preview = "Случилась ошибка.";
+                _refreshing = false;
+                StateHasChanged();
+                Logger.LogError(e, "Error getting the preview...");
+            }
+        });
+    }
+
+    private async Task Retry()
+    {
+        RetryCollectionIndex();
+        await OnParametersSetAsync();
+    }
+
+    private string GetTitle()
+    {
+        try
+        {
+            if (_collective != null)
+            {
+                return $"{string.Join(", ", _collective.Collective.Authors)} — {_collective.Collective.Title}";
+            }
+
+            if (VersionId.HasValue)
+            {
+                return $"{string.Join(", ", CollectionIndex!.VersionsById[VersionId.Value].song.Artists.Select(a => CollectionIndex.ArtistsById[a].Name))} — {CollectionIndex!.VersionsById[VersionId.Value].song.Title}";
+            }
+
+            throw new InvalidOperationException();
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting the song title.");
+            return "(песня не найдена)";
+        }
+    }
+
+    private string? GetAuthors()
+    {
+        try
+        {
+            if (_collective != null)
+            {
+                return string.Join(", ", _collective.Collective.Authors);
+            }
+
+            if (VersionId.HasValue)
+            {
+                return string.Join(", ", CollectionIndex!.VersionsById[VersionId.Value].song.Artists.Select(a => CollectionIndex.ArtistsById[a].Name));
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting the song title.");
+            return string.Empty;
+        }
+    }
+
+    private string? GetSongName()
+    {
+        try
+        {
+            if (_collective != null)
+            {
+                return _collective.Collective.Title;
+            }
+
+            if (VersionId.HasValue)
+            {
+                return CollectionIndex!.VersionsById[VersionId.Value].song.Title;
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting the song title.");
+            return string.Empty;
+        }
+    }
+
+    private async Task Delete()
+    {
+        await ExecuteAndGo(
+            "Удаляем...",
+            () => CollectivesApiClient.Delete(IdentityProvider.RequiredIdentity, CollectiveId!.Value),
+            () => CollectionNavigation.GetExternalMyCollectivesNavigationLink());
+    }
+
+    private async Task Refresh()
+    {
+        await ExecuteAndGo(
+            "Обновляем циферки...",
+            () => CollectivesApiClient.Update(IdentityProvider.RequiredIdentity, CollectiveId!.Value, _collective!.Collective),
+            () =>
+            {
+                var (version, song) = CollectionIndex.VersionsById.Values
+                    .Single(x => x.version.CollectiveId == CollectiveId);
+                return CollectionNavigation.GetExternalNavigationLink(song.Id, version.Id, version.ExternalId, SearchResultsLocal.SongsMode.WithMyCollectives);
+            });
+    }
+
+    private async Task Create()
+    {
+        switch (Action)
+        {
+            case ActionType.Add:
+                InsertResponse? insertResponse = null;
+                await ExecuteAndGo(
+                    "Создаем...",
+                    async () =>
+                    {
+                        insertResponse = await CollectivesApiClient.Insert(
+                            IdentityProvider.RequiredIdentity,
+                            new()
+                            {
+                                Title = _newName ?? CollectionIndex!.VersionsById[VersionId.Value].song.Title,
+                                Authors = _newAuthor?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
+                                    ?? CollectionIndex.VersionsById[VersionId.Value].song.Artists.Select(a => CollectionIndex.ArtistsById[a].Name).ToList(),
+                                Contents = _content,
+                                Visibility = _newAccess ?? CollectiveVisibility.Club,
+                            },
+                            VersionId);
+                    },
+                    () =>
+                    {
+                        var (version, song) = CollectionIndex!.VersionsById.Values
+                            .Single(x => x.version.CollectiveId == insertResponse.Version.CollectiveId);
+                        return CollectionNavigation.GetExternalNavigationLink(song.Id, version.Id, version.ExternalId, SearchResultsLocal.SongsMode.WithMyCollectives);
+                    });
+                break;
+            case ActionType.Update:
+                await ExecuteAndGo(
+                    "Сохраняем изменения...",
+                    () => CollectivesApiClient.Update(
+                        IdentityProvider.RequiredIdentity,
+                        _collective!.CollectiveId,
+                        new()
+                        {
+                            Title = _newName ?? _collective.Collective.Title,
+                            Authors = _newAuthor?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList() ?? _collective.Collective.Authors,
+                            Contents = _content ?? _collective.Collective.Contents,
+                            Visibility = _newAccess ?? _collective.Collective.Visibility,
+                        }),
+                    () =>
+                    {
+                        var (version, song) = CollectionIndex!.VersionsById.Values
+                            .Single(x => x.version.CollectiveId == CollectiveId);
+                        return CollectionNavigation.GetExternalNavigationLink(song.Id, version.Id, version.ExternalId, SearchResultsLocal.SongsMode.WithMyCollectives);
+                    });
+                break;
+            case ActionType.Delete:
+            case ActionType.Refresh:
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        if (_navigateOnSuccess != null)
+        {
+            var index = CollectionIndexProvider.Peek().collectionIndex;
+            if (index != null)
+            {
+                NavigationManager.NavigateTo(_navigateOnSuccess(), replace: true);
+            }
+            else
+            {
+                _applying = null;
+            }
+        }
+        else
+        {
+            if (Action == ActionType.Add && VersionId.HasValue && CollectionIndex != null && _content == null)
+            {
+                try
+                {
+                    var chords = await DataProvider.GetChords(CollectionIndex!.VersionsById[VersionId.Value].version.ExternalId!);
+                    _content = chords.Output.AsOneShelf(new());
+                    TimerElapsed(null, null);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Error fetching the chords version {id}.", VersionId);
+                    _collectiveFailed = true;
+                }
+            }
+        }
+
+        await base.OnNewCollectionIndexReceived();
+    }
+
+    private async Task ExecuteAndGo(string title, Func<Task> action, Func<string> navigateOnSuccess)
+    {
+        _applying = title;
+        try
+        {
+            await action();
+            _navigateOnSuccess = navigateOnSuccess;
+            await CollectionIndexProvider.Clear();
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error applying action {action} the collective {id}.", action, CollectiveId);
+            _applying = null;
+            _collectiveFailed = true;
+            _collective = null;
+        }
+    }
+
+    private string GetSearchTag()
+    {
+        try
+        {
+            return $"{_collective.SearchTag / 1000:000} {_collective.SearchTag % 1000:000}";
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting the search tag.");
+            return "(неизвестные циферки)";
+        }      
+
+    }
+
+    private string? GetAddUpdateError()
+    {
+        if (string.IsNullOrWhiteSpace(_newName) && _collective == null && !VersionId.HasValue
+            || (_collective != null || VersionId.HasValue) && _newName != null && string.IsNullOrWhiteSpace(_newName))
+        {
+            return "...не хватает названия...";
+        }
+
+        var noNewAuthor = string.IsNullOrWhiteSpace(_newAuthor) || !_newAuthor.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Any();
+        if (noNewAuthor && _collective == null && !VersionId.HasValue
+            || (_collective != null || VersionId.HasValue) && _newAuthor != null && noNewAuthor)
+            return "...не хватает автора...";
+        
+        if (string.IsNullOrWhiteSpace(_content)) return "...не хватает аккордов...";
+
+        return null;
+    }
+
+    private string GetPageTitle() => Action switch {
+        ActionType.Add => _collective != null ? $"{GetTitle()} – новые аккорды" : "Новая песня",
+        ActionType.Delete => _collective != null ? $"{GetTitle()} – удаление" : "Удаление",
+        ActionType.Refresh => _collective != null ? $"{GetTitle()} – обновление циферок" : "Обновление циферок",
+        ActionType.Update => _collective != null ? $"{GetTitle()} – редактирование" : "Редактирование",
+        _ => throw new ArgumentOutOfRangeException()};
+
+    private const string DummyContent = @"[Вступление]
+
+Например такое вступление.
+> Am Dm Gsus4/D
+
+[Куплет]
+>F       A
+Идёт куплетик,
+>F           A
+Кончится война.
+
+[Бридж]
+<Am> | <Dm> | <Am> | <Dm> x4";
+
+}

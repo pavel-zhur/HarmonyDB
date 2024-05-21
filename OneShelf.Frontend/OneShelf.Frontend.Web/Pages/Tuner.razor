@@ -1,0 +1,96 @@
+﻿@page "/tuner"
+@using System.Reflection
+@implements IDisposable
+
+<h3>Тюнер</h3>
+
+@if (_loading)
+{
+    <div>Загрузка...</div>
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else if (_started)
+{
+    <iframe srcdoc="@GetBody()"></iframe>
+}
+else
+{
+    <button @onclick="() => _started = true" class="btn btn-primary">Запустить</button>
+}
+
+@code {
+
+    private static string? _cache;
+
+    private bool _started;
+    private bool _loading = true;
+    private Timer? _timer;
+
+    private static Guid _initializationCatcherValue = Guid.NewGuid();
+    private static Guid _initializationCatcher;
+
+    public static void Init()
+    {
+        _initializationCatcher = _initializationCatcherValue;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await Task.Delay(100);
+            Load();
+            StateHasChanged();
+        }
+    }
+
+    private void Load()
+    {
+        _loading = false;
+        _started = _initializationCatcher == _initializationCatcherValue;
+        if (_started)
+        {
+            _initializationCatcherValue = Guid.NewGuid();
+        }
+        else
+        {
+            var started = DateTime.Now;
+            _timer = new(_ =>
+            {
+                if ((DateTime.Now - started).TotalSeconds > 4)
+                {
+                    Dispose();
+                    return;
+                }
+
+                if (_initializationCatcher == _initializationCatcherValue)
+                {
+                    _started = true;
+                    StateHasChanged();
+                    Dispose();
+                }
+            }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(20));
+        }
+    }
+
+    public void Dispose()
+    {
+        Console.WriteLine("Disposing timer.");
+        _timer?.Dispose();
+        _timer = null;
+    }
+
+    private string GetBody()
+    {
+        if (_cache != null) return _cache;
+        
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("OneShelf.Frontend.Web.Resources.Tuner.html");
+        using var reader = new StreamReader(stream!);
+        var result = reader.ReadToEnd();
+        _cache = result;
+        return result;
+    }
+
+}

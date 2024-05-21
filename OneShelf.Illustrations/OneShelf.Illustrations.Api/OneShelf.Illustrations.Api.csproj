@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+	  <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.20.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.22.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.1.0" />
+	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.2.1" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.17.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Api.Model\OneShelf.Illustrations.Api.Model.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Database\OneShelf.Illustrations.Database.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
+		<Using Include="Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute" Alias="FromBodyAttribute" />
+		<Using Include="Microsoft.Azure.Functions.Worker.Http" />
+	</ItemGroup>
+</Project>

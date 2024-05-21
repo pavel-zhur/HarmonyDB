@@ -1,0 +1,225 @@
+﻿@inject CollectionNavigation CollectionNavigation
+@inject IdentityProvider IdentityProvider
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@using OneShelf.Frontend.Web.Components
+@using OneShelf.Frontend.Web.Pages
+@using OneShelf.Frontend.Web.Services
+@implements IDisposable
+@inject IJSRuntime Js
+@inject IWebAssemblyHostEnvironment WebAssemblyHostEnvironment
+
+<!-- Main sidebar -->
+<div class="sidebar sidebar-dark sidebar-main sidebar-expand-lg">
+
+	<!-- Sidebar content -->
+	<div class="sidebar-content">
+
+		<!-- Sidebar header -->
+		<div class="sidebar-section">
+			<div class="sidebar-section-body d-flex justify-content-center">
+				<h5 class="sidebar-resize-hide flex-grow-1 my-auto">Навигация</h5>
+
+				<div>
+					<button type="button" class="btn btn-flat-white btn-icon btn-sm rounded-pill border-transparent sidebar-control sidebar-main-resize d-none d-lg-inline-flex">
+						<i class="ph-arrows-left-right"></i>
+					</button>
+
+                    <button type="button" class="btn btn-flat-white btn-icon btn-sm rounded-pill border-transparent sidebar-mobile-main-toggle d-lg-none" id="mobileclosebutton">
+						<i class="ph-x"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+		<!-- /sidebar header -->
+		<!-- Main navigation -->
+		<div class="sidebar-section">
+			<ul class="nav nav-sidebar" data-nav-type="accordion">
+
+				<!-- Main -->
+                <li class="nav-item-header pt-0">
+                    <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Главное</div>
+                    <i class="ph-dots-three sidebar-resize-show"></i>
+                </li>
+				
+				@if (IdentityProvider.Identity == null)
+                {
+                    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="login" class="nav-link">
+                            <i class="ph-sign-in"></i>
+                            <span>Вход</span>
+                        </NavLink>
+                    </li>
+				}
+				else
+				{
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="" class="nav-link" Match="NavLinkMatch.All">
+                            <i class="ph-house"></i>
+                            <span>Главная</span>
+                        </NavLink>
+                    </li>
+                    @if (WebAssemblyHostEnvironment.Environment.StartsWith("Development"))
+				    {
+				        <li class="nav-item">
+                            <NavLink @onclick="ItemClick" href="/index2" class="nav-link">
+                                <i class="ph-house"></i>
+                                <span>Главная-2</span>
+                            </NavLink>
+                        </li>
+				        <li class="nav-item">
+                            <NavLink href="/progressions" class="nav-link">
+                                <i class="ph-line-segments"></i>
+                                <span>Прогрессии аккордов</span>
+                            </NavLink>
+                        </li>
+				    }
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/user" class="nav-link">
+                            <i class="ph-user"></i>
+                            <span>Профиль</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/cache" class="nav-link">
+                            <i class="ph-cloud-arrow-down"></i>
+                            <span>Сохранённые данные</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/categories" class="nav-link">
+                            <i class="ph-list-dashes"></i>
+                            <span>Списочки</span>
+                        </NavLink>
+                    </li>
+				}
+
+                <li class="nav-item">
+                    <NavLink @onclick="ItemClick" href="/illustrations" class="nav-link">
+                        <i class="ph-sun"></i>
+                        <span>Иллюстрации</span>
+                    </NavLink>
+                </li>
+
+                @if (IdentityProvider.Identity != null)
+                {
+				    <li class="nav-item-header">
+                        <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Библиотека</div>
+                        <i class="ph-dots-three sidebar-resize-show"></i>
+                    </li>
+				    <li class="nav-item">
+                        <CollectionNavLink @onclick="ItemClick" href="collection" class="nav-link" IsMy="false">
+                            <i class="ph-playlist my-red"></i>
+                            <span>Все песни</span>
+                        </CollectionNavLink>
+                    </li>
+				    <li class="nav-item">
+                        <CollectionNavLink @onclick="ItemClick" href="mycollection" class="nav-link" IsMy="true">
+                            <i class="fas fa-heart my-red"></i>
+                            <span>Мой шортлист</span>
+                        </CollectionNavLink>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/artists" class="nav-link">
+                            <i class="ph-user-list"></i>
+                            <span>Исполнители</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/collective" class="nav-link">
+                            <i class="ph-music-notes-plus"></i>
+                            <span>Добавить мои аккорды</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item-header">
+                        <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Недавнее</div>
+                        <i class="ph-dots-three sidebar-resize-show"></i>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/visitedsearch" class="nav-link">
+                            <i class="ph-magnifying-glass"></i>
+                            <span>Поиск</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/visitedchords" class="nav-link">
+                            <i class="ph-music-notes-simple"></i>
+                            <span>Аккорды</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item-header">
+                        <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Инструменты</div>
+                        <i class="ph-dots-three sidebar-resize-show"></i>
+                    </li>
+                    <li class="nav-item">
+                        <NavLink @onclick="TunerClick" href="/tuner" class="nav-link">
+                            <i class="ph-gauge"></i>
+                            <span>Тюнер</span>
+                        </NavLink>
+                    </li>
+                    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/fingerings" class="nav-link">
+                            <i class="ph-kanban"></i>
+                            <span>Аппликатуры на гитаре</span>
+                        </NavLink>
+                    </li>
+				    <li class="nav-item-header">
+                        <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Инфо</div>
+                        <i class="ph-dots-three sidebar-resize-show"></i>
+                    </li>
+				    <li class="nav-item">
+                        <NavLink @onclick="ItemClick" href="/releasenotes" class="nav-link">
+                            <i class="ph-robot"></i>
+                            <span>Что умеет этот шкаф?</span>
+                        </NavLink>
+                    </li>
+				}
+
+                <li class="nav-item">
+                    <NavLink @onclick="ItemClick" href="/how-to-install" class="nav-link">
+                        <i class="ph-cloud-arrow-down"></i>
+                        <span>Как установить?</span>
+                    </NavLink>
+                </li>
+
+			</ul>
+		</div>
+		<!-- /main navigation -->
+
+	</div>
+	<!-- /sidebar content -->
+
+</div>
+<!-- /main sidebar -->
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        IdentityProvider.IdentityChange += IdentityProviderOnIdentityChange;
+    }
+
+    private void IdentityProviderOnIdentityChange()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        IdentityProvider.IdentityChange -= IdentityProviderOnIdentityChange;
+    }
+
+    private async Task TunerClick()
+    {
+        await ItemClick();
+        await Task.Delay(500);
+        Tuner.Init();
+    }
+
+    private async Task ItemClick()
+    {
+        var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Shared/MenuLeft.razor.js");
+        await module.InvokeVoidAsync("Clicked");
+    }
+}

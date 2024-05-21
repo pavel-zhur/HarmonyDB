@@ -1,0 +1,136 @@
+﻿@page "/illustrations"
+@using OneShelf.Frontend.Api.Model.V3.Api
+@inject IdentityProvider IdentityProvider
+@inject Api Api
+@inject CollectionNavigation CollectionNavigation
+@inject NavigationManager NavigationManager
+@inject JsFunctions JsFunctions
+@inject ILogger<Illustrations> Logger
+@inject CollectionIndexProvider CollectionIndexProvider
+
+@if (_result == null)
+{
+    if (_failed)
+    {
+        <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+        <button class="btn btn-outline-secondary" @onclick="OnInitializedAsync">Повтор</button>
+    }
+    else
+    {
+        <span>Эта страничка грузится где-то секунд 20 обычно.</span>
+        <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+    }
+}
+else
+{
+    <div class="page-header bg-warning bg-opacity-75 my-header my-content-addition">
+
+        <div class="page-header-content d-block">
+            <div class="d-flex justify-content-between">
+                <div class="breadcrumb">
+                    <h5 class="my-pt-25">Иллюстрации</h5>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    @if (IdentityProvider.Identity != null)
+    {
+        <div>
+            Привет!
+            <br/>
+            Тут видны иллюстрации к песням, сгенеренные ботом. Они появляются тут спустя 96 часов.
+            <br/>
+            Их же можно смотреть в <a href="@CollectionNavigation.GetExternalIllustrationsNavigationLink()">библиотеке с фильтром "С иллюстрациями"</a>, в самих песнях. Там, в песнях, их бывает больше, тут на каждую песню всего несколько.
+        </div>
+    }
+    else
+    {
+        <div>
+            Привет!
+            <br/>
+            Кому интересно, как их генерить, <a href="https://t.me/pavel_zhur">пишите</a>.
+        </div>
+    }
+
+    foreach (var (id, song) in _result.Illustrations!.Songs.OrderByDescending(x => x.Value.LatestCreatedOn))
+    {
+        var isLink = IdentityProvider.Identity != null && CollectionIndexProvider.Peek().collectionIndex?.SongsById.ContainsKey(id) == true;
+        <div class="page-header bg-info bg-opacity-75 mt-4 @(!isLink ? null : "my-link") my-header my-content-addition" @onclick="_ => GoTo(id)">
+
+            <div class="page-header-content d-block">
+                <div class="d-flex justify-content-between">
+                    <div class="breadcrumb">
+                        <h5 class="my-pt-25">@_result.Titles[id]</h5>
+                    </div>
+
+                    @if (isLink)
+                    {
+                        <div class="d-flex">
+                            <span class="d-flex align-items-center text-body py-2 ms-2 collapsed">
+                                <i class="ph-arrow-right my-white"></i>
+                            </span>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="d-flex my-images">
+            @foreach (var illustration in song.Illustrations)
+            {
+                <div class="img-box">
+                    <img src="@illustration.PublicUrls.Url256" onclick=" illustrationFullscreenClicked(this, '@illustration.PublicUrls.Url1024') ">
+                    <span>@($"v{illustration.Version} i{illustration.I + 1} j{illustration.J + 1} #{illustration.K + 1}")</span>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+
+    private IllustrationsResponse? _result;
+    private bool _failed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _failed = false;
+        try
+        {
+            var identity = IdentityProvider.Identity;
+            var collectionIndex = CollectionIndexProvider.Peek().collectionIndex;
+
+            if (identity == null || collectionIndex == null)
+            {
+                _result = await Api.GetIllustrationsAnonymous();
+            }
+            else
+            {
+                _result = await Api.GetIllustrations(null, false);
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error loading the illustrations");
+            _result = null;
+        }
+
+        if (_result == null)
+        {
+            _failed = true;
+        }
+    }
+
+    private async Task GoTo(int songId)
+    {
+        if (IdentityProvider.Identity == null) return;
+        if (CollectionIndexProvider.Peek().collectionIndex?.SongsById.ContainsKey(songId) != true) return;
+        await JsFunctions.ScrollToTop();
+        NavigationManager.NavigateTo(CollectionNavigation.GetExternalIllustrationsNavigationLink(songId));
+    }
+
+}

@@ -1,0 +1,185 @@
+﻿@page "/artists"
+@using OneShelf.Common.Songs
+@using OneShelf.Common.Songs.FullTextSearch
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Web.Models
+@inject ILogger<Artists> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityProvider IdentityProvider
+@inject CollectionNavigation CollectionNavigation
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+
+<div class="left-collection-col col ">
+    <PageTitle>Исполнители</PageTitle>
+
+    <div class="input-group  input-group-lg  ">                       
+        <input type="text" class="form-control" placeholder="Поиск..." @bind="@Query" @oninput="@((e) => { Query = (string)e.Value; Change(); })" />
+           
+        <div class="input-group-append">
+            <button class="input-group-text button-clear" type="button" @onclick="ClearSearch">
+                <i class="ph-x"></i>
+            </button>
+        </div>
+      
+    </div>
+    @if (CollectionIndexFailed)
+    {
+        <p><em>Не получилось загрузить, может нету интернета, исполнителей.</em></p>
+        <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+    }
+    else if (CollectionIndex == null)
+    {
+      <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+    }
+    else
+    {
+          <div class="row">
+        <div class="col-md-12 search-result-section-content">       
+                <div class="align-content-sm-center mt-3 mb-3">
+                    <div class="row ">
+                         <div class="col-md-auto">
+                            <div class="row ">
+                        <div class="input-group artists-switch">      
+                            @foreach (var artistsMode in Enum.GetValues<ArtistsMode>())
+                            {
+                                if (artistsMode == Mode)
+                                {<div class="input-group-prepend ">
+                                    <b  class="btn btn-secondary  px-2">@artistsMode.GetHumanTitle()</b> 
+                                  </div>
+                                }
+                                else
+                                {<div class="input-group-prepend ">
+                                    <a class="btn btn-secondary   px-2" href="@GetNavigationLink(artistsMode, Query)">@artistsMode.GetHumanTitle()</a>
+                                 </div>
+                                }
+                            } 
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+             </div>
+            <table class="mt-3 songs table  table-artistcompact ">
+                <thead>
+                <tr>
+                    <td><span>Исполнитель</span></td>
+                    <td class="text-center"><span class="px-2">Песен</span></td>
+                    <td class="text-center"><span class="px-2">Рейтинг</span></td>
+                </tr>
+                </thead>
+                @foreach (var (artist, songsCount, rating) in _artists)
+                {
+                    <tr>
+                        <td>
+                            <a href="@CollectionNavigation.GetExternalNavigationLink(artist.Id, artist.Name)">@artist.Name</a>
+                        </td>
+                        <td class="text-center px-2">@songsCount</td>
+                        <td class="text-center px-2"><span class="hearts-span"><span class="fas fa-heart heart-1"></span></span>&times;@Math.Round(rating, 1)</td>
+                    </tr>
+                }
+            </table>
+        </div>
+     </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Query { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "mode")]
+    public string? ModeRaw { get; set; }
+
+    public ArtistsMode Mode => ModeRaw != null && Enum.TryParse<ArtistsMode>(ModeRaw, out var x) ? x : ArtistsMode.Rating;
+
+    private List<(Artist artist, int songsCount, double rating)> _artists;
+
+    public enum ArtistsMode
+    {
+        [HumanTitle("По имени")]
+        Title,
+
+        [HumanTitle("По рейтингу")]
+        Rating,
+
+        [HumanTitle("По моему рейтингу")]
+        MyRating,
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (!IdentityProvider.EnsureAuthorized()) return;
+        Update();
+    }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        Update();
+    }
+
+    private void Change()
+    {
+        if (string.IsNullOrWhiteSpace(Query))
+        {
+            NavigateTo(Mode, null);
+            return;
+        }
+        
+        NavigateTo(Mode, Query);
+    }
+
+    private void NavigateTo(ArtistsMode mode, string? query)
+    {
+        NavigationManager.NavigateTo(GetNavigationLink(mode, query), false, true);
+    }
+
+    private string GetNavigationLink(ArtistsMode mode, string? query)
+    {
+        return $"/artists?mode={mode}&query={(query == null ? null : Uri.EscapeDataString(query))}";
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        Update();
+    }
+
+    private void Update()
+    {
+        if (CollectionIndex == null)
+        {
+            return;
+        }
+        
+        var artists = CollectionIndex.Collection.Songs
+            .Select(x => (rating: x.Likes.GetRating(), myRating: x.Likes.Where(x => x.UserId == IdentityProvider.RequiredIdentity.Id).GetRating(), artists: x.Artists))
+            .SelectMany(x => x.artists.Select(a => (a, x.rating, x.myRating)))
+            .GroupBy(x => x.a)
+            .Select(g => (artist: CollectionIndex.ArtistsById[g.Key], songsCount: g.Count(), rating: g.Sum(x => x.rating), myRating: g.Sum(x => x.myRating)))
+            .Select(g => (g.artist, g.songsCount, g.rating, g.myRating, withSynonyms: string.Join(" ", g.artist.Synonyms.Append(g.artist.Name)).ToLowerInvariant().ToSearchSyntax().SearchSyntaxRemoveSeparators()));
+
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            var terms = Query.ToLowerInvariant().ToSearchSyntax().Split(FullTextSearchLogic.Separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            artists = artists.Where(x => terms.All(t => x.withSynonyms.Contains(t)));
+        }
+
+        _artists = (Mode switch
+        {
+            ArtistsMode.Title => artists.OrderBy(x => x.artist.Name),
+            ArtistsMode.Rating => artists.OrderByDescending(x => x.rating),
+            ArtistsMode.MyRating => artists.OrderByDescending(x => x.myRating),
+            
+            _ => throw new ArgumentOutOfRangeException(),
+        }).Select(x => (x.artist, x.songsCount, x.rating)).ToList();
+    }
+
+    private void ClearSearch()
+    {
+        Query = null;
+        Update();
+    }
+}

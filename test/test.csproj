@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.5">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OneShelf.Billing\OneShelf.Billing.Api.Client\OneShelf.Billing.Api.Client.csproj" />
+    <ProjectReference Include="..\OneShelf.Common\OneShelf.Common.Database.Songs\OneShelf.Common.Database.Songs.csproj" />
+    <ProjectReference Include="..\OneShelf.Illustrations\OneShelf.Illustrations.Api.Client\OneShelf.Illustrations.Api.Client.csproj" />
+    <ProjectReference Include="..\OneShelf.Illustrations\OneShelf.Illustrations.Database\OneShelf.Illustrations.Database.csproj" />
+    <ProjectReference Include="..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
+    <ProjectReference Include="..\OneShelf.OneDog\OneShelf.OneDog.Database\OneShelf.OneDog.Database.csproj" />
+    <ProjectReference Include="..\OneShelf.Telegram\OneShelf.Telegram.Processor\OneShelf.Telegram.Processor.csproj" />
+  </ItemGroup>
+
+	<ItemGroup>
+	  <None Update="appsettings.Secrets.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="appsettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>

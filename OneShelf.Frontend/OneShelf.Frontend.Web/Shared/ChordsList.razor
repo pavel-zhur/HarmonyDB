@@ -1,0 +1,446 @@
+﻿@using OneShelf.Common
+@using OneShelf.Frontend.Api.Model.V3.Databasish
+@using OneShelf.Frontend.Api.Model.V3.Illustrations
+@using OneShelf.Frontend.SpecificModel
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Services
+@using OneShelf.Frontend.Web.Tools
+@using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@using HarmonyDB.Sources.Api.Model.V1
+@inject NavigationManager NavigationManager
+@inject IdentityProvider IdentityProvider
+@inject SearchContext SearchContext
+@inject CollectionNavigation CollectionNavigation
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+@inject InstantActions InstantActions
+@inject IllustrationsProvider IllustrationsProvider
+
+<!-- Page header -->
+<div class="page-header bg-indigo bg-opacity-75 my-header my-content-addition">
+
+    <div class="page-header-content d-block">
+        <div class="d-flex">
+            <div class="breadcrumb">
+                <h5 class="my-pt-25">@(Title ?? "Загрузка...")</h5>
+            </div>
+
+            <a class="d-flex align-items-center text-body py-2 ms-auto collapsed my-link" @onclick="() => StateChanged((false, false))">
+                <i class="ph-x-circle my-white"></i>
+            </a>
+        </div>
+
+    </div>
+</div>
+<!-- /page header -->
+
+@if (CollectionIndexFailed)
+{
+    <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+    <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+}
+else if (CollectionIndex == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    @if (CollectionIndexFailed)
+    {
+        <p><em>Не получилось загрузить, может нету интернета, исполнителей.</em></p>
+        <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+    }
+    else if (CollectionIndex == null)
+    {
+        <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+    }
+    else if (_failed)
+    {
+        <span>Loading failed.</span>
+        <button class="btn btn-primary" @onclick="SearchContext.RestartFailed">Refresh</button>
+    }
+    else if (_items == null)
+    {
+        <span>No song is selected.</span>
+    }
+    else
+    {
+        <div class="my-pre-background">
+            @if (SongId.HasValue && _illustrations?.Songs.TryGetValue(SongId.Value, out var illustrations) == true)
+            {
+                <div class="my-background" style="--background: url('@illustrations.Illustrations.OrderBy(_ => Random.Shared.NextDouble()).First().PublicUrls.Url256')"></div>
+            }
+
+            <div class="my-post-background">
+                <ul class="list-group chordslist list-group-flush mb-3">
+                    @foreach (var ((version, header, isSelected, title), i) in _items.WithIndices())
+                    {
+                        <li class="list-group-item @(isSelected ? "bg-info bg-opacity-75" : "my-link")" @onclick="() => Go(!isSelected || !IsOpen2, GetChordsListLink(version, header))">
+                            <div>
+                                <span>@i.ToLetterIndex(). </span>
+                                <span class="source active-content me-2">@title</span>
+                                @if (header != null && CollectionIndex.ExistingExternalIdsWithVirtual.Contains(header.ExternalId))
+                                {
+                                    <span class="badge bg-pink me-2">добавлены!</span>
+                                }
+
+                                @if (header?.SpecificAttributes.ToFrontendAttributesV1().BadgeText != null)
+                                {
+                                    <span class="badge bg-success me-2">@header.SpecificAttributes.ToFrontendAttributesV1().BadgeText</span>
+                                }
+
+                                @if (header?.Rating != null)
+                                {
+                                    <span class="badge bg-light text-body me-2"> ☆ @Math.Round(header.Rating.Value, 2)</span>
+                                }
+
+                                @if (header?.Type != null)
+                                {
+                                    <span class="badge @(header.IsSupported ? "bg-light text-body" : "bg-dark bg-opacity-20 text-reset") me-2"> @header.Type</span>
+                                }
+
+                                @foreach (var like in (
+                                    SongId.HasValue
+                                        ? CollectionIndex.SongsById[SongId.Value].Likes
+                                        : CollectionIndex.VersionsByUri[version?.Uri ?? header!.SourceUri].SelectMany(x => x.song.Likes))
+                                    .Where(x => x.VersionId.HasValue)
+                                    .Where(x => version != null ? version.Id == x.VersionId : CollectionIndex.VersionsById[x.VersionId.Value].version.Uri == (header!.SourceUri))
+                                    .OrderBy(x => x.CreatedOn)
+                                    .Select(x => (like: (Like?)x, virtualLike: ((byte level, int? likeCategoryId)?)null))
+                                    .SelectSingle(x => header != null && CollectionIndex.VirtualLikeLevels.TryGetValue(header.ExternalId, out var virtualLevel)
+                                        ? x.Append((null, virtualLevel))
+                                        : x)
+                                    .Select(x => (
+                                        level: x.like?.Level ?? x.virtualLike!.Value.level, 
+                                            transpose: x.like?.Transpose, 
+                                            userId: x.like?.UserId ?? IdentityProvider.RequiredIdentity.Id,
+                                            likeCategoryId: x.like?.LikeCategoryId ?? x.virtualLike?.likeCategoryId)))
+                                {
+                                    @if (like.likeCategoryId.HasValue)
+                                    {
+                                        <span @onclick="() => Go(isSelected && IsOpen2, CollectionNavigation.SearchResultsLocalLikeCategoryId(like.likeCategoryId.Value, true))" class="badge @(isSelected ? "bg-light bg-opacity-75" : "bg-indigo bg-opacity-10") border-start border-width-3 text-body rounded-start-0 border-indigo me-2">
+                                            @CollectionIndex.LikeCategoriesById[like.likeCategoryId.Value].Name
+                                            @if (like.userId != IdentityProvider.RequiredIdentity.Id)
+                                            {
+                                                <span> – @CollectionIndex.UsersById[like.userId].Title</span>
+                                            }
+                                            @if (like.transpose is not (null or 0))
+                                            {
+                                                <span> (@like.transpose.Value.Transposition())</span>
+                                            }
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="pe-2">
+                                            <span class="fas fa-heart heart-@like.level"></span>
+                                            <span @onclick="() => Go(isSelected && IsOpen2, CollectionNavigation.SearchResultsLocalShortlistedUser(like.userId, true))">@CollectionIndex.UsersById[like.userId].Title</span>
+                                            @if (like.transpose is not (null or 0))
+                                            {
+                                                <span> (@like.transpose.Value.Transposition())</span>
+                                            }
+                                        </span>
+                                    }
+                                }
+
+                            </div>
+                        </li>
+                    }
+
+                    @if (SongId.HasValue && _illustrations?.Songs.TryGetValue(SongId.Value, out illustrations) == true)
+                    {
+                        <li class="list-group-item @(AreIllustrationsOpen() ? "bg-info bg-opacity-75" : null) my-link" @onclick="() => NavigationManager.NavigateTo(GetIllustrationsLink())">
+                            <div>
+                                <span class="source active-content me-2">Иллюстрации (@illustrations.Illustrations.Count)</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                @if (SongId.HasValue)
+                {
+                    <div class="chordslist-likes-section mb-3">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="likes mb-3">
+                                    @foreach (var like in CollectionIndex.SongsById[SongId.Value].Likes.Where(x => x.VersionId == null).OrderBy(x => x.CreatedOn))
+                                    {
+                                        @if (like.LikeCategoryId.HasValue)
+                                        {
+                                            <a href="@CollectionNavigation.SearchResultsLocalLikeCategoryId(like.LikeCategoryId.Value, true)" class="badge bg-indigo bg-opacity-10 border-start border-width-3 text-body rounded-start-0 border-indigo me-2">
+                                                @CollectionIndex.LikeCategoriesById[like.LikeCategoryId.Value].Name
+                                                @if (like.UserId != IdentityProvider.RequiredIdentity.Id)
+                                                {
+                                                    <span> – @CollectionIndex.UsersById[like.UserId].Title</span>
+                                                }
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="chordslike">
+                                                <span class="fas fa-heart heart-@like.Level"></span>
+                                                <a href="@CollectionNavigation.SearchResultsLocalShortlistedUser(like.UserId, true)">@CollectionIndex.UsersById[like.UserId].Title</a>
+                                            </span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="likes-links row">
+                                    <LikesBlock
+                                        CurrentLevel="@(CollectionIndex.SongsById[SongId.Value].Likes.SingleOrDefault(x => !x.LikeCategoryId.HasValue && x.UserId == IdentityProvider.RequiredIdentity.Id && x.VersionId == null)?.Level)"
+                                        Update="OnLikesUpdate"
+                                        Level0Available="false"></LikesBlock>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <CategoriesButton SongId="SongId.Value" Update="OnLikesUpdate"/>
+                }
+
+                @if (SongId.HasValue)
+                {
+                    foreach (var artistId in CollectionIndex.SongsById[SongId.Value].Artists)
+                    {
+                        <span class="badge border-start border-width-3 text-body rounded-start-0 border-teal my-link me-2 bg-teal bg-opacity-20 mb-1 mt-1" @onclick="() => SearchArtist(artistId)">
+                            Еще @CollectionIndex.ArtistsById[artistId].Name
+                            @if ((_temp = CollectionIndex.SongsById.Count(x => x.Value.Artists.Contains(artistId))) > 1)
+                            {
+                                <span> (@_temp+)</span>
+                            }
+                        </span>
+                    }
+                }
+                @if (VirtualSongArtist != null)
+                {
+                    <span class="badge border-start border-width-3 text-body rounded-start-0 border-teal my-link me-2 bg-teal bg-opacity-20 mb-1 mt-1" @onclick="() => SearchArtist(null)">Еще @VirtualSongArtist</span>
+                }
+
+                <span class="badge border-start border-width-3 text-body rounded-start-0 border-teal my-link me-1 bg-teal bg-opacity-20 mb-1 mt-1" @onclick="SearchInternet">Искать в интернете</span>
+            </div>
+        </div>
+
+        @if (IsOpen2 && _selectedItem != null)
+        {
+            <ChordsView ExternalId="@ExternalId"
+                        VersionId="@VersionId"
+                        SongId="@FindSongId()"
+                        StateChanged="StateChanged"
+                        VirtualSongArtist="@VirtualSongArtist"
+                        VirtualSongTitle="@VirtualSongTitle"
+                        PreviousVisible="_selectedItem.Value.i > 0"
+                        OnPrevious="() => NavigationManager.NavigateTo(GetChordsListLink(_items[_selectedItem.Value.i - 1].version, _items[_selectedItem.Value.i - 1].header))"
+                        NextVisible="!_items.Last().isSelected"
+                        OnNext="() => NavigationManager.NavigateTo(GetChordsListLink(_items[_selectedItem.Value.i + 1].version, _items[_selectedItem.Value.i + 1].header))"
+                        Title="@GetChordsViewTitle()" />
+        }
+
+        @if (AreIllustrationsOpen())
+        {
+            <IllustrationsView 
+                SongId="@FindSongId()"
+                StateChanged="StateChanged" />
+        }
+    }
+}
+@code {
+
+    private bool _failed;
+    private List<(Version? version, SearchHeader? header, bool isSelected, string title)>? _items;
+    private (int i, Version? veersion, SearchHeader? header, string title)? _selectedItem;
+    private int _temp;
+    private AllIllustrations? _illustrations;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public int? SongId { get; set; }
+
+    [Parameter]
+    public string? VirtualSongArtist { get; set; }
+
+    [Parameter]
+    public string? VirtualSongTitle { get; set; }
+
+    [Parameter]
+    public EventCallback SearchInternet { get; set; }
+
+    [Parameter]
+    public string? ExternalId { get; set; }
+
+    [Parameter]
+    public int? VersionId { get; set; }
+
+    [Parameter]
+    public bool IsOpen2 { get; set; }
+
+    [Parameter]
+    public required Action<(bool isOpen, bool isOpen2)> StateChanged { get; set; }
+
+    protected override async Task OnNewCollectionIndexReceived()
+    {
+        await base.OnNewCollectionIndexReceived();
+        await OnParametersSetAsync();
+        StateHasChanged();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        _illustrations = IllustrationsProvider.Peek();
+        if (CollectionIndex != null)
+        {
+            if (VirtualSongArtist != null)
+            {
+                _items = null;
+                await ResultArrived(SearchContext.Peek);
+            }
+            else if (SongId.HasValue)
+            {
+                _items = CollectionIndex.SongsById[SongId.Value].Versions
+                    .OrderBy(x => x.CreatedOn)
+                    .Select(x => ((Version?)x, (SearchHeader?)null, IsSelected(x, null), x.Source?.ToString() ?? x.Uri.Host))
+                    .ToList();
+
+                SetSelectedItem();
+
+                if (_illustrations == null) _illustrations = await IllustrationsProvider.Get();
+            }
+            else
+            {
+                _items = null;
+            }
+        }
+    }
+
+    public override void Dispose()
+    {
+        SearchContext.Arrived -= ResultArrived;
+        base.Dispose();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        SearchContext.Arrived += ResultArrived;
+    }
+
+    private async Task ResultArrived((List<(string artist, string title, SearchHeader header)>? results, bool failed)? results)
+    {
+        if (VirtualSongArtist == null)
+        {
+            return;
+        }
+
+        if (!results.HasValue)
+        {
+            _failed = false;
+            _items = null;
+            StateHasChanged();
+            return;
+        }
+
+        if (results.Value.failed)
+        {
+            _failed = true;
+            StateHasChanged();
+            return;
+        }
+
+        _failed = false;
+
+        _items = results.Value.results!
+            .Where(x => x.artist == VirtualSongArtist && x.title == VirtualSongTitle)
+            .Select(x => ((Version?)null, (SearchHeader?)x.header, IsSelected(null, x.header), x.header.Source.ToString()))
+            .ToList();
+
+        SetSelectedItem();
+
+        StateHasChanged();
+    }
+
+    private void SetSelectedItem()
+    {
+        _selectedItem = _items
+            .Select((x, i) => (((Version version, SearchHeader header, bool isSelected, string title) x, int i)?)(x, i))
+            .SingleOrDefault(x => x!.Value.x.isSelected)
+            .SelectSingle(x =>
+                !x.HasValue
+                    ? ((int i, Version? version, SearchHeader? header, string title)?)null
+                    : (x.Value.i, version: x.Value.x.version, x.Value.x.header, x.Value.x.title));
+    }
+
+    private async Task OnLikesUpdate(byte? level)
+    {
+        await InstantActions.UpdateLike(SongId!.Value, null, level, null, null);
+    }
+
+    private async Task OnLikesUpdate((byte? level, int likeCategoryId) value)
+    {
+        await InstantActions.UpdateLike(SongId!.Value, null, value.level, null, value.likeCategoryId);
+    }
+
+    private bool IsSelected(Version? version, SearchHeader? header)
+    {
+        return ExternalId == (version?.ExternalId ?? header?.ExternalId) && ExternalId != null || VersionId == version?.Id && VersionId != null;
+    }
+
+    private string GetChordsListLink(Version? version, SearchHeader? header)
+    {
+        return CollectionNavigation.ChordsListLink(version?.ExternalId ?? header?.ExternalId, version?.Id);
+    }
+
+    private string GetIllustrationsLink()
+    {
+        return CollectionNavigation.IllustrationsLink();
+    }
+
+    private string GetChordsViewTitle()
+    {
+        var title = _items.WithIndices().Single(x => x.x.isSelected).i.ToLetterIndex();
+        title += ". ";
+        title += _selectedItem!.Value.title;
+        if (_selectedItem.Value.header?.SpecificAttributes.ToFrontendAttributesV1().BadgeText != null)
+        {
+            title += $"({_selectedItem.Value.header.SpecificAttributes.ToFrontendAttributesV1().BadgeText})";
+        }
+
+        if (_selectedItem.Value.header?.Rating != null)
+        {
+            title += " ☆ ";
+            title += Math.Round(_selectedItem.Value.header.Rating.Value, 2);
+        }
+
+        if (_selectedItem.Value.header?.Type != null)
+        {
+            title += $" {_selectedItem.Value.header.Type}";
+        }
+
+        return title;
+    }
+
+    private void SearchArtist(int? artistId)
+    {
+        if (CollectionIndex != null || !artistId.HasValue)
+        {
+            NavigationManager.NavigateTo(CollectionNavigation.SearchResultsLocalArtist(artistId: artistId, null, artistId.HasValue ? CollectionIndex!.ArtistsById[artistId.Value].Name : VirtualSongArtist!));
+        }
+    }
+
+    private int? FindSongId() => SongId ?? (ExternalId == null ? null : CollectionIndex?.VersionsByExternalId[ExternalId].Select(x => x.song).FirstOrDefault()?.Id);
+
+    private bool AreIllustrationsOpen()
+    {
+        return IsOpen2 && SongId.HasValue && string.IsNullOrWhiteSpace(ExternalId) && !VersionId.HasValue && _illustrations?.Songs.ContainsKey(SongId.Value) == true;
+    }
+
+    private void Go(bool condition, string url)
+    {
+        if (!condition) return;
+        NavigationManager.NavigateTo(url);
+    }
+
+}

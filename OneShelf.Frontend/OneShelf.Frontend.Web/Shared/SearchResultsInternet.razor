@@ -1,0 +1,272 @@
+﻿@using OneShelf.Common
+@using OneShelf.Frontend.Web.Models
+@using OneShelf.Frontend.Web.Services
+@using HarmonyDB.Sources.Api.Model.V1
+@inject CollectionNavigation CollectionNavigation
+@inject NavigationManager NavigationManager
+@inject DataProvider DataProvider
+@inject ILogger<SearchResultsInternet> Logger
+@inject SearchContext SearchContext
+@inherits OneShelf.Frontend.Web.Components.CollectionComponentBase
+
+@if (CollectionIndexFailed)
+{
+    <div class="sidebar-section-body">
+        <p><em>Не получилось загрузить, может нету интернета, исполнителей.</em></p>
+        <button class="btn btn-secondary" @onclick="RetryCollectionIndex">Повтор</button>
+    </div>
+}
+else if (CollectionIndex == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else if (_failed)
+{
+    <div class="sidebar-section-body">
+        <div class="row">
+            <div class="col-md-12">
+                <p><em>Не получилось загрузить, может нету интернета, библиотеку.</em></p>
+                <button class="btn btn-secondary" @onclick="SearchContext.RestartFailed">Повтор</button>
+            </div>
+        </div>
+    </div>
+}
+else if (_expanded == null || Mode is SongsMode.ArtistCompact or SongsMode.ArtistCompactOriginal && _compact == null)
+{
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    <div class="page-header bg-yellow opacity-75 mt-2 text-body">
+        <div class="page-header-content d-block">
+            <div class="d-flex justify-content-between">
+                <div class="breadcrumb">
+                    <h5 class="my-pt-25">Интернет</h5>
+                </div>
+
+                <div class="d-flex">
+                    <div class="row align-items-center">
+                        <div class="col  ">
+                            <select class="dropdown btn" @onchange="args => NavigationManager.NavigateTo(CollectionNavigation.SearchResultsInternetMode(Enum.Parse<SongsMode>(args.Value.ToString())))" value="@Mode">
+                                @foreach (var songsMode in GetAvailableModes())
+                                {
+                                    <option value="@songsMode" selected="@(songsMode == Mode)">@songsMode.GetHumanTitle()</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    if (Mode is SongsMode.ArtistCompact or SongsMode.ArtistCompactOriginal)
+    {
+        <div class="sidebar-section-body">
+            <table class="songs table-artistcompact">
+                @foreach (var (artistName, songs) in _compact)
+                {
+                    <tr>
+                        <td class="artistName-td ">
+                            <span class="artistName"> @artistName</span>
+                        </td>
+                        <td class="songs-td">
+
+                            @foreach (var (songTitle, headers) in songs)
+                            {
+                                <div>
+                                    <span class="song-name  @MaybeHighlighted(artistName, songTitle) my-link" @onclick="() => GoTo(artistName, songTitle, headers[0].ExternalId, headers[0].SourceUri)">
+                                        <b><span class="active-content songtitle">@songTitle</span></b>
+                                        <AvailableChords Headers="@headers"></AvailableChords>
+                                    </span>
+                                </div>
+                            }
+
+                        </td>
+                    </tr>
+                }
+
+            </table>
+            <div class="col-md-12">
+                <div class="input-group  mt-3 mb-5">
+                    <a class="btn btn-primary" href="@GoogleSearchLink"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><!--! Font Awesome Pro 6.4.0 by fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" /></svg> Искать в гугле</a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="sidebar-section-body">
+            <table class="songs table-one-column mt-2">
+                <Virtualize Items="_expanded" Context="item">
+                    <tr class="@MaybeHighlighted(item.artistName, item.songTitle) ">
+                        <td>
+                            <div class="my-link inline-non-touch" @onclick="() => GoTo(item.artistName, item.songTitle, item.headers[0].ExternalId, item.headers[0].SourceUri)">
+                                @if (Mode == SongsMode.Title)
+                                {
+                                    <b><span class="active-content songtitle">@item.songTitle</span></b>
+                                    <span>&nbsp;(</span>
+                                    <span class="artistName">@item.artistName</span>
+                                    <span>)</span>
+                                }
+                                else
+                                {
+                                    <span class="active-content artistName">@item.artistName</span>
+                                    <span> &mdash; </span>
+                                    <b><span class="songtitle">@item.songTitle</span></b>
+                                }
+                                <AvailableChords Headers="@item.headers"></AvailableChords>
+                            </div>
+                        </td>
+                    </tr>
+                </Virtualize>
+            </table>
+            <div class="col-md-12">
+                <div class="input-group mt-3 mb-5">
+                    <a class="btn btn-primary" href="@GoogleSearchLink"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><!--! Font Awesome Pro 6.4.0 by fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" /></svg> Искать в гугле </a>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+
+    private bool _failed;
+    private List<(string artistName, string songTitle, List<SearchHeader> headers)>? _expanded;
+    private List<(string artistName, List<(string songTitle, List<SearchHeader> headers)> songs)>? _compact;
+
+    [Parameter]
+    public string? ModeInternet { get; set; }
+
+    private SongsMode Mode => ModeInternet
+        .SelectSingle(x => x == null ? GetAvailableModes().First() : Enum.Parse<SongsMode>(x))
+        .SelectSingle(x => GetAvailableModes().Contains(x) ? x : GetAvailableModes().First());
+
+    [Parameter]
+    public string? VirtualSongArtist { get; set; }
+
+    [Parameter]
+    public string? VirtualSongTitle { get; set; }
+
+    [Parameter]
+    public bool IsCompact { get; set; }
+
+    [Parameter]
+    public string? GoogleSearchLink { get; set; }
+
+    public enum SongsMode
+    {
+        [HumanTitle("По исполнителю")]
+        Artist,
+
+        [HumanTitle("По исполнителю")]
+        ArtistCompact,
+
+        [HumanTitle("По релевантности")]
+        ArtistCompactOriginal,
+
+        [HumanTitle("По имени")]
+        Title,
+
+        [HumanTitle("По релевантности")]
+        Original,
+    }
+
+    private IEnumerable<SongsMode> GetAvailableModes()
+        => IsCompact
+            ? SongsMode.ArtistCompactOriginal
+                .Once()
+                .Append(SongsMode.ArtistCompact)
+            : SongsMode.Original
+                .Once()
+                .Append(SongsMode.Artist)
+                .Append(SongsMode.Title);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        SearchContext.Arrived += ResultArrived;
+        await ResultArrived(SearchContext.Peek);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        await ResultArrived(SearchContext.Peek);
+    }
+
+    private string? MaybeHighlighted(string virtualSongArtist, string virtualSongTitle) => (virtualSongArtist, virtualSongTitle) == (VirtualSongArtist, VirtualSongTitle) ? "last-highlighted" : null;
+
+    private async Task ResultArrived((List<(string artist, string title, SearchHeader header)>? results, bool failed)? results)
+    {
+        if (!results.HasValue)
+        {
+            _expanded = null;
+            _compact = null;
+            _failed = false;
+            StateHasChanged();
+            return;
+        }
+
+        if (results.Value.failed)
+        {
+            _failed = true;
+            StateHasChanged();
+            return;
+        }
+
+        _failed = false;
+
+        _expanded = results.Value.results!
+            .GroupBy(x => (x.artist, x.title))
+            .Select(g => (g.Key.artist, g.Key.title, g.Select(x => x.header).ToList()))
+            .ToList();
+
+        if (Mode is SongsMode.ArtistCompact or SongsMode.ArtistCompactOriginal)
+        {
+            _compact = _expanded
+                .GroupBy(x => x.artistName)
+                .Select(g => (g.Key, g.Select(x => (x.songTitle, x.headers)).ToList()))
+                .ToList();
+        }
+        else
+        {
+            _compact = null;
+        }
+
+        switch (Mode)
+        {
+            case SongsMode.Artist:
+                _expanded = _expanded.OrderBy(x => x.artistName).ThenBy(x => x.songTitle).ToList();
+                break;
+            case SongsMode.ArtistCompact:
+                _compact = _compact.OrderBy(x => x.artistName).Select(x => (x.artistName, x.songs.OrderBy(x => x.songTitle).ToList())).ToList();
+                break;
+            case SongsMode.ArtistCompactOriginal:
+                break;
+            case SongsMode.Title:
+                _expanded = _expanded.OrderBy(x => x.songTitle).ThenBy(x => x.artistName).ToList();
+                break;
+            case SongsMode.Original:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        StateHasChanged();
+    }
+
+    public override void Dispose()
+    {
+        SearchContext.Arrived -= ResultArrived;
+        base.Dispose();
+    }
+
+    private void GoTo(string artistName, string songTitle, string externalId, Uri sourceUri)
+    {
+        NavigationManager.NavigateTo(CollectionNavigation.SearchResultsInternetJustHighlight(artistName, songTitle), replace: true);
+        NavigationManager.NavigateTo(CollectionNavigation.SearchResultsInternetLink(artistName, songTitle, externalId));
+    }
+
+}

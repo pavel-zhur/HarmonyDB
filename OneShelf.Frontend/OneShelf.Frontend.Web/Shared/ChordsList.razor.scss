@@ -1,0 +1,101 @@
+a.source {
+  //  color: gray;
+    margin-right:8px;
+}
+
+div.likes {
+  //  margin-top: 30px;
+}
+
+div.search-other {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.chordslist-likes-section {
+    .likes {
+        .chordslike {
+            margin-right: 8px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        span {
+            margin-right: 3px;
+
+            a {
+                text-decoration: none;
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+        }
+
+        .btn-likes {
+            border: none !important;
+        }
+    }
+}
+.chordslist {
+    .heart-0, heart-1, .heart-2, .heart-3, .heart-x1, .heart-x0 {
+        margin-right: 0px;
+    }
+}
+.sectionchordslist-header {
+    h4 {
+        color: #243354;
+        padding-bottom:0;
+    }
+}
+.list-group.chordslist {
+    li {
+        background-color: rgba(248, 249, 253, 0.75);
+        border-bottom: none;
+        margin: 5px 0;
+        border-radius: 10px;
+    }
+}
+.chordslist-arrow {
+    .btn.btn-secondary:hover, .btn.btn-secondary:active, .btn.btn-secondary:focus {
+        background-color: #7c83ff;
+        border-color: #7c83ff;
+    }
+
+    .btn.btn-secondary{
+        min-height:38px; 
+        height:100%;
+        min-width:45px;
+    }
+    //box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+.chordslist-arrow.only-first-arrow, .chordslist-arrow.only-last-arrow {
+    .btn-secondary {
+        border-radius: 0.25rem !important;
+    }
+}
+
+
+.my-pre-background {
+    position: relative;
+
+    .my-background {
+        position: absolute;
+        width: calc(100% + 2.5rem);
+        height: calc(100% + 1.25rem + 1.875rem);
+        margin-left: -1.25rem;
+        margin-top: -1.25rem;
+        background-image: var(--background);
+        /* ReSharper disable once InvalidValue */
+        opacity: 28%;
+        background-size: cover;
+        background-position: center;
+        z-index: 0;
+    }
+
+    .my-post-background {
+        z-index: 1;
+        position: inherit;
+    }
+}

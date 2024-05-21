@@ -1,0 +1,139 @@
+﻿@page "/fingerings"
+@using OneShelf.Common
+@using OneShelf.Frontend.Web.Models.Fingerings
+@inject FingeringsProvider FingeringsProvider
+
+<h3>Аппликатуры на гитаре</h3>
+<div>
+    <input class="form-control my-search mb-2" type="search" placeholder="Поиск..." @oninput="SetSearch" />
+    В аккордах любой песни нажмите на аккорд, и покажутся его аппликатуры.
+    <br />
+    Или ищите аппликатуры здесь.
+    <br />
+    Тут две большие группы - мажорные и минорные.
+</div>
+@if (_model == null)
+{
+    <h5 class="mt-4">Загрузка...</h5>
+    <div class="small-loading"><img class="music-loading" src="img/music-loading.gif" title="Загрузка..." alt="Загрузка..." /></div>
+}
+else
+{
+    <h5 class="mt-4" id="major">
+        Мажорные / <a class="my-link my-smaller" onclick="document.getElementById('minor').scrollIntoView({behavior:'smooth'})">минорные</a>
+    </h5>
+    @foreach (var type in _model.Model.Types.Select(x => 
+        string.IsNullOrWhiteSpace(_search) 
+        || x.ChordText.Contains(_search) 
+        || FingeringsProvider.SynonymsTextToText.Any(y => y.Key.Contains(_search) && y.Value == x.ChordText)
+            ? (x, shouldRender: true)
+            : (null, shouldRender: x.Url == "Cm"))
+        .Where(x => x.shouldRender)
+        .Select(x => x.x))
+    {
+        @if (type?.Url is "Cm" or null)
+        {
+            <h5 class="mt-4" id="minor">
+                Минорные / <a class="my-link my-smaller" onclick="document.getElementById('major').scrollIntoView({behavior:'smooth'})">мажорные</a>
+            </h5>
+        }
+        @if (type != null)
+        {
+            <div class="mb-1">
+                <div>
+                    <span @onclick="() => Switch(type.Url)" class="@(_loading.Contains(type.Url) || _switched.Contains(type.Url) ? null : "collapsed") my-link">
+                        <b>@(new MarkupString(string.Join(", ", type.ChordHtml.Once().Concat(FingeringsProvider.SynonymsTextToHtmls[type.ChordText]))))</b>: @type.Description
+                        <i class="ph-caret-down collapsible-indicator"></i>
+                    </span>
+                </div>
+                @if (_switched.Contains(type.Url))
+                {
+                    <div>
+                        @foreach (var (note, images, image, isExpanded, isLoading, isUnloading, i, total) in type.Notes
+                            .SelectMany(x => _switched2.Contains((type.Url, x.Key))
+                                ? x.Value.Select((y, i) => (x.Key, x.Value, y, true, false, false, i, x.Value.Count))
+                                : (x.Key, x.Value, x.Value[0], false, _loading2.Contains((type.Url, x.Key)), _unloading2.Contains((type.Url, x.Key)), 0, 0).Once()))
+                        {
+                            <div class="pic @(isLoading || isExpanded || isUnloading ? "my-loading" : null) my-link" @onclick="() => Switch2((type.Url, note))">
+                                <img class="pic" src="data:image/gif;base64,@(Convert.ToBase64String(_model.Model.Pictures[image]))"/>
+                                <span class="@(isExpanded || isLoading || isUnloading ? "my-bolder" : "collapsed")">
+                                    @if (isExpanded)
+                                    {
+                                        <span>@(i + 1) / @total</span>
+                                    }
+                                    else
+                                    {
+                                        <span>и еще @(images.Count - 1)</span>
+                                        <span class="ph-caret-down collapsible-indicator"></span>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@code {
+
+    private FingeringsModelIndex? _model;
+    private HashSet<string> _loading = new();
+    private HashSet<string> _switched = new();
+    private HashSet<(string typeUrl, FingeringsNote note)> _loading2 = new();
+    private HashSet<(string typeUrl, FingeringsNote note)> _unloading2 = new();
+    private HashSet<(string typeUrl, FingeringsNote note)> _switched2 = new();
+    private string? _search;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await Task.Delay(100);
+            _model = await FingeringsProvider.GetModel();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Switch(string typeUrl)
+    {
+        if (!_switched.Remove(typeUrl))
+        {
+            _loading.Add(typeUrl);
+            StateHasChanged();
+            await Task.Delay(50);
+            _loading.Remove(typeUrl);
+            _switched.Add(typeUrl);
+        }
+    }
+
+    private async Task Switch2((string typeUrl, FingeringsNote note) key)
+    {
+        if (!_switched2.Remove(key))
+        {
+            _loading2.Add(key);
+            StateHasChanged();
+            await Task.Delay(200);
+            _loading2.Remove(key);
+            _switched2.Add(key);
+        }
+        else
+        {
+            _unloading2.Add(key);
+            StateHasChanged();
+            await Task.Delay(50);
+            _unloading2.Remove(key);
+        }
+    }
+
+    private void SetSearch(ChangeEventArgs obj)
+    {
+        _search = obj.Value?.ToString()?.ToLowerInvariant().Trim();
+        if ("abcdefgh".Any(x => _search?.StartsWith(x) ?? false)) _search = _search!.Substring(1);
+        StateHasChanged();
+    }
+
+}
