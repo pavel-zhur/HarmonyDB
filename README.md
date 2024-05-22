@@ -4,9 +4,9 @@ Welcome to this repository, a personal project with mixed purposes that has chan
 The project is up and running, hosted on Azure. It's still a work in progress, but I've made a part of it accessible for anyone curious. You can check out the current version here: https://c.harmonydb.com/.
 
 ## History
-Originally started as a Telegram bot to keep track of songs for our jam session and a PDF generator for songbooks, this repository has grown into a diverse collection of tools, including:
-- A Blazor web assembly application that allows musicians to easily search and manage chords even offline, with features like fingerings view and a circle of fifts.
-- Musical harmony analysis, like chord progression and loop detection, a degree view mode, and a (key-insensitive) song search based on progressions.
+Originally started as a Telegram bot to keep track of songs for our jam sessions and a PDF generator for songbooks, this repository has grown into a diverse collection of tools, including:
+- A mobile-friendly Blazor web assembly application that allows musicians to search and manage chords even offline, with features like fingerings view and a circle of fifts.
+- Some musical harmony analysis features, like chord progression and loop detection, a degree view mode, and a (key-insensitive) song search based on progressions.
 - A GPT-powered chatbot that loves to chat about music and create song images from lyrics.
 - Support for private and shared playlists, plus a multi-tenancy setup for clubs seeking a digital home (if you're interested in setting up your space, just let me know!).
 
