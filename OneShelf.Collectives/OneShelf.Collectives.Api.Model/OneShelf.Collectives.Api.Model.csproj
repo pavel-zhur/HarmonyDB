@@ -10,7 +10,7 @@
     <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Model\OneShelf.Authorization.Api.Model.csproj" />
   </ItemGroup>
 
-	<Target Name="NugetPackAutoVersioning" AfterTargets="Build">
+	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
 		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
 	</Target>
 

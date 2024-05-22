@@ -161,6 +161,8 @@ public class SongsOperations
                 .Include(x => x.Song)
                 .ThenInclude(x => x.Artists)
                 .ThenInclude(x => x.Synonyms)
+                .Include(x => x.Song)
+                .ThenInclude(x => x.Likes)
                 .Where(v => v.Song.Index < 1000 && v.Song.Status == SongStatus.Live)
                 .ToListAsync();
 
@@ -177,23 +179,28 @@ public class SongsOperations
             SongsDatabase.Artists.AddRange(artists.Values);
             await SongsDatabase.SaveChangesAsyncX();
 
+            var songs = versions.Select(v => v.Song).Distinct().ToDictionary(s => s, s => new Song
+            {
+                TenantId = tenantId,
+                Index = s.Index,
+                CreatedByUser = user,
+                CreatedOn = DateTime.Now,
+                SourceUniqueIdentifier = Guid.NewGuid().ToString(),
+                Status = SongStatus.Live,
+                CategoryOverride = s.CategoryOverride,
+                Title = s.Title,
+                Artists = s.Artists.Select(a => artists[a]).ToList(),
+                TemplateRating = (float)s.Likes.GetRating(),
+            });
+            SongsDatabase.Songs.AddRange(songs.Values);
+            await SongsDatabase.SaveChangesAsyncX();
+
             versions = versions.Select(v => new Version
             {
                 CreatedOn = DateTime.Now,
                 Uri = v.Uri,
                 User = user,
-                Song = new()
-                {
-                    TenantId = tenantId,
-                    Index = v.Song.Index,
-                    CreatedByUser = user,
-                    CreatedOn = DateTime.Now,
-                    SourceUniqueIdentifier = Guid.NewGuid().ToString(),
-                    Status = SongStatus.Live,
-                    CategoryOverride = v.Song.CategoryOverride,
-                    Title = v.Song.Title,
-                    Artists = v.Song.Artists.Select(a => artists[a]).ToList(),
-                },
+                Song = songs[v.Song],
             }).ToList();
 
             SongsDatabase.Versions.AddRange(versions);

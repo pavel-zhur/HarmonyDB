@@ -494,14 +494,17 @@ else
             SongsMode.RatingAll or SongsMode.WithoutIllustrations => songs
                 .Select(x => ((string?)null, (int?)null, x))
                 .OrderByDescending(x => x.x.Likes.GetRating())
-                .ThenByDescending(x => x.x.Likes.Max(x => (DateTime?)x.CreatedOn)),
+                .ThenByDescending(x => x.x.Likes.Max(x => (DateTime?)x.CreatedOn))
+                .ThenByDescending(x => x.x.TemplateRating),
             SongsMode.MyRating => songs
                 .Select(x => ((string?)null, (int?)null, x))
                 .OrderByDescending(x => x.x.Likes.Where(x => x.UserId == ShortlistedUserId).Max(x => x.Level))
-                .ThenByDescending(x => x.x.Likes.Where(x => x.UserId == ShortlistedUserId).Min(x => x.CreatedOn)),
+                .ThenByDescending(x => x.x.Likes.Where(x => x.UserId == ShortlistedUserId).Min(x => x.CreatedOn))
+                .ThenByDescending(x => x.x.TemplateRating),
             SongsMode.NewestLike => songs
                 .Select(x => ((string?)null, (int?)null, x))
-                .OrderByDescending(x => x.x.Likes.Where(ShortlistedUserId.HasValue ? x => x.UserId == ShortlistedUserId : LikeCategoryId.HasValue ? x => x.LikeCategoryId == LikeCategoryId : x => true).Max(x => x.CreatedOn)),
+                .OrderByDescending(x => x.x.Likes.Where(ShortlistedUserId.HasValue ? x => x.UserId == ShortlistedUserId : LikeCategoryId.HasValue ? x => x.LikeCategoryId == LikeCategoryId : x => true).Max(x => x.CreatedOn))
+                .ThenByDescending(x => x.x.TemplateRating),
             SongsMode.IndexDesc => songs
                 .Select(x => ((string?)null, (int?)null, x))
                 .OrderByDescending(x => x.x.Index),
@@ -523,7 +526,8 @@ else
 
             SongsMode.ArtistCompact => songs
                 .SelectMany(x => x.Artists.Select(x => CollectionIndex.ArtistsById[x]).Select(a => (artistName: a.Name, (int?)a.Id, x)))
-                .OrderBy(x => x.x.Title),
+                .OrderBy(x => x.x.Title)
+                .ThenByDescending(x => x.x.TemplateRating),
 
             _ => throw new ArgumentOutOfRangeException(),
         }).ToList();

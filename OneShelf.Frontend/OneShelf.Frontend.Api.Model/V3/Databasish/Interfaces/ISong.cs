@@ -12,6 +12,7 @@ public interface ISong : ISearchableSong
     IReadOnlyList<Version> Versions { get; }
     new IReadOnlyList<Like> Likes { get; }
     IReadOnlyDictionary<long, string> Comments { get; }
+    float? TemplateRating { get; }
     IEnumerable<int> DeepHash();
     Song Clone();
 }

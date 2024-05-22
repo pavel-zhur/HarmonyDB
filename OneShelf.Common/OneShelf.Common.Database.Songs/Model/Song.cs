@@ -65,6 +65,8 @@ public class Song : IValidatableObject, ISearchableSong
 
     public ICollection<Version> Versions { get; set; } = null!;
 
+    public float? TemplateRating { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (Title != Title.Trim().ToLowerInvariant()) yield return new($"{nameof(Title)} not trimmed or not lowercase.");
