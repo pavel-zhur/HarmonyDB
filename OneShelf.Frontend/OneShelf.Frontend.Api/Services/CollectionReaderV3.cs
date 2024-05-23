@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Model;
@@ -16,13 +17,13 @@ public class CollectionReaderV3
 {
     private readonly ILogger<CollectionReaderV3> _logger;
     private readonly SongsDatabase _songsDatabase;
-    private readonly IndexApiClient _indexApiClient;
+    private readonly SourceApiClient _sourceApiClient;
 
-    public CollectionReaderV3(ILogger<CollectionReaderV3> logger, SongsDatabase songsDatabase, IndexApiClient indexApiClient)
+    public CollectionReaderV3(ILogger<CollectionReaderV3> logger, SongsDatabase songsDatabase, SourceApiClient sourceApiClient)
     {
         _logger = logger;
         _songsDatabase = songsDatabase;
-        _indexApiClient = indexApiClient;
+        _sourceApiClient = sourceApiClient;
     }
 
     public async Task<Collection> Read(int tenantId, Identity identity)
@@ -57,7 +58,7 @@ public class CollectionReaderV3
             .Where(x => x.TenantId == tenantId)
             .ToListAsync();
 
-        var sourcesAndExternalIds = await _indexApiClient.V1GetSourcesAndExternalIds(identity, songs
+        var sourcesAndExternalIds = await _sourceApiClient.V1GetSourcesAndExternalIds(identity, songs
             .SelectMany(x => x.Versions)
             .Select(x => x.Uri));
 

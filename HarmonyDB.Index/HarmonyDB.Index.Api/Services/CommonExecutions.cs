@@ -10,10 +10,10 @@ namespace HarmonyDB.Index.Api.Services;
 public class CommonExecutions
 {
     private readonly ILogger<CommonExecutions> _logger;
-    private readonly SourcesApiClient _sourcesApiClient;
+    private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
     private readonly SourceResolver _sourceResolver;
 
-    public CommonExecutions(ILogger<CommonExecutions> logger, SourcesApiClient sourcesApiClient, SourceResolver sourceResolver)
+    public CommonExecutions(ILogger<CommonExecutions> logger, SourcesApiClient.SourcesApiClient sourcesApiClient, SourceResolver sourceResolver)
     {
         _logger = logger;
         _sourcesApiClient = sourcesApiClient;

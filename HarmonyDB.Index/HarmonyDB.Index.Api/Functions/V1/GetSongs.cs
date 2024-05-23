@@ -15,10 +15,10 @@ namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class GetSongs : AuthorizationFunctionBase<GetSongsRequest, GetSongsResponse>
     {
-        private readonly SourcesApiClient _sourcesApiClient;
+        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
         private readonly SourceResolver _sourceResolver;
 
-        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) 
+        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) 
             : base(loggerFactory, authorizationApiClient)
         {
             _sourcesApiClient = sourcesApiClient;

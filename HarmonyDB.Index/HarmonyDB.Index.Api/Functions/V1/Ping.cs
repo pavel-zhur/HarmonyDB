@@ -10,9 +10,9 @@ namespace HarmonyDB.Index.Api.Functions.V1
     public class Ping
     {
         private readonly ILogger _logger;
-        private readonly SourcesApiClient _sourcesApiClient;
+        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
 
-        public Ping(ILoggerFactory loggerFactory, SourcesApiClient sourcesApiClient)
+        public Ping(ILoggerFactory loggerFactory, SourcesApiClient.SourcesApiClient sourcesApiClient)
         {
             _sourcesApiClient = sourcesApiClient;
             _logger = loggerFactory.CreateLogger<Ping>();

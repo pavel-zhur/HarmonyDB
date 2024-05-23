@@ -1,5 +1,6 @@
 using System.Net;
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -10,11 +11,11 @@ namespace OneShelf.Frontend.Api.Functions.V3
     public class GetChords
     {
         private readonly ILogger _logger;
-        private readonly IndexApiClient _indexApiClient;
+        private readonly SourceApiClient _sourceApiClient;
 
-        public GetChords(ILoggerFactory loggerFactory, IndexApiClient indexApiClient)
+        public GetChords(ILoggerFactory loggerFactory, SourceApiClient sourceApiClient)
         {
-            _indexApiClient = indexApiClient;
+            _sourceApiClient = sourceApiClient;
             _logger = loggerFactory.CreateLogger<GetChords>();
         }
 
@@ -25,7 +26,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
 
             var request = await req.ReadAsStringAsync();
 
-            var result = await _indexApiClient.V1GetSongsDirect(request);
+            var result = await _sourceApiClient.V1GetSongsDirect(request);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 

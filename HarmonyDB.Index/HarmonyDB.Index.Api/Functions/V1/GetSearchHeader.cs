@@ -14,10 +14,10 @@ namespace HarmonyDB.Index.Api.Functions.V1;
 
 public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest, GetSearchHeaderResponse>
 {
-    private readonly SourcesApiClient _sourcesApiClient;
+    private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
     private readonly SourceResolver _sourceResolver;
 
-    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) : base(loggerFactory, authorizationApiClient)
+    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) : base(loggerFactory, authorizationApiClient)
     {
         _sourcesApiClient = sourcesApiClient;
         _sourceResolver = sourceResolver;

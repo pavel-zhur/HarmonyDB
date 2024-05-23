@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.22.0" />
   </ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Client\OneShelf.Authorization.Api.Client.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api.WithAuthorization\OneShelf.Common.Api.WithAuthorization.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />

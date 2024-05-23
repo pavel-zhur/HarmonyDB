@@ -1,5 +1,6 @@
 using System.Net;
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -40,11 +41,11 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
     private readonly PdfsApiClient _pdfsApiClient;
     private readonly FrontendCosmosDatabase _frontendCosmosDatabase;
     private readonly AuthorizationQuickChecker _authorizationQuickChecker;
-    private readonly IndexApiClient _indexApiClient;
+    private readonly SourceApiClient _sourceApiClient;
 
     public const string Version = "1";
 
-    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, IndexApiClient indexApiClient)
+    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient)
         : base(loggerFactory, authorizationApiClient)
     {
         _songsDatabase = songsDatabase;
@@ -54,7 +55,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         _pdfsApiClient = pdfsApiClient;
         _frontendCosmosDatabase = frontendCosmosDatabase;
         _authorizationQuickChecker = authorizationQuickChecker;
-        _indexApiClient = indexApiClient;
+        _sourceApiClient = sourceApiClient;
     }
 
     [Function(ApiUrls.V3GetPdfs)]
@@ -201,7 +202,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             }
         }
 
-        var structures = (await _indexApiClient.V1GetSongs(identity, files.Select(x => x.ExternalId).ToList())).Songs.Values;
+        var structures = (await _sourceApiClient.V1GetSongs(identity, files.Select(x => x.ExternalId).ToList())).Songs.Values;
 
         var tasks = new Dictionary<string, Task<(byte[] pdf, int pageCount)>>();
         foreach (Chords chords in structures)

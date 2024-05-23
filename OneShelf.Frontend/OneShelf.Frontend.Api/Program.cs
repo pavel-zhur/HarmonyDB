@@ -1,4 +1,5 @@
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,6 +22,7 @@ var host = new HostBuilder()
         .AddAuthorizationQuickCheckOptions(context.Configuration)
         .AddSongsDatabase()
         .AddIndexApiClient(context.Configuration)
+        .AddSourceApiClient(context.Configuration)
         .AddAuthorizationApiClient(context.Configuration)
         .AddScoped<CollectionReaderV3>()
         .AddScoped<IllustrationsReader>()

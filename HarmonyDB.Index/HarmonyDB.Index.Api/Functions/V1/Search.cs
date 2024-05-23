@@ -14,9 +14,9 @@ namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class Search : AuthorizationFunctionBase<SearchRequest, SearchResponse>
     {
-        private readonly SourcesApiClient _sourcesApiClient;
+        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
 
-        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient sourcesApiClient) : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient) : base(loggerFactory, authorizationApiClient)
         {
             _sourcesApiClient = sourcesApiClient;
         }

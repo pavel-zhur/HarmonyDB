@@ -6,12 +6,15 @@ using OneShelf.Common.Api.Client;
 
 namespace HarmonyDB.Source.Api.Client;
 
-internal class SourceApiClient : ApiClientBase<SourceApiClient>
+public class SourceApiClient : ApiClientBase<SourceApiClient>
 {
     public SourceApiClient(ApiClientOptions<SourceApiClient> options, IHttpClientFactory httpClientFactory) 
         : base(options, httpClientFactory)
     {
     }
+
+    public async Task<string> V1GetSongsDirect(string request)
+        => await PostDirect(SourceApiUrls.V1GetSongs, request);
 
     public async Task<GetSongResponse> V1GetSong(Identity identity, string externalId)
         => await Post<GetSongRequest, GetSongResponse>(SourceApiUrls.V1GetSong, new()

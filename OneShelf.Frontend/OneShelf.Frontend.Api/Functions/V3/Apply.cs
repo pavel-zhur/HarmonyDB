@@ -1,5 +1,6 @@
 using System.Net;
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -30,15 +31,15 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private readonly CollectionReaderV3 _collectionReaderV3;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly FrontendOptions _frontendOptions;
-        private readonly IndexApiClient _indexApiClient;
+        private readonly SourceApiClient _sourceApiClient;
         private readonly SongsOperations _songsOperations;
 
-        public Apply(ILoggerFactory loggerFactory, CollectionReaderV3 collectionReaderV3, IOptions<FrontendOptions> frontendOptions, IHttpClientFactory httpClientFactory, AuthorizationApiClient authorizationApiClient, IndexApiClient indexApiClient, SongsOperations songsOperations)
+        public Apply(ILoggerFactory loggerFactory, CollectionReaderV3 collectionReaderV3, IOptions<FrontendOptions> frontendOptions, IHttpClientFactory httpClientFactory, AuthorizationApiClient authorizationApiClient, SourceApiClient sourceApiClient, SongsOperations songsOperations)
             : base(loggerFactory, authorizationApiClient)
         {
             _collectionReaderV3 = collectionReaderV3;
             _httpClientFactory = httpClientFactory;
-            _indexApiClient = indexApiClient;
+            _sourceApiClient = sourceApiClient;
             _songsOperations = songsOperations;
             _frontendOptions = frontendOptions.Value;
         }
@@ -200,7 +201,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
 
         private async Task VersionImport(Identity identity, ImportedVersion request, long userId)
         {
-            var header = await _indexApiClient.V1GetSearchHeader(identity, request.ExternalId);
+            var header = await _sourceApiClient.V1GetSearchHeader(identity, request.ExternalId);
             if (header.SourceUri == null) throw new("The source uri does not exist for these chords.");
 
             var (_, versionExisted, _) = await _songsOperations.VersionImport(TenantId, header.SourceUri, header.Artists ?? new List<string>(),
