@@ -35,7 +35,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                 throw new ArgumentOutOfRangeException(nameof(query));
             }
 
-            var all = await Task.WhenAll(_downstreamApiClient.SearchableDownstreamSourceIndices.Select(i => _downstreamApiClient.V1Search(i,
+            var all = await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.IsSearchSupported).Select(i => _downstreamApiClient.V1Search(i,
                 new()
                 {
                     Identity = request.Identity,

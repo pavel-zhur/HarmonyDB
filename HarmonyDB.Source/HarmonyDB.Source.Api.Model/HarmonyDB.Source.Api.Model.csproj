@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
     <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Model\OneShelf.Authorization.Api.Model.csproj" />
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.Representations.OneShelf\HarmonyDB.Common.Representations.OneShelf.csproj" />

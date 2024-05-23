@@ -1,6 +1,7 @@
 ﻿using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model.VInternal;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common.Api.Client;
 
@@ -22,6 +23,10 @@ public class SourceApiClient : ApiClientBase<SourceApiClient>
             Identity = identity,
             ExternalId = externalId,
         });
+
+    public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex()
+        => await PostWithCode<GetProgressionsIndexRequest, GetProgressionsIndexResponse>(SourceApiUrls.VInternalGetProgressionsIndex, new());
+
     public async Task<GetSongsResponse> V1GetSongs(Identity identity, IReadOnlyList<string> externalIds)
         => await Post<GetSongsRequest, GetSongsResponse>(SourceApiUrls.V1GetSongs, new()
         {

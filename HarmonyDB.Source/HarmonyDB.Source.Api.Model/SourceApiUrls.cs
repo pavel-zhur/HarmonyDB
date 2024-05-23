@@ -8,4 +8,6 @@ public static class SourceApiUrls
     public const string V1GetSearchHeader = nameof(V1GetSearchHeader);
     public const string V1GetSourcesAndExternalIds = nameof(V1GetSourcesAndExternalIds);
     public const string V1Ping = nameof(V1Ping);
+    
+    public const string VInternalGetProgressionsIndex = nameof(VInternalGetProgressionsIndex);
 }

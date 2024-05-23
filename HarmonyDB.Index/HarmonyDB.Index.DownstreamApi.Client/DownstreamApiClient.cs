@@ -1,6 +1,7 @@
 ﻿using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model.VInternal;
 using Microsoft.Extensions.Options;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common;
@@ -26,13 +27,16 @@ public class DownstreamApiClient
 
     public IReadOnlyDictionary<string, int> DownstreamSourceIndicesBySourceKey { get; }
 
-    public IEnumerable<int> SearchableDownstreamSourceIndices => _options.DownstreamSources.WithIndices().Where(x => x.x.IsSearchSupported).Select(x => x.i);
-
+    public IEnumerable<int> GetDownstreamSourceIndices(Func<DownstreamApiClientOptions.DownstreamSourceOptions, bool> selector) => _options.DownstreamSources.WithIndices().Where(x => selector(x.x)).Select(x => x.i);
+    
     public int DownstreamSourcesCount => _options.DownstreamSources.Count;
 
     public string GetSourceTitle(string sourceKey) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => s.Key == sourceKey).Title;
     
     public string GetSourceKey(string externalId) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => externalId.StartsWith(s.ExternalIdPrefix)).Key;
+
+    public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex)
+        => await _clients[sourceIndex].VInternalGetProgressionsIndex();
 
     public async Task<GetSongResponse> V1GetSong(Identity identity, int sourceIndex, string externalId)
         => await _clients[sourceIndex].V1GetSong(identity, externalId);
