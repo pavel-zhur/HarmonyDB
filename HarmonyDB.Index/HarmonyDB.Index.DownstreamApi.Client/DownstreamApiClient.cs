@@ -16,19 +16,23 @@ public class DownstreamApiClient
     {
         _options = options.Value;
 
-        SourceIndices = _options.Sources
+        DownstreamSourceIndicesBySourceKey = _options.DownstreamSources
             .WithIndices()
-            .SelectMany(x => x.x.Sources.Select(s => (x.i, s)))
-            .ToDictionary(x => x.s, x => x.i);
+            .SelectMany(x => x.x.Sources.Select(s => (x.i, s.Key)))
+            .ToDictionary(x => x.Key, x => x.i);
 
-        _clients = _options.Sources.Select(o => new SourceApiClient(o, httpClientFactory)).ToList();
+        _clients = _options.DownstreamSources.Select(o => new SourceApiClient(o, httpClientFactory)).ToList();
     }
 
-    public IReadOnlyDictionary<string, int> SourceIndices { get; }
+    public IReadOnlyDictionary<string, int> DownstreamSourceIndicesBySourceKey { get; }
 
-    public IEnumerable<int> SearchableIndices => _options.Sources.WithIndices().Where(x => x.x.SupportsSearch).Select(x => x.i);
+    public IEnumerable<int> SearchableDownstreamSourceIndices => _options.DownstreamSources.WithIndices().Where(x => x.x.IsSearchSupported).Select(x => x.i);
 
-    public int SourcesCount => _options.Sources.Count;
+    public int DownstreamSourcesCount => _options.DownstreamSources.Count;
+
+    public string GetSourceTitle(string sourceKey) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => s.Key == sourceKey).Title;
+    
+    public string GetSourceKey(string externalId) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => externalId.StartsWith(s.ExternalIdPrefix)).Key;
 
     public async Task<GetSongResponse> V1GetSong(Identity identity, int sourceIndex, string externalId)
         => await _clients[sourceIndex].V1GetSong(identity, externalId);

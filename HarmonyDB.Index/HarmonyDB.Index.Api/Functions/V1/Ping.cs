@@ -24,7 +24,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.SourcesCount).Select(x => _downstreamApiClient.V1Ping(x)));
+            await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.DownstreamSourcesCount).Select(x => _downstreamApiClient.V1Ping(x)));
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

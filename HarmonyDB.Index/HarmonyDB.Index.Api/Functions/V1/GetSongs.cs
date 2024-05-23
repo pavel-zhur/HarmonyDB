@@ -1,4 +1,3 @@
-using HarmonyDB.Index.BusinessLogic.Services;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
@@ -17,13 +16,11 @@ namespace HarmonyDB.Index.Api.Functions.V1
     public class GetSongs : AuthorizationFunctionBase<GetSongsRequest, GetSongsResponse>
     {
         private readonly DownstreamApiClient _downstreamApiClient;
-        private readonly SourceResolver _sourceResolver;
 
-        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SourceResolver sourceResolver) 
+        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient) 
             : base(loggerFactory, authorizationApiClient)
         {
             _downstreamApiClient = downstreamApiClient;
-            _sourceResolver = sourceResolver;
         }
 
         [Function(SourceApiUrls.V1GetSongs)]
@@ -35,12 +32,16 @@ namespace HarmonyDB.Index.Api.Functions.V1
             async Task<List<Chords>> Process(int sourceIndex, IReadOnlyCollection<string> externalIds) 
                 => (await _downstreamApiClient.V1GetSongs(request.Identity, sourceIndex, externalIds.ToList()))
                     .Songs
-                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.SourceIndices[x.Value.Source])
-                    .Select(x => x.Value)
+                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.DownstreamSourceIndicesBySourceKey[x.Value.Source])
+                    .Select(x =>
+                    {
+                        x.Value.Source = _downstreamApiClient.GetSourceTitle(x.Value.Source);
+                        return x.Value;
+                    })
                     .ToList();
 
             var results = await Task.WhenAll(request.ExternalIds
-                .GroupBy(x => _downstreamApiClient.SourceIndices[_sourceResolver.GetSource(x)])
+                .GroupBy(x => _downstreamApiClient.DownstreamSourceIndicesBySourceKey[_downstreamApiClient.GetSourceKey(x)])
                 .Select(source => Process(source.Key, source.ToHashSet())));
 
             return new()

@@ -1,5 +1,4 @@
-﻿using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Index.DownstreamApi.Client;
+﻿using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
@@ -12,22 +11,27 @@ public class CommonExecutions
 {
     private readonly ILogger<CommonExecutions> _logger;
     private readonly DownstreamApiClient _downstreamApiClient;
-    private readonly SourceResolver _sourceResolver;
 
-    public CommonExecutions(ILogger<CommonExecutions> logger, DownstreamApiClient downstreamApiClient, SourceResolver sourceResolver)
+    public CommonExecutions(ILogger<CommonExecutions> logger, DownstreamApiClient downstreamApiClient)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
-        _sourceResolver = sourceResolver;
     }
 
     public async Task<GetSourcesAndExternalIdsResponse> GetSourcesAndExternalIds(GetSourcesAndExternalIdsRequest request)
     {
-        var results = await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.SourcesCount)
+        var results = await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.DownstreamSourcesCount)
             .Select(x => _downstreamApiClient.V1GetSourcesAndExternalIds(request.Identity, x, request.Uris)));
+
         var all = results
             .WithIndices()
-            .SelectMany(s => s.x.Where(x => _downstreamApiClient.SourceIndices[x.Value.Source] == s.i))
+            .SelectMany(s => s.x
+                .Where(x => _downstreamApiClient.DownstreamSourceIndicesBySourceKey[x.Value.Source] == s.i)
+                .Select(x =>
+                {
+                    x.Value.Source = _downstreamApiClient.GetSourceTitle(x.Value.Source);
+                    return x;
+                }))
             .ToDictionary(x => x.Key, x => x.Value);
 
         return new()
@@ -37,7 +41,10 @@ public class CommonExecutions
     }
 
     public async Task<GetSongResponse> GetSong(GetSongRequest request)
-        => await _downstreamApiClient.V1GetSong(
-            request.Identity,
-            _downstreamApiClient.SourceIndices[_sourceResolver.GetSource(request.ExternalId)], request.ExternalId);
+    {
+        var sourceKey = _downstreamApiClient.GetSourceKey(request.ExternalId);
+        var getSongResponse = await _downstreamApiClient.V1GetSong(request.Identity, _downstreamApiClient.DownstreamSourceIndicesBySourceKey[sourceKey], request.ExternalId);
+        getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(sourceKey);
+        return getSongResponse;
+    }
 }

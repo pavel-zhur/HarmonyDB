@@ -5,12 +5,25 @@ namespace HarmonyDB.Index.DownstreamApi.Client;
 
 public class DownstreamApiClientOptions
 {
-    public IReadOnlyList<SourceOptions> Sources { get; init; } = null!;
+    public IReadOnlyList<DownstreamSourceOptions> DownstreamSources { get; init; } = null!;
 
-    public class SourceOptions : ApiClientOptions<SourceApiClient>
+    public class DownstreamSourceOptions : ApiClientOptions<SourceApiClient>
     {
-        public required List<string> Sources { get; init; }
+        public required List<SourceOptions> Sources { get; init; }
 
-        public required bool SupportsSearch { get; init; }
+        public required bool IsSearchSupported { get; init; }
+
+        public required bool IsSearchDelegated { get; init; }
+
+        public required bool AreProgressionsProvidedForIndexing { get; init; }
+    }
+
+    public class SourceOptions
+    {
+        public required string Key { get; set; }
+
+        public required string ExternalIdPrefix { get; set; }
+
+        public required string Title { get; set; }
     }
 }
