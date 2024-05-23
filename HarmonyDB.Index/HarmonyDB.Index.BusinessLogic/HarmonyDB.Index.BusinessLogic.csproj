@@ -14,4 +14,9 @@
 		<PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Compression\OneShelf.Common.Compression.csproj" />
+	  <ProjectReference Include="..\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
+	</ItemGroup>
+
 </Project>

@@ -31,17 +31,17 @@ public class ApiClientBase<TClient>
         _httpClientFactory = httpClientFactory;
     }
 
-    protected async Task<TResponse> PostWithCode<TRequest, TResponse>(string url, TRequest request)
+    protected async Task<TResponse> PostWithCode<TRequest, TResponse>(string url, TRequest request, CancellationToken cancellationToken = default)
     {
         using var client = _httpClientFactory.CreateClient();
-        using var response = await client.PostAsJsonAsync(new Uri(_options.Endpoint, WithCode(url)), request, _jsonSerializerOptions);
+        using var response = await client.PostAsJsonAsync(new Uri(_options.Endpoint, WithCode(url)), request, _jsonSerializerOptions, cancellationToken);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            throw new UnauthorizedException(await response.Content.ReadAsStringAsync());
+            throw new UnauthorizedException(await response.Content.ReadAsStringAsync(cancellationToken));
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<TResponse>(_jsonSerializerOptions) ?? throw new("Empty response.");
+        return await response.Content.ReadFromJsonAsync<TResponse>(_jsonSerializerOptions, cancellationToken) ?? throw new("Empty response.");
     }
 
     protected async Task<byte[]> PostWithCode<TRequest>(string url, TRequest request)

@@ -35,8 +35,8 @@ public class DownstreamApiClient
     
     public string GetSourceKey(string externalId) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => externalId.StartsWith(s.ExternalIdPrefix)).Key;
 
-    public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex)
-        => await _clients[sourceIndex].VInternalGetProgressionsIndex();
+    public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex, GetProgressionsIndexRequest request, CancellationToken cancellationToken)
+        => await _clients[sourceIndex].VInternalGetProgressionsIndex(request, cancellationToken);
 
     public async Task<GetSongResponse> V1GetSong(Identity identity, int sourceIndex, string externalId)
         => await _clients[sourceIndex].V1GetSong(identity, externalId);
