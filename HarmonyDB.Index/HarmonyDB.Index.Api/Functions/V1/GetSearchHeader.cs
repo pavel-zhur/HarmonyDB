@@ -1,4 +1,5 @@
 using HarmonyDB.Index.BusinessLogic.Services;
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1.Api;
@@ -14,12 +15,12 @@ namespace HarmonyDB.Index.Api.Functions.V1;
 
 public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest, GetSearchHeaderResponse>
 {
-    private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
+    private readonly DownstreamApiClient _downstreamApiClient;
     private readonly SourceResolver _sourceResolver;
 
-    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) : base(loggerFactory, authorizationApiClient)
+    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SourceResolver sourceResolver) : base(loggerFactory, authorizationApiClient)
     {
-        _sourcesApiClient = sourcesApiClient;
+        _downstreamApiClient = downstreamApiClient;
         _sourceResolver = sourceResolver;
     }
 
@@ -33,7 +34,7 @@ public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest,
     {
         return new()
         {
-            SearchHeader = await _sourcesApiClient.V1GetSearchHeader(request.Identity, _sourcesApiClient.SourceIndices[_sourceResolver.GetSource(request.ExternalId)], request.ExternalId),
+            SearchHeader = await _downstreamApiClient.V1GetSearchHeader(request.Identity, _downstreamApiClient.SourceIndices[_sourceResolver.GetSource(request.ExternalId)], request.ExternalId),
         };
     }
 }

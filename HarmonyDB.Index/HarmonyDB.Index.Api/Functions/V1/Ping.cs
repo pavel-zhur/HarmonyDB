@@ -1,4 +1,5 @@
 using System.Net;
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
 using Microsoft.Azure.Functions.Worker;
@@ -10,11 +11,11 @@ namespace HarmonyDB.Index.Api.Functions.V1
     public class Ping
     {
         private readonly ILogger _logger;
-        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
+        private readonly DownstreamApiClient _downstreamApiClient;
 
-        public Ping(ILoggerFactory loggerFactory, SourcesApiClient.SourcesApiClient sourcesApiClient)
+        public Ping(ILoggerFactory loggerFactory, DownstreamApiClient downstreamApiClient)
         {
-            _sourcesApiClient = sourcesApiClient;
+            _downstreamApiClient = downstreamApiClient;
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
@@ -23,7 +24,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            await Task.WhenAll(Enumerable.Range(0, _sourcesApiClient.SourcesCount).Select(x => _sourcesApiClient.V1Ping(x)));
+            await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.SourcesCount).Select(x => _downstreamApiClient.V1Ping(x)));
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

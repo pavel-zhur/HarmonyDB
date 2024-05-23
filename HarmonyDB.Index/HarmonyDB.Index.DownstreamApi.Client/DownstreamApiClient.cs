@@ -5,14 +5,14 @@ using Microsoft.Extensions.Options;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common;
 
-namespace HarmonyDB.Index.SourcesApiClient;
+namespace HarmonyDB.Index.DownstreamApi.Client;
 
-public class SourcesApiClient
+public class DownstreamApiClient
 {
-    private readonly SourcesApiClientOptions _options;
+    private readonly DownstreamApiClientOptions _options;
     private readonly IReadOnlyList<SourceApiClient> _clients;
 
-    public SourcesApiClient(IHttpClientFactory httpClientFactory, IOptions<SourcesApiClientOptions> options)
+    public DownstreamApiClient(IHttpClientFactory httpClientFactory, IOptions<DownstreamApiClientOptions> options)
     {
         _options = options.Value;
 

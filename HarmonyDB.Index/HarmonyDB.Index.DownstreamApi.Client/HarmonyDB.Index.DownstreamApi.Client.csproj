@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
+	</ItemGroup>
 
 </Project>

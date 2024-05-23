@@ -2,7 +2,7 @@ using HarmonyDB.Index.Api.Functions.V1;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic;
 using HarmonyDB.Index.BusinessLogic.Models;
-using HarmonyDB.Index.SourcesApiClient;
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
@@ -24,7 +24,7 @@ var host = new HostBuilder()
             .AddCollectivesApiClient(context.Configuration)
             .Configure<IndexApiOptions>(x => context.Configuration.GetSection(nameof(IndexApiOptions)).Bind(x))
             .AddAuthorizationApiClient(context.Configuration)
-            .AddSourcesApiClient(context.Configuration)
+            .AddDownstreamApiClient(context.Configuration)
             .AddScoped<CommonExecutions>();
     })
     .Build();

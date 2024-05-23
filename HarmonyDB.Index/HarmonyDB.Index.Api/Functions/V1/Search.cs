@@ -1,3 +1,4 @@
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1.Api;
@@ -14,11 +15,11 @@ namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class Search : AuthorizationFunctionBase<SearchRequest, SearchResponse>
     {
-        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
+        private readonly DownstreamApiClient _downstreamApiClient;
 
-        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient) : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient) : base(loggerFactory, authorizationApiClient)
         {
-            _sourcesApiClient = sourcesApiClient;
+            _downstreamApiClient = downstreamApiClient;
         }
 
         [Function(SourceApiUrls.V1Search)]
@@ -34,7 +35,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                 throw new ArgumentOutOfRangeException(nameof(query));
             }
 
-            var all = await Task.WhenAll(_sourcesApiClient.SearchableIndices.Select(i => _sourcesApiClient.V1Search(i,
+            var all = await Task.WhenAll(_downstreamApiClient.SearchableIndices.Select(i => _downstreamApiClient.V1Search(i,
                 new()
                 {
                     Identity = request.Identity,
@@ -45,7 +46,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
             {
                 Headers = all
                     .WithIndices()
-                    .SelectMany(x => x.x.Headers.Where(h => _sourcesApiClient.SourceIndices[h.Source] == x.i))
+                    .SelectMany(x => x.x.Headers.Where(h => _downstreamApiClient.SourceIndices[h.Source] == x.i))
                     .ToList(),
             };
         }

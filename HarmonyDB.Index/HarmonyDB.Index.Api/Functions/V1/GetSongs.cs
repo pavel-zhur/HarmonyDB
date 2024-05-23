@@ -1,4 +1,5 @@
 using HarmonyDB.Index.BusinessLogic.Services;
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1;
@@ -15,13 +16,13 @@ namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class GetSongs : AuthorizationFunctionBase<GetSongsRequest, GetSongsResponse>
     {
-        private readonly SourcesApiClient.SourcesApiClient _sourcesApiClient;
+        private readonly DownstreamApiClient _downstreamApiClient;
         private readonly SourceResolver _sourceResolver;
 
-        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient.SourcesApiClient sourcesApiClient, SourceResolver sourceResolver) 
+        public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SourceResolver sourceResolver) 
             : base(loggerFactory, authorizationApiClient)
         {
-            _sourcesApiClient = sourcesApiClient;
+            _downstreamApiClient = downstreamApiClient;
             _sourceResolver = sourceResolver;
         }
 
@@ -32,14 +33,14 @@ namespace HarmonyDB.Index.Api.Functions.V1
         protected override async Task<GetSongsResponse> Execute(HttpRequest httpRequest, GetSongsRequest request)
         {
             async Task<List<Chords>> Process(int sourceIndex, IReadOnlyCollection<string> externalIds) 
-                => (await _sourcesApiClient.V1GetSongs(request.Identity, sourceIndex, externalIds.ToList()))
+                => (await _downstreamApiClient.V1GetSongs(request.Identity, sourceIndex, externalIds.ToList()))
                     .Songs
-                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _sourcesApiClient.SourceIndices[x.Value.Source])
+                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.SourceIndices[x.Value.Source])
                     .Select(x => x.Value)
                     .ToList();
 
             var results = await Task.WhenAll(request.ExternalIds
-                .GroupBy(x => _sourcesApiClient.SourceIndices[_sourceResolver.GetSource(x)])
+                .GroupBy(x => _downstreamApiClient.SourceIndices[_sourceResolver.GetSource(x)])
                 .Select(source => Process(source.Key, source.ToHashSet())));
 
             return new()

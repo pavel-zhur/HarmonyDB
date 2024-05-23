@@ -1,9 +1,9 @@
 ﻿using HarmonyDB.Source.Api.Client;
 using OneShelf.Common.Api.Client;
 
-namespace HarmonyDB.Index.SourcesApiClient;
+namespace HarmonyDB.Index.DownstreamApi.Client;
 
-public class SourcesApiClientOptions
+public class DownstreamApiClientOptions
 {
     public IReadOnlyList<SourceOptions> Sources { get; init; } = null!;
 
