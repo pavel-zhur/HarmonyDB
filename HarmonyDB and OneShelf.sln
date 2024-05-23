@@ -127,9 +127,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.Api.Client"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Sources.Self", "OneShelf.Sources.Self", "{B9B1BB37-376A-413A-8F4C-CB6F61C70FE6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Source.Api.Model", "HarmonyDB.Sources\HarmonyDB.Sources.Api.Model\HarmonyDB.Source.Api.Model.csproj", "{8BEB2357-0B54-416C-AE1A-1409F46E13F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Source.Api.Model", "HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj", "{8BEB2357-0B54-416C-AE1A-1409F46E13F5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Source.Api.Client", "HarmonyDB.Sources\HarmonyDB.Sources.Api.Client\HarmonyDB.Source.Api.Client.csproj", "{AFF2ABDE-31BE-4B37-B28D-A675A9001B29}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Source.Api.Client", "HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj", "{AFF2ABDE-31BE-4B37-B28D-A675A9001B29}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Frontend.Api.Client", "OneShelf.Frontend\OneShelf.Frontend.Api.Client\OneShelf.Frontend.Api.Client.csproj", "{57EDF7D7-14B6-416B-B4F0-5A28D472D9BF}"
 EndProject
