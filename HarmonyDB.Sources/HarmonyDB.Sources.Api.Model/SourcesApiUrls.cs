@@ -1,6 +1,6 @@
-﻿namespace HarmonyDB.Sources.Api.Model;
+﻿namespace HarmonyDB.Source.Api.Model;
 
-public static class SourcesApiUrls
+public static class SourceApiUrls
 {
     public const string V1GetSongs = nameof(V1GetSongs);
     public const string V1GetSong = nameof(V1GetSong);

@@ -1,6 +1,6 @@
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -28,7 +28,7 @@ namespace OneShelf.Sources.Self.Api.Functions.V1
             _structureParser = structureParser;
         }
 
-        [Function(SourcesApiUrls.V1GetSongs)]
+        [Function(SourceApiUrls.V1GetSongs)]
         public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [Microsoft.Azure.Functions.Worker.Http.FromBody] GetSongsRequest request) => RunHandler(req, request);
 
         protected override async Task<GetSongsResponse> Execute(HttpRequest httpRequest, GetSongsRequest request)

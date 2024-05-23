@@ -1,5 +1,5 @@
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;

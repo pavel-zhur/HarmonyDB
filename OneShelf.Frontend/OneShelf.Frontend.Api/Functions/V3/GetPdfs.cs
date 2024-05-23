@@ -1,6 +1,6 @@
 using System.Net;
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;

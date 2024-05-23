@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HarmonyDB.Sources.Api.Client;
+namespace HarmonyDB.Source.Api.Client;
 
 // ReSharper disable once InconsistentNaming
 public static class IServiceCollectionExtensions

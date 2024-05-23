@@ -1,4 +1,4 @@
-namespace HarmonyDB.Sources.Api.Model.V1;
+namespace HarmonyDB.Source.Api.Model.V1;
 
 public class SearchHeader : PublicHeaderBase
 {

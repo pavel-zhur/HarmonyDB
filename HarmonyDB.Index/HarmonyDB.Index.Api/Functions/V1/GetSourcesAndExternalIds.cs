@@ -1,7 +1,6 @@
 using HarmonyDB.Index.Api.Services;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -23,7 +22,7 @@ public class GetSourcesAndExternalIds : AuthorizationFunctionBase<GetSourcesAndE
         _commonExecutions = commonExecutions;
     }
 
-    [Function(SourcesApiUrls.V1GetSourcesAndExternalIds)]
+    [Function(SourceApiUrls.V1GetSourcesAndExternalIds)]
     public Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetSourcesAndExternalIdsRequest request)
         => RunHandler(req, request);

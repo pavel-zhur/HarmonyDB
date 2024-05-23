@@ -2,7 +2,7 @@
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VPublic;
 using HarmonyDB.Index.Api.Services;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;

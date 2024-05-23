@@ -2,7 +2,7 @@ using HarmonyDB.Index.Api.Functions.V1;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic;
 using HarmonyDB.Index.BusinessLogic.Models;
-using HarmonyDB.Sources.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

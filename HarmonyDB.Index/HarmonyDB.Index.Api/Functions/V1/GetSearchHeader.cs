@@ -1,7 +1,7 @@
 using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -23,7 +23,7 @@ public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest,
         _sourceResolver = sourceResolver;
     }
 
-    [Function(SourcesApiUrls.V1GetSearchHeader)]
+    [Function(SourceApiUrls.V1GetSearchHeader)]
     public Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetSearchHeaderRequest request)
         => RunHandler(req, request);

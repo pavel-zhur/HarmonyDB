@@ -1,6 +1,6 @@
 ﻿using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;

@@ -1,8 +1,8 @@
 using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -25,7 +25,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
             _sourceResolver = sourceResolver;
         }
 
-        [Function(SourcesApiUrls.V1GetSongs)]
+        [Function(SourceApiUrls.V1GetSongs)]
         public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetSongsRequest request)
             => RunHandler(req, request);
 

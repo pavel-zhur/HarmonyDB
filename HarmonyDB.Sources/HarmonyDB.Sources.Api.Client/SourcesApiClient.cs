@@ -1,10 +1,10 @@
-﻿using HarmonyDB.Sources.Api.Model.V1;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+﻿using HarmonyDB.Source.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.Extensions.Options;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common;
 
-namespace HarmonyDB.Sources.Api.Client;
+namespace HarmonyDB.Source.Api.Client;
 
 public class SourcesApiClient
 {

@@ -1,6 +1,6 @@
-﻿@using OneShelf.Common
+﻿@using HarmonyDB.Source.Api.Model.V1
+@using OneShelf.Common
 @using OneShelf.Frontend.SpecificModel
-@using HarmonyDB.Sources.Api.Model.V1
 
 @foreach (var (group, i) in Headers.GroupBy(x => (x.Source, x.SpecificAttributes.ToFrontendAttributesV1().SourceColor)).WithIndices())
 {

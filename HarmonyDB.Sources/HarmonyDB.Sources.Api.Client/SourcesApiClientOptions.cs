@@ -1,6 +1,6 @@
 ﻿using OneShelf.Common.Api.Client;
 
-namespace HarmonyDB.Sources.Api.Client;
+namespace HarmonyDB.Source.Api.Client;
 
 public class SourcesApiClientOptions
 {

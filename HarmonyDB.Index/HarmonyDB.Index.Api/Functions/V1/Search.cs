@@ -1,6 +1,6 @@
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -21,7 +21,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
             _sourcesApiClient = sourcesApiClient;
         }
 
-        [Function(SourcesApiUrls.V1Search)]
+        [Function(SourceApiUrls.V1Search)]
         public Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] SearchRequest request)
             => RunHandler(req, request);

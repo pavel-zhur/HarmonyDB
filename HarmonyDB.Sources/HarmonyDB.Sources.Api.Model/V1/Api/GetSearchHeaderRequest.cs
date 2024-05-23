@@ -1,6 +1,6 @@
 using OneShelf.Authorization.Api.Model;
 
-namespace HarmonyDB.Sources.Api.Model.V1.Api;
+namespace HarmonyDB.Source.Api.Model.V1.Api;
 
 public class GetSearchHeaderRequest : IRequestWithIdentity
 {
