@@ -1,4 +1,3 @@
-using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.VInternal;
@@ -22,7 +21,7 @@ public class GetProgressionsIndex : FunctionBase<GetProgressionsIndexRequest, Ge
 
     [Function(SourceApiUrls.VInternalGetProgressionsIndex)]
     public Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetProgressionsIndexRequest request)
+        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] GetProgressionsIndexRequest request)
         => RunHandler(request);
 
     protected override async Task<GetProgressionsIndexResponse> Execute(GetProgressionsIndexRequest request)
