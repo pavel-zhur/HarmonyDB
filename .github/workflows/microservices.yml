@@ -1,0 +1,95 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: microservices
+
+on:
+# Triggers the workflow on push or pull request events but only for the master branch
+  #push:
+    #branches: [ master ]
+# Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+#    - name: Wasm tools
+#      run: dotnet workload install wasm-tools
+    - name: Remove Frontend.Web (speedup)
+      run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web
+    - name: Remove Frontend.Web.Tests (speedup)
+      run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web.Tests
+    - name: Restore dependencies
+      run: dotnet restore
+#    - name: Build
+#      run: dotnet build --no-restore --configuration Release
+    - name: Publish 1
+      run: dotnet publish OneShelf.Telegram/OneShelf.Telegram.Runner.Functions/OneShelf.Telegram.Runner.Functions.csproj --no-restore
+    - name: Publish 2
+      run: dotnet publish OneShelf.OneDog/OneShelf.OneDog.Runner.Functions/OneShelf.OneDog.Runner.Functions.csproj --no-restore
+    - name: Publish 3
+      run: dotnet publish OneShelf.Frontend/OneShelf.Frontend.Api/OneShelf.Frontend.Api.csproj --no-restore
+    - name: Publish 4
+      run: dotnet publish OneShelf.Authorization/OneShelf.Authorization.Api/OneShelf.Authorization.Api.csproj --no-restore
+    - name: Publish 5
+      run: dotnet publish HarmonyDB.Index/HarmonyDB.Index.Api/HarmonyDB.Index.Api.csproj --no-restore
+    - name: Publish 6
+      run: dotnet publish OneShelf.Illustrations/OneShelf.Illustrations.Api/OneShelf.Illustrations.Api.csproj --no-restore
+    - name: Publish 7
+      run: dotnet publish OneShelf.Billing/OneShelf.Billing.Api/OneShelf.Billing.Api.csproj --no-restore
+    - name: Publish 8
+      run: dotnet publish OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj --no-restore --configuration Release
+    - name: Publish 9
+      run: dotnet publish OneShelf.Collectives/OneShelf.Collectives.Api/OneShelf.Collectives.Api.csproj --no-restore
+    - name: Publish 10
+      run: dotnet publish OneShelf.Sources/OneShelf.Sources.Self.Api/OneShelf.Sources.Self.Api.csproj --no-restore
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Telegram.Runner.Functions
+        path: ./**/OneShelf.Telegram.Runner.Functions/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.OneDog.Runner.Functions
+        path: ./**/OneShelf.OneDog.Runner.Functions/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Frontend.Api
+        path: ./**/OneShelf.Frontend.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Authorization.Api
+        path: ./**/OneShelf.Authorization.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: HarmonyDB.Index.Api
+        path: ./**/HarmonyDB.Index.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Illustrations.Api
+        path: ./**/OneShelf.Illustrations.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Billing.Api
+        path: ./**/OneShelf.Billing.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Pdfs.Api
+        path: ./**/OneShelf.Pdfs.Api/bin/Release/net6.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Collectives.Api
+        path: ./**/OneShelf.Collectives.Api/bin/Release/net8.0/publish
+    - uses: actions/upload-artifact@v4
+      with:
+        name: OneShelf.Sources.Self.Api
+        path: ./**/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish
+#    - name: Test
+#      run: dotnet test --no-build --verbosity normal
