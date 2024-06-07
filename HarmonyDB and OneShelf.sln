@@ -163,9 +163,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Common", "Harmony
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Common.Api.Client", "OneShelf.Common\OneShelf.Common.Api.Client\OneShelf.Common.Api.Client.csproj", "{92969108-D9C8-4FF8-B083-B10463EB0FEC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Source", "HarmonyDB.Source", "{3E91BCAD-3270-42AB-96BB-3F5A092CE64F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.DownstreamApi.Client", "HarmonyDB.Index\HarmonyDB.Index.DownstreamApi.Client\HarmonyDB.Index.DownstreamApi.Client.csproj", "{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Index.DownstreamApi.Client", "HarmonyDB.Index\HarmonyDB.Index.DownstreamApi.Client\HarmonyDB.Index.DownstreamApi.Client.csproj", "{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Source", "HarmonyDB.Source", "{3E91BCAD-3270-42AB-96BB-3F5A092CE64F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
