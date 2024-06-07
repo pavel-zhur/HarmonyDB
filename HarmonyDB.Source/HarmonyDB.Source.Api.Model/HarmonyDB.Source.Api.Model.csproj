@@ -4,7 +4,16 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="nuget readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
@@ -13,8 +22,5 @@
     <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.Representations.OneShelf\HarmonyDB.Common.Representations.OneShelf.csproj" />
   </ItemGroup>
 
-	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
-		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
-	</Target>
 
 </Project>

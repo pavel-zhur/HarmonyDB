@@ -4,7 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="nuget readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Azure.Storage.Queues" Version="12.18.0" />
@@ -12,6 +17,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -19,8 +25,5 @@
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api.Client\OneShelf.Common.Api.Client.csproj" />
 	</ItemGroup>
 
-	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
-		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
-	</Target>
 
 </Project>
