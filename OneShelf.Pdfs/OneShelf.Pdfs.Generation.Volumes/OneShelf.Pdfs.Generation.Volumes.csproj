@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -25,10 +25,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Resources\OneShelf.Pdfs.Generation.Resources.csproj" />
-	</ItemGroup>
-
-	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
-		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
-	</Target>
+	</ItemGroup>
 
 </Project>

@@ -13,8 +13,5 @@
 	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
-	<Target Condition="'$(PushNuget)'=='1'" Name="NugetPackAutoVersioning" AfterTargets="Build">
-		<Exec Command="dotnet pack -p:PackageVersion=1.0.$(OneShelfVersion) --include-source --include-symbols --no-build --configuration $(Configuration) --output &quot;..\\..\\nuget&quot;" />
-	</Target>
 
 </Project>
