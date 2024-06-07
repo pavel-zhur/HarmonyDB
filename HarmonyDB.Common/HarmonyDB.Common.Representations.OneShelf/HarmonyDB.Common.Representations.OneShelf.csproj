@@ -4,7 +4,16 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common\HarmonyDB.Common.csproj" />
