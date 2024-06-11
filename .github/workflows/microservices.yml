@@ -3,12 +3,18 @@
 
 name: microservices
 
+permissions:
+  contents: write
+
 on:
 # Triggers the workflow on push or pull request events but only for the master branch
   #push:
     #branches: [ master ]
 # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  #workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -51,45 +57,65 @@ jobs:
       run: dotnet publish OneShelf.Collectives/OneShelf.Collectives.Api/OneShelf.Collectives.Api.csproj --no-restore
     - name: Publish 10
       run: dotnet publish OneShelf.Sources/OneShelf.Sources.Self.Api/OneShelf.Sources.Self.Api.csproj --no-restore
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Telegram.Runner.Functions
-        path: ./**/OneShelf.Telegram.Runner.Functions/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.OneDog.Runner.Functions
-        path: ./**/OneShelf.OneDog.Runner.Functions/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Frontend.Api
-        path: ./**/OneShelf.Frontend.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Authorization.Api
-        path: ./**/OneShelf.Authorization.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: HarmonyDB.Index.Api
-        path: ./**/HarmonyDB.Index.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Illustrations.Api
-        path: ./**/OneShelf.Illustrations.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Billing.Api
-        path: ./**/OneShelf.Billing.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Pdfs.Api
-        path: ./**/OneShelf.Pdfs.Api/bin/Release/net6.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Collectives.Api
-        path: ./**/OneShelf.Collectives.Api/bin/Release/net8.0/publish
-    - uses: actions/upload-artifact@v4
-      with:
-        name: OneShelf.Sources.Self.Api
-        path: ./**/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish
+
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Telegram.Runner.Functions
+    #     path: ./**/OneShelf.Telegram.Runner.Functions/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.OneDog.Runner.Functions
+    #     path: ./**/OneShelf.OneDog.Runner.Functions/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Frontend.Api
+    #     path: ./**/OneShelf.Frontend.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Authorization.Api
+    #     path: ./**/OneShelf.Authorization.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: HarmonyDB.Index.Api
+    #     path: ./**/HarmonyDB.Index.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Illustrations.Api
+    #     path: ./**/OneShelf.Illustrations.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Billing.Api
+    #     path: ./**/OneShelf.Billing.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Pdfs.Api
+    #     path: ./**/OneShelf.Pdfs.Api/bin/Release/net6.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Collectives.Api
+    #     path: ./**/OneShelf.Collectives.Api/bin/Release/net8.0/publish
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: OneShelf.Sources.Self.Api
+    #     path: ./**/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish
+
+    - run: Compress-Archive -Path OneShelf.Telegram/OneShelf.Telegram.Runner.Functions/bin/Release/net8.0/publish -Destination OneShelf.Telegram.Runner.Functions.zip
+    - run: Compress-Archive -Path OneShelf.OneDog/OneShelf.OneDog.Runner.Functions/bin/Release/net8.0/publish -Destination OneShelf.OneDog.Runner.Functions.zip
+    - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Api/bin/Release/net8.0/publish -Destination OneShelf.Frontend.Api.zip
+    - run: Compress-Archive -Path OneShelf.Authorization/OneShelf.Authorization.Api/bin/Release/net8.0/publish -Destination OneShelf.Authorization.Api.zip
+    - run: Compress-Archive -Path HarmonyDB.Index/HarmonyDB.Index.Api/bin/Release/net8.0/publish -Destination HarmonyDB.Index.Api.zip
+    - run: Compress-Archive -Path OneShelf.Illustrations/OneShelf.Illustrations.Api/bin/Release/net8.0/publish -Destination OneShelf.Illustrations.Api.zip
+    - run: Compress-Archive -Path OneShelf.Billing/OneShelf.Billing.Api/bin/Release/net8.0/publish -Destination OneShelf.Billing.Api.zip
+    - run: Compress-Archive -Path OneShelf.Pdfs/OneShelf.Pdfs.Api/bin/Release/net6.0/publish -Destination OneShelf.Pdfs.Api.zip
+    - run: Compress-Archive -Path OneShelf.Collectives/OneShelf.Collectives.Api/bin/Release/net8.0/publish -Destination OneShelf.Collectives.Api.zip
+    - run: Compress-Archive -Path OneShelf.Sources.Self/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish -Destination OneShelf.Sources.Self.Api.zip
+  
 #    - name: Test
 #      run: dotnet test --no-build --verbosity normal
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: true
+        files: |
+          LICENSE
+          *.zip
