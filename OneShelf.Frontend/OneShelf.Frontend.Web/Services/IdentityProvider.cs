@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
+using BlazorApplicationInsights.Interfaces;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Nito.AsyncEx;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Frontend.Web.Models;
@@ -16,15 +18,22 @@ public class IdentityProvider
     private readonly ILocalStorageService _localStorageService;
     private readonly NavigationManager _navigationManager;
     private readonly AsyncLock _lock = new();
+    private readonly IApplicationInsights _appInsights;
+    private readonly IJSRuntime _jsRuntime;
 
     private Identity? _identity;
     private bool _isInitialized;
 
-    public IdentityProvider(ILogger<IdentityProvider> logger, ILocalStorageService localStorageService, NavigationManager navigationManager)
+    private int _appInsightsInitExceptions;
+    private string? _appInsightsSetUserId;
+
+    public IdentityProvider(ILogger<IdentityProvider> logger, ILocalStorageService localStorageService, NavigationManager navigationManager, IApplicationInsights appInsights, IJSRuntime jsRuntime)
     {
         _logger = logger;
         _localStorageService = localStorageService;
         _navigationManager = navigationManager;
+        _appInsights = appInsights;
+        _jsRuntime = jsRuntime;
     }
 
     public event Action IdentityChange;
@@ -90,8 +99,7 @@ public class IdentityProvider
             await _localStorageService.RemoveItemAsync(AuthKey);
         }
 
-        _logger.LogInformation($"idp identity = {Identity}");
-
+        await SetApplicationInsights();
         OnIdentityChange();
     }
 
@@ -103,9 +111,40 @@ public class IdentityProvider
         if (value != null)
         {
             _identity = JsonSerializer.Deserialize<Identity>(value)!;
+            await SetApplicationInsights();
         }
 
         _isInitialized = true;
+    }
+
+    private async Task SetApplicationInsights()
+    {
+        try
+        {
+            var authenticatedUserId = _identity?.Id.ToString();
+            if (authenticatedUserId == _appInsightsSetUserId) return;
+            _appInsightsSetUserId = authenticatedUserId;
+
+            _appInsights.InitJSRuntime(_jsRuntime);
+
+            if (authenticatedUserId != null)
+            {
+                await _appInsights.SetAuthenticatedUserContext(authenticatedUserId);
+            }
+            else
+            {
+                await _appInsights.ClearAuthenticatedUserContext();
+            }
+        }
+        catch (Exception e)
+        {
+            _appInsightsInitExceptions++;
+
+            if (_appInsightsInitExceptions < 5)
+            {
+                _logger.LogError(e, "Error setting the application insights user.");
+            }
+        }
     }
 
     protected virtual void OnIdentityChange()
