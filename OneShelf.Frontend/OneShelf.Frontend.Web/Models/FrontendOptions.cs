@@ -11,4 +11,6 @@ public class FrontendOptions
         .Replace("\"", string.Empty)
         .Trim()
         .SelectSingle(x => string.IsNullOrEmpty(x) ? "Local" : x)!;
+
+    public required string AppInsightsConnectionString { get; init; }
 }

@@ -1,0 +1,1 @@
+﻿copy appsettings.json appsettings.json.bak
