@@ -20,6 +20,7 @@
   <ItemGroup>
     <Content Remove="compilerconfig.json" />
     <Content Remove="Resources\fingerings.json" />
+    <Content Remove="wwwroot\appinsights.min.js" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +66,7 @@
 
   <ItemGroup>
     <None Include="compilerconfig.json" />
+    <None Include="wwwroot\appinsights.min.js" />
     <None Include="wwwroot\services-js\JsFunctions.js" />
     <None Include="wwwroot\services-js\Player.js" />
     <None Include="wwwroot\sw-registrator.js" />
