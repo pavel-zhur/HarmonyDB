@@ -29,12 +29,7 @@ jobs:
         dotnet-version: 8.0.x
 #    - name: Wasm tools
 #      run: dotnet workload install wasm-tools
-    - name: Restore dependencies
-      run: dotnet restore OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj
-    - name: Build
-      run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
-    - name: Publish 1
-      run: dotnet publish OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
+
 
     - name: Get current date
       id: date
@@ -53,6 +48,14 @@ jobs:
         files: 'OneShelf.Frontend/OneShelf.Frontend.Web/wwwroot/index.html'
         search-text: '{#CACHE_VERSION#}'
         replacement-text: "${{ github.ref_name }}-${{ steps.date.outputs.date }}"
+
+
+    - name: Restore dependencies
+      run: dotnet restore OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj
+    - name: Build
+      run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
+    - name: Publish 1
+      run: dotnet publish OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
 
 
     - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Web/bin/Release/net8.0/publish/* -Destination OneShelf.Frontend.Web.zip
