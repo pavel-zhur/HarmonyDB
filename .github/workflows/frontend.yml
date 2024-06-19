@@ -55,7 +55,8 @@ jobs:
     - name: Build
       run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
     - name: Publish 1
-      run: OneShelf.Frontend/OneShelf.Frontend.Web/publish.bat
+      working-directory: OneShelf.Frontend/OneShelf.Frontend.Web
+      run: publish.bat
 
 
     - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Web/bin/Publish/* -Destination OneShelf.Frontend.Web.zip
