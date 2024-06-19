@@ -432,9 +432,8 @@ else
             </span>
             break;
         case State.HideUnstable:
-            versionUri = CollectionIndex.VersionsById[VersionId!.Value].version.Uri;
             <span>
-                @_chords!.UnstableErrorMessage <a href="@versionUri" target="_blank">@(_chords!.Source)</a>
+                @_chords!.UnstableErrorMessage <a href="@_chords!.SourceUri" target="_blank">@(_chords!.Source)</a>
             </span>
             break;
     }
