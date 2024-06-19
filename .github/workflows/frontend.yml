@@ -55,7 +55,8 @@ jobs:
     - name: Build
       run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
     - name: Publish 1
-      working-directory: OneShelf.Frontend/OneShelf.Frontend.Web
+      working-directory: ./OneShelf.Frontend/OneShelf.Frontend.Web
+      shell: cmd
       run: publish.bat
 
 
