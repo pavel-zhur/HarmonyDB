@@ -11,3 +11,6 @@ $base642 = [System.Convert]::ToBase64String($filehash_as_bytes2).Replace("/", "\
 
 $content = (Get-Content .\service-worker-assets.js).Replace($base641, $base642)
 Set-Content .\service-worker-assets.js -Value $content
+
+$content = (Get-Content .\service-worker-assets-compat.js).Replace($base641, $base642)
+Set-Content .\service-worker-assets-compat.js -Value $content
