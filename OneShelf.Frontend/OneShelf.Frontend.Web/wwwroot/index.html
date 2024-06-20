@@ -69,7 +69,7 @@
         }
     </script>
 
-<script>
+    <script>
 
         function illustrationFullscreenClicked(el, url1024) {
             if (!document.fullscreen) {
@@ -99,7 +99,7 @@
                  left: 0;
                  right: 0;
                  text-align: center;
-                 padding: 1em; 
+                 padding: 1em;
                  display: none;
              " class="long-load-fadein">Первый раз грузимся из интернета около минуты, <strong>следующие — без интернета</strong> несколько секунд.</div>
     </div>
@@ -107,45 +107,103 @@
     <script src="_content/DnetIndexedDbTs/rxjs.min.js"></script>
     <script src="_content/DnetIndexedDbTs/dnet-indexeddb.js"></script>
 
-<script>
+    <script>
 
-    // https://stackoverflow.com/questions/152975/how-do-i-detect-a-click-outside-an-element
+        // https://stackoverflow.com/questions/152975/how-do-i-detect-a-click-outside-an-element
 
-    (function () {
-        const outsideClickListener = event => {
+        (function () {
+            const outsideClickListener = event => {
 
-            var element = document.querySelector('.sidebar-mobile-expanded');
-            if (!element) return;
+                var element = document.querySelector('.sidebar-mobile-expanded');
+                if (!element) return;
 
-            const sidebarMainMobileToggler = document.querySelectorAll('.sidebar-mobile-main-toggle');
+                const sidebarMainMobileToggler = document.querySelectorAll('.sidebar-mobile-main-toggle');
 
-            var contains = false;
-            sidebarMainMobileToggler.forEach(function (toggler) {
-                if (toggler.contains(event.target)) {
-                    contains = true;
+                var contains = false;
+                sidebarMainMobileToggler.forEach(function (toggler) {
+                    if (toggler.contains(event.target)) {
+                        contains = true;
+                    }
+                });
+
+                if (contains) return;
+
+                if (!element.contains(event.target)) { // or use: event.target.closest(selector) === null
+                    element.classList.remove('sidebar-mobile-expanded');
                 }
-            });
-
-            if (contains) return;
-
-            if (!element.contains(event.target)) { // or use: event.target.closest(selector) === null
-                element.classList.remove('sidebar-mobile-expanded');
             }
-        }
 
-        document.addEventListener('click', outsideClickListener);
-        document.addEventListener('touchstart', outsideClickListener);
-    })();
+            document.addEventListener('click', outsideClickListener);
+            document.addEventListener('touchstart', outsideClickListener);
+        })();
 
-</script>
+    </script>
 
     <div id="blazor-error-ui">
         Случилась ошибка.
         <a href="" class="reload">Обновить</a>
         <a class="dismiss">🗙</a>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
     <script src="sw-registrator.js"></script>
+
+    <!-- autostart is set to false so we can detect SIMD support and load the appropriate build -->
+    <!-- the below script can also be "_framework/blazor.web.js" depending on the hosting model -->
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <!--
+        WASM Feature Detect - from GoogleChromeLabs
+        CDN UMD Version: https://unpkg.com/wasm-feature-detect/dist/umd/index.js
+        Repo: https://github.com/GoogleChromeLabs/wasm-feature-detect
+    -->
+    <script webworker-enabled src="wasm-feature-detect.1.5.1.js"></script>
+    <!--
+        The below script tag is used to detect SIMD support on the running device and load the appropriate build
+        If SIMD is not supported it loads _frameworkCompat/ instead of _framework/
+    -->
+    <script webworker-enabled>
+        (async () => {
+            var url = new URL(location.href);
+            let verboseStart = url.searchParams.get('verboseStart') === '1';
+            var forceCompatMode = url.searchParams.get('forceCompatMode') === '1';
+            var supportsSimd = await wasmFeatureDetect.simd();
+            if (verboseStart) console.log('supportsSimd', supportsSimd);
+            // compat mode build could be built without wasm exception support if needed and detected here
+            var supportsExceptions = await wasmFeatureDetect.exceptions();
+            if (verboseStart) console.log('supportsExceptions', supportsExceptions);
+            var useCompatMode = !supportsSimd;
+            if (forceCompatMode) {
+                if (verboseStart) console.log('forceCompatMode', forceCompatMode);
+                useCompatMode = true;
+            }
+            if (verboseStart) console.log('useCompatMode', useCompatMode);
+            // Blazor United (.Net 8 Blazor Web App) Blazor.start settings are slightly different than Blazor WebAssembly (Blazor WebAssembly Standalone App)
+            var getRuntimeType = function () {
+                for (var script of document.scripts) {
+                    if (script.src.indexOf('_framework/blazor.web.js') !== -1) return 'united';
+                    if (script.src.indexOf('_framework/blazor.webassembly.js') !== -1) return 'wasm';
+                }
+                return '';
+            }
+            var runtimeType = getRuntimeType();
+            // customize the resource loader for the runtime that is loaded
+            // https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/startup?view=aspnetcore-8.0#load-boot-resources
+            var webAssemblyConfig = {
+                loadBootResource: function (type, name, defaultUri, integrity) {
+                    if (verboseStart) console.log(`Loading: '${type}', '${name}', '${defaultUri}', '${integrity}'`);
+                    if (useCompatMode) {
+                        let newUrl = defaultUri.replace('_framework/', '_frameworkCompat/');
+                        return newUrl;
+                    }
+                },
+            };
+            if (runtimeType === 'wasm') {
+                // Blazor WebAssembly Standalone App
+                Blazor.start(webAssemblyConfig);
+            } else if (runtimeType === 'united') {
+                // Blazor Web App (formally Blazor United)
+                Blazor.start({ webAssembly: webAssemblyConfig });
+            }
+        })();
+    </script>
 </body>
 
 </html>

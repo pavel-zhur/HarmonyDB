@@ -55,10 +55,11 @@ jobs:
     - name: Build
       run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
     - name: Publish 1
-      run: dotnet publish OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
+      working-directory: ./OneShelf.Frontend/OneShelf.Frontend.Web
+      run: ./publish.ps1
 
 
-    - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Web/bin/Release/net8.0/publish/* -Destination OneShelf.Frontend.Web.zip
+    - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Web/bin/Publish/* -Destination OneShelf.Frontend.Web.zip
   
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
