@@ -76,16 +76,21 @@ Moving forward, I plan to develop an open source harmonic database index engine 
   - Indexed DB.
   - Notification of new version when it is ready. The service worker code is tweaked a bit to make the updates arrive faster.
   - Library updates only when changed (hash comparison saves traffic).
+  - Published once, and then a quick buildless transformation is run for different tenants to update the app settings and the build number.
 - Open AI:
   - Chat optimization to keep API usage costs low in an infinite dialog. GPT functions are used to detect when users change topics and the context can be cut.
 - Chords and lyrics:
   - A unified model suitable for songs from different sources.
 - All front ends are hosted statically, ASP.Net is not used.
+- Nuget packages are built for the custom .Net song sources services.
 
 ## Projects and resources used
 - The online tuner based on web audio api, https://github.com/qiuxiang/tuner
 - Limitless - Responsive Web Application Kit, https://themeforest.net/item/limitless-responsive-web-application-kit/13080328
 - Materials from https://muzland.info/, https://muzland.ru/
+- Playing guitar chords in the browser with the Web Audio API: https://codepen.io/johnslipper/embed/eYgZMRL/
+- Browser SIMD support auto-detect and version switching (.Net 8 Blazor wasm fix for older iPhones and other devices): https://github.com/LostBeard/BlazorWASMSIMDDetectExample
+- Free 1-minute testing on iPhones and other mobile versions: https://live.browserstack.com/
 
 ## Thanks for the inspiration
 - Adam Neely, https://www.youtube.com/@AdamNeely
