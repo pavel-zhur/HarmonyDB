@@ -14,7 +14,7 @@ Moving forward, I plan to develop an open source harmonic database index engine 
 
 ## Planned and under development goals
 - A harmony index built on thousands of songs, containing statistics of chord progression movements and options, supplemented by music-theoretical analysis features (modulations, cadences, chord sequence connections and mutations, etc.), associated with the songs' metadata (years, genres, countries), built as an open-source database engine responding to any kind of complex query, with a public API.
-  - Development is ongoing. The plan is to support more and more query types of any complexity as new use cases emerge. At this early stage, the set of potential use cases is unpredictable, and the potential seems large (some ideas: https://github.com/pavel-zhur/HarmonyDB/wiki/Analysis-ideas).
+  - Development is ongoing. The plan is to support more and more query types of any complexity as new use cases emerge. At this early stage, the set of potential use cases is unpredictable, and the potential seems large ([some ideas](https://github.com/pavel-zhur/HarmonyDB/wiki/Analysis-ideas)).
 - A front-end that allows users to query the index, get results with visualizations in the songs, save and publish the searches and results with the wiki functionality, allowing the community to share and discuss their music analysis right there.
   - Simplistic and barebone.
 - A visual representation of harmony movements, trends and possibilities, connected to the index data source. A helper navigator of possible harmony changes from one progression to another, certain modulations, and whatever else it may be.
