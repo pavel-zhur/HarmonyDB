@@ -21,11 +21,6 @@ Moving forward, I plan to develop an open source harmonic database index engine 
   - It is unlikely that I will be able to accomplish this alone, as I am not experienced enough in both music theory and front-end development. I hope for a community collaboration one day.
 - An open source backend for the distributed song chord library exchange network, with optional pluggable sources and conditional access or distribution rules, allowing any existing song chord collection to join the index network and/or use the index features to provide more functionality to their users (the index comes with the LGPL license).
 
-## Projects and resources used
-- The online tuner based on web audio api, https://github.com/qiuxiang/tuner
-- Limitless - Responsive Web Application Kit, https://themeforest.net/item/limitless-responsive-web-application-kit/13080328
-- Materials from https://muzland.info/, https://muzland.ru/
-
 ## Front end features in detail
 - Works as an app on Android, IPhone, desktop browsers (.Net 8 Blazor web assembly app).
 - Responsive layout on mobile and desktop. On PC monitors, a library is displayed along with the chords (two-column layout). Quick jump to the top icons are provided. Loading indicators are shown, the app is responsive to user interaction.
@@ -85,7 +80,12 @@ Moving forward, I plan to develop an open source harmonic database index engine 
   - Chat optimization to keep API usage costs low in an infinite dialog. GPT functions are used to detect when users change topics and the context can be cut.
 - Chords and lyrics:
   - A unified model suitable for songs from different sources.
-- All front ends are hosted statically, ASP.Net is not used. 
+- All front ends are hosted statically, ASP.Net is not used.
+
+## Projects and resources used
+- The online tuner based on web audio api, https://github.com/qiuxiang/tuner
+- Limitless - Responsive Web Application Kit, https://themeforest.net/item/limitless-responsive-web-application-kit/13080328
+- Materials from https://muzland.info/, https://muzland.ru/
 
 ## Thanks for the inspiration
 - Adam Neely, https://www.youtube.com/@AdamNeely
