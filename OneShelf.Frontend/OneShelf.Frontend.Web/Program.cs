@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BlazorApplicationInsights;
 using Blazored.LocalStorage;
 using DnetIndexedDb;
 using DnetIndexedDb.Fluent;
@@ -43,7 +44,11 @@ builder.Services
     .AddSingleton<FingeringsProvider>()
     .AddCollectivesApiClient(builder.Configuration)
     .AddFrontendApiClient(builder.Configuration)
-    .Configure<FrontendOptions>(o => builder.Configuration.GetSection(nameof(FrontendOptions)).Bind(o));
+    .Configure<FrontendOptions>(o => builder.Configuration.GetSection(nameof(FrontendOptions)).Bind(o))
+    .AddBlazorApplicationInsights(config =>
+    {
+        config.ConnectionString = builder.Configuration.GetSection(nameof(FrontendOptions)).Get<FrontendOptions>()!.AppInsightsConnectionString;
+    });
 
 builder.Services
     .AddIndexedDbDatabase<MyIndexedDb>(options =>

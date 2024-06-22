@@ -1,0 +1,70 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: frontend
+
+permissions:
+  contents: write
+
+on:
+# Triggers the workflow on push or pull request events but only for the master branch
+  #push:
+    #branches: [ master ]
+# Allows you to run this workflow manually from the Actions tab
+  #workflow_dispatch:
+  push:
+    tags:
+      - "v*-f"
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+#    - name: Wasm tools
+#      run: dotnet workload install wasm-tools
+
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+    - name: Replace 1
+      uses: richardrigutins/replace-in-files@v2
+      with:
+        files: 'OneShelf.Frontend/OneShelf.Frontend.Web/wwwroot/service-worker.published.js'
+        search-text: '{#CACHE_VERSION#}'
+        replacement-text: "${{ github.ref_name }}-${{ steps.date.outputs.date }}"
+
+    - name: Replace 2
+      uses: richardrigutins/replace-in-files@v2
+      with:
+        files: 'OneShelf.Frontend/OneShelf.Frontend.Web/wwwroot/index.html'
+        search-text: '{#CACHE_VERSION#}'
+        replacement-text: "${{ github.ref_name }}-${{ steps.date.outputs.date }}"
+
+
+    - name: Restore dependencies
+      run: dotnet restore OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj
+    - name: Build
+      run: dotnet build OneShelf.Frontend/OneShelf.Frontend.Web/OneShelf.Frontend.Web.csproj --no-restore --configuration Release
+    - name: Publish 1
+      working-directory: ./OneShelf.Frontend/OneShelf.Frontend.Web
+      run: ./publish.ps1
+
+
+    - run: Compress-Archive -Path OneShelf.Frontend/OneShelf.Frontend.Web/bin/Publish/* -Destination OneShelf.Frontend.Web.zip
+  
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: true
+        files: |
+          LICENSE
+          OneShelf.Frontend.Web.zip
