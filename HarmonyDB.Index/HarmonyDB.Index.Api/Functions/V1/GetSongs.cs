@@ -41,7 +41,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                     .ToList();
 
             var results = await Task.WhenAll(request.ExternalIds
-                .GroupBy(x => _downstreamApiClient.DownstreamSourceIndicesBySourceKey[_downstreamApiClient.GetSourceKey(x)])
+                .GroupBy(_downstreamApiClient.GetDownstreamSourceIndex)
                 .Select(source => Process(source.Key, source.ToHashSet())));
 
             return new()

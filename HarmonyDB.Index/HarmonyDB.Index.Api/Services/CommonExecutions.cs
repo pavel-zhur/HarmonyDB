@@ -42,9 +42,9 @@ public class CommonExecutions
 
     public async Task<GetSongResponse> GetSong(GetSongRequest request)
     {
-        var sourceKey = _downstreamApiClient.GetSourceKey(request.ExternalId);
-        var getSongResponse = await _downstreamApiClient.V1GetSong(request.Identity, _downstreamApiClient.DownstreamSourceIndicesBySourceKey[sourceKey], request.ExternalId);
-        getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(sourceKey);
+        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndex(request.ExternalId);
+        var getSongResponse = await _downstreamApiClient.V1GetSong(request.Identity, sourceIndex, request.ExternalId);
+        getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(getSongResponse.Song.Source);
         return getSongResponse;
     }
 }

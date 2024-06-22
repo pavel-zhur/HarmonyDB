@@ -33,7 +33,7 @@ public class DownstreamApiClient
 
     public string GetSourceTitle(string sourceKey) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => s.Key == sourceKey).Title;
     
-    public string GetSourceKey(string externalId) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => externalId.StartsWith(s.ExternalIdPrefix)).Key;
+    public int GetDownstreamSourceIndex(string externalId) => _options.DownstreamSources.WithIndices().Single(s => s.x.ExternalIdPrefixes.Any(externalId.StartsWith)).i;
 
     public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex, GetProgressionsIndexRequest request, CancellationToken cancellationToken)
         => await _clients[sourceIndex].VInternalGetProgressionsIndex(request, cancellationToken);

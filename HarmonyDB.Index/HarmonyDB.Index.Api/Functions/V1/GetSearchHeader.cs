@@ -29,10 +29,10 @@ public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest,
     protected override async Task<GetSearchHeaderResponse> Execute(HttpRequest httpRequest,
         GetSearchHeaderRequest request)
     {
-        var sourceKey = _downstreamApiClient.GetSourceKey(request.ExternalId);
-        var searchHeader = await _downstreamApiClient.V1GetSearchHeader(request.Identity, _downstreamApiClient.DownstreamSourceIndicesBySourceKey[sourceKey], request.ExternalId);
+        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndex(request.ExternalId);
+        var searchHeader = await _downstreamApiClient.V1GetSearchHeader(request.Identity, sourceIndex, request.ExternalId);
 
-        searchHeader.Source = sourceKey;
+        searchHeader.Source = _downstreamApiClient.GetSourceTitle(searchHeader.Source);
 
         return new()
         {
