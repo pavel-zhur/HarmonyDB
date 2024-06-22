@@ -26,7 +26,7 @@ public class CommonExecutions
         var all = results
             .WithIndices()
             .SelectMany(s => s.x
-                .Where(x => _downstreamApiClient.DownstreamSourceIndicesBySourceKey[x.Value.Source] == s.i)
+                .Where(x => _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(x.Value.Source) == s.i)
                 .Select(x =>
                 {
                     x.Value.Source = _downstreamApiClient.GetSourceTitle(x.Value.Source);
@@ -42,7 +42,7 @@ public class CommonExecutions
 
     public async Task<GetSongResponse> GetSong(GetSongRequest request)
     {
-        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndex(request.ExternalId);
+        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndexByExternalId(request.ExternalId);
         var getSongResponse = await _downstreamApiClient.V1GetSong(request.Identity, sourceIndex, request.ExternalId);
         getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(getSongResponse.Song.Source);
         return getSongResponse;

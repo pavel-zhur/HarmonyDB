@@ -17,15 +17,10 @@ public class DownstreamApiClient
     {
         _options = options.Value;
 
-        DownstreamSourceIndicesBySourceKey = _options.DownstreamSources
-            .WithIndices()
-            .SelectMany(x => x.x.Sources.Select(s => (x.i, s.Key)))
-            .ToDictionary(x => x.Key, x => x.i);
-
         _clients = _options.DownstreamSources.Select(o => new SourceApiClient(o, httpClientFactory)).ToList();
     }
 
-    public IReadOnlyDictionary<string, int> DownstreamSourceIndicesBySourceKey { get; }
+    public int GetDownstreamSourceIndexBySourceKey(string sourceKey) => _options.DownstreamSources.WithIndices().Single(s => s.x.Sources.Any(s => s.Key == sourceKey)).i;
 
     public IEnumerable<int> GetDownstreamSourceIndices(Func<DownstreamApiClientOptions.DownstreamSourceOptions, bool> selector) => _options.DownstreamSources.WithIndices().Where(x => selector(x.x)).Select(x => x.i);
     
@@ -33,7 +28,7 @@ public class DownstreamApiClient
 
     public string GetSourceTitle(string sourceKey) => _options.DownstreamSources.SelectMany(x => x.Sources).Single(s => s.Key == sourceKey).Title;
     
-    public int GetDownstreamSourceIndex(string externalId) => _options.DownstreamSources.WithIndices().Single(s => s.x.ExternalIdPrefixes.Any(externalId.StartsWith)).i;
+    public int GetDownstreamSourceIndexByExternalId(string externalId) => _options.DownstreamSources.WithIndices().Single(s => s.x.ExternalIdPrefixes.Any(externalId.StartsWith)).i;
 
     public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex, GetProgressionsIndexRequest request, CancellationToken cancellationToken)
         => await _clients[sourceIndex].VInternalGetProgressionsIndex(request, cancellationToken);

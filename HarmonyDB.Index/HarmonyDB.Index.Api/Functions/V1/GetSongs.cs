@@ -32,7 +32,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
             async Task<List<Chords>> Process(int sourceIndex, IReadOnlyCollection<string> externalIds) 
                 => (await _downstreamApiClient.V1GetSongs(request.Identity, sourceIndex, externalIds.ToList()))
                     .Songs
-                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.DownstreamSourceIndicesBySourceKey[x.Value.Source])
+                    .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(x.Value.Source))
                     .Select(x =>
                     {
                         x.Value.Source = _downstreamApiClient.GetSourceTitle(x.Value.Source);
@@ -41,7 +41,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                     .ToList();
 
             var results = await Task.WhenAll(request.ExternalIds
-                .GroupBy(_downstreamApiClient.GetDownstreamSourceIndex)
+                .GroupBy(_downstreamApiClient.GetDownstreamSourceIndexByExternalId)
                 .Select(source => Process(source.Key, source.ToHashSet())));
 
             return new()

@@ -47,7 +47,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                 Headers = all
                     .WithIndices()
                     .SelectMany(x => x.x.Headers
-                        .Where(h => _downstreamApiClient.DownstreamSourceIndicesBySourceKey[h.Source] == x.i)
+                        .Where(h => _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(h.Source) == x.i)
                         .Select(h =>
                         {
                             h.Source = _downstreamApiClient.GetSourceTitle(h.Source);
