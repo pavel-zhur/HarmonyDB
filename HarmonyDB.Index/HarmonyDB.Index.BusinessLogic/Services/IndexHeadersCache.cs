@@ -10,7 +10,7 @@ public class IndexHeadersCache : FileCacheBase<byte[], IndexHeaders>
     {
     }
 
-    protected override string Key => "SongHeaders";
+    protected override string Key => "IndexHeaders";
 
     public async Task Save(byte[] model)
     {
