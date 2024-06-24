@@ -63,7 +63,7 @@ public class DownstreamApiClient
 
         if (downstreamOptions.TenantTagsForbidden.Intersect(tags).Any()) return false;
 
-        if (downstreamOptions.TenantTagsRequired.Any() && downstreamOptions.TenantTagsRequired.Any(x => !tags.Contains(x))) return false;
+        if (downstreamOptions.TenantTagsRequired.Any() && !downstreamOptions.TenantTagsRequired.Intersect(tags).Any()) return false;
 
         return true;
     }
