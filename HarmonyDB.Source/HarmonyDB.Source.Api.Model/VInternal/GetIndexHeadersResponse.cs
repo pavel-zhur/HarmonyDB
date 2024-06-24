@@ -2,7 +2,7 @@ using HarmonyDB.Source.Api.Model.V1;
 
 namespace HarmonyDB.Source.Api.Model.VInternal;
 
-public class GetSongHeadersResponse
+public class GetIndexHeadersResponse
 {
     public required IReadOnlyList<IndexHeader> Headers { get; init; }
 

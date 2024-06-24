@@ -10,5 +10,5 @@ public static class SourceApiUrls
     public const string V1Ping = nameof(V1Ping);
     
     public const string VInternalGetProgressionsIndex = nameof(VInternalGetProgressionsIndex);
-    public const string VInternalGetSongHeaders = nameof(VInternalGetSongHeaders);
+    public const string VInternalGetIndexHeaders = nameof(VInternalGetIndexHeaders);
 }

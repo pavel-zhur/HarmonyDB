@@ -18,15 +18,15 @@ public class IndexFunctions
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
-    private readonly SongHeadersCache _songHeadersCache;
+    private readonly IndexHeadersCache _indexHeadersCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, SongHeadersCache songHeadersCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
         _progressionsCache = progressionsCache;
         _loopsStatisticsCache = loopsStatisticsCache;
-        _songHeadersCache = songHeadersCache;
+        _indexHeadersCache = indexHeadersCache;
 
         securityContext.InitService();
     }
@@ -65,22 +65,22 @@ public class IndexFunctions
         return new OkResult();
     }
 
-    [Function(nameof(VDevSaveSongHeaders))]
-    public async Task<IActionResult> VDevSaveSongHeaders([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, CancellationToken cancellationToken)
+    [Function(nameof(VDevSaveIndexHeaders))]
+    public async Task<IActionResult> VDevSaveIndexHeaders([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, CancellationToken cancellationToken)
     {
-        await _songHeadersCache.Save(new SongHeaders
+        await _indexHeadersCache.Save(new IndexHeaders
         {
             Headers = (await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreSongsProvidedForIndexResults)
                     .Select(async i =>
                     {
                         List<IndexHeader> headers = new();
                         var iteration = 0;
-                        GetSongHeadersRequest request = new();
+                        GetIndexHeadersRequest request = new();
                         while (true)
                         {
                             cancellationToken.ThrowIfCancellationRequested();
 
-                            var result = await _downstreamApiClient.VInternalGetSongHeaders(i, request, cancellationToken);
+                            var result = await _downstreamApiClient.VInternalGetIndexHeaders(i, request, cancellationToken);
                             headers.AddRange(result.Headers);
 
                             _logger.LogInformation("Iteration {iteration} {token}", iteration++, request.NextToken);
@@ -105,10 +105,10 @@ public class IndexFunctions
         return new OkObjectResult((await _progressionsCache.Get()).Count);
     }
 
-    [Function(nameof(VDevGetSongHeadersItemsCount))]
-    public async Task<IActionResult> VDevGetSongHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetIndexHeadersItemsCount))]
+    public async Task<IActionResult> VDevGetIndexHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        return new OkObjectResult((await _songHeadersCache.Get()).Headers.Count);
+        return new OkObjectResult((await _indexHeadersCache.Get()).Headers.Count);
     }
 
     [Function(nameof(VDevGetLoopStatisticsCacheItemsCount))]

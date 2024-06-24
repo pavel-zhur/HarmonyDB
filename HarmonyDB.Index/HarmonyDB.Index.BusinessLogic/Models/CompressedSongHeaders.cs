@@ -3,7 +3,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
-public class SongHeaders
+public class IndexHeaders
 {
     public required IReadOnlyList<IndexHeader> Headers { get; set; }
 
@@ -52,7 +52,7 @@ public class SongHeaders
         return stream2.ToArray().Concat(stream1.ToArray()).ToArray();
     }
 
-    public static SongHeaders Deserialize(byte[] fileModel)
+    public static IndexHeaders Deserialize(byte[] fileModel)
     {
         using var stream = new MemoryStream(fileModel);
         using var reader = new BinaryReader(stream);

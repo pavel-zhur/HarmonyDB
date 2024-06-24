@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class SongHeadersCache : FileCacheBase<byte[], SongHeaders>
+public class IndexHeadersCache : FileCacheBase<byte[], IndexHeaders>
 {
-    public SongHeadersCache(ILogger<SongHeadersCache> logger)
+    public IndexHeadersCache(ILogger<IndexHeadersCache> logger)
         : base(logger)
     {
     }
@@ -17,6 +17,6 @@ public class SongHeadersCache : FileCacheBase<byte[], SongHeaders>
         await StreamCompressSerialize(model);
     }
 
-    protected override SongHeaders ToPresentationModel(byte[] fileModel)
-        => SongHeaders.Deserialize(fileModel);
+    protected override IndexHeaders ToPresentationModel(byte[] fileModel)
+        => IndexHeaders.Deserialize(fileModel);
 }

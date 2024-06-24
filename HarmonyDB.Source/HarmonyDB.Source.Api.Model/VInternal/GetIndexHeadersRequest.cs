@@ -1,6 +1,6 @@
 namespace HarmonyDB.Source.Api.Model.VInternal;
 
-public class GetSongHeadersRequest
+public class GetIndexHeadersRequest
 {
     public string? NextToken { get; set; }
 }
