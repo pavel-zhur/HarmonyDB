@@ -1,3 +1,5 @@
+using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Models;
 using HarmonyDB.Index.BusinessLogic.Services;
 using HarmonyDB.Index.DownstreamApi.Client;
@@ -19,14 +21,18 @@ public class IndexFunctions
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
     private readonly IndexHeadersCache _indexHeadersCache;
+    private readonly InputParser _inputParser;
+    private readonly ProgressionsSearch _progressionsSearch;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
         _progressionsCache = progressionsCache;
         _loopsStatisticsCache = loopsStatisticsCache;
         _indexHeadersCache = indexHeadersCache;
+        _inputParser = inputParser;
+        _progressionsSearch = progressionsSearch;
 
         securityContext.InitService();
     }
@@ -128,5 +134,11 @@ public class IndexFunctions
     {
         await _loopsStatisticsCache.Rebuild();
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
+    }
+
+    [Function(nameof(VDevFindAndCount))]
+    public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
+    {
+        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.Parse(searchQuery)).Count);
     }
 }

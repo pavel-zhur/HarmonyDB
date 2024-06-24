@@ -16,7 +16,7 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly ProgressionsCache _progressionsCache;
 
-    public LoopsStatisticsCache(ILogger<LoopsStatisticsCache> logger, ProgressionsSearch progressionsSearch, ProgressionsCache progressionsCache) 
+    public LoopsStatisticsCache(ILogger<LoopsStatisticsCache> logger, ProgressionsSearch progressionsSearch, ProgressionsCache progressionsCache)
         : base(logger)
     {
         _progressionsSearch = progressionsSearch;
