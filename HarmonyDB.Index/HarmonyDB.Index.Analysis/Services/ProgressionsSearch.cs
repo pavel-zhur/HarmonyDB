@@ -47,10 +47,10 @@ public class ProgressionsSearch
             harmonyGroupsWithIsFirst.ToDictionary(x => ((ChordsProgression)x.Key.progression).HarmonySequence[x.Key.index].harmonyGroup, x => x.Value));
     }
 
-    public Dictionary<ISearchableChordsProgression, float> Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase)
-        => Search(progressions, searchPhrase, false).foundProgressionsWithCoverage;
+    public Dictionary<ISearchableChordsProgression, float> Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, int? top = int.MaxValue)
+        => Search(progressions, searchPhrase, false, top).foundProgressionsWithCoverage;
 
-    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, bool harmonyGroupsToo)
+    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, bool harmonyGroupsToo, int? top = int.MaxValue)
     {
         (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) result = (new(), new());
 
@@ -89,6 +89,9 @@ public class ProgressionsSearch
                         new KeyValuePair<(ISearchableChordsProgression progression, int index), bool>(
                             (progression, i), totalFoundFirsts!.Contains(i))), false);
                 }
+
+                if (result.foundProgressionsWithCoverage.Count == top)
+                    break;
             }
         }
         

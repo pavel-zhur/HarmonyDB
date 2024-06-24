@@ -1,3 +1,4 @@
+using HarmonyDB.Index.Analysis.Models.Interfaces;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Models;
@@ -23,8 +24,9 @@ public class IndexFunctions
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
+    private readonly SearchOrderCache _searchOrderCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -33,6 +35,7 @@ public class IndexFunctions
         _indexHeadersCache = indexHeadersCache;
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
+        _searchOrderCache = searchOrderCache;
 
         securityContext.InitService();
     }
@@ -99,7 +102,7 @@ public class IndexFunctions
                         return headers;
                     })))
                 .SelectMany(x => x)
-                .ToList()
+                .ToDictionary(x => x.ExternalId)
         }.Serialize());
 
         return new OkResult();
@@ -140,5 +143,17 @@ public class IndexFunctions
     public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
     {
         return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.Parse(searchQuery)).Count);
+    }
+
+    [Function(nameof(VDevFindTop100))]
+    public async Task<IActionResult> VDevFindTop100([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
+    {
+        var progressions = await _progressionsCache.Get();
+        var progressionsReverse = progressions.ToDictionary(x => (ISearchableChordsProgression)x.Value, x => x.Key);
+        var searchOrder = await _searchOrderCache.Get();
+        var headers = await _indexHeadersCache.Get();
+        var found = _progressionsSearch.Search(searchOrder.Select(x => progressions[x]), _inputParser.Parse(searchQuery), 100);
+
+        return new OkObjectResult(found.Select(x => headers.Headers[progressionsReverse[x.Key]]).ToList());
     }
 }

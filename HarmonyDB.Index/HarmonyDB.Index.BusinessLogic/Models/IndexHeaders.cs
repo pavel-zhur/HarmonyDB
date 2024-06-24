@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.BusinessLogic.Models;
 
 public class IndexHeaders
 {
-    public required IReadOnlyList<IndexHeader> Headers { get; set; }
+    public required IReadOnlyDictionary<string, IndexHeader> Headers { get; set; }
 
     public byte[] Serialize()
     {
@@ -23,7 +23,7 @@ public class IndexHeaders
         using var writer2 = new BinaryWriter(stream2);
 
         writer1.Write(Headers.Count);
-        foreach (var header in Headers)
+        foreach (var header in Headers.Values)
         {
             writer1.Write(header.ExternalId);
             writer1.Write(Add(header.Source, sources));
@@ -89,7 +89,7 @@ public class IndexHeaders
 
         return new()
         {
-            Headers = result,
+            Headers = result.ToDictionary(x => x.ExternalId),
         };
     }
 }

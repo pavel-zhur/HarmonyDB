@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
@@ -72,10 +73,17 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
                 };
             }
 
+            var started = DateTime.Now; 
+            var fileModel = await StreamDecompressDeserialize();
+            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds); 
+            started = DateTime.Now;
+
             _cache = new()
             {
-                Data = ToPresentationModel(await StreamDecompressDeserialize()),
+                Data = ToPresentationModel(fileModel),
             };
+
+            Logger.LogInformation("Building the presentation model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds);
         }
         catch (Exception e)
         {
