@@ -117,6 +117,12 @@ public class IndexFunctions
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
     }
 
+    [Function(nameof(VDevGetLoopStatisticsCacheTop1000))]
+    public async Task<IActionResult> VDevGetLoopStatisticsCacheTop1000([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        return new OkObjectResult((await _loopsStatisticsCache.Get()).Take(1000).ToList());
+    }
+
     [Function(nameof(VDevRebuildLoopStatisticsCache))]
     public async Task<IActionResult> VDevRebuildLoopStatisticsCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {

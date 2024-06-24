@@ -2,12 +2,16 @@
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Services;
 using System.Collections.Concurrent;
+using HarmonyDB.Common;
+using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
+using OneShelf.Common;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, LoopStatistics>, IReadOnlyDictionary<string, LoopStatistics>>
+public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, CompactLoopStatistics>, List<LoopStatistics>>
 {
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly ProgressionsCache _progressionsCache;
@@ -21,20 +25,49 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Lo
 
     protected override string Key => "LoopStatistics";
 
-    protected override IReadOnlyDictionary<string, LoopStatistics> ToPresentationModel(
-        IReadOnlyDictionary<string, LoopStatistics> fileModel)
-        => fileModel;
+    protected override List<LoopStatistics> ToPresentationModel(IReadOnlyDictionary<string, CompactLoopStatistics> fileModel)
+    {
+        string ToChord(int note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
+
+        var idsToSequences = fileModel.Keys.ToDictionary(x => x, Loop.Deserialize);
+
+        return fileModel
+            .Select(l =>
+            {
+                var sequence = idsToSequences[l.Key].ToArray();
+                var note = sequence[0].FromType == ChordType.Minor ? 0 : 3;
+                return new LoopStatistics
+                {
+                    Progression = string.Join(" ", ToChord(note, sequence[0].FromType)
+                        .Once()
+                        .Concat(sequence
+                            //.Take(sequence.Length - 1)
+                            .Select(m =>
+                            {
+                                note = Note.Normalize(note + m.RootDelta);
+                                return ToChord(note, m.ToType);
+                            }))),
+                    Length = sequence.Length,
+                    TotalOccurrences = l.Value.TotalOccurrences,
+                    TotalSuccessions = l.Value.TotalSuccessions,
+                    TotalSongs = l.Value.ExternalIds.Count,
+                };
+            })
+            .OrderByDescending(x => x.TotalOccurrences)
+            .ThenByDescending(x => x.TotalSuccessions)
+            .ToList();
+    }
 
     public async Task Rebuild()
     {
         await StreamCompressSerialize(await GetAllLoops(await _progressionsCache.Get()));
     }
 
-    private async Task<ConcurrentDictionary<string, LoopStatistics>> GetAllLoops(IReadOnlyDictionary<string, CompactChordsProgression> dictionary)
+    private async Task<ConcurrentDictionary<string, CompactLoopStatistics>> GetAllLoops(IReadOnlyDictionary<string, CompactChordsProgression> dictionary)
     {
         var cc = 0;
         var cf = 0;
-        ConcurrentDictionary<string, LoopStatistics> loopsBag = new();
+        ConcurrentDictionary<string, CompactLoopStatistics> loopsBag = new();
 
         await Parallel.ForEachAsync(dictionary, (x, _) =>
         {
@@ -54,8 +87,8 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Lo
                     lock (bag)
                     {
                         bag.ExternalIds.Add(externalId);
-                        bag.SumOccurrences += loop.Occurrences;
-                        bag.SumSuccessions += loop.Successions;
+                        bag.TotalOccurrences += loop.Occurrences;
+                        bag.TotalSuccessions += loop.Successions;
                     }
                 }
 

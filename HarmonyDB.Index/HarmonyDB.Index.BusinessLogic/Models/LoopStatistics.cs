@@ -1,15 +1,14 @@
-﻿using System.Text.Json.Serialization;
-
-namespace HarmonyDB.Index.BusinessLogic.Models;
+﻿namespace HarmonyDB.Index.BusinessLogic.Models;
 
 public class LoopStatistics
 {
-    [JsonPropertyName("e")]
-    public required List<string> ExternalIds { get; init; }
+    public required string Progression { get; init; }
 
-    [JsonPropertyName("o")]
-    public int SumOccurrences { get; set; }
+    public required int Length { get; init; }
 
-    [JsonPropertyName("s")]
-    public int SumSuccessions { get; set; }
+    public required int TotalSongs { get; init; }
+
+    public required int TotalSuccessions { get; init; }
+
+    public required int TotalOccurrences { get; init; }
 }
