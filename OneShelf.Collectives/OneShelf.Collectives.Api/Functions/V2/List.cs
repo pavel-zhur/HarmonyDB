@@ -20,8 +20,8 @@ public class List : AuthorizationFunctionBase<ListRequest, ListResponse>
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
-    public List(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager) 
-        : base(loggerFactory, authorizationApiClient)
+    public List(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _collectivesCosmosDatabase = collectivesCosmosDatabase;
         _songsOperations = songsOperations;

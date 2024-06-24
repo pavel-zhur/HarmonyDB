@@ -20,7 +20,8 @@ namespace OneShelf.Sources.Self.Api.Functions.V1
         private readonly CollectivesApiClient _collectivesApiClient;
         private readonly StructureParser _structureParser;
 
-        public GetSong(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, CollectivesApiClient collectivesApiClient, StructureParser structureParser, AuthorizationApiClient authorizationApiClient) : base(loggerFactory, authorizationApiClient)
+        public GetSong(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, CollectivesApiClient collectivesApiClient, StructureParser structureParser, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _metadataBuilder = metadataBuilder;
             _collectivesApiClient = collectivesApiClient;

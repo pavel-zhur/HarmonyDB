@@ -3,6 +3,7 @@ using HarmonyDB.Source.Api.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Model;
+using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Songs.Hashing;
@@ -18,20 +19,22 @@ public class CollectionReaderV3
     private readonly ILogger<CollectionReaderV3> _logger;
     private readonly SongsDatabase _songsDatabase;
     private readonly SourceApiClient _sourceApiClient;
+    private readonly SecurityContext _securityContext;
 
-    public CollectionReaderV3(ILogger<CollectionReaderV3> logger, SongsDatabase songsDatabase, SourceApiClient sourceApiClient)
+    public CollectionReaderV3(ILogger<CollectionReaderV3> logger, SongsDatabase songsDatabase, SourceApiClient sourceApiClient, SecurityContext securityContext)
     {
         _logger = logger;
         _songsDatabase = songsDatabase;
         _sourceApiClient = sourceApiClient;
+        _securityContext = securityContext;
     }
 
-    public async Task<Collection> Read(int tenantId, Identity identity)
+    public async Task<Collection> Read(Identity identity)
     {
         var songs = await _songsDatabase.Songs
-            .Where(x => x.TenantId == tenantId)
-            .Include(x => x.Comments.Where(c => c.User.TenantId == tenantId))
-            .Include(x => x.Likes.Where(c => c.User.TenantId == tenantId))
+            .Where(x => x.TenantId == _securityContext.TenantId)
+            .Include(x => x.Comments.Where(c => c.User.TenantId == _securityContext.TenantId))
+            .Include(x => x.Likes.Where(c => c.User.TenantId == _securityContext.TenantId))
             .ThenInclude(x => x.Version)
             .Include(x => x.Versions)
             .ThenInclude(x => x.Comments)
@@ -55,7 +58,7 @@ public class CollectionReaderV3
             .ToList();
 
         var users = await _songsDatabase.Users
-            .Where(x => x.TenantId == tenantId)
+            .Where(x => x.TenantId == _securityContext.TenantId)
             .ToListAsync();
 
         var sourcesAndExternalIds = await _sourceApiClient.V1GetSourcesAndExternalIds(identity, songs
@@ -63,7 +66,7 @@ public class CollectionReaderV3
             .Select(x => x.Uri));
 
         var likeCategories = await _songsDatabase.LikeCategories
-            .Where(x => x.TenantId == tenantId)
+            .Where(x => x.TenantId == _securityContext.TenantId)
             .Where(x => x.Access != LikeCategoryAccess.Private || x.UserId == identity.Id)
             .ToDictionaryAsync(x => x.Id);
 

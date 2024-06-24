@@ -14,8 +14,8 @@ namespace HarmonyDB.Index.Api.Functions.V1
     {
         private readonly CommonExecutions _commonExecutions;
 
-        public GetSong(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions) 
-            : base(loggerFactory, authorizationApiClient)
+        public GetSong(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions, SecurityContext securityContext) 
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _commonExecutions = commonExecutions;
         }

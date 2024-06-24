@@ -22,8 +22,8 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private readonly SourceApiClient _sourceApiClient;
         private readonly SongsDatabase _songsDatabase;
 
-        public Search(ILoggerFactory loggerFactory, SourceApiClient sourceApiClient, AuthorizationApiClient authorizationApiClient, SongsDatabase songsDatabase)
-            : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, SourceApiClient sourceApiClient, AuthorizationApiClient authorizationApiClient, SongsDatabase songsDatabase, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _sourceApiClient = sourceApiClient;
             _songsDatabase = songsDatabase;
@@ -50,7 +50,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
 
         private async Task<SearchResponse> GoLocal(Identity identity, int tag)
         {
-            var version = await _songsDatabase.Versions.Where(x => x.Song.TenantId == TenantId).Include(x => x.Song).ThenInclude(x => x.Artists).FirstOrDefaultAsync(x => x.CollectiveSearchTag == tag);
+            var version = await _songsDatabase.Versions.Where(x => x.Song.TenantId == SecurityContext.TenantId).Include(x => x.Song).ThenInclude(x => x.Artists).FirstOrDefaultAsync(x => x.CollectiveSearchTag == tag);
             if (version != null)
             {
                 var attributes = await _sourceApiClient.V1GetSourcesAndExternalIds(identity, version.Uri.Once());

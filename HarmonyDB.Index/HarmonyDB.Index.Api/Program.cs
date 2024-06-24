@@ -10,6 +10,7 @@ using Nito.AsyncEx;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Collectives.Api.Client;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
 
 var host = new HostBuilder()
     .ConfigureApi()
@@ -23,7 +24,8 @@ var host = new HostBuilder()
             .AddAuthorizationApiClient(context.Configuration)
             .AddDownstreamApiClient(context.Configuration)
             .AddScoped<CommonExecutions>()
-            .AddIndexBusinessLogic();
+            .AddIndexBusinessLogic()
+            .AddSecurityContext();
     })
     .Build();
 

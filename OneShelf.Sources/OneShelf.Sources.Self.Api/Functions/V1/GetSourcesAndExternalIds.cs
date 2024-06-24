@@ -19,7 +19,8 @@ public class GetSourcesAndExternalIds : AuthorizationFunctionBase<GetSourcesAndE
     private readonly MetadataBuilder _metadataBuilder;
     private readonly SelfApiOptions _options;
 
-    public GetSourcesAndExternalIds(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, IOptions<SelfApiOptions> options, AuthorizationApiClient authorizationApiClient) : base(loggerFactory, authorizationApiClient)
+    public GetSourcesAndExternalIds(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, IOptions<SelfApiOptions> options, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _metadataBuilder = metadataBuilder;
         _options = options.Value;

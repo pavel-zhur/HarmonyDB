@@ -23,7 +23,7 @@ namespace OneShelf.Authorization.Api.Functions
 
         protected override async Task<CheckIdentityResponse> Execute(Identity request)
         {
-            var (authorizationError, tenantId, arePdfsAllowed) = await _authorizationChecker.Check(request);
+            var (authorizationError, tenantId, arePdfsAllowed, tenantTags) = await _authorizationChecker.Check(request);
 
             return new()
             {
@@ -31,6 +31,7 @@ namespace OneShelf.Authorization.Api.Functions
                 IsSuccess = tenantId.HasValue,
                 TenantId = tenantId,
                 ArePdfsAllowed = arePdfsAllowed,
+                TenantTags = tenantTags,
             };
         }
     }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Frontend.Api.AuthorizationQuickCheck;
 using OneShelf.Frontend.Api.Model;
@@ -32,7 +33,8 @@ var host = new HostBuilder()
         .AddPdfsApiClient(context.Configuration)
         .AddIllustrationsApiClient(context.Configuration)
         .AddFrontendCosmosDatabase(context.Configuration)
-        .AddSelfApiClient(context.Configuration))
+        .AddSelfApiClient(context.Configuration)
+        .AddSecurityContext())
     .Build();
 
 host.Run();

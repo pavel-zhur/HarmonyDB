@@ -14,8 +14,8 @@ public class GetSourcesAndExternalIds : AuthorizationFunctionBase<GetSourcesAndE
 {
     private readonly CommonExecutions _commonExecutions;
 
-    public GetSourcesAndExternalIds(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions)
-        : base(loggerFactory, authorizationApiClient)
+    public GetSourcesAndExternalIds(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _commonExecutions = commonExecutions;
     }

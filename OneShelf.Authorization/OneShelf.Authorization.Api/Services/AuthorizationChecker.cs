@@ -24,12 +24,12 @@ public class AuthorizationChecker
         _authorizationOptions = authorizationOptions.Value;
     }
 
-    public async Task<(string? authorizationError, int? tenantId, bool? arePdfsAllowed)> Check(Identity identity)
+    public async Task<(string? authorizationError, int? tenantId, bool? arePdfsAllowed, IReadOnlyList<string>? tenantTags)> Check(Identity identity)
     {
         if (!(_authorizationOptions.AllowBadHash && identity.Hash == _authorizationOptions.BadHash || CheckHash(identity)))
         {
             _logger.LogInformation("Bad hash: {identity}.", identity);
-            return ("BadHash", null, null);
+            return ("BadHash", null, null, null);
         }
 
         var user = await _songsOperations.SongsDatabase.Users.Include(x => x.Tenant).SingleOrDefaultAsync(x => x.Id == identity.Id);
@@ -53,7 +53,7 @@ public class AuthorizationChecker
             await _songsOperations.InitializeTenant(user.TenantId);
         }
 
-        return (null, user.TenantId, user.Tenant.ArePdfsAllowed);
+        return (null, user.TenantId, user.Tenant.ArePdfsAllowed, user.Tenant.Tags);
     }
 
     private bool CheckHash(Identity identity)

@@ -10,6 +10,8 @@ public class Tenant : IValidatableObject
 
     public string? PrivateDescription { get; set; }
 
+    public List<string> Tags { get; set; } = [];
+
     public int LatestUsedIndex { get; set; }
 
     public bool ArePdfsAllowed { get; set; }

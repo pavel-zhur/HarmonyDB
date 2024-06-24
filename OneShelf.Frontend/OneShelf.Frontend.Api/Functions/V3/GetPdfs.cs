@@ -45,8 +45,8 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
 
     public const string Version = "1";
 
-    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
         _collectionReaderV3 = collectionReaderV3;
@@ -63,7 +63,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
 
     protected override async Task<GetPdfsResponse> Execute(HttpRequest httpRequest, GetPdfsRequest request)
     {
-        if (!ArePdfsAllowed) throw new($"The pdfs generation is not allowed for this tenant, {TenantId}, userid = {request.Identity.Id}.");
+        if (!SecurityContext.ArePdfsAllowed) throw new($"The pdfs generation is not allowed for this tenant, {SecurityContext.TenantId}, userid = {request.Identity.Id}.");
 
         await _songsDatabase.Interactions.AddAsync(new()
         {
@@ -75,7 +75,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         });
         await _songsDatabase.SaveChangesAsyncX();
 
-        var collection = await _collectionReaderV3.Read(TenantId, request.Identity);
+        var collection = await _collectionReaderV3.Read(request.Identity);
         var artists = collection.Artists.ToDictionary(x => x.Id);
 
         var versions = collection.Songs.SelectMany(s => s.Versions.Select(u => (s, u))).ToDictionary(x => x.u.Id);
@@ -121,7 +121,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             if (request.IncludeInspiration)
             {
                 volumeDocuments.Insert(0, (await _inspirationGeneration.Inspiration(
-                    TenantId,
+                    SecurityContext.TenantId,
                     InspirationDataOrdering.ByArtist,
                     false,
                     true,

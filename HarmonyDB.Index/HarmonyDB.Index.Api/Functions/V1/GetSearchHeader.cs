@@ -16,7 +16,8 @@ public class GetSearchHeader : AuthorizationFunctionBase<GetSearchHeaderRequest,
 {
     private readonly DownstreamApiClient _downstreamApiClient;
 
-    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient) : base(loggerFactory, authorizationApiClient)
+    public GetSearchHeader(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _downstreamApiClient = downstreamApiClient;
     }

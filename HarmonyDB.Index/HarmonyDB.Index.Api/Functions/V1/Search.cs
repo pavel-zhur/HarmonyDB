@@ -17,7 +17,8 @@ namespace HarmonyDB.Index.Api.Functions.V1
     {
         private readonly DownstreamApiClient _downstreamApiClient;
 
-        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient) : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _downstreamApiClient = downstreamApiClient;
         }

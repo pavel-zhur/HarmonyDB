@@ -19,8 +19,8 @@ public class Inspiration : AuthorizationFunctionBase<InspirationRequest>
 {
     private readonly InspirationGeneration _inspirationGeneration;
 
-    public Inspiration(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, InspirationGeneration inspirationGeneration)
-        : base(loggerFactory, authorizationApiClient)
+    public Inspiration(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, InspirationGeneration inspirationGeneration, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _inspirationGeneration = inspirationGeneration;
     }
@@ -30,7 +30,7 @@ public class Inspiration : AuthorizationFunctionBase<InspirationRequest>
 
     protected override async Task<IActionResult> ExecuteSuccessful(HttpRequest httpRequest, InspirationRequest request)
     {
-        var pdf = await _inspirationGeneration.Inspiration(TenantId, InspirationDataOrdering.ByArtist, false, true, true, false);
+        var pdf = await _inspirationGeneration.Inspiration(SecurityContext.TenantId, InspirationDataOrdering.ByArtist, false, true, true, false);
         return new FileContentResult(pdf, "application/pdf");
     }
 }

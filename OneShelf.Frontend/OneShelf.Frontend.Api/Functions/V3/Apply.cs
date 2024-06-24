@@ -34,8 +34,8 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private readonly SourceApiClient _sourceApiClient;
         private readonly SongsOperations _songsOperations;
 
-        public Apply(ILoggerFactory loggerFactory, CollectionReaderV3 collectionReaderV3, IOptions<FrontendOptions> frontendOptions, IHttpClientFactory httpClientFactory, AuthorizationApiClient authorizationApiClient, SourceApiClient sourceApiClient, SongsOperations songsOperations)
-            : base(loggerFactory, authorizationApiClient)
+        public Apply(ILoggerFactory loggerFactory, CollectionReaderV3 collectionReaderV3, IOptions<FrontendOptions> frontendOptions, IHttpClientFactory httpClientFactory, AuthorizationApiClient authorizationApiClient, SourceApiClient sourceApiClient, SongsOperations songsOperations, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _collectionReaderV3 = collectionReaderV3;
             _httpClientFactory = httpClientFactory;
@@ -127,7 +127,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
                 }
             }
 
-            var collection = await _collectionReaderV3.Read(TenantId, request.Identity);
+            var collection = await _collectionReaderV3.Read(request.Identity);
             return new()
             {
                 Collection = collection.Etag == request.Etag ? null : collection,
@@ -137,7 +137,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private async Task VersionRemove(RemovedVersion request, long userId)
         {
             var version = await _songsOperations.SongsDatabase.Versions
-                .Where(x => x.Song.TenantId == TenantId)
+                .Where(x => x.Song.TenantId == SecurityContext.TenantId)
                 .Include(x => x.Song)
                 .SingleOrDefaultAsync(x => x.Id == request.VersionId);
 
@@ -169,7 +169,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
 
             var likes = await _songsOperations.SongsDatabase.Likes.Where(x => x.VersionId == version.Id).ToListAsync();
             var songOwnLikes = (await _songsOperations.SongsDatabase.Songs
-                .Where(x => x.TenantId == TenantId)
+                .Where(x => x.TenantId == SecurityContext.TenantId)
                 .Where(x => x.Likes.Any(x => x.VersionId == version.Id))
                 .SelectMany(x => x.Likes)
                 .Where(x => x.VersionId == null)
@@ -204,7 +204,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
             var header = await _sourceApiClient.V1GetSearchHeader(identity, request.ExternalId);
             if (header.SourceUri == null) throw new("The source uri does not exist for these chords.");
 
-            var (_, versionExisted, _) = await _songsOperations.VersionImport(TenantId, header.SourceUri, header.Artists ?? new List<string>(),
+            var (_, versionExisted, _) = await _songsOperations.VersionImport(SecurityContext.TenantId, header.SourceUri, header.Artists ?? new List<string>(),
                 header.Title, userId, request.Level, request.HappenedOn, request.LikeCategoryId, request.Transpose);
 
             if (versionExisted)
@@ -223,7 +223,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
             if (request.LikeCategoryId.HasValue)
             {
                 var likeCategory = await _songsOperations.SongsDatabase.LikeCategories
-                    .Where(x => x.TenantId == TenantId)
+                    .Where(x => x.TenantId == SecurityContext.TenantId)
                     .SingleOrDefaultAsync(x => x.Id == request.LikeCategoryId.Value);
                 if (likeCategory == null) return;
                 if (likeCategory.UserId != userId)
@@ -239,7 +239,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
             }
 
             var song = await _songsOperations.SongsDatabase.Songs
-                .Where(x => x.TenantId == TenantId)
+                .Where(x => x.TenantId == SecurityContext.TenantId)
                 .Include(x => x.Versions)
                 .Include(x => x.Likes)
                 .ThenInclude(x => x.Version)

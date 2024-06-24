@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Collectives.Api.Client;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Sources.Self.Api.Models;
 using OneShelf.Sources.Self.Api.Services;
 
@@ -20,7 +21,8 @@ var host = new HostBuilder()
             .AddScoped<StructureParser>()
             .AddScoped<MetadataBuilder>()
             .AddCollectivesApiClient(context.Configuration)
-            .AddAuthorizationApiClient(context.Configuration);
+            .AddAuthorizationApiClient(context.Configuration)
+            .AddSecurityContext();
     })
     .Build();
 
