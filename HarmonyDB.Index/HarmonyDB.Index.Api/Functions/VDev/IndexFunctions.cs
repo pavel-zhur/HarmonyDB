@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VDev;
 
@@ -14,13 +15,17 @@ public class IndexFunctions
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
+    private readonly SecurityContext _securityContext;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
         _progressionsCache = progressionsCache;
         _loopsStatisticsCache = loopsStatisticsCache;
+        _securityContext = securityContext;
+
+        _securityContext.InitService();
     }
 
     [Function(nameof(VDevSaveProgressionsIndex))]

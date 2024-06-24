@@ -182,7 +182,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
                 {
                     Data = await CompressionTools.DecompressToBytes(found.Data),
                     PageCount = found.PageCount,
-                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, pdfsRequestFile, urlAbsolutePathBase),
+                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(pdfsRequestFile, urlAbsolutePathBase),
                 };
             }
             else
@@ -197,7 +197,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
                 result[pdfsRequestFile.ExternalId] = new()
                 {
                     PageCount = found.Value,
-                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, pdfsRequestFile, urlAbsolutePathBase),
+                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(pdfsRequestFile, urlAbsolutePathBase),
                 };
             }
         }
@@ -227,7 +227,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             {
                 Data = includeData ? value.Result.pdf : null,
                 PageCount = value.Result.pageCount,
-                PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, requests[key], urlAbsolutePathBase),
+                PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(requests[key], urlAbsolutePathBase),
             };
         }
 

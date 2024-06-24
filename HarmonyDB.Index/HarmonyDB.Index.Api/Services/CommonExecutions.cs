@@ -1,7 +1,5 @@
 ﻿using HarmonyDB.Index.DownstreamApi.Client;
-using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1.Api;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 
@@ -18,10 +16,10 @@ public class CommonExecutions
         _downstreamApiClient = downstreamApiClient;
     }
 
-    public async Task<GetSourcesAndExternalIdsResponse> GetSourcesAndExternalIds(GetSourcesAndExternalIdsRequest request)
+    public async Task<GetSourcesAndExternalIdsResponse> GetSourcesAndExternalIds(IReadOnlyList<Uri> uris)
     {
-        var results = await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.DownstreamSourcesCount)
-            .Select(x => _downstreamApiClient.V1GetSourcesAndExternalIds(request.Identity, x, request.Uris)));
+        var results = await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(_ => true)
+            .Select(x => _downstreamApiClient.V1GetSourcesAndExternalIds(x, uris)));
 
         var all = results
             .WithIndices()
@@ -40,10 +38,10 @@ public class CommonExecutions
         };
     }
 
-    public async Task<GetSongResponse> GetSong(GetSongRequest request)
+    public async Task<GetSongResponse> GetSong(string externalId)
     {
-        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndexByExternalId(request.ExternalId);
-        var getSongResponse = await _downstreamApiClient.V1GetSong(request.Identity, sourceIndex, request.ExternalId);
+        var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndexByExternalId(externalId);
+        var getSongResponse = await _downstreamApiClient.V1GetSong(sourceIndex, externalId);
         getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(getSongResponse.Song.Source);
         return getSongResponse;
     }

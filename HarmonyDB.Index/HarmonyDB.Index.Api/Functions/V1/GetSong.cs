@@ -25,6 +25,6 @@ namespace HarmonyDB.Index.Api.Functions.V1
             => RunHandler(req, request);
 
         protected override async Task<GetSongResponse> Execute(HttpRequest httpRequest, GetSongRequest request)
-            => await _commonExecutions.GetSong(request);
+            => await _commonExecutions.GetSong(request.ExternalId);
     }
 }

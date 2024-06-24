@@ -41,7 +41,7 @@ public class PreviewPdf : FunctionBase<PreviewPdfRequest>
     {
         if (DateTime.Now > new DateTime(request.Expiration)) return new UnauthorizedObjectResult("Expired");
 
-        var hash = await _authorizationQuickChecker.Sign(request.UserId, System.Text.Json.JsonSerializer.Serialize(request.File), request.Expiration);
+        var hash = await _authorizationQuickChecker.Sign(System.Text.Json.JsonSerializer.Serialize(request.File), request.Expiration);
         var isSuccess = request.Hash == hash;
 
         if (!isSuccess) return new UnauthorizedObjectResult("BadHash");

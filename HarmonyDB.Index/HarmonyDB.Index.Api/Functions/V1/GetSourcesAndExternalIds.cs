@@ -27,5 +27,5 @@ public class GetSourcesAndExternalIds : AuthorizationFunctionBase<GetSourcesAndE
 
     protected override async Task<GetSourcesAndExternalIdsResponse> Execute(HttpRequest httpRequest,
         GetSourcesAndExternalIdsRequest request)
-        => await _commonExecutions.GetSourcesAndExternalIds(request);
+        => await _commonExecutions.GetSourcesAndExternalIds(request.Uris);
 }

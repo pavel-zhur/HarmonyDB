@@ -15,6 +15,16 @@ public class AuthorizationApiClient
         _options = options.Value;
     }
 
+    public async Task<CheckIdentityResponse?> CheckIdentityRespectingCode(Identity identity)
+    {
+        if (identity.Hash == _options.ServiceCode)
+        {
+            return null;
+        }
+
+        return await CheckIdentity(identity);
+    }
+
     public async Task<CheckIdentityResponse> CheckIdentity(Identity identity)
     {
         using var client = _httpClientFactory.CreateClient();

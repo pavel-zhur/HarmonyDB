@@ -5,6 +5,7 @@ using HarmonyDB.Source.Api.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.V1
 {
@@ -24,7 +25,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            await Task.WhenAll(Enumerable.Range(0, _downstreamApiClient.DownstreamSourcesCount).Select(x => _downstreamApiClient.V1Ping(x)));
+            await _downstreamApiClient.PingAll();
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

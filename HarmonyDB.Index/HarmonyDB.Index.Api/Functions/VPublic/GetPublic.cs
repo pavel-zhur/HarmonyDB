@@ -13,16 +13,20 @@ using OneShelf.Collectives.Api.Model.V2.Sub;
 using OneShelf.Collectives.Api.Model.VInternal;
 using OneShelf.Common;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
+using System.Security;
+using SecurityContext = OneShelf.Common.Api.WithAuthorization.SecurityContext;
 
 namespace HarmonyDB.Index.Api.Functions.VPublic;
 
-public class GetPublic : FunctionBase<GetPublicRequest, GetPublicResponse>
+public class GetPublic : AnonymousFunctionBase<GetPublicRequest, GetPublicResponse>
 {
     private readonly CommonExecutions _commonExecutions;
     private readonly CollectivesApiClient _collectivesApiClient;
 
-    public GetPublic(ILoggerFactory loggerFactory, CollectivesApiClient collectivesApiClient, CommonExecutions commonExecutions)
-        : base(loggerFactory)
+    public GetPublic(ILoggerFactory loggerFactory, CollectivesApiClient collectivesApiClient,
+        CommonExecutions commonExecutions, SecurityContext securityContext)
+        : base(loggerFactory, securityContext)
     {
         _collectivesApiClient = collectivesApiClient;
         _commonExecutions = commonExecutions;
@@ -37,17 +41,9 @@ public class GetPublic : FunctionBase<GetPublicRequest, GetPublicResponse>
         Chords chords;
         try
         {
-            var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new()
-            {
-                Identity = null!,
-                Uris = new Uri(getPublicRequest.Url).Once().ToList(),
-            }))!.Attributes.Single().Value.ExternalId;
+            var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new Uri(getPublicRequest.Url).Once().ToList())).Attributes.Single().Value.ExternalId;
 
-            chords = (await _commonExecutions.GetSong(new()
-            {
-                Identity = null!,
-                ExternalId = externalId,
-            }))!.Song;
+            chords = (await _commonExecutions.GetSong(externalId)).Song;
 
             if (!chords.IsPublic)
                 return new()

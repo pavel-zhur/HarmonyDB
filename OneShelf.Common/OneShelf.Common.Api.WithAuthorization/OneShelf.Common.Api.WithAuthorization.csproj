@@ -14,11 +14,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="1.18.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.2.1" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Client\OneShelf.Authorization.Api.Client.csproj" />
+    <ProjectReference Include="..\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />
   </ItemGroup>
 
 

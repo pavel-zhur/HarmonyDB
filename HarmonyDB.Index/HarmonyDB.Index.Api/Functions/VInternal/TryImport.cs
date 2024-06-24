@@ -8,15 +8,18 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
+using System.Security;
+using SecurityContext = OneShelf.Common.Api.WithAuthorization.SecurityContext;
 
 namespace HarmonyDB.Index.Api.Functions.VInternal;
 
-public class TryImport : FunctionBase<TryImportRequest, TryImportResponse>
+public class TryImport : ServiceFunctionBase<TryImportRequest, TryImportResponse>
 {
     private readonly CommonExecutions _commonExecutions;
 
-    public TryImport(ILoggerFactory loggerFactory, CommonExecutions commonExecutions)
-        : base(loggerFactory)
+    public TryImport(ILoggerFactory loggerFactory, CommonExecutions commonExecutions, SecurityContext securityContext)
+        : base(loggerFactory, securityContext)
     {
         _commonExecutions = commonExecutions;
     }
@@ -29,17 +32,9 @@ public class TryImport : FunctionBase<TryImportRequest, TryImportResponse>
     {
         try
         {
-            var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new()
-            {
-                Identity = null!,
-                Uris = new Uri(request.Url).Once().ToList(),
-            }))!.Attributes.Single().Value.ExternalId;
+            var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new Uri(request.Url).Once().ToList())).Attributes.Single().Value.ExternalId;
 
-            var chords = (await _commonExecutions.GetSong(new()
-            {
-                Identity = null!,
-                ExternalId = externalId,
-            }))!.Song;
+            var chords = (await _commonExecutions.GetSong(externalId)).Song;
 
             if (chords.Artists?.Count(x => !string.IsNullOrWhiteSpace(x)) is (null or 0) || string.IsNullOrWhiteSpace(chords.Title))
             {

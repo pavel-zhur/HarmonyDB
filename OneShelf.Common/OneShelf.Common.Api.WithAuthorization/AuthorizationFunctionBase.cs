@@ -10,15 +10,17 @@ public abstract class AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
     private readonly AuthorizationApiClient _authorizationApiClient;
+    private readonly bool _respectServiceCode;
     
     protected readonly SecurityContext SecurityContext;
     protected readonly ILogger Logger;
 
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, bool respectServiceCode = false)
     {
         Logger = loggerFactory.CreateLogger(GetType());
         _authorizationApiClient = authorizationApiClient;
         SecurityContext = securityContext;
+        _respectServiceCode = respectServiceCode;
     }
 
     protected async Task<IActionResult> RunHandler(HttpRequest httpRequest, TRequest request)
@@ -27,10 +29,16 @@ public abstract class AuthorizationFunctionBase<TRequest>
         {
             Logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var authorizationCheckResult = await CheckAuthorization(request.Identity);
+            var authorizationCheckResult = _respectServiceCode ? await _authorizationApiClient.CheckIdentityRespectingCode(request.Identity) : await _authorizationApiClient.CheckIdentity(request.Identity);
+            if (authorizationCheckResult == null)
+            {
+                SecurityContext.InitService();
+                return await ExecuteSuccessful(httpRequest, request);
+            }
+
             if (authorizationCheckResult.IsSuccess)
             {
-                SecurityContext.InitSuccessful(authorizationCheckResult);
+                SecurityContext.InitSuccessful(request.Identity, authorizationCheckResult);
                 return await ExecuteSuccessful(httpRequest, request);
             }
 
@@ -47,11 +55,6 @@ public abstract class AuthorizationFunctionBase<TRequest>
         }
     }
 
-    protected virtual async Task<CheckIdentityResponse> CheckAuthorization(Identity identity)
-    {
-        return await _authorizationApiClient.CheckIdentity(identity);
-    }
-
     protected abstract Task<IActionResult> ExecuteSuccessful(HttpRequest httpRequest, TRequest request);
 
     protected virtual Task<IActionResult> ExecuteFailed(string authorizationError)
@@ -61,8 +64,8 @@ public abstract class AuthorizationFunctionBase<TRequest>
 public abstract class AuthorizationFunctionBase<TRequest, TResponse> : AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
-        : base(loggerFactory, authorizationApiClient, securityContext)
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, bool respectServiceCode = false)
+        : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode)
     {
     }
 

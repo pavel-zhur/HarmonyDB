@@ -17,7 +17,7 @@ public abstract class FunctionBase<TRequest>
         try
         {
             Logger.LogInformation("C# HTTP trigger function processed a request.");
-
+            OnBeforeExecution();
             return await ExecuteSuccessful(request);
         }
         catch (Exception e)
@@ -25,6 +25,10 @@ public abstract class FunctionBase<TRequest>
             Logger.LogError(e, "Error executing the function.");
             return new StatusCodeResult(500);
         }
+    }
+
+    protected virtual void OnBeforeExecution()
+    {
     }
 
     protected abstract Task<IActionResult> ExecuteSuccessful(TRequest request);
