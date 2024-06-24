@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj" />
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Compression\OneShelf.Common.Compression.csproj" />
 	  <ProjectReference Include="..\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
 	</ItemGroup>

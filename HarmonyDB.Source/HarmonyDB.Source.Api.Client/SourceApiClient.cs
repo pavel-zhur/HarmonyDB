@@ -27,6 +27,9 @@ public class SourceApiClient : ApiClientBase<SourceApiClient>
     public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(GetProgressionsIndexRequest request, CancellationToken cancellationToken)
         => await PostWithCode<GetProgressionsIndexRequest, GetProgressionsIndexResponse>(SourceApiUrls.VInternalGetProgressionsIndex, request, cancellationToken);
 
+    public async Task<GetSongHeadersResponse> VInternalGetSongHeaders(GetSongHeadersRequest request, CancellationToken cancellationToken)
+        => await PostWithCode<GetSongHeadersRequest, GetSongHeadersResponse>(SourceApiUrls.VInternalGetSongHeaders, request, cancellationToken);
+
     public async Task<GetSongsResponse> V1GetSongs(Identity identity, IReadOnlyList<string> externalIds)
         => await Post<GetSongsRequest, GetSongsResponse>(SourceApiUrls.V1GetSongs, new()
         {

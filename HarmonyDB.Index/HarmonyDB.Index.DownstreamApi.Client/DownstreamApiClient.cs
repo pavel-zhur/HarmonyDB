@@ -39,6 +39,9 @@ public class DownstreamApiClient
     public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(int sourceIndex, GetProgressionsIndexRequest request, CancellationToken cancellationToken)
         => await _clients[sourceIndex].VInternalGetProgressionsIndex(request, cancellationToken);
 
+    public async Task<GetSongHeadersResponse> VInternalGetSongHeaders(int sourceIndex, GetSongHeadersRequest request, CancellationToken cancellationToken)
+        => await _clients[sourceIndex].VInternalGetSongHeaders(request, cancellationToken);
+
     public async Task<GetSongResponse> V1GetSong(int sourceIndex, string externalId)
         => await _clients[sourceIndex].V1GetSong(_securityContext.OutputIdentity, externalId);
 

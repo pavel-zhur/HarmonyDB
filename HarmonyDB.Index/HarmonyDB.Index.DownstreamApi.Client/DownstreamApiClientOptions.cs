@@ -17,6 +17,8 @@ public class DownstreamApiClientOptions
 
         public required bool AreProgressionsProvidedForIndexing { get; init; }
 
+        public required bool AreSongsProvidedForIndexResults { get; init; }
+
         public required List<string> TenantTagsRequired { get; init; } = [];
         
         public required List<string> TenantTagsForbidden { get; init; } = [];

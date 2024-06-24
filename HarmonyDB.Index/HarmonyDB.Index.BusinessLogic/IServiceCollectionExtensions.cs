@@ -10,5 +10,6 @@ public static class IServiceCollectionExtensions
         => serviceCollection
             .AddSingleton<ProgressionsCache>()
             .AddSingleton<LoopsStatisticsCache>()
+            .AddSingleton<SongHeadersCache>()
             .AddIndexAnalysis();
 }
