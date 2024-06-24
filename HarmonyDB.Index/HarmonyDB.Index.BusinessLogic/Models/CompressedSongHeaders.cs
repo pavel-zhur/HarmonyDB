@@ -59,7 +59,7 @@ public class SongHeaders
 
         List<string?> Read1()
         {
-            var count1 = reader.Read();
+            var count1 = reader.ReadInt32();
             var result1 = new List<string?>();
             for (var i = 0; i < count1; i++)
             {
@@ -73,7 +73,7 @@ public class SongHeaders
         var titles = Read1();
         var artists = Read1();
 
-        var count = reader.Read();
+        var count = reader.ReadInt32();
         var result = new List<IndexHeader>();
         for (var i = 0; i < count; i++)
         {

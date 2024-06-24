@@ -83,9 +83,9 @@ public class IndexFunctions
                             var result = await _downstreamApiClient.VInternalGetSongHeaders(i, request, cancellationToken);
                             headers.AddRange(result.Headers);
 
-                            _logger.LogInformation("Iteration {iteration}", iteration++);
+                            _logger.LogInformation("Iteration {iteration} {token}", iteration++, request.NextToken);
 
-                            if (result.NextToken == null) break;
+                            if (result.NextToken == null || iteration > 4) break;
 
                             request.NextToken = result.NextToken;
                         }
@@ -103,6 +103,12 @@ public class IndexFunctions
     public async Task<IActionResult> VDevGetProgressionsCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         return new OkObjectResult((await _progressionsCache.Get()).Count);
+    }
+
+    [Function(nameof(VDevGetSongHeadersItemsCount))]
+    public async Task<IActionResult> VDevGetSongHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        return new OkObjectResult((await _songHeadersCache.Get()).Headers.Count);
     }
 
     [Function(nameof(VDevGetLoopStatisticsCacheItemsCount))]
