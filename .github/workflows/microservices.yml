@@ -49,8 +49,8 @@ jobs:
       run: dotnet publish OneShelf.Illustrations/OneShelf.Illustrations.Api/OneShelf.Illustrations.Api.csproj --no-restore
     - name: Publish 7
       run: dotnet publish OneShelf.Billing/OneShelf.Billing.Api/OneShelf.Billing.Api.csproj --no-restore
-    - name: Publish 8
-      run: dotnet publish OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj --no-restore --configuration Release
+#    - name: Publish 8
+#      run: dotnet publish OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj --no-restore --configuration Release
     - name: Publish 9
       run: dotnet publish OneShelf.Collectives/OneShelf.Collectives.Api/OneShelf.Collectives.Api.csproj --no-restore
     - name: Publish 10
@@ -104,7 +104,7 @@ jobs:
     - run: Compress-Archive -Path HarmonyDB.Index/HarmonyDB.Index.Api/bin/Release/net8.0/publish/* -Destination HarmonyDB.Index.Api.zip
     - run: Compress-Archive -Path OneShelf.Illustrations/OneShelf.Illustrations.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Illustrations.Api.zip
     - run: Compress-Archive -Path OneShelf.Billing/OneShelf.Billing.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Billing.Api.zip
-    - run: Compress-Archive -Path OneShelf.Pdfs/OneShelf.Pdfs.Api/bin/Release/net6.0/publish/* -Destination OneShelf.Pdfs.Api.zip
+#    - run: Compress-Archive -Path OneShelf.Pdfs/OneShelf.Pdfs.Api/bin/Release/net6.0/publish/* -Destination OneShelf.Pdfs.Api.zip
     - run: Compress-Archive -Path OneShelf.Collectives/OneShelf.Collectives.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Collectives.Api.zip
     - run: Compress-Archive -Path OneShelf.Sources/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Sources.Self.Api.zip
   

@@ -1,0 +1,49 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: microservices pdfs
+
+permissions:
+  contents: write
+
+on:
+# Triggers the workflow on push or pull request events but only for the master branch
+  #push:
+    #branches: [ master ]
+# Allows you to run this workflow manually from the Actions tab
+  #workflow_dispatch:
+  push:
+    tags:
+      - "v*-mp"
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Remove Frontend.Web (speedup)
+      run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web
+    - name: Remove Frontend.Web.Tests (speedup)
+      run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web.Tests
+    - name: Restore dependencies
+      run: dotnet restore OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj -
+#    - name: Build
+#      run: dotnet build --no-restore --configuration Release
+    - name: Publish 8
+      run: dotnet publish OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj --no-restore --configuration Release
+
+    - run: Compress-Archive -Path OneShelf.Pdfs/OneShelf.Pdfs.Api/bin/Release/net6.0/publish/* -Destination OneShelf.Pdfs.Api.zip
+  
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: true
+        files: |
+          LICENSE
+          *.zip
