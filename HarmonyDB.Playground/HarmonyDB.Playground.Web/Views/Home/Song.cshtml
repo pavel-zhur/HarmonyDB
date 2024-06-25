@@ -1,0 +1,28 @@
+﻿@using HarmonyDB.Source.Api.Model.V1
+@model SongModel
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+
+    Chords chords = ViewBag.Chords;
+}
+
+<div>
+    <h3 class="d-inline-block">@string.Join(", ", chords.Artists) &ndash; @chords.Title</h3>
+    @Html.ActionLink("\ud83d\udd17Permalink", "Song", "Home", Model, new { target = "_blank" })
+</div>
+@if (Model.IncludeTrace)
+{
+    @Html.ActionLink("Exclude the Index API trace for developers", "Song", "Home", Model with { IncludeTrace = false }, null)
+}
+else
+{
+    @Html.ActionLink("Include the Index API trace for developers", "Song", "Home", Model with { IncludeTrace = true }, null)
+}
+
+<div class="chords-block">
+    @Html.Raw(chords.Output.AsHtml(new()))
+</div>
+
+@await Html.PartialAsync("Trace")

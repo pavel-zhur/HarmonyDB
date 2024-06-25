@@ -8,7 +8,6 @@
     Layout = "_Layout";
 
     SearchResponse? response = ViewBag.Response;
-    ApiTraceBag? trace = ViewBag.Trace;
 }
 
 <div>
@@ -16,7 +15,7 @@
     @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
     {
         JustForm = true,
-    }, null)
+}, new { target = "_blank" })
 </div>
 
 @using (Html.BeginForm("Search", "Home", Model, FormMethod.Get))
@@ -58,7 +57,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">Results</h3>
-        @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, null)
+        @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, new { target = "_blank" })
     </div>
 
     @await Html.PartialAsync("Paging", Model)
@@ -77,7 +76,7 @@
         {
             <tr>
                 <td>@string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>())</td>
-                <td>@song.Header.Title</td>
+                <td>@Html.ActionLink(song.Header.Title, "Song", "Home", new { song.Header.ExternalId })</td>
                 <td>@song.Header.Source</td>
                 <td>@((int)song.Header.Rating)%</td>
                 <td>@((int)(song.Coverage * 100))%</td>
@@ -88,28 +87,4 @@
     @await Html.PartialAsync("Paging", Model)
 }
 
-@if (trace != null)
-{
-    <h3 class="mt-4">Trace</h3>
-    @foreach (var request in trace.Requests)
-    {
-        <h4>@request.Method @request.Url</h4>
-        @if (request.Request != null)
-        {
-            <p>
-                Request:
-                <pre>@JsonSerializer.Serialize(request.Request, new JsonSerializerOptions { WriteIndented = true, })</pre>
-            </p>
-        }
-        @if (request.Response != null)
-        {
-            <p>
-                Request:
-                <pre>@JsonSerializer.Serialize(request.Response, new JsonSerializerOptions { WriteIndented = true, })</pre>
-            </p>
-        }
-        <p>
-            Time taken: @request.TimeTaken
-        </p>
-    }
-}
+@await Html.PartialAsync("Trace")

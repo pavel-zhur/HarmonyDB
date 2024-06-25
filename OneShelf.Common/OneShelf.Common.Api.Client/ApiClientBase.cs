@@ -52,7 +52,7 @@ public class ApiClientBase<TClient>
         apiTraceBag?.Requests.Add(new()
         {
             Method = "POST",
-            Request = request,
+            Request = MaskIdentity(request),
             Response = response,
             Url = new Uri(_options.Endpoint, $"{url}?code={{code}}").ToString(),
             TimeTaken = DateTime.Now - started,
@@ -92,7 +92,7 @@ public class ApiClientBase<TClient>
         apiTraceBag?.Requests.Add(new()
         {
             Method = "POST",
-            Request = request,
+            Request = MaskIdentity(request),
             Response = response,
             Url = uri.ToString(),
             TimeTaken = DateTime.Now - started,
@@ -139,7 +139,7 @@ public class ApiClientBase<TClient>
         apiTraceBag?.Requests.Add(new()
         {
             Method = "POST",
-            Request = request,
+            Request = MaskIdentity(request),
             Response = response,
             Url = new Uri(_options.Endpoint, $"{url}?code={{code}}").ToString(),
             TimeTaken = DateTime.Now - started,
@@ -158,5 +158,21 @@ public class ApiClientBase<TClient>
     private string WithCode(string url)
     {
         return $"{url}?code={_options.MasterCode}";
+    }
+
+    private static TRequest MaskIdentity<TRequest>(TRequest request)
+    {
+        if (request != null)
+        {
+            request = JsonSerializer.Deserialize<TRequest>(JsonSerializer.Serialize(request, new JsonSerializerOptions
+            {
+                Converters =
+                {
+                    new MaskedIdentityConverter(),
+                },
+            }))!;
+        }
+
+        return request;
     }
 }

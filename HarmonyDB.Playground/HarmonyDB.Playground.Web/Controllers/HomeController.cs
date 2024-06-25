@@ -40,6 +40,19 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Song(SongModel songModel)
+        {
+            if (songModel.IncludeTrace)
+            {
+                ViewBag.Trace = new ApiTraceBag();
+            }
+
+            ViewBag.Chords = (Chords)(await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+
+            return View(songModel);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Search([FromQuery]SearchModel searchModel)
         {
             if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
