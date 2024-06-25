@@ -32,7 +32,7 @@ jobs:
     - name: Remove Frontend.Web.Tests (speedup)
       run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web.Tests
     - name: Restore dependencies
-      run: dotnet restore OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj -
+      run: dotnet restore OneShelf.Pdfs/OneShelf.Pdfs.Api/OneShelf.Pdfs.Api.csproj
 #    - name: Build
 #      run: dotnet build --no-restore --configuration Release
     - name: Publish 8
