@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
-using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.Extensions.Options;
 using OneShelf.Authorization.Api.Model;
