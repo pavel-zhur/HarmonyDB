@@ -17,10 +17,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+  
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
     - name: Pack
       run: dotnet pack OneShelf.Common/OneShelf.Common/OneShelf.Common.csproj --include-source -p:PackageVersion=1.1.${{ github.run_number }} -p:VersionSuffix=prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
 
@@ -28,7 +30,11 @@ jobs:
       run: dotnet nuget add source --username pavel-zhur --password ${{ secrets.NUGET_API_KEY }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/pavel-zhur/index.json"
 
     - name: Push
-      run: dotnet nuget push HarmonyDB/nuget/*.nupkg --source "github"
+      run: |
+        dir
+        cd nuget
+        dir
+        dotnet nuget push nuget/*.nupkg --source "github"
 
     # - uses: "marvinpinto/action-automatic-releases@latest"
     #   with:
