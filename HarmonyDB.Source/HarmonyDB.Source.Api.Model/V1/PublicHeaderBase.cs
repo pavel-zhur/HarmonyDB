@@ -1,6 +1,6 @@
 namespace HarmonyDB.Source.Api.Model.V1;
 
-public class PublicHeaderBase : IndexHeader
+public record PublicHeaderBase : IndexHeader
 {
     public required Uri SourceUri { get; set; }
 

@@ -1,16 +1,23 @@
-﻿@using HarmonyDB.Index.Api.Model.VExternal1
-@model SearchRequest
+﻿@using System.Text.Json
+@using HarmonyDB.Index.Api.Model.VExternal1
+@using OneShelf.Common.Api.Client
+@model SearchModel
 
 @{
     ViewBag.Title = "Search";
     Layout = "_Layout";
 
     SearchResponse? response = ViewBag.Response;
+    ApiTraceBag? trace = ViewBag.Trace;
 }
 
-<h2>Search</h2>
+<h3>Search</h3>
+@Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
+{
+    JustForm = true,
+}, null)
 
-@using (Html.BeginForm("Search", "Home", null, FormMethod.Get))
+@using (Html.BeginForm("Search", "Home", Model, FormMethod.Get))
 {
     <p>
         Progression: @Html.TextBoxFor(x => x.Query)
@@ -28,64 +35,35 @@
         </label>
     </p>
     <p>
-        Min coverage (0-1): @Html.TextBoxFor(x => x.MinCoverage)
+        Min coverage (real, 0&ndash;1): @Html.TextBoxFor(x => x.MinCoverage)
     </p>
     <p>
-        Min rating (0-100): @Html.TextBoxFor(x => x.MinRating)
+        Min rating (integer, 0&ndash;100): @Html.TextBoxFor(x => x.MinRating)
     </p>
     <p>
         Songs Per Page: @Html.TextBoxFor(x => x.SongsPerPage)
     </p>
-    <input type="submit"/>
+    <p>
+        <label>
+            @Html.CheckBoxFor(x => x.IncludeTrace)
+            Include the Index API trace for developers
+        </label>
+    </p>
+    <input type="submit" value="Search" />
 }
 
 @if (response != null)
 {
-    <p>Total results: @response.Total</p>
-    <p>Current page: @Model.PageNumber</p>
-
-    @if (Model.PageNumber > 2)
-    {
-        <p>
-            @Html.ActionLink("Page 1", "Search", Model with
-            {
-                PageNumber = 1,
-            })
-        </p>
-    }
-    @if (Model.PageNumber > 1)
-    {
-        <p>
-            @Html.ActionLink("Previous Page", "Search", Model with
-            {
-                PageNumber = Model.PageNumber - 1,
-            })
-        </p>
-    }
-    @if (Model.PageNumber < response.TotalPages)
-    {
-        <p>
-            @Html.ActionLink("Next Page", "Search", Model with
-            {
-                PageNumber = Model.PageNumber + 1,
-            })
-        </p>
-    }
-    @if (Model.PageNumber < response.TotalPages - 1)
-    {
-        <p>
-            @Html.ActionLink($"Page {response.TotalPages}", "Search", Model with
-            {
-                PageNumber = response.TotalPages,
-            })
-        </p>
-    }
+    <h3>Results</h3>
+    @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, null)
+    @await Html.PartialAsync("Paging", Model)
 
     <table>
         <thead>
         <tr>
             <td>Artists</td>
             <td>Title</td>
+            <td>Source</td>
             <td>Rating</td>
             <td>Coverage</td>
         </tr>
@@ -95,9 +73,38 @@
             <tr>
                 <td>@string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>())</td>
                 <td>@song.Header.Title</td>
+                <td>@song.Header.Source</td>
                 <td>@((int)song.Header.Rating)%</td>
                 <td>@((int)(song.Coverage * 100))%</td>
             </tr>
         }
     </table>
+
+    @await Html.PartialAsync("Paging", Model)
+}
+
+@if (trace != null)
+{
+    <h3>Trace</h3>
+    @foreach (var request in trace.Requests)
+    {
+        <h4>@request.Method @request.Url</h4>
+        @if (request.Request != null)
+        {
+            <p>
+                Request:
+                <pre>@JsonSerializer.Serialize(request.Request, new JsonSerializerOptions { WriteIndented = true, })</pre>
+            </p>
+        }
+        @if (request.Response != null)
+        {
+            <p>
+                Request:
+                <pre>@JsonSerializer.Serialize(request.Response, new JsonSerializerOptions { WriteIndented = true, })</pre>
+            </p>
+        }
+        <p>
+            Time taken: @request.TimeTaken
+        </p>
+    }
 }

@@ -3,6 +3,7 @@ using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Services;
+using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,8 +21,9 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly SearchOrderCache _searchOrderCache;
     private readonly InputParser _inputParser;
+    private readonly DownstreamApiClient _downstreamApiClient;
 
-    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser)
+    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser, DownstreamApiClient downstreamApiClient)
         : base(loggerFactory, securityContext)
     {
         _progressionsCache = progressionsCache;
@@ -29,6 +31,7 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
         _progressionsSearch = progressionsSearch;
         _searchOrderCache = searchOrderCache;
         _inputParser = inputParser;
+        _downstreamApiClient = downstreamApiClient;
     }
 
     [Function(IndexApiUrls.VExternal1Search)]
@@ -63,7 +66,10 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
         {
             Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SearchResponseSong
             {
-                Header = x.h.Value,
+                Header = x.h.Value with
+                {
+                    Source = _downstreamApiClient.GetSourceTitle(x.h.Value.Source),
+                },
                 Coverage = x.coverage,
             }).ToList(),
             Total = results.Count,

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using OneShelf.Common.Api.Client;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -34,14 +35,21 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery]SearchRequest? request)
+        public async Task<IActionResult> Search([FromQuery]SearchModel searchModel)
         {
-            if (!string.IsNullOrWhiteSpace(request?.Query))
+            if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
             {
-                ViewBag.Response = await _indexApiClient.Search(request);
+                if (searchModel.IncludeTrace)
+                {
+                    ViewBag.Trace = new ApiTraceBag();
+                }
+
+                ViewBag.Response = await _indexApiClient.Search(searchModel, ViewBag.Trace);
             }
 
-            return View(request);
+            searchModel.JustForm = false;
+
+            return View(searchModel);
         }
     }
 }

@@ -8,9 +8,9 @@ public record SearchRequest
 
     public int PageNumber { get; init; } = 1;
 
-    public float MinCoverage { get; init; } = 0;
+    public float MinCoverage { get; init; } = 0.5f;
 
-    public int MinRating { get; init; } = 0;
+    public int MinRating { get; init; } = 70;
 
     public int SongsPerPage { get; init; } = 100;
 

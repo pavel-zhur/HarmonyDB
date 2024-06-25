@@ -2,7 +2,7 @@
 
 namespace HarmonyDB.Source.Api.Model.V1;
 
-public class Chords : PublicHeaderBase
+public record Chords : PublicHeaderBase
 {
     public required NodeHtml Output { get; init; }
 

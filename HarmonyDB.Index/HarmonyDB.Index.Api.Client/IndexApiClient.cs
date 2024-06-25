@@ -25,6 +25,6 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
             Url = url,
         });
 
-    public async Task<SearchResponse> Search(SearchRequest request)
-        => await PostWithCode<SearchRequest, SearchResponse>(IndexApiUrls.VExternal1Search, request);
+    public async Task<SearchResponse> Search(SearchRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<SearchRequest, SearchResponse>(IndexApiUrls.VExternal1Search, request, apiTraceBag: apiTraceBag);
 }

@@ -1,6 +1,6 @@
 namespace HarmonyDB.Source.Api.Model.V1;
 
-public class IndexHeader
+public record IndexHeader
 {
     public required string ExternalId { get; set; }
 
