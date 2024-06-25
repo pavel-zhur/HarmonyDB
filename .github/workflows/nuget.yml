@@ -24,7 +24,7 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Pack
-      run: dotnet pack --include-source -p:PackageVersion=1.1.$GITHUB_RUN_NUMBER -p:VersionSuffix=prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
+      run: dotnet pack --include-source -p:PackageVersion=1.1.${{ github.run_number }} -p:VersionSuffix=prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
 
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
