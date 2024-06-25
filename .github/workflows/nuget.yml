@@ -28,7 +28,7 @@ jobs:
       run: dotnet nuget add source --username pavel-zhur --password ${{ secrets.NUGET_API_KEY }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/pavel-zhur/index.json"
 
     - name: Publish MyApp
-      run: dotnet nuget push nuget/*.symbols.nupkg --source "github"
+      run: dotnet nuget push nuget/*.nupkg --source "github"
 
     # - uses: "marvinpinto/action-automatic-releases@latest"
     #   with:
