@@ -35,7 +35,7 @@ jobs:
     - name: Push
       run: |
         cd nuget
-        dotnet nuget push **/*.nupkg --source "github"
+        dotnet nuget push **/*.symbols.nupkg --source "github"
 
     # - uses: "marvinpinto/action-automatic-releases@latest"
     #   with:
