@@ -1,0 +1,66 @@
+﻿div.chords-block div.pre-variable-width {
+    white-space: pre-wrap;
+    font-family: Tahoma, Roboto, Arial, Helvetica, sans-serif;
+}
+
+.chords-block {
+    margin-left: 16px;
+    margin-top: 30px;
+}
+
+div.chords-block div.pre-variable-width span.flying2 {
+    top: -20px;
+}
+
+div.chords-block div.pre-variable-width .chord {
+    border-left: 1px solid white;
+    font-size: 90%;
+}
+
+div.chords-block pre {
+    white-space: pre-wrap;
+    padding-bottom: 6px;
+    overflow: visible;
+    padding-right: 1.25rem;
+}
+
+div.chords-block .chord {
+    background-color: #d5f5ff;
+    font-weight: normal;
+    padding: 0 3px;
+    cursor: pointer;
+    /* ReSharper disable once InvalidValue */
+    text-wrap: nowrap;
+    white-space: nowrap;
+}
+
+div.chords-block div.bold-div {
+    font-weight: bold;
+}
+
+div.chords-block span.chords-line {
+    line-height: inherit;
+}
+
+div.chords-block div.chords-double-line {
+    margin-bottom: 0.142917em;
+    padding-right: 1.15em;
+}
+
+div.chords-block span.chords-double-line {
+    line-height: 2.5725em;
+    position: relative;
+    top: 0.57167em;
+    display: inline-block;
+}
+
+div.chords-block span.flying {
+    position: absolute;
+    margin-right: -1.25rem;
+}
+
+div.chords-block span.flying2 {
+    position: relative;
+    top: -1.28625em;
+    margin-right: -1.4375em;
+}
