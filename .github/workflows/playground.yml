@@ -14,7 +14,7 @@ on:
   #workflow_dispatch:
   push:
     tags:
-      - "v*-m"
+      - "v*-p"
 
 jobs:
   build:
