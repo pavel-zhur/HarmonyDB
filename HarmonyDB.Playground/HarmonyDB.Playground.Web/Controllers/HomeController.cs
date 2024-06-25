@@ -69,5 +69,23 @@ namespace HarmonyDB.Playground.Web.Controllers
 
             return View(searchModel);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Loops([FromQuery]LoopsModel loopsModel)
+        {
+            if (!loopsModel.JustForm)
+            {
+                if (loopsModel.IncludeTrace)
+                {
+                    ViewBag.Trace = new ApiTraceBag();
+                }
+
+                ViewBag.Response = await _indexApiClient.Loops(loopsModel, ViewBag.Trace);
+            }
+
+            loopsModel.JustForm = false;
+
+            return View(loopsModel);
+        }
     }
 }

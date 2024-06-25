@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Tools;
+using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;

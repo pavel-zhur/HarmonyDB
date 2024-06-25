@@ -27,4 +27,7 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
 
     public async Task<SearchResponse> Search(SearchRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<SearchRequest, SearchResponse>(IndexApiUrls.VExternal1Search, request, apiTraceBag: apiTraceBag);
+
+    public async Task<LoopsResponse> Loops(LoopsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<LoopsRequest, LoopsResponse>(IndexApiUrls.VExternal1Loops, request, apiTraceBag: apiTraceBag);
 }

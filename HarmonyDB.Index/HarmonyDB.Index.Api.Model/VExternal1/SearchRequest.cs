@@ -2,11 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public record SearchRequest
+public record SearchRequest : PagedRequestBase
 {
     public required string Query { get; init; }
-
-    public int PageNumber { get; init; } = 1;
 
     public float MinCoverage { get; init; } = 0.5f;
 

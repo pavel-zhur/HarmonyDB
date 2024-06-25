@@ -1,8 +1,8 @@
 ﻿@using HarmonyDB.Index.Api.Model.VExternal1
-@model SearchModel
+@model PagedRequestBase
 
 @{
-    SearchResponse? response = ViewBag.Response;
+    PagedResponseBase? response = ViewBag.Response;
 }
 
 <p>
@@ -12,7 +12,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink("Page 1", "Search", "Home", Model with
+            @Html.ActionLink("Page 1", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
             {
                 PageNumber = 1,
             })
@@ -22,7 +22,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink("Previous Page", "Search", "Home", Model with
+            @Html.ActionLink("Previous Page", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
             {
                 PageNumber = Model.PageNumber - 1,
             })
@@ -33,7 +33,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink("Next Page", "Search", "Home", Model with
+            @Html.ActionLink("Next Page", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
             {
                 PageNumber = Model.PageNumber + 1,
             })
@@ -43,7 +43,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink($"Page {response.TotalPages}", "Search", "Home", Model with
+            @Html.ActionLink($"Page {response.TotalPages}", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
             {
                 PageNumber = response.TotalPages,
             })

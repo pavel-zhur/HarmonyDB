@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.BusinessLogic.Models;
+﻿namespace HarmonyDB.Index.Api.Model.VExternal1;
 
 public class LoopStatistics
 {
