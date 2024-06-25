@@ -3,9 +3,6 @@
 
 name: nuget
 
-permissions:
-  packages: write
-
 on:
 # Triggers the workflow on push or pull request events but only for the master branch
   #push:
@@ -27,15 +24,12 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Pack
-      run: dotnet pack --include-source -p:PackageVersion=1.1.${{ github.run_number }}-prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
-
-    - name: Add nuget source
-      run: dotnet nuget add source --username pavel-zhur --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/pavel-zhur/index.json"
-
+      run: dotnet pack OneShelf.Common/OneShelf.Common/OneShelf.Common.csproj --include-source -p:PackageVersion=1.1.${{ github.run_number }}-prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
+      
     - name: Push
       run: |
         cd nuget
-        dotnet nuget push **/*.symbols.nupkg --source "github"
+        dotnet nuget push **/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_TOKEN }}
 
     # - uses: "marvinpinto/action-automatic-releases@latest"
     #   with:
