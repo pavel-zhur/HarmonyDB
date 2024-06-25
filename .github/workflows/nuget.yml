@@ -8,9 +8,7 @@ on:
   #push:
     #branches: [ master ]
 # Allows you to run this workflow manually from the Actions tab
-  push:
-    tags:
-      - "v*-n"
+  workflow_dispatch:
 
 jobs:
   build:
