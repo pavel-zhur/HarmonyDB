@@ -11,11 +11,13 @@
     ApiTraceBag? trace = ViewBag.Trace;
 }
 
-<h3>Search</h3>
-@Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
-{
-    JustForm = true,
-}, null)
+<div>
+    <h3 class="d-inline-block">Search</h3>
+    @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
+    {
+        JustForm = true,
+    }, null)
+</div>
 
 @using (Html.BeginForm("Search", "Home", Model, FormMethod.Get))
 {
@@ -54,8 +56,11 @@
 
 @if (response != null)
 {
-    <h3>Results</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, null)
+    <div class="mt-4">
+        <h3 class="d-inline-block">Results</h3>
+        @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, null)
+    </div>
+
     @await Html.PartialAsync("Paging", Model)
 
     <table>
@@ -85,7 +90,7 @@
 
 @if (trace != null)
 {
-    <h3>Trace</h3>
+    <h3 class="mt-4">Trace</h3>
     @foreach (var request in trace.Requests)
     {
         <h4>@request.Method @request.Url</h4>
