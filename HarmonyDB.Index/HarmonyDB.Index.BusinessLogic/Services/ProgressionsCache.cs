@@ -1,13 +1,15 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.IO;
+using HarmonyDB.Index.BusinessLogic.Models;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
 public class ProgressionsCache : FileCacheBase<IReadOnlyDictionary<string, byte[]>, IReadOnlyDictionary<string, CompactChordsProgression>>
 {
-    public ProgressionsCache(ILogger<ProgressionsCache> logger)
-        : base(logger)
+    public ProgressionsCache(ILogger<ProgressionsCache> logger, IOptions<FileCacheBaseOptions> options)
+        : base(logger, options)
     {
     }
 

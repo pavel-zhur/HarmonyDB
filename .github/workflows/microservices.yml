@@ -27,8 +27,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-#    - name: Wasm tools
-#      run: dotnet workload install wasm-tools
     - name: Remove Frontend.Web (speedup)
       run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web
     - name: Remove Frontend.Web.Tests (speedup)

@@ -25,7 +25,7 @@ var host = new HostBuilder()
             .AddDownstreamApiClient(context.Configuration)
             .AddScoped<CommonExecutions>()
             .AddScoped<InputParser>()
-            .AddIndexBusinessLogic()
+            .AddIndexBusinessLogic(context.Configuration)
             .AddSecurityContext();
     })
     .Build();

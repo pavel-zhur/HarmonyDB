@@ -114,6 +114,27 @@ public class IndexFunctions
         return new OkObjectResult((await _progressionsCache.Get()).Count);
     }
 
+    [Function(nameof(VDevProgressionsCacheCopy))]
+    public async Task<IActionResult> VDevProgressionsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _progressionsCache.Copy();
+        return new OkResult();
+    }
+
+    [Function(nameof(VDevLoopsStatisticsCacheCopy))]
+    public async Task<IActionResult> VDevLoopsStatisticsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _loopsStatisticsCache.Copy();
+        return new OkResult();
+    }
+
+    [Function(nameof(VDevIndexHeadersCacheCopy))]
+    public async Task<IActionResult> VDevIndexHeadersCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _indexHeadersCache.Copy();
+        return new OkResult();
+    }
+
     [Function(nameof(VDevGetIndexHeadersItemsCount))]
     public async Task<IActionResult> VDevGetIndexHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {

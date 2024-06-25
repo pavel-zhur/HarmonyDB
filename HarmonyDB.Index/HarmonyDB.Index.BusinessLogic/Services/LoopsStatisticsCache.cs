@@ -9,6 +9,7 @@ using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
@@ -17,8 +18,9 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly ProgressionsCache _progressionsCache;
 
-    public LoopsStatisticsCache(ILogger<LoopsStatisticsCache> logger, ProgressionsSearch progressionsSearch, ProgressionsCache progressionsCache)
-        : base(logger)
+    public LoopsStatisticsCache(ILogger<LoopsStatisticsCache> logger, ProgressionsSearch progressionsSearch,
+        ProgressionsCache progressionsCache, IOptions<FileCacheBaseOptions> options)
+        : base(logger, options)
     {
         _progressionsSearch = progressionsSearch;
         _progressionsCache = progressionsCache;

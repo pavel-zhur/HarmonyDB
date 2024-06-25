@@ -1,12 +1,13 @@
 ﻿using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
 public class IndexHeadersCache : FileCacheBase<byte[], IndexHeaders>
 {
-    public IndexHeadersCache(ILogger<IndexHeadersCache> logger)
-        : base(logger)
+    public IndexHeadersCache(ILogger<IndexHeadersCache> logger, IOptions<FileCacheBaseOptions> options)
+        : base(logger, options)
     {
     }
 
