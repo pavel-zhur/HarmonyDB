@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Api.Model;
+using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VInternal;
 using Microsoft.Extensions.Options;
 using OneShelf.Common.Api.Client;
@@ -23,4 +24,7 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
         {
             Url = url,
         });
+
+    public async Task<SearchResponse> Search(SearchRequest request)
+        => await PostWithCode<SearchRequest, SearchResponse>(IndexApiUrls.VExternal1Search, request);
 }

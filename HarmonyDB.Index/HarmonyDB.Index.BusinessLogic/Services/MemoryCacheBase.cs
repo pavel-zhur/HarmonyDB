@@ -29,10 +29,10 @@ public abstract class MemoryCacheBase<TInputModel, TPresentationModel>
 
         var started = DateTime.Now;
         var inputModel = await GetInputModel();
-        Logger.LogInformation("Getting the input model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds);
+        Logger.LogInformation("Getting the input model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
         started = DateTime.Now;
         _presentationModel = GetPresentationModel(inputModel);
-        Logger.LogInformation("Building the presentation model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds);
+        Logger.LogInformation("Building the presentation model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
 
         return _presentationModel;
     }

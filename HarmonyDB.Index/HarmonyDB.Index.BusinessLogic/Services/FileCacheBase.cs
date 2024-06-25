@@ -75,7 +75,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
             var started = DateTime.Now; 
             var fileModel = await StreamDecompressDeserialize();
-            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds); 
+            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds); 
             started = DateTime.Now;
 
             _cache = new()
@@ -83,7 +83,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
                 Data = ToPresentationModel(fileModel),
             };
 
-            Logger.LogInformation("Building the presentation model for the {type} memory cache took {time} ms", Key, (DateTime.Now - started).TotalMicroseconds);
+            Logger.LogInformation("Building the presentation model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
         }
         catch (Exception e)
         {

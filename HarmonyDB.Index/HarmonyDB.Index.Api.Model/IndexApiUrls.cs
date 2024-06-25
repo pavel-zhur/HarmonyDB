@@ -6,4 +6,6 @@ public static class IndexApiUrls
 
     public const string VInternalTryImport = nameof(VInternalTryImport);
     public const string VInternalGetLyrics = nameof(VInternalGetLyrics);
+
+    public const string VExternal1Search = nameof(VExternal1Search);
 }

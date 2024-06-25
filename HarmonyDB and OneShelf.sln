@@ -167,6 +167,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.DownstreamA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Source", "HarmonyDB.Source", "{3E91BCAD-3270-42AB-96BB-3F5A092CE64F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Playground", "HarmonyDB.Playground", "{47FED0C3-B336-4FC6-86FE-51A78872C2DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Playground.Web", "HarmonyDB.Playground\HarmonyDB.Playground.Web\HarmonyDB.Playground.Web.csproj", "{C63D176C-03AB-4403-BE88-E8FE4EFE736D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -413,6 +417,10 @@ Global
 		{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -479,6 +487,7 @@ Global
 		{36D7C835-0DE5-4FD3-A489-820A1D121EE4} = {2950865E-9D1A-406E-B0C6-4C249E2E4D61}
 		{92969108-D9C8-4FF8-B083-B10463EB0FEC} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
 		{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA} = {7548FF8E-E1B9-4939-96E9-03DBD5236709}
+		{C63D176C-03AB-4403-BE88-E8FE4EFE736D} = {47FED0C3-B336-4FC6-86FE-51A78872C2DE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}

@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using System.Text.Json;
 using OneShelf.Authorization.Api.Model;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 
 namespace OneShelf.Common.Api.Client;
 

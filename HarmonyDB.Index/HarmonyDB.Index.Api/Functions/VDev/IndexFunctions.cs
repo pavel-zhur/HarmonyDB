@@ -154,6 +154,10 @@ public class IndexFunctions
         var headers = await _indexHeadersCache.Get();
         var found = _progressionsSearch.Search(searchOrder.Select(x => progressions[x]), _inputParser.Parse(searchQuery), 100);
 
-        return new OkObjectResult(found.Select(x => headers.Headers[progressionsReverse[x.Key]]).ToList());
+        return new OkObjectResult(found.Select(x => new
+        {
+            Header = headers.Headers[progressionsReverse[x.Key]],
+            Coverage = x.Value,
+        }).ToList());
     }
 }

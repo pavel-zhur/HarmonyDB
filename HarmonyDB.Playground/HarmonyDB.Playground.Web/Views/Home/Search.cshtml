@@ -1,0 +1,98 @@
+﻿@using HarmonyDB.Index.Api.Model.VExternal1
+@model SearchRequest
+
+@{
+    ViewBag.Title = "Search";
+    Layout = "_Layout";
+
+    SearchResponse? response = ViewBag.Response;
+}
+
+<h2>Search</h2>
+
+@using (Html.BeginForm("Search", "Home", null, FormMethod.Get))
+{
+    @Html.TextBoxFor(x => x.Query)
+    <p>
+        Ordering:
+        <label>
+            @Html.RadioButtonFor(x => x.Ordering, SearchRequestOrdering.ByCoverage)
+            By Coverage
+        </label>
+        
+        <label>
+            @Html.RadioButtonFor(x => x.Ordering, SearchRequestOrdering.ByRating)
+            By Rating
+        </label>
+    </p>
+    <p>
+        Min coverage (0-1): @Html.TextBoxFor(x => x.MinCoverage)
+    </p>
+    <p>
+        Min rating (0-100): @Html.TextBoxFor(x => x.MinRating)
+    </p>
+    <input type="submit"/>
+}
+
+@if (response != null)
+{
+    <p>Total results: @response.Total</p>
+    <p>Current page: @Model.PageNumber</p>
+
+    @if (Model.PageNumber > 2)
+    {
+        <p>
+            @Html.ActionLink("Page 1", "Search", Model with
+            {
+                PageNumber = 1,
+            })
+        </p>
+    }
+    @if (Model.PageNumber > 1)
+    {
+        <p>
+            @Html.ActionLink("Previous Page", "Search", Model with
+            {
+                PageNumber = Model.PageNumber - 1,
+            })
+        </p>
+    }
+    @if (Model.PageNumber < response.TotalPages)
+    {
+        <p>
+            @Html.ActionLink("Next Page", "Search", Model with
+            {
+                PageNumber = Model.PageNumber + 1,
+            })
+        </p>
+    }
+    @if (Model.PageNumber < response.TotalPages - 1)
+    {
+        <p>
+            @Html.ActionLink($"Page {response.TotalPages}", "Search", Model with
+            {
+                PageNumber = response.TotalPages,
+            })
+        </p>
+    }
+
+    <table>
+        <thead>
+        <tr>
+            <td>Artists</td>
+            <td>Title</td>
+            <td>Rating</td>
+            <td>Coverage</td>
+        </tr>
+        </thead>
+        @foreach (var song in response.Songs)
+        {
+            <tr>
+                <td>@string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>())</td>
+                <td>@song.Header.Title</td>
+                <td>@((int)song.Header.Rating)%</td>
+                <td>@((int)(song.Coverage * 100))%</td>
+            </tr>
+        }
+    </table>
+}
