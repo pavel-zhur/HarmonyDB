@@ -31,6 +31,10 @@ jobs:
       run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web
     - name: Remove Frontend.Web.Tests (speedup)
       run: dotnet sln remove OneShelf.Frontend/OneShelf.Frontend.Web.Tests
+    - name: Remove OneShelf.Pdfs/OneShelf.Pdfs.Api (speedup)
+      run: dotnet sln remove OneShelf.Pdfs/OneShelf.Pdfs.Api
+    - name: Remove OneShelf.Pdfs/OneShelf.Pdfs.LocalWindowsEnvBlinkFiles (speedup)
+      run: dotnet sln remove OneShelf.Pdfs/OneShelf.Pdfs.LocalWindowsEnvBlinkFiles
     - name: Restore dependencies
       run: dotnet restore
 #    - name: Build
