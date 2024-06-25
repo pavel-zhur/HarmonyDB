@@ -39,7 +39,6 @@ namespace HarmonyDB.Playground.Web.Controllers
             if (!string.IsNullOrWhiteSpace(request?.Query))
             {
                 ViewBag.Response = await _indexApiClient.Search(request);
-                ViewBag.Trace = new List
             }
 
             return View(request);

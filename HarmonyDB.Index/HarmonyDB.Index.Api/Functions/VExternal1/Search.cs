@@ -21,8 +21,6 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
     private readonly SearchOrderCache _searchOrderCache;
     private readonly InputParser _inputParser;
 
-    private const int PerPage = 20;
-
     public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser)
         : base(loggerFactory, securityContext)
     {
@@ -63,13 +61,13 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
 
         return new()
         {
-            Songs = results.Skip((request.PageNumber - 1) * PerPage).Take(PerPage).Select(x => new SearchResponseSong
+            Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SearchResponseSong
             {
                 Header = x.h.Value,
                 Coverage = x.coverage,
             }).ToList(),
             Total = results.Count,
-            TotalPages = results.Count / PerPage + (results.Count % PerPage == 0 ? 0 : 1),
+            TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,
         };
     }

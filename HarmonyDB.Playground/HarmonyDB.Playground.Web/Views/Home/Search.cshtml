@@ -12,7 +12,9 @@
 
 @using (Html.BeginForm("Search", "Home", null, FormMethod.Get))
 {
-    @Html.TextBoxFor(x => x.Query)
+    <p>
+        Progression: @Html.TextBoxFor(x => x.Query)
+    </p>
     <p>
         Ordering:
         <label>
@@ -30,6 +32,9 @@
     </p>
     <p>
         Min rating (0-100): @Html.TextBoxFor(x => x.MinRating)
+    </p>
+    <p>
+        Songs Per Page: @Html.TextBoxFor(x => x.SongsPerPage)
     </p>
     <input type="submit"/>
 }

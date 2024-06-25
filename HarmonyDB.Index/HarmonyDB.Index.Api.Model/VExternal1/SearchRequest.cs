@@ -12,6 +12,8 @@ public record SearchRequest
 
     public int MinRating { get; init; } = 0;
 
+    public int SongsPerPage { get; init; } = 100;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public SearchRequestOrdering Ordering { get; init; } = SearchRequestOrdering.ByRating;
 }
