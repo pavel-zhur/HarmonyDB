@@ -2,7 +2,7 @@
 
 public interface ISearchableHarmonyMovement
 {
-    int RootDelta { get; }
+    byte RootDelta { get; }
 
     ChordType FromType { get; }
 

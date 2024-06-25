@@ -170,5 +170,5 @@ public record Note
 
     public int EstimatedLength(RepresentationSettings representationSettings) => Representation(representationSettings).Length;
 
-    public static int Normalize(int delta) => ((delta % Modulus) + Modulus + Modulus) % Modulus;
+    public static byte Normalize(int delta) => (byte)(((delta % Modulus) + Modulus + Modulus) % Modulus);
 }

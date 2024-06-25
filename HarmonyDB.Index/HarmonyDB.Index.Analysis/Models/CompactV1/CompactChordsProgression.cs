@@ -25,7 +25,7 @@ public class CompactChordsProgression : ISearchableChordsProgression
                     Movements = Enumerable.Repeat(0, reader.ReadInt32())
                         .Select(_ => new CompactHarmonyMovement
                         {
-                            RootDelta = reader.ReadSByte(),
+                            RootDelta = reader.ReadByte(),
                             FromType = (ChordType)reader.ReadByte(),
                             ToType = (ChordType)reader.ReadByte(),
                         })
@@ -48,7 +48,7 @@ public class CompactChordsProgression : ISearchableChordsProgression
             writer.Write(extendedHarmonyMovementsSequence.Movements.Length);
             foreach (var compactHarmonyMovement in extendedHarmonyMovementsSequence.Movements.Span)
             {
-                writer.Write((sbyte)compactHarmonyMovement.RootDelta);
+                writer.Write(compactHarmonyMovement.RootDelta);
                 writer.Write((byte)compactHarmonyMovement.FromType);
                 writer.Write((byte)compactHarmonyMovement.ToType);
             }

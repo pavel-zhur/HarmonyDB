@@ -1,6 +1,6 @@
 ﻿namespace HarmonyDB.Index.Analysis.Models;
 
-public enum ChordType
+public enum ChordType : byte
 {
     Major,
     Minor,
