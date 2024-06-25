@@ -2,7 +2,10 @@ using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1.Api;
+using Microsoft.Extensions.Options;
 using OneShelf.Common.Api.Client;
 
 namespace HarmonyDB.Playground.Web.Controllers
@@ -11,11 +14,13 @@ namespace HarmonyDB.Playground.Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IndexApiClient _indexApiClient;
+        private readonly SourceApiClient _sourceApiClient;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
+            _sourceApiClient = sourceApiClient;
         }
 
         public IActionResult Index()

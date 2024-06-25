@@ -23,7 +23,7 @@ public class DownstreamApiClientOptions
         
         public required List<string> TenantTagsForbidden { get; init; } = [];
 
-        public required List<string> ExternalIdPrefixes { get; set; }
+        public required List<string> ExternalIdPrefixes { get; set; } = [];
     }
 
     public class SourceOptions

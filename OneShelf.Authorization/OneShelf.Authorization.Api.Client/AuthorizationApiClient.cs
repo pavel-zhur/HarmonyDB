@@ -17,7 +17,7 @@ public class AuthorizationApiClient
 
     public async Task<CheckIdentityResponse?> CheckIdentityRespectingCode(Identity identity)
     {
-        if (identity.Hash == _options.ServiceCode)
+        if (identity.Hash == _options.ServiceCode && !string.IsNullOrWhiteSpace(_options.ServiceCode))
         {
             return null;
         }

@@ -1,4 +1,5 @@
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 
 namespace HarmonyDB.Playground.Web
 {
@@ -12,7 +13,8 @@ namespace HarmonyDB.Playground.Web
             builder.Services.AddControllersWithViews();
 
             builder.Services
-                .AddIndexApiClient(builder.Configuration);
+                .AddIndexApiClient(builder.Configuration)
+                .AddSourceApiClient(builder.Configuration);
 
             var app = builder.Build();
 

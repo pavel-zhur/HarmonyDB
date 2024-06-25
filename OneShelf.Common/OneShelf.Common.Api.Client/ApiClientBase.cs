@@ -30,6 +30,12 @@ public class ApiClientBase<TClient>
         _httpClientFactory = httpClientFactory;
     }
 
+    public Identity GetServiceIdentity()
+        => new()
+        {
+            Hash = _options.ServiceCode,
+        };
+
     protected async Task<TResponse> PostWithCode<TRequest, TResponse>(string url, TRequest request, CancellationToken cancellationToken = default, ApiTraceBag? apiTraceBag = null)
     {
         var started = DateTime.Now;

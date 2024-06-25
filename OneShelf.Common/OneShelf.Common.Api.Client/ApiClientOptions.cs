@@ -5,4 +5,6 @@ public class ApiClientOptions<TClient>
     public required Uri Endpoint { get; set; }
 
     public required string MasterCode { get; set; }
+
+    public required string ServiceCode { get; set; }
 }

@@ -2,6 +2,7 @@
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using HarmonyDB.Source.Api.Model.VInternal;
+using Microsoft.Extensions.Options;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common.Api.Client;
 
@@ -9,6 +10,11 @@ namespace HarmonyDB.Source.Api.Client;
 
 public class SourceApiClient : ApiClientBase<SourceApiClient>
 {
+    public SourceApiClient(IOptions<ApiClientOptions<SourceApiClient>> options, IHttpClientFactory httpClientFactory) 
+        : base(options, httpClientFactory)
+    {
+    }
+
     public SourceApiClient(ApiClientOptions<SourceApiClient> options, IHttpClientFactory httpClientFactory) 
         : base(options, httpClientFactory)
     {
@@ -17,12 +23,12 @@ public class SourceApiClient : ApiClientBase<SourceApiClient>
     public async Task<string> V1GetSongsDirect(string request)
         => await PostDirect(SourceApiUrls.V1GetSongs, request);
 
-    public async Task<GetSongResponse> V1GetSong(Identity identity, string externalId)
+    public async Task<GetSongResponse> V1GetSong(Identity identity, string externalId, ApiTraceBag? apiTraceBag = null)
         => await Post<GetSongRequest, GetSongResponse>(SourceApiUrls.V1GetSong, new()
         {
             Identity = identity,
             ExternalId = externalId,
-        });
+        }, apiTraceBag: apiTraceBag);
 
     public async Task<GetProgressionsIndexResponse> VInternalGetProgressionsIndex(GetProgressionsIndexRequest request, CancellationToken cancellationToken)
         => await PostWithCode<GetProgressionsIndexRequest, GetProgressionsIndexResponse>(SourceApiUrls.VInternalGetProgressionsIndex, request, cancellationToken);
