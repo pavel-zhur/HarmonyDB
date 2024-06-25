@@ -94,8 +94,6 @@ public class IndexFunctions
 
                             _logger.LogInformation("Iteration {iteration} {token}", iteration++, request.NextToken);
 
-                            if (result.NextToken == null || iteration > 4) break;
-
                             request.NextToken = result.NextToken;
                         }
 
