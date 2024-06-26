@@ -35,7 +35,7 @@ jobs:
     - name: Replace 1
       uses: richardrigutins/replace-in-files@v2
       with:
-        files: 'HarmonyDB.Playground/HarmonyDB.Playground.Web/Views/Shared/Layout.cshtml'
+        files: 'HarmonyDB.Playground/HarmonyDB.Playground.Web/Views/Shared/_Layout.cshtml'
         search-text: '{#version#}'
         replacement-text: "${{ github.ref_name }}-${{ steps.date.outputs.date }}"
 
