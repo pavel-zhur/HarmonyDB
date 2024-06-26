@@ -10,7 +10,7 @@ public record SongModel
 
     public string? Highlight { get; set; }
 
-    public int Transpose { get; set; } = 0;
+    public int Transpose { get; set; }
 
     public NoteAlteration? Alteration { get; set; }
 }
