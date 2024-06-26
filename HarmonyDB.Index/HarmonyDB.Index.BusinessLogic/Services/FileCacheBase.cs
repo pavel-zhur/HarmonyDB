@@ -13,18 +13,17 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
     where TPresentationModel : class
     where TFileModel : class
 {
-    private readonly BlobServiceClient _client;
     private readonly FileCacheBaseOptions _options;
     private readonly AsyncLock _lock = new();
     private readonly AsyncLock _containerClientLock = new();
 
     private Cache? _cache;
     private BlobContainerClient? _containerClient;
+    private BlobServiceClient? _client;
 
     protected FileCacheBase(ILogger<FileCacheBase<TFileModel, TPresentationModel>> logger, IOptions<FileCacheBaseOptions> options)
     {
         _options = options.Value;
-        _client = new(_options.StorageConnectionString);
         Logger = logger;
     }
 
@@ -114,6 +113,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
         if (_containerClient != null) return _containerClient;
         using var _ = await _containerClientLock.LockAsync();
         if (_containerClient != null) return _containerClient;
+        _client ??= new(_options.StorageConnectionString);
         var containerClient = _client.GetBlobContainerClient("indexcache");
         await containerClient.CreateIfNotExistsAsync();
         return _containerClient = containerClient;
