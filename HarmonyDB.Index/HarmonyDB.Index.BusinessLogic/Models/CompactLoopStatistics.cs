@@ -2,7 +2,7 @@
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
-public class CompactLoopStatistics
+public record CompactLoopStatistics
 {
     [JsonPropertyName("e")]
     public required List<string> ExternalIds { get; init; }

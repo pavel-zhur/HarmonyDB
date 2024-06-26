@@ -38,9 +38,14 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
     protected abstract TPresentationModel ToPresentationModel(TFileModel fileModel);
 
-    public async Task Copy()
+    public async Task Copy(Func<TFileModel, TFileModel>? updateFunc = null)
     {
-        var x = await StreamDecompressDeserialize();
+        var x = await StreamDecompressDeserialize() ?? throw new("The data is not available.");
+        if (updateFunc != null)
+        {
+            x = updateFunc(x);
+        }
+
         await StreamCompressSerialize(x);
     }
 

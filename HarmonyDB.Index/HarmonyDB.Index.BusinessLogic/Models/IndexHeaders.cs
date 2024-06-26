@@ -29,8 +29,9 @@ public class IndexHeaders
             writer1.Write(Add(header.Source, sources));
             writer1.Write(Add(header.Title ?? string.Empty, titles));
             writer1.Write(header.Rating ?? -1f);
-            writer1.Write(header.Artists?.Count ?? 0);
-            foreach (var artist in header.Artists ?? Enumerable.Empty<string>())
+            var artistsOutput = header.Artists?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? [];
+            writer1.Write(artistsOutput.Count);
+            foreach (var artist in artistsOutput)
             {
                 writer1.Write(Add(artist, artists));
             }
