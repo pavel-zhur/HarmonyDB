@@ -3,17 +3,18 @@
 @model SongModel
 
 @{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
-
     Chords chords = ViewBag.Chords;
+    var title = $"{string.Join(", ", chords.Artists)} – {chords.Title}, Harmony DB";
+
+    ViewBag.Title = title;
+    Layout = "_Layout";
 }
 
 <script src="~/js/Player.js"></script>
 @Html.Hidden("parsedChords", JsonSerializer.Serialize(ViewBag.Parsed), null)
 
 <div>
-    <h3 class="d-inline-block">@string.Join(", ", chords.Artists) &ndash; @chords.Title</h3>
+    <h3 class="d-inline-block">@title</h3>
     @Html.ActionLink("\ud83d\udd17Permalink", "Song", "Home", Model, new { target = "_blank" })
 </div>
 @if (Model.IncludeTrace)
