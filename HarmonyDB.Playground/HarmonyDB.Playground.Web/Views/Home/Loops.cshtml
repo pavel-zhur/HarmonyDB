@@ -2,14 +2,14 @@
 @model LoopsModel
 
 @{
-    ViewBag.Title = "Loops";
+    ViewBag.Title = "Popular Loops";
     Layout = "_Layout";
 
     LoopsResponse? response = ViewBag.Response;
 }
 
 <div>
-    <h3 class="d-inline-block">Search</h3>
+    <h3 class="d-inline-block">See the most popular chord progressions</h3>
     @Html.ActionLink("\ud83d\udd17Permalink", "Loops", "Home", Model with
     {
         JustForm = true,
@@ -46,7 +46,7 @@
             Include the Index API trace for developers
         </label>
     </p>
-    <input type="submit" value="Display" />
+    <input type="submit" value="List" onclick="this.form.submit(); this.disabled=true; this.value='Querying (takes 5–60 seconds)…'; " />
 }
 
 @if (response != null)

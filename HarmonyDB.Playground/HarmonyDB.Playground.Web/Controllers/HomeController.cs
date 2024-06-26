@@ -63,6 +63,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                 }
 
                 searchModel.JustForm = false;
+                if (string.IsNullOrEmpty(searchModel.Query)) searchModel = searchModel with { Query = "F G Am F" };
 
                 return View(searchModel);
             }

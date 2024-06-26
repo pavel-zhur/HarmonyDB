@@ -4,14 +4,14 @@
 @model SearchModel
 
 @{
-    ViewBag.Title = "Search";
+    ViewBag.Title = "Progressions Search";
     Layout = "_Layout";
 
     SearchResponse? response = ViewBag.Response;
 }
 
 <div>
-    <h3 class="d-inline-block">Search</h3>
+    <h3 class="d-inline-block">Search songs by chords sequence</h3>
     @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
     {
         JustForm = true,
@@ -50,7 +50,7 @@
             Include the Index API trace for developers
         </label>
     </p>
-    <input type="submit" value="Search" />
+    <input type="submit" value="Search" onclick="this.form.submit(); this.disabled=true; this.value='Querying (takes 5–60 seconds)…'; " />
 }
 
 @if (response != null)
