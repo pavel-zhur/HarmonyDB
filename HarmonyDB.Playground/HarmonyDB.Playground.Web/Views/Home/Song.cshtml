@@ -13,8 +13,6 @@
 <script src="~/js/Player.js"></script>
 @Html.Hidden("parsedChords", JsonSerializer.Serialize(ViewBag.Parsed), null)
 
-<button onclick="playChord()">play</button>
-
 <div>
     <h3 class="d-inline-block">@string.Join(", ", chords.Artists) &ndash; @chords.Title</h3>
     @Html.ActionLink("\ud83d\udd17Permalink", "Song", "Home", Model, new { target = "_blank" })
