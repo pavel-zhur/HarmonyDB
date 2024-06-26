@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using HarmonyDB.Common;
+using HarmonyDB.Common.Tools;
 using Microsoft.Extensions.Options;
 
 namespace OneShelf.Pdfs.Api.Client;
@@ -104,7 +105,7 @@ div.chords-block span.flying2 {{
     <body>
 
 <h4 class='song-title'>
-    {artist} &minus; {title} <span style='font-size: 70%; font-weight: normal;'>({shortSourceName}{(transpose == 0 ? "" : transpose < 0 ? $", {transpose}" : $", +{transpose}")}{(alteration.HasValue ? alteration == NoteAlteration.Flat ? ", b" : ", #" : "")})</span>
+    {artist} &minus; {title} <span style='font-size: 70%; font-weight: normal;'>({shortSourceName}{(transpose == 0 ? "" : $", {transpose.Transposition()}")}{(alteration.HasValue ? alteration == NoteAlteration.Flat ? ", b" : ", #" : "")})</span>
 </h4>
 
         <div class=""chords-block {(twoColumns ? "two" : "")}"">

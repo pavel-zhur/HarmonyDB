@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Common.Songs.Tools;
+﻿namespace HarmonyDB.Common.Tools;
 
 public static class TranspositionExtensions
 {
