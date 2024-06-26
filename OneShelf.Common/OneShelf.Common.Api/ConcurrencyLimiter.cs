@@ -24,6 +24,7 @@ public class ConcurrencyLimiter
         try
         {
             var value = Interlocked.Increment(ref _current);
+            _logger.LogInformation("Request concurrency: {concurrency}.", value);
             if (value > _options.MaxConcurrency)
             {
                 throw new ServiceConcurrencyException();
