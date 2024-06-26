@@ -46,6 +46,11 @@ public class ApiClientBase<TClient>
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken));
         }
 
+        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new ConcurrencyException();
+        }
+
         httpResponseMessage.EnsureSuccessStatusCode();
         var response = await httpResponseMessage.Content.ReadFromJsonAsync<TResponse>(_jsonSerializerOptions, cancellationToken) ?? throw new("Empty response.");
 
@@ -70,6 +75,11 @@ public class ApiClientBase<TClient>
             throw new UnauthorizedException(await response.Content.ReadAsStringAsync());
         }
 
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new ConcurrencyException();
+        }
+
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync();
     }
@@ -84,6 +94,11 @@ public class ApiClientBase<TClient>
         {
             unauthorized?.Invoke();
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken));
+        }
+
+        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new ConcurrencyException();
         }
 
         httpResponseMessage.EnsureSuccessStatusCode();
@@ -108,6 +123,11 @@ public class ApiClientBase<TClient>
         var uri = new Uri(_options.Endpoint, url);
         using var httpResponseMessage = await client.GetAsync(uri, cancellationToken);
 
+        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new ConcurrencyException();
+        }
+
         httpResponseMessage.EnsureSuccessStatusCode();
         var response = await httpResponseMessage.Content.ReadFromJsonAsync<TResponse>(_jsonSerializerOptions, cancellationToken: cancellationToken) ?? throw new("Empty response.");
 
@@ -131,6 +151,11 @@ public class ApiClientBase<TClient>
         {
             unauthorized?.Invoke();
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync());
+        }
+
+        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new ConcurrencyException();
         }
 
         httpResponseMessage.EnsureSuccessStatusCode();

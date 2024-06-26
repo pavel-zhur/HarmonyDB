@@ -50,37 +50,51 @@ namespace HarmonyDB.Playground.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Search([FromQuery]SearchModel searchModel)
         {
-            if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
+            try
             {
-                if (searchModel.IncludeTrace)
+                if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
                 {
-                    ViewBag.Trace = new ApiTraceBag();
+                    if (searchModel.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.Search(searchModel, ViewBag.Trace);
                 }
 
-                ViewBag.Response = await _indexApiClient.Search(searchModel, ViewBag.Trace);
+                searchModel.JustForm = false;
+
+                return View(searchModel);
             }
-
-            searchModel.JustForm = false;
-
-            return View(searchModel);
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Loops([FromQuery]LoopsModel loopsModel)
+        public async Task<IActionResult> Loops([FromQuery] LoopsModel loopsModel)
         {
-            if (!loopsModel.JustForm)
+            try
             {
-                if (loopsModel.IncludeTrace)
+                if (!loopsModel.JustForm)
                 {
-                    ViewBag.Trace = new ApiTraceBag();
+                    if (loopsModel.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.Loops(loopsModel, ViewBag.Trace);
                 }
 
-                ViewBag.Response = await _indexApiClient.Loops(loopsModel, ViewBag.Trace);
+                loopsModel.JustForm = false;
+
+                return View(loopsModel);
             }
-
-            loopsModel.JustForm = false;
-
-            return View(loopsModel);
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
         }
     }
 }

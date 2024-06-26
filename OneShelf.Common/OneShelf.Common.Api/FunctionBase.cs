@@ -5,10 +5,13 @@ namespace OneShelf.Common.Api;
 
 public abstract class FunctionBase<TRequest>
 {
+    private readonly ConcurrencyLimiter? _concurrencyLimiter;
+
     protected readonly ILogger Logger;
 
-    protected FunctionBase(ILoggerFactory loggerFactory)
+    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false)
     {
+        _concurrencyLimiter = limitConcurrency ? concurrencyLimiter ?? throw new("Concurrency limiter is required.") : null;
         Logger = loggerFactory.CreateLogger(GetType());
     }
 
@@ -18,7 +21,18 @@ public abstract class FunctionBase<TRequest>
         {
             Logger.LogInformation("C# HTTP trigger function processed a request.");
             OnBeforeExecution();
+
+            if (_concurrencyLimiter != null)
+            {
+                return await _concurrencyLimiter.ExecuteOrThrow(() => ExecuteSuccessful(request));
+            }
+                
             return await ExecuteSuccessful(request);
+        }
+        catch (ServiceConcurrencyException e)
+        {
+            Logger.LogError(e, "Too many requests.");
+            return new StatusCodeResult(429);
         }
         catch (Exception e)
         {
@@ -36,8 +50,8 @@ public abstract class FunctionBase<TRequest>
 
 public abstract class FunctionBase<TRequest, TResponse> : FunctionBase<TRequest>
 {
-    protected FunctionBase(ILoggerFactory loggerFactory)
-        : base(loggerFactory)
+    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false)
+        : base(loggerFactory, concurrencyLimiter, limitConcurrency)
     {
     }
 

@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.BusinessLogic\HarmonyDB.Index.BusinessLogic.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
+    <ProjectReference Include="..\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
     <ProjectReference Include="..\HarmonyDB.Index.DownstreamApi.Client\HarmonyDB.Index.DownstreamApi.Client.csproj" />
   </ItemGroup>
   <ItemGroup>

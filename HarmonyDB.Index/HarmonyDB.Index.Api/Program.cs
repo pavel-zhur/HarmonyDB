@@ -1,3 +1,5 @@
+using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic;
 using HarmonyDB.Index.DownstreamApi.Client;
@@ -23,10 +25,13 @@ var host = new HostBuilder()
             .AddCollectivesApiClient(context.Configuration)
             .AddAuthorizationApiClient(context.Configuration)
             .AddDownstreamApiClient(context.Configuration)
+            .AddIndexApiClient(context.Configuration)
+            .AddConcurrencyLimiter(context.Configuration)
             .AddScoped<CommonExecutions>()
             .AddScoped<InputParser>()
             .AddIndexBusinessLogic(context.Configuration)
-            .AddSecurityContext();
+            .AddSecurityContext()
+            .Configure<IndexApiOptions>(o => context.Configuration.GetSection(nameof(IndexApiOptions)).Bind(o));
     })
     .Build();
 

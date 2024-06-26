@@ -1,6 +1,8 @@
 ﻿using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Services;
 using HarmonyDB.Index.DownstreamApi.Client;
@@ -9,7 +11,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OneShelf.Common;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
@@ -22,9 +26,11 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
     private readonly SearchOrderCache _searchOrderCache;
     private readonly InputParser _inputParser;
     private readonly DownstreamApiClient _downstreamApiClient;
+    private readonly IndexApiOptions _options;
+    private readonly IndexApiClient _indexApiClient;
 
-    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser, DownstreamApiClient downstreamApiClient)
-        : base(loggerFactory, securityContext)
+    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
+        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _progressionsCache = progressionsCache;
         _indexHeadersCache = indexHeadersCache;
@@ -32,6 +38,8 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
         _searchOrderCache = searchOrderCache;
         _inputParser = inputParser;
         _downstreamApiClient = downstreamApiClient;
+        _indexApiClient = indexApiClient;
+        _options = options.Value;
     }
 
     [Function(IndexApiUrls.VExternal1Search)]
@@ -40,6 +48,11 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
 
     protected override async Task<SearchResponse> Execute(SearchRequest request)
     {
+        if (_options.RedirectCachesToIndex)
+        {
+            return await _indexApiClient.Search(request);
+        }
+
         var progressions = await _progressionsCache.Get();
         var searchOrder = await _searchOrderCache.Get();
         var headers = await _indexHeadersCache.Get();

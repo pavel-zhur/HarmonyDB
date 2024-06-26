@@ -2,9 +2,9 @@
 
 public class FileCacheBaseOptions
 {
-    public required FileCacheSource ReadSource { get; init; }
+    public FileCacheSource? ReadSource { get; init; }
 
-    public required FileCacheSource WriteSource { get; init; }
+    public FileCacheSource? WriteSource { get; init; }
 
     public string? DiskPath { get; init; }
     

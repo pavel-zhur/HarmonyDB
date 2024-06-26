@@ -12,12 +12,17 @@
 
   <ItemGroup>
     <_ContentIncludedByDefault Remove="Views\Home\Search.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Shared\Concurrency.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\Shared\Concurrency.cshtml" />
   </ItemGroup>
 
 </Project>

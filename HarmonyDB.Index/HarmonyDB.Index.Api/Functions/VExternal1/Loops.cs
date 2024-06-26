@@ -1,11 +1,15 @@
-﻿using HarmonyDB.Index.Api.Model;
+﻿using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.BusinessLogic.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OneShelf.Common;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
@@ -13,11 +17,15 @@ namespace HarmonyDB.Index.Api.Functions.VExternal1;
 public class Loops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
 {
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
+    private readonly IndexApiOptions _options;
+    private readonly IndexApiClient _indexApiClient;
 
-    public Loops(ILoggerFactory loggerFactory, SecurityContext securityContext, LoopsStatisticsCache loopsStatisticsCache)
-        : base(loggerFactory, securityContext)
+    public Loops(ILoggerFactory loggerFactory, SecurityContext securityContext, LoopsStatisticsCache loopsStatisticsCache, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
+        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _loopsStatisticsCache = loopsStatisticsCache;
+        _indexApiClient = indexApiClient;
+        _options = options.Value;
     }
 
     [Function(IndexApiUrls.VExternal1Loops)]
@@ -26,6 +34,11 @@ public class Loops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
 
     protected override async Task<LoopsResponse> Execute(LoopsRequest request)
     {
+        if (_options.RedirectCachesToIndex)
+        {
+            return await _indexApiClient.Loops(request);
+        }
+
         IEnumerable<LoopStatistics> results = await _loopsStatisticsCache.Get();
 
         var loops = (request.Ordering switch

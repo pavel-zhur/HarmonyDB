@@ -6,8 +6,9 @@ public abstract class ServiceFunctionBase<TRequest> : FunctionBase<TRequest>
 {
     private readonly SecurityContext _securityContext;
 
-    protected ServiceFunctionBase(ILoggerFactory loggerFactory, SecurityContext securityContext)
-        : base(loggerFactory)
+    protected ServiceFunctionBase(ILoggerFactory loggerFactory, SecurityContext securityContext,
+        ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false)
+        : base(loggerFactory, concurrencyLimiter, limitConcurrency)
     {
         _securityContext = securityContext;
     }
@@ -23,7 +24,9 @@ public abstract class ServiceFunctionBase<TRequest, TResponse> : FunctionBase<TR
 {
     private readonly SecurityContext _securityContext;
 
-    protected ServiceFunctionBase(ILoggerFactory loggerFactory, SecurityContext securityContext) : base(loggerFactory)
+    protected ServiceFunctionBase(ILoggerFactory loggerFactory, SecurityContext securityContext,
+        ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false) 
+        : base(loggerFactory, concurrencyLimiter, limitConcurrency)
     {
         _securityContext = securityContext;
     }

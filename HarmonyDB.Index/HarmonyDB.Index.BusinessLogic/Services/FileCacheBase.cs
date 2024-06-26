@@ -105,7 +105,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             }
         }
 
-        throw new ArgumentOutOfRangeException(nameof(_options.WriteSource), _options.WriteSource,
+        throw new ArgumentOutOfRangeException(nameof(_options.ReadSource), _options.ReadSource,
             "The write source is out of range.");
     }
 

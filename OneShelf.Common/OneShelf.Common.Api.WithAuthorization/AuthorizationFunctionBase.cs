@@ -9,14 +9,16 @@ namespace OneShelf.Common.Api.WithAuthorization;
 public abstract class AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
+    private readonly ConcurrencyLimiter? _concurrencyLimiter;
     private readonly AuthorizationApiClient _authorizationApiClient;
     private readonly bool _respectServiceCode;
     
     protected readonly SecurityContext SecurityContext;
     protected readonly ILogger Logger;
 
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, bool respectServiceCode = false)
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, ConcurrencyLimiter? concurrencyLimiter = null, bool respectServiceCode = false, bool limitConcurrency = false)
     {
+        _concurrencyLimiter = limitConcurrency ? concurrencyLimiter ?? throw new("Concurrency limiter is required.") : null;
         Logger = loggerFactory.CreateLogger(GetType());
         _authorizationApiClient = authorizationApiClient;
         SecurityContext = securityContext;
@@ -33,13 +35,13 @@ public abstract class AuthorizationFunctionBase<TRequest>
             if (authorizationCheckResult == null)
             {
                 SecurityContext.InitService();
-                return await ExecuteSuccessful(httpRequest, request);
+                return await ExecuteWithConcurrency(httpRequest, request);
             }
 
             if (authorizationCheckResult.IsSuccess)
             {
                 SecurityContext.InitSuccessful(request.Identity, authorizationCheckResult);
-                return await ExecuteSuccessful(httpRequest, request);
+                return await ExecuteWithConcurrency(httpRequest, request);
             }
 
             return await ExecuteFailed(authorizationCheckResult.AuthorizationError!);
@@ -48,11 +50,26 @@ public abstract class AuthorizationFunctionBase<TRequest>
         {
             return new UnauthorizedObjectResult(e.Message);
         }
+        catch (ServiceConcurrencyException e)
+        {
+            Logger.LogError(e, "Too many requests.");
+            return new StatusCodeResult(429);
+        }
         catch (Exception e)
         {
             Logger.LogError(e, "Error executing the function.");
             return new StatusCodeResult(500);
         }
+    }
+
+    private async Task<IActionResult> ExecuteWithConcurrency(HttpRequest httpRequest, TRequest request)
+    {
+        if (_concurrencyLimiter != null)
+        {
+            return await _concurrencyLimiter.ExecuteOrThrow(() => ExecuteSuccessful(httpRequest, request));
+        }
+
+        return await ExecuteSuccessful(httpRequest, request);
     }
 
     protected abstract Task<IActionResult> ExecuteSuccessful(HttpRequest httpRequest, TRequest request);
@@ -64,8 +81,8 @@ public abstract class AuthorizationFunctionBase<TRequest>
 public abstract class AuthorizationFunctionBase<TRequest, TResponse> : AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, bool respectServiceCode = false)
-        : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode)
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, ConcurrencyLimiter? concurrencyLimiter = null, bool respectServiceCode = false, bool limitConcurrency = false)
+        : base(loggerFactory, authorizationApiClient, securityContext, concurrencyLimiter, respectServiceCode, limitConcurrency)
     {
     }
 
