@@ -1,7 +1,9 @@
 ﻿# Harmony DB
 Welcome to this repository, a personal project with mixed purposes that has changed and evolved over time, along with my interests in music and .Net.
 
-The project is up and running, hosted on Azure. It's still a work in progress, but I've made a part of it accessible for anyone curious. You can check out the current version here: https://c.harmonydb.com/.
+The project is up and running, hosted on Azure. It's still a work in progress, but I've made a part of it accessible for anyone curious. You can check out the current versions here:
+- https://p.harmonydb.com/ - a playground that allows you to query the Harmony DB (under active development),
+- https://c.harmonydb.com/ - a web and mobile application, a chord library for jamming and personal use.
 
 ## History
 Originally started as a Telegram bot to keep track of songs for our jam sessions and a PDF generator for songbooks, this repository has grown into a diverse collection of tools, including:
