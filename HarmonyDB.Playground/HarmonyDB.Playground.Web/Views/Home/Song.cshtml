@@ -4,7 +4,7 @@
 
 @{
     Chords chords = ViewBag.Chords;
-    var title = $"{string.Join(", ", chords.Artists)} – {chords.Title}, Harmony DB";
+    var title = $"{string.Join(", ", chords.Artists ?? [])} – {chords.Title}, Harmony DB";
 
     ViewBag.Title = title;
     Layout = "_Layout";
