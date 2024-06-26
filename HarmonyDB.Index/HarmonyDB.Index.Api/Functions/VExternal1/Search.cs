@@ -23,19 +23,17 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
     private readonly ProgressionsCache _progressionsCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly ProgressionsSearch _progressionsSearch;
-    private readonly SearchOrderCache _searchOrderCache;
     private readonly InputParser _inputParser;
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
 
-    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, SearchOrderCache searchOrderCache, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
+    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _progressionsCache = progressionsCache;
         _indexHeadersCache = indexHeadersCache;
         _progressionsSearch = progressionsSearch;
-        _searchOrderCache = searchOrderCache;
         _inputParser = inputParser;
         _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
@@ -54,9 +52,12 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
         }
 
         var progressions = await _progressionsCache.Get();
-        var searchOrder = await _searchOrderCache.Get();
         var headers = await _indexHeadersCache.Get();
-        var found = _progressionsSearch.Search(searchOrder.Select(x => progressions[x]), _inputParser.Parse(request.Query));
+        var found = _progressionsSearch.Search(
+            headers.Headers.Values.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
+                .Where(x => !string.IsNullOrWhiteSpace(x.h.Title) && x.h.Artists?.Any(a => !string.IsNullOrWhiteSpace(a)) == true && !string.IsNullOrWhiteSpace(_downstreamApiClient.GetSourceTitle(x.h.Source)))
+                .Select(x => x.p.Value),
+            _inputParser.Parse(request.Query));
 
         var results = headers.Headers
             .Select(h => progressions.TryGetValue(h.Key, out var progression) && found.TryGetValue(progression, out var coverage)
