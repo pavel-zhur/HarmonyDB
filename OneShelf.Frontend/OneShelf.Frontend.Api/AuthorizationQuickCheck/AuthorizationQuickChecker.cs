@@ -2,18 +2,23 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using OneShelf.Authorization.Api.Model;
+using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Frontend.Api.Model.V3.Api;
 
 namespace OneShelf.Frontend.Api.AuthorizationQuickCheck;
 
 public class AuthorizationQuickChecker
 {
+    private readonly SecurityContext _securityContext;
     private readonly AuthorizationQuickCheckOptions _options;
 
-    public AuthorizationQuickChecker(IOptions<AuthorizationQuickCheckOptions> options) => _options = options.Value;
+    public AuthorizationQuickChecker(IOptions<AuthorizationQuickCheckOptions> options, SecurityContext securityContext)
+    {
+        _securityContext = securityContext;
+        _options = options.Value;
+    }
 
-    public async Task<string> CreateV1PreviewPdfLink(Identity identity, GetPdfsChunkRequestFile requestFile,
+    public async Task<string> CreateV1PreviewPdfLink(GetPdfsChunkRequestFile requestFile,
         string urlAbsolutePathBase)
     {
         var expiration = DateTime.Now.AddMinutes(30).Ticks;
@@ -22,15 +27,15 @@ public class AuthorizationQuickChecker
         {
             File = requestFile,
             Expiration = expiration,
-            UserId = identity.Id,
-            Hash = await Sign(identity.Id, JsonSerializer.Serialize(requestFile), expiration),
+            UserId = _securityContext.Identity.Id,
+            Hash = await Sign(JsonSerializer.Serialize(requestFile), expiration),
         };
 
         return $"{urlAbsolutePathBase}{ApiUrls.V3PreviewPdf}?x={Uri.EscapeDataString(JsonSerializer.Serialize(request))}";
     }
 
-    public async Task<string> Sign(long userId, string file, long expiration) =>
-        await Sign($"{userId}, {expiration}, {file}, {_options.Secret}");
+    public async Task<string> Sign(string file, long expiration) =>
+        await Sign($"{_securityContext.Identity.Id}, {expiration}, {file}, {_options.Secret}");
 
     private async Task<string> Sign(string data)
     {

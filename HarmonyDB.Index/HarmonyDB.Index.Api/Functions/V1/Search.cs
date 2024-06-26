@@ -1,6 +1,7 @@
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Index.DownstreamApi.Client;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -14,14 +15,15 @@ namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class Search : AuthorizationFunctionBase<SearchRequest, SearchResponse>
     {
-        private readonly SourcesApiClient _sourcesApiClient;
+        private readonly DownstreamApiClient _downstreamApiClient;
 
-        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SourcesApiClient sourcesApiClient) : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
-            _sourcesApiClient = sourcesApiClient;
+            _downstreamApiClient = downstreamApiClient;
         }
 
-        [Function(SourcesApiUrls.V1Search)]
+        [Function(SourceApiUrls.V1Search)]
         public Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] SearchRequest request)
             => RunHandler(req, request);
@@ -34,7 +36,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                 throw new ArgumentOutOfRangeException(nameof(query));
             }
 
-            var all = await Task.WhenAll(_sourcesApiClient.SearchableIndices.Select(i => _sourcesApiClient.V1Search(i,
+            var all = await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.IsSearchSupported).Select(i => _downstreamApiClient.V1Search(i,
                 new()
                 {
                     Identity = request.Identity,
@@ -45,7 +47,13 @@ namespace HarmonyDB.Index.Api.Functions.V1
             {
                 Headers = all
                     .WithIndices()
-                    .SelectMany(x => x.x.Headers.Where(h => _sourcesApiClient.SourceIndices[h.Source] == x.i))
+                    .SelectMany(x => x.x.Headers
+                        .Where(h => _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(h.Source) == x.i)
+                        .Select(h =>
+                        {
+                            h.Source = _downstreamApiClient.GetSourceTitle(h.Source);
+                            return h;
+                        }))
                     .ToList(),
             };
         }

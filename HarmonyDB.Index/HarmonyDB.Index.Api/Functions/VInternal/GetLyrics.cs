@@ -7,15 +7,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VInternal;
 
-public class GetLyrics : FunctionBase<GetLyricsRequest, GetLyricsResponse>
+public class GetLyrics : ServiceFunctionBase<GetLyricsRequest, GetLyricsResponse>
 {
     private readonly CommonExecutions _commonExecutions;
 
-    public GetLyrics(ILoggerFactory loggerFactory, CommonExecutions commonExecutions)
-        : base(loggerFactory)
+    public GetLyrics(ILoggerFactory loggerFactory, CommonExecutions commonExecutions, SecurityContext securityContext)
+        : base(loggerFactory, securityContext)
     {
         _commonExecutions = commonExecutions;
     }
@@ -26,17 +27,9 @@ public class GetLyrics : FunctionBase<GetLyricsRequest, GetLyricsResponse>
 
     protected override async Task<GetLyricsResponse> Execute(GetLyricsRequest request)
     {
-        var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new()
-        {
-            Identity = null!,
-            Uris = new Uri(request.Url).Once().ToList(),
-        })).Attributes.Single().Value.ExternalId;
+        var externalId = (await _commonExecutions.GetSourcesAndExternalIds(new Uri(request.Url).Once().ToList())).Attributes.Single().Value.ExternalId;
 
-        var chords = (await _commonExecutions.GetSong(new()
-        {
-            Identity = null!,
-            ExternalId = externalId,
-        })).Song;
+        var chords = (await _commonExecutions.GetSong(externalId)).Song;
         
         return new()
         {

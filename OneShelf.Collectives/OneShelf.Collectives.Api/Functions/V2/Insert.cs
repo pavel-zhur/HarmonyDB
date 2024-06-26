@@ -24,8 +24,8 @@ namespace OneShelf.Collectives.Api.Functions.V2
         private readonly SongsOperations _songsOperations;
         private readonly UrlsManager _urlsManager;
 
-        public Insert(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager) 
-            : base(loggerFactory, authorizationApiClient)
+        public Insert(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _collectivesCosmosDatabase = collectivesCosmosDatabase;
             _songsOperations = songsOperations;
@@ -41,7 +41,7 @@ namespace OneShelf.Collectives.Api.Functions.V2
             if (request.DerivedFromVersionId.HasValue)
             {
                 version = await _songsOperations.SongsDatabase.Versions
-                    .Where(x => x.Song.TenantId == TenantId)
+                    .Where(x => x.Song.TenantId == SecurityContext.TenantId)
                     .Include(x => x.Song)
                     .SingleOrDefaultAsync(x => x.Id == request.DerivedFromVersionId);
 
@@ -86,12 +86,12 @@ namespace OneShelf.Collectives.Api.Functions.V2
             }
             else
             {
-                var newIndex = await _songsOperations.SongsDatabase.GetNextSongIndex(TenantId);
-                var artists = await _songsOperations.FindOrCreateArtists(TenantId, request.Collective.Authors);
+                var newIndex = await _songsOperations.SongsDatabase.GetNextSongIndex(SecurityContext.TenantId);
+                var artists = await _songsOperations.FindOrCreateArtists(SecurityContext.TenantId, request.Collective.Authors);
 
                 _songsOperations.SongsDatabase.Songs.Add(new()
                 {
-                    TenantId = TenantId,
+                    TenantId = SecurityContext.TenantId,
                     Artists = artists,
                     CreatedByUserId = request.Identity.Id,
                     CreatedOn = DateTime.Now,

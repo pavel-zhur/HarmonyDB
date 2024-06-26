@@ -133,4 +133,8 @@ public static class Extensions
             }
         }
     }
+
+    public static T? OnceAsNullable<T>(this T value)
+        where T : struct
+        => value;
 }

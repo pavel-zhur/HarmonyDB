@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.Analysis.Models.CompactV1;
 
 public struct CompactHarmonyMovement : ISearchableHarmonyMovement
 {
-    public required int RootDelta { get; init; }
+    public required byte RootDelta { get; init; }
 
     public required ChordType FromType { get; init; }
 

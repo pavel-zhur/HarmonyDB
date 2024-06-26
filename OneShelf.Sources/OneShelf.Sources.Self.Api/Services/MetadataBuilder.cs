@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.Extensions.Options;
 using OneShelf.Collectives.Api.Model.V2.Sub;
 using OneShelf.Frontend.SpecificModel;

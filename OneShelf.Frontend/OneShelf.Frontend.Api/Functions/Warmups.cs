@@ -1,4 +1,5 @@
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Source.Api.Client;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,16 +12,16 @@ namespace OneShelf.Frontend.Api.Functions
 {
     public class Warmups
     {
-        private readonly IndexApiClient _indexApiClient;
+        private readonly SourceApiClient _sourceApiClient;
         private readonly AuthorizationApiClient _authorizationApiClient;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SongsDatabase _songsDatabase;
         private readonly FrontendOptions _options;
         private readonly ILogger _logger;
 
-        public Warmups(ILoggerFactory loggerFactory, IndexApiClient indexApiClient, AuthorizationApiClient authorizationApiClient, IHttpClientFactory httpClientFactory, IOptions<FrontendOptions> options, SongsDatabase songsDatabase)
+        public Warmups(ILoggerFactory loggerFactory, SourceApiClient sourceApiClient, AuthorizationApiClient authorizationApiClient, IHttpClientFactory httpClientFactory, IOptions<FrontendOptions> options, SongsDatabase songsDatabase)
         {
-            _indexApiClient = indexApiClient;
+            _sourceApiClient = sourceApiClient;
             _authorizationApiClient = authorizationApiClient;
             _httpClientFactory = httpClientFactory;
             _songsDatabase = songsDatabase;
@@ -54,7 +55,7 @@ namespace OneShelf.Frontend.Api.Functions
             var authorizationTook = (int)(DateTime.Now - authorization).TotalMilliseconds;
 
             var index = DateTime.Now;
-            await _indexApiClient.V1Ping();
+            await _sourceApiClient.V1Ping();
             var indexTook = (int)(DateTime.Now - index).TotalMilliseconds;
 
             var telegram = DateTime.Now;

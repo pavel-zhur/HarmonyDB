@@ -464,6 +464,10 @@ namespace OneShelf.Common.Database.Songs.Migrations
                     b.Property<string>("PrivateDescription")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 

@@ -1,5 +1,5 @@
 using System.Net;
-using HarmonyDB.Sources.Api.Model;
+using HarmonyDB.Source.Api.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -15,7 +15,7 @@ namespace OneShelf.Sources.Self.Api.Functions.V1
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
-        [Function(SourcesApiUrls.V1Ping)]
+        [Function(SourceApiUrls.V1Ping)]
         public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");

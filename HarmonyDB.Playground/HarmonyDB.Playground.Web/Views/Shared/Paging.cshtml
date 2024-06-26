@@ -1,0 +1,52 @@
+﻿@using HarmonyDB.Index.Api.Model.VExternal1
+@model PagedRequestBase
+
+@{
+    PagedResponseBase? response = ViewBag.Response;
+}
+
+<p>
+    <span>Total results: @response.Total</span>
+
+    @if (Model.PageNumber > 2)
+    {
+        <span>
+            <span>| </span>
+            @Html.ActionLink("Page 1", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            {
+                PageNumber = 1,
+            })
+        </span>
+    }
+    @if (Model.PageNumber > 1)
+    {
+        <span>
+            <span>| </span>
+            @Html.ActionLink("Previous Page", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            {
+                PageNumber = Model.PageNumber - 1,
+            })
+        </span>
+    }
+    <span>| Current page: @Model.PageNumber</span>
+    @if (Model.PageNumber < response.TotalPages)
+    {
+        <span>
+            <span>| </span>
+            @Html.ActionLink("Next Page", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            {
+                PageNumber = Model.PageNumber + 1,
+            })
+        </span>
+    }
+    @if (Model.PageNumber < response.TotalPages - 1)
+    {
+        <span>
+            <span>| </span>
+            @Html.ActionLink($"Page {response.TotalPages}", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            {
+                PageNumber = response.TotalPages,
+            })
+        </span>
+    }
+</p>

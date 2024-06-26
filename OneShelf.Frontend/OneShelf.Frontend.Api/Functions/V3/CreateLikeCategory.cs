@@ -20,8 +20,8 @@ public class CreateLikeCategory : AuthorizationFunctionBase<CreateLikeCategoryRe
 {
     private readonly SongsDatabase _songsDatabase;
 
-    public CreateLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    public CreateLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
     }
@@ -50,7 +50,7 @@ public class CreateLikeCategory : AuthorizationFunctionBase<CreateLikeCategoryRe
 
         var likeCategory = new LikeCategory
         {
-            TenantId = TenantId,
+            TenantId = SecurityContext.TenantId,
             Name = request.LikeCategory.Name,
             Access = request.LikeCategory.Access.ToDatabaseAccess(),
             CssColor = "any",

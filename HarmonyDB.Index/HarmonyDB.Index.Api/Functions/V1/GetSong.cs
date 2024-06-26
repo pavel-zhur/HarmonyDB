@@ -1,8 +1,6 @@
 using HarmonyDB.Index.Api.Services;
-using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -16,17 +14,17 @@ namespace HarmonyDB.Index.Api.Functions.V1
     {
         private readonly CommonExecutions _commonExecutions;
 
-        public GetSong(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions) 
-            : base(loggerFactory, authorizationApiClient)
+        public GetSong(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CommonExecutions commonExecutions, SecurityContext securityContext) 
+            : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode: true)
         {
             _commonExecutions = commonExecutions;
         }
 
-        [Function(SourcesApiUrls.V1GetSong)]
+        [Function(SourceApiUrls.V1GetSong)]
         public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetSongRequest request)
             => RunHandler(req, request);
 
         protected override async Task<GetSongResponse> Execute(HttpRequest httpRequest, GetSongRequest request)
-            => await _commonExecutions.GetSong(request);
+            => await _commonExecutions.GetSong(request.ExternalId);
     }
 }

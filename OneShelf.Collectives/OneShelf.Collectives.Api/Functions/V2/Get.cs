@@ -20,8 +20,8 @@ public class Get : AuthorizationFunctionBase<GetRequest, GetResponse>
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
-    public Get(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager) 
-        : base(loggerFactory, authorizationApiClient)
+    public Get(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _collectivesCosmosDatabase = collectivesCosmosDatabase;
         _songsOperations = songsOperations;

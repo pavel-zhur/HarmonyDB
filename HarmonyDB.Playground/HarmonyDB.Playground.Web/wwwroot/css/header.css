@@ -1,0 +1,59 @@
+﻿body {
+    font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+
+.my-navbar-black {
+    background-color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    z-index: -10;
+}
+
+    .my-navbar-black .my-navbar-black-image {
+        background-image: url(../header.png);
+        background-position-y: -5px;
+        z-index: -100;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        opacity: .15;
+        -webkit-animation-name: floating-image;
+        animation-name: floating-image;
+        -webkit-animation-duration: 360s;
+        animation-duration: 360s;
+        -webkit-animation-timing-function: linear;
+        animation-timing-function: linear;
+        -webkit-animation-iteration-count: infinite;
+        animation-iteration-count: infinite;
+    }
+
+@-webkit-keyframes floating-image {
+    0% {
+        background-position-x: 0
+    }
+
+    100% {
+        background-position-x: -1216px
+    }
+}
+
+@keyframes floating-image {
+    0% {
+        background-position-x: 0
+    }
+
+    100% {
+        background-position-x: -1216px
+    }
+}
+
+h2#header {
+    margin-top: 12px;
+    margin-left: 23px;
+    color: white;
+}

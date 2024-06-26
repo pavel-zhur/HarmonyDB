@@ -1,5 +1,5 @@
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Sources.Api.Model.V1.Api;
+using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -13,18 +13,19 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Frontend.Api.Model.V3.Api;
 using OneShelf.Frontend.SpecificModel;
 using OneShelf.Common.Api.WithAuthorization;
+using HarmonyDB.Source.Api.Client;
 
 namespace OneShelf.Frontend.Api.Functions.V3
 {
     public class Search : AuthorizationFunctionBase<SearchRequest, SearchResponse>
     {
-        private readonly IndexApiClient _indexApiClient;
+        private readonly SourceApiClient _sourceApiClient;
         private readonly SongsDatabase _songsDatabase;
 
-        public Search(ILoggerFactory loggerFactory, IndexApiClient indexApiClient, AuthorizationApiClient authorizationApiClient, SongsDatabase songsDatabase)
-            : base(loggerFactory, authorizationApiClient)
+        public Search(ILoggerFactory loggerFactory, SourceApiClient sourceApiClient, AuthorizationApiClient authorizationApiClient, SongsDatabase songsDatabase, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
-            _indexApiClient = indexApiClient;
+            _sourceApiClient = sourceApiClient;
             _songsDatabase = songsDatabase;
         }
 
@@ -35,7 +36,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
         {
             return TryGetTag(request.Query, out var tag)
                 ? await GoLocal(request.Identity, tag)
-                : await _indexApiClient.V1Search(request);
+                : await _sourceApiClient.V1Search(request);
         }
 
         private bool TryGetTag(string query, out int tag)
@@ -49,10 +50,10 @@ namespace OneShelf.Frontend.Api.Functions.V3
 
         private async Task<SearchResponse> GoLocal(Identity identity, int tag)
         {
-            var version = await _songsDatabase.Versions.Where(x => x.Song.TenantId == TenantId).Include(x => x.Song).ThenInclude(x => x.Artists).FirstOrDefaultAsync(x => x.CollectiveSearchTag == tag);
+            var version = await _songsDatabase.Versions.Where(x => x.Song.TenantId == SecurityContext.TenantId).Include(x => x.Song).ThenInclude(x => x.Artists).FirstOrDefaultAsync(x => x.CollectiveSearchTag == tag);
             if (version != null)
             {
-                var attributes = await _indexApiClient.V1GetSourcesAndExternalIds(identity, version.Uri.Once());
+                var attributes = await _sourceApiClient.V1GetSourcesAndExternalIds(identity, version.Uri.Once());
                 if (attributes.Any())
                 {
                     var attribute = attributes.Single().Value;

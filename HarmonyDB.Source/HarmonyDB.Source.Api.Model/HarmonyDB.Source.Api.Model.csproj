@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="nuget readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Model\OneShelf.Authorization.Api.Model.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.Representations.OneShelf\HarmonyDB.Common.Representations.OneShelf.csproj" />
+  </ItemGroup>
+
+
+</Project>

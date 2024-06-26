@@ -19,13 +19,11 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private const int PerPage = 100;
 
         private readonly SongsDatabase _songsDatabase;
-        private readonly AuthorizationApiClient _authorizationApiClient;
 
-        public GetVisitedChords(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient)
-            : base(loggerFactory, authorizationApiClient)
+        public GetVisitedChords(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _songsDatabase = songsDatabase;
-            _authorizationApiClient = authorizationApiClient;
         }
 
         [Function(ApiUrls.V3GetVisitedChords)]
@@ -63,7 +61,7 @@ where c <> isnull(c2, 0) or DATEDIFF(minute, v2, viewedon) < -10
 
 ");
 
-            var count = await source.CountAsync(x => x.UserId == request.Identity.Id && x.User.TenantId == TenantId);
+            var count = await source.CountAsync(x => x.UserId == request.Identity.Id && x.User.TenantId == SecurityContext.TenantId);
 
             return new()
             {

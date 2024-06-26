@@ -18,15 +18,13 @@ public class Delete : AuthorizationFunctionBase<DeleteRequest, DeleteResponse>
 {
     private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
     private readonly SongsOperations _songsOperations;
-    private readonly UrlsManager _urlsManager;
     private readonly ILogger<Delete> _logger;
 
-    public Delete(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager) 
-        : base(loggerFactory, authorizationApiClient)
+    public Delete(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _collectivesCosmosDatabase = collectivesCosmosDatabase;
         _songsOperations = songsOperations;
-        _urlsManager = urlsManager;
         _logger = loggerFactory.CreateLogger<Delete>();
     }
 
@@ -48,9 +46,9 @@ public class Delete : AuthorizationFunctionBase<DeleteRequest, DeleteResponse>
             Visibility = Database.Models.CollectiveVisibility.Deleted,
         });
         collective.LatestVisibility = Database.Models.CollectiveVisibility.Deleted;
-
+        
         var version = await _songsOperations.SongsDatabase.Versions
-            .Where(x => x.Song.TenantId == TenantId)
+            .Where(x => x.Song.TenantId == SecurityContext.TenantId)
             .Include(x => x.Song)
             .ThenInclude(x => x.Versions)
             .Include(x => x.Likes)

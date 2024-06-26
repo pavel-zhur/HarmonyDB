@@ -9,7 +9,7 @@ public class HarmonyMovement : ISearchableHarmonyMovement
 
     public required HarmonyGroup To { get; init; }
 
-    public required int RootDelta { get; init; }
+    public required byte RootDelta { get; init; }
 
     public required ChordType FromType { get; init; }
 

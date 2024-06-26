@@ -7,6 +7,7 @@ using OneShelf.Collectives.Api.Models;
 using OneShelf.Collectives.Api.Services;
 using OneShelf.Collectives.Database;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs;
 
 var host = new HostBuilder()
@@ -21,7 +22,8 @@ var host = new HostBuilder()
             .AddCollectivesDatabase(context.Configuration)
             .AddAuthorizationApiClient(context.Configuration)
             .AddScoped<UrlsManager>()
-            .Configure<CollectivesOptions>(o => context.Configuration.GetSection(nameof(CollectivesOptions)).Bind(o));
+            .Configure<CollectivesOptions>(o => context.Configuration.GetSection(nameof(CollectivesOptions)).Bind(o))
+            .AddSecurityContext();
     })
     .Build();
 

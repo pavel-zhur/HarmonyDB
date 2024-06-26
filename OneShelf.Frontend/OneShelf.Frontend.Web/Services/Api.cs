@@ -1,5 +1,5 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1;
 using ApplyRequest = OneShelf.Frontend.Api.Model.V3.Api.ApplyRequest;
 using GetPdfsResponse = OneShelf.Frontend.Api.Model.V3.Api.GetPdfsResponse;
 using OneShelf.Frontend.Api.Client;

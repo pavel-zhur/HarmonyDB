@@ -13,8 +13,8 @@ namespace OneShelf.Frontend.Api.Functions.V3
     {
         private readonly IllustrationsReader _illustrationsReader;
 
-        public Illustrations(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, IllustrationsReader illustrationsReader)
-            : base(loggerFactory, authorizationApiClient)
+        public Illustrations(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, IllustrationsReader illustrationsReader, SecurityContext securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _illustrationsReader = illustrationsReader;
         }
@@ -25,7 +25,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
             => await RunHandler(req, request);
 
         protected override Task<IllustrationsResponse> Execute(HttpRequest httpRequest, IllustrationsRequest request)
-            => _illustrationsReader.Go(TenantId, 
+            => _illustrationsReader.Go(SecurityContext.TenantId, 
                 request.AllVersions ? IllustrationsReader.Mode.AllVersionsOneTenantWithUnderGeneration : IllustrationsReader.Mode.CollapseSongsIncludeTitles, 
                 request.Etag);
     }

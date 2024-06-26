@@ -19,8 +19,8 @@ public class UpdateLikeCategory : AuthorizationFunctionBase<UpdateLikeCategoryRe
 {
     private readonly SongsDatabase _songsDatabase;
 
-    public UpdateLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    public UpdateLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
     }

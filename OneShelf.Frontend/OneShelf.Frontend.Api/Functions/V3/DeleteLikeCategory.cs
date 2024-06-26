@@ -17,8 +17,8 @@ public class DeleteLikeCategory : AuthorizationFunctionBase<DeleteLikeCategoryRe
 {
     private readonly SongsDatabase _songsDatabase;
 
-    public DeleteLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    public DeleteLikeCategory(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
     }

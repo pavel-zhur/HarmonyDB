@@ -1,6 +1,7 @@
 using System.Net;
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
@@ -40,12 +41,12 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
     private readonly PdfsApiClient _pdfsApiClient;
     private readonly FrontendCosmosDatabase _frontendCosmosDatabase;
     private readonly AuthorizationQuickChecker _authorizationQuickChecker;
-    private readonly IndexApiClient _indexApiClient;
+    private readonly SourceApiClient _sourceApiClient;
 
     public const string Version = "1";
 
-    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, IndexApiClient indexApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient, SecurityContext securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
         _collectionReaderV3 = collectionReaderV3;
@@ -54,7 +55,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         _pdfsApiClient = pdfsApiClient;
         _frontendCosmosDatabase = frontendCosmosDatabase;
         _authorizationQuickChecker = authorizationQuickChecker;
-        _indexApiClient = indexApiClient;
+        _sourceApiClient = sourceApiClient;
     }
 
     [Function(ApiUrls.V3GetPdfs)]
@@ -62,7 +63,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
 
     protected override async Task<GetPdfsResponse> Execute(HttpRequest httpRequest, GetPdfsRequest request)
     {
-        if (!ArePdfsAllowed) throw new($"The pdfs generation is not allowed for this tenant, {TenantId}, userid = {request.Identity.Id}.");
+        if (!SecurityContext.ArePdfsAllowed) throw new($"The pdfs generation is not allowed for this tenant, {SecurityContext.TenantId}, userid = {request.Identity.Id}.");
 
         await _songsDatabase.Interactions.AddAsync(new()
         {
@@ -74,7 +75,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         });
         await _songsDatabase.SaveChangesAsyncX();
 
-        var collection = await _collectionReaderV3.Read(TenantId, request.Identity);
+        var collection = await _collectionReaderV3.Read(request.Identity);
         var artists = collection.Artists.ToDictionary(x => x.Id);
 
         var versions = collection.Songs.SelectMany(s => s.Versions.Select(u => (s, u))).ToDictionary(x => x.u.Id);
@@ -120,7 +121,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             if (request.IncludeInspiration)
             {
                 volumeDocuments.Insert(0, (await _inspirationGeneration.Inspiration(
-                    TenantId,
+                    SecurityContext.TenantId,
                     InspirationDataOrdering.ByArtist,
                     false,
                     true,
@@ -181,7 +182,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
                 {
                     Data = await CompressionTools.DecompressToBytes(found.Data),
                     PageCount = found.PageCount,
-                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, pdfsRequestFile, urlAbsolutePathBase),
+                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(pdfsRequestFile, urlAbsolutePathBase),
                 };
             }
             else
@@ -196,12 +197,12 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
                 result[pdfsRequestFile.ExternalId] = new()
                 {
                     PageCount = found.Value,
-                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, pdfsRequestFile, urlAbsolutePathBase),
+                    PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(pdfsRequestFile, urlAbsolutePathBase),
                 };
             }
         }
 
-        var structures = (await _indexApiClient.V1GetSongs(identity, files.Select(x => x.ExternalId).ToList())).Songs.Values;
+        var structures = (await _sourceApiClient.V1GetSongs(identity, files.Select(x => x.ExternalId).ToList())).Songs.Values;
 
         var tasks = new Dictionary<string, Task<(byte[] pdf, int pageCount)>>();
         foreach (Chords chords in structures)
@@ -226,7 +227,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             {
                 Data = includeData ? value.Result.pdf : null,
                 PageCount = value.Result.pageCount,
-                PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(identity, requests[key], urlAbsolutePathBase),
+                PreviewLink = await _authorizationQuickChecker.CreateV1PreviewPdfLink(requests[key], urlAbsolutePathBase),
             };
         }
 

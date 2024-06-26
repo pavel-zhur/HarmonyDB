@@ -22,8 +22,8 @@ public class Update : AuthorizationFunctionBase<UpdateRequest, UpdateResponse>
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
-    public Update(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager) 
-        : base(loggerFactory, authorizationApiClient)
+    public Update(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+        : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _collectivesCosmosDatabase = collectivesCosmosDatabase;
         _songsOperations = songsOperations;
@@ -52,7 +52,7 @@ public class Update : AuthorizationFunctionBase<UpdateRequest, UpdateResponse>
         }
 
         var version = await _songsOperations.SongsDatabase.Versions
-            .Where(x => x.Song.TenantId == TenantId)
+            .Where(x => x.Song.TenantId == SecurityContext.TenantId)
             .Include(x => x.Song)
             .ThenInclude(x => x.Versions)
             .Include(x => x.Song)
@@ -69,7 +69,7 @@ public class Update : AuthorizationFunctionBase<UpdateRequest, UpdateResponse>
         
         if (version.Song.Versions.Count == 1)
         {
-            var artists = await _songsOperations.FindOrCreateArtists(TenantId, request.Collective.Authors);
+            var artists = await _songsOperations.FindOrCreateArtists(SecurityContext.TenantId, request.Collective.Authors);
             version.Song.Artists = artists;
             version.Song.Title = request.Collective.Title.Trim().ToLowerInvariant();
         }

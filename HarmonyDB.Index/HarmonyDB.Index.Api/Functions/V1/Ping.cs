@@ -1,29 +1,31 @@
 using System.Net;
-using HarmonyDB.Sources.Api.Client;
-using HarmonyDB.Sources.Api.Model;
+using HarmonyDB.Index.DownstreamApi.Client;
+using HarmonyDB.Source.Api.Client;
+using HarmonyDB.Source.Api.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.V1
 {
     public class Ping
     {
         private readonly ILogger _logger;
-        private readonly SourcesApiClient _sourcesApiClient;
+        private readonly DownstreamApiClient _downstreamApiClient;
 
-        public Ping(ILoggerFactory loggerFactory, SourcesApiClient sourcesApiClient)
+        public Ping(ILoggerFactory loggerFactory, DownstreamApiClient downstreamApiClient)
         {
-            _sourcesApiClient = sourcesApiClient;
+            _downstreamApiClient = downstreamApiClient;
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
-        [Function(SourcesApiUrls.V1Ping)]
+        [Function(SourceApiUrls.V1Ping)]
         public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            await Task.WhenAll(Enumerable.Range(0, _sourcesApiClient.SourcesCount).Select(x => _sourcesApiClient.V1Ping(x)));
+            await _downstreamApiClient.PingAll();
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

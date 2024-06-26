@@ -20,13 +20,11 @@ namespace OneShelf.Frontend.Api.Functions.V3
         private const int PerPage = 100;
 
         private readonly SongsDatabase _songsDatabase;
-        private readonly AuthorizationApiClient _authorizationApiClient;
 
-        public GetVisitedSearches(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient) 
-            : base(loggerFactory, authorizationApiClient)
+        public GetVisitedSearches(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext) 
+            : base(loggerFactory, authorizationApiClient, securityContext)
         {
             _songsDatabase = songsDatabase;
-            _authorizationApiClient = authorizationApiClient;
         }
 
         [Function(ApiUrls.V3GetVisitedSearches)]

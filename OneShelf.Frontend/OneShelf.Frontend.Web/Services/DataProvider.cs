@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using HarmonyDB.Index.Analysis.Models.V1;
-using HarmonyDB.Sources.Api.Model.V1;
+using HarmonyDB.Source.Api.Model.V1;
 using Nito.AsyncEx;
 using OneShelf.Common;
 using OneShelf.Frontend.SpecificModel;

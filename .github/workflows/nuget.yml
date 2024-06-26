@@ -17,13 +17,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+  
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
     - name: Pack
-      run: dotnet pack --include-source -p:PackageVersion=1.1.0 -p:VersionSuffix=$GITHUB_RUN_NUMBER -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
-    - uses: actions/upload-artifact@v4
-      with:
-        name: packages
-        path: ./**/*.nupkg
+      run: dotnet pack --include-source -p:PackageVersion=1.1.${{ github.run_number }}-prerelease -p:EmbedUntrackedSources=True --configuration Release --output nuget -p:Authors="Pavel Zhur" -p:Description="DO NOT USE. It is a prerelease package of the HarmonyDB / OneShelf." -p:ContinuousIntegrationBuild=True
+      
+    - name: Push
+      run: |
+        cd nuget
+        dotnet nuget push **/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_TOKEN }}
+
+    # - uses: "marvinpinto/action-automatic-releases@latest"
+    #   with:
+    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
+    #     prerelease: true
+    #     files: |
+    #       LICENSE
+    #       nuget/*.nupkg

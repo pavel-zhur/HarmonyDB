@@ -1,4 +1,4 @@
-﻿using HarmonyDB.Sources.Api.Model.V1;
+﻿using HarmonyDB.Source.Api.Model.V1;
 using OneShelf.Common;
 using OneShelf.Common.Songs.FullTextSearch;
 

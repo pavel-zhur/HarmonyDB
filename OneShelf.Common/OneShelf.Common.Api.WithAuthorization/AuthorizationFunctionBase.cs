@@ -9,22 +9,21 @@ namespace OneShelf.Common.Api.WithAuthorization;
 public abstract class AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
+    private readonly ConcurrencyLimiter? _concurrencyLimiter;
     private readonly AuthorizationApiClient _authorizationApiClient;
-
-    private int? _tenantId;
-    private bool? _arePdfsAllowed;
-
-    protected readonly ILogger Logger;
+    private readonly bool _respectServiceCode;
     
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient)
+    protected readonly SecurityContext SecurityContext;
+    protected readonly ILogger Logger;
+
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, ConcurrencyLimiter? concurrencyLimiter = null, bool respectServiceCode = false, bool limitConcurrency = false)
     {
+        _concurrencyLimiter = limitConcurrency ? concurrencyLimiter ?? throw new("Concurrency limiter is required.") : null;
         Logger = loggerFactory.CreateLogger(GetType());
         _authorizationApiClient = authorizationApiClient;
+        SecurityContext = securityContext;
+        _respectServiceCode = respectServiceCode;
     }
-
-    protected int TenantId => _tenantId ?? throw new("Not authorized.");
-
-    protected bool ArePdfsAllowed => _arePdfsAllowed ?? throw new("Not authorized.");
 
     protected async Task<IActionResult> RunHandler(HttpRequest httpRequest, TRequest request)
     {
@@ -32,12 +31,17 @@ public abstract class AuthorizationFunctionBase<TRequest>
         {
             Logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var authorizationCheckResult = await CheckAuthorization(request.Identity);
-            _tenantId = authorizationCheckResult.TenantId;
-            _arePdfsAllowed = authorizationCheckResult.ArePdfsAllowed;
+            var authorizationCheckResult = _respectServiceCode ? await _authorizationApiClient.CheckIdentityRespectingCode(request.Identity) : await _authorizationApiClient.CheckIdentity(request.Identity);
+            if (authorizationCheckResult == null)
+            {
+                SecurityContext.InitService();
+                return await ExecuteWithConcurrency(httpRequest, request);
+            }
+
             if (authorizationCheckResult.IsSuccess)
             {
-                return await ExecuteSuccessful(httpRequest, request);
+                SecurityContext.InitSuccessful(request.Identity, authorizationCheckResult);
+                return await ExecuteWithConcurrency(httpRequest, request);
             }
 
             return await ExecuteFailed(authorizationCheckResult.AuthorizationError!);
@@ -46,6 +50,11 @@ public abstract class AuthorizationFunctionBase<TRequest>
         {
             return new UnauthorizedObjectResult(e.Message);
         }
+        catch (ServiceConcurrencyException e)
+        {
+            Logger.LogError(e, "Too many requests.");
+            return new StatusCodeResult(429);
+        }
         catch (Exception e)
         {
             Logger.LogError(e, "Error executing the function.");
@@ -53,9 +62,14 @@ public abstract class AuthorizationFunctionBase<TRequest>
         }
     }
 
-    protected virtual async Task<CheckIdentityResponse> CheckAuthorization(Identity identity)
+    private async Task<IActionResult> ExecuteWithConcurrency(HttpRequest httpRequest, TRequest request)
     {
-        return await _authorizationApiClient.CheckIdentity(identity);
+        if (_concurrencyLimiter != null)
+        {
+            return await _concurrencyLimiter.ExecuteOrThrow(() => ExecuteSuccessful(httpRequest, request));
+        }
+
+        return await ExecuteSuccessful(httpRequest, request);
     }
 
     protected abstract Task<IActionResult> ExecuteSuccessful(HttpRequest httpRequest, TRequest request);
@@ -67,8 +81,8 @@ public abstract class AuthorizationFunctionBase<TRequest>
 public abstract class AuthorizationFunctionBase<TRequest, TResponse> : AuthorizationFunctionBase<TRequest>
     where TRequest : IRequestWithIdentity
 {
-    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient)
-        : base(loggerFactory, authorizationApiClient)
+    protected AuthorizationFunctionBase(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext, ConcurrencyLimiter? concurrencyLimiter = null, bool respectServiceCode = false, bool limitConcurrency = false)
+        : base(loggerFactory, authorizationApiClient, securityContext, concurrencyLimiter, respectServiceCode, limitConcurrency)
     {
     }
 
