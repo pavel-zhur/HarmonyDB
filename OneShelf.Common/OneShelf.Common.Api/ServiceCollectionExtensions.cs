@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace OneShelf.Common.Api;
 
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddConcurrencyLimiter(this IServiceCollection services,
         IConfiguration configuration)

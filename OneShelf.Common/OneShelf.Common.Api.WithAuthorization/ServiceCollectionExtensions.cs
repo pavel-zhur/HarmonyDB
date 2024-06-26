@@ -2,7 +2,7 @@
 
 namespace OneShelf.Common.Api.WithAuthorization;
 
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddSecurityContext(this IServiceCollection services) => services
         .AddScoped<SecurityContext>();

@@ -3,8 +3,7 @@ using OneShelf.Pdfs.Generation.Volumes.Services;
 
 namespace OneShelf.Pdfs.Generation.Volumes;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddPdfsGenerationVolumes(this IServiceCollection services)
     {

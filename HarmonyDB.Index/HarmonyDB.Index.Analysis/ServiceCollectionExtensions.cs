@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Index.Analysis;
 
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddIndexAnalysis(this IServiceCollection services) => services
         .AddSingleton<ChordDataParser>()

@@ -6,7 +6,7 @@ using OneShelf.Common.Database.Songs.Services;
 namespace OneShelf.Common.Database.Songs;
 
 // ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddSongsDatabase(this IServiceCollection serviceCollection)
         => serviceCollection

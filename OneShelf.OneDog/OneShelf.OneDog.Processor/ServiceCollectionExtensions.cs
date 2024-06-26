@@ -11,8 +11,7 @@ using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
 namespace OneShelf.OneDog.Processor;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddProcessor(this IServiceCollection services, IConfiguration configuration)
     {

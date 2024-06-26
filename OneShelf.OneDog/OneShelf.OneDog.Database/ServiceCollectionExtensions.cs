@@ -4,8 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace OneShelf.OneDog.Database;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDogDatabase(this IServiceCollection serviceCollection)
         => serviceCollection

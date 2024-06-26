@@ -4,8 +4,7 @@ using OneShelf.Illustrations.Database.Options;
 
 namespace OneShelf.Illustrations.Database;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddIllustrationsDatabase(this IServiceCollection serviceCollection, IConfiguration configuration)
         => serviceCollection

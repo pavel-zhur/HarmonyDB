@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Index.BusinessLogic;
 
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddIndexBusinessLogic(this IServiceCollection serviceCollection, IConfiguration configuration)
         => serviceCollection

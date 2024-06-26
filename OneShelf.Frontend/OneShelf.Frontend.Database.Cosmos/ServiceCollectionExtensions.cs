@@ -4,8 +4,7 @@ using OneShelf.Frontend.Database.Cosmos.Options;
 
 namespace OneShelf.Frontend.Database.Cosmos;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddFrontendCosmosDatabase(this IServiceCollection serviceCollection, IConfiguration configuration)
         => serviceCollection

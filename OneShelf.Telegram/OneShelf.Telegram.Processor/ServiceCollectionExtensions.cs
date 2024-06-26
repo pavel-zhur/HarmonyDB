@@ -13,8 +13,7 @@ using OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
 namespace OneShelf.Telegram.Processor;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddProcessor(this IServiceCollection services, IConfiguration configuration)
     {

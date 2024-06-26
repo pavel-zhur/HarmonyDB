@@ -3,8 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace OneShelf.Common.Api.Client;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApiClient<TClient>(this IServiceCollection services, IConfiguration configuration)
         where TClient : ApiClientBase<TClient>

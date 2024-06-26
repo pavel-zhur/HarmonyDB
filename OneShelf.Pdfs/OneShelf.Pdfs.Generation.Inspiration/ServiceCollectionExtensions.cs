@@ -4,8 +4,7 @@ using OneShelf.Pdfs.Generation.Inspiration.Services;
 
 namespace OneShelf.Pdfs.Generation.Inspiration;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddPdfsGenerationInspiration(this IServiceCollection services)
     {

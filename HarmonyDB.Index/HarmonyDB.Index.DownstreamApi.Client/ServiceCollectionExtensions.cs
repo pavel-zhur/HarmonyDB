@@ -3,8 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Index.DownstreamApi.Client;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDownstreamApiClient(this IServiceCollection services, IConfiguration configuration) => services
         .AddScoped<DownstreamApiClient>()

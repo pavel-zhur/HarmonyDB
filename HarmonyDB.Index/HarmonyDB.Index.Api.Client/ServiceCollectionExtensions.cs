@@ -4,8 +4,7 @@ using OneShelf.Common.Api.Client;
 
 namespace HarmonyDB.Index.Api.Client;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection
         AddIndexApiClient(this IServiceCollection services, IConfiguration configuration) =>

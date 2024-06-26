@@ -6,8 +6,7 @@ using OneShelf.Common.OpenAi.Services;
 
 namespace OneShelf.Common.OpenAi;
 
-// ReSharper disable once InconsistentNaming
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddOpenAi(this IServiceCollection services, IConfiguration configuration)
     {
