@@ -2,6 +2,7 @@
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Services;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Tools;
@@ -32,18 +33,17 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
     {
         string ToChord(int note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
 
-        var idsToSequences = fileModel.Keys.ToDictionary(x => x, Loop.Deserialize);
-
         return fileModel
             .Select(l =>
             {
-                var sequence = idsToSequences[l.Key].ToArray();
-                var note = sequence[0].FromType == ChordType.Minor ? 0 : 3;
+                var sequence = Loop.Deserialize(l.Key);
+                var note = sequence.Span[0].FromType == ChordType.Minor ? 0 : 3;
                 return new LoopStatistics
                 {
-                    Progression = string.Join(" ", ToChord(note, sequence[0].FromType)
+                    Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
                         .Once()
-                        .Concat(sequence
+                        .Concat(
+                            MemoryMarshal.ToEnumerable(sequence)
                             //.Take(sequence.Length - 1)
                             .Select(m =>
                             {

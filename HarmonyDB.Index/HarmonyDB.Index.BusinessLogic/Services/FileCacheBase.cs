@@ -90,7 +90,6 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             {
                 var client = await GetContainerClient();
                 var blobClient = client.GetBlobClient(FileName);
-                var x = (await blobClient.DownloadAsync()).Value;
                 var stream = await blobClient.OpenReadAsync();
                 await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
                 return JsonSerializer.Deserialize<TFileModel>(gzip)!;
