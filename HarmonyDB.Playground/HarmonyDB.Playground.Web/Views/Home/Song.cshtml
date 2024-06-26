@@ -1,5 +1,8 @@
-﻿@using System.Text.Json
+﻿@using System.Reflection
+@using System.Text.Json
+@using HarmonyDB.Common
 @using HarmonyDB.Source.Api.Model.V1
+@using OneShelf.Common
 @using OneShelf.Common.Songs.Tools
 @model SongModel
 
@@ -19,17 +22,6 @@
     @Html.ActionLink("\ud83d\udd17Permalink", "Song", Model, new { target = "_blank" })
 </div>
 <ul>
-    <li>
-        @if (Model.IncludeTrace)
-        {
-            @Html.ActionLink("Exclude the Index API trace for developers", "Song", Model with { IncludeTrace = false })
-        }
-        else
-        {
-            @Html.ActionLink("Include the Index API trace for developers", "Song", Model with { IncludeTrace = true })
-        }
-    </li>
-
     @if (Model.Highlight != null)
     {
         <li>
@@ -53,6 +45,40 @@
             {
                 @Html.ActionLink(i.Transposition(), "Song", Model with { Transpose = i })
             }
+        }
+    </li>
+    
+    <li>
+        <span>Preferred alteration: </span>
+        @{
+            (string title, NoteAlteration? alteration)[] alterations = [("Original", null), ("Flats", NoteAlteration.Flat), ("Sharps", NoteAlteration.Sharp)];
+        }
+        @foreach (var (alteration, isFirst) in alterations.WithIsFirst())
+        {
+            if (!isFirst)
+            {
+                <span> | </span>
+            }
+
+            if (alteration.alteration == Model.Alteration)
+            {
+                <span>@alteration.title</span>
+            }
+            else
+            {
+                @Html.ActionLink(alteration.title, "Song", Model with { Alteration = alteration.alteration })
+            }
+        }
+    </li>
+
+    <li>
+        @if (Model.IncludeTrace)
+        {
+            @Html.ActionLink("Exclude the Index API trace for developers", "Song", Model with { IncludeTrace = false })
+        }
+        else
+        {
+            @Html.ActionLink("Include the Index API trace for developers", "Song", Model with { IncludeTrace = true })
         }
     </li>
 </ul>

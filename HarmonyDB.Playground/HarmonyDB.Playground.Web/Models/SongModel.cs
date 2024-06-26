@@ -1,3 +1,5 @@
+using HarmonyDB.Common;
+
 namespace HarmonyDB.Playground.Web.Models;
 
 public record SongModel
@@ -9,4 +11,6 @@ public record SongModel
     public string? Highlight { get; set; }
 
     public int Transpose { get; set; } = 0;
+
+    public NoteAlteration? Alteration { get; set; }
 }
