@@ -70,6 +70,39 @@
             }
         }
     </li>
+    
+    <li>
+        @using (Html.BeginForm("Song", "Home", Model, FormMethod.Get))
+        {
+            @Html.HiddenFor(x => x.Alteration)
+            @Html.HiddenFor(x => x.Highlight)
+            @Html.HiddenFor(x => x.Transpose)
+            @Html.HiddenFor(x => x.ExternalId)
+            @Html.HiddenFor(x => x.IncludeTrace)
+            <span>Show complex chords: </span>
+            <label>
+                @Html.CheckBoxFor(x => x.Show7)
+                <span> 7</span>
+            </label>
+            <label>
+                @Html.CheckBoxFor(x => x.ShowSus)
+                <span> sus</span>
+            </label>
+            <label>
+                @Html.CheckBoxFor(x => x.ShowBass)
+                <span> bass</span>
+            </label>
+            <label>
+                @Html.CheckBoxFor(x => x.Show6)
+                <span> 6</span>
+            </label>
+            <label>
+                @Html.CheckBoxFor(x => x.Show9)
+                <span> 9, 11, 13</span>
+            </label>
+            <input type="submit" value="Apply"/>
+        }
+    </li>
 
     <li>
         @if (Model.IncludeTrace)

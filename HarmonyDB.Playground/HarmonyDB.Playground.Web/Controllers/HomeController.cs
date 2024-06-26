@@ -57,7 +57,10 @@ namespace HarmonyDB.Playground.Web.Controllers
             Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
             ViewBag.Chords = chords;
 
-            var representationSettings = new RepresentationSettings(transpose: songModel.Transpose, alteration: songModel.Alteration);
+            var representationSettings = new RepresentationSettings(
+                transpose: songModel.Transpose, 
+                alteration: songModel.Alteration);
+
             var chordsData = chords.Output.AsChords(representationSettings);
 
             if (songModel.Highlight != null)
@@ -77,7 +80,16 @@ namespace HarmonyDB.Playground.Web.Controllers
                 representationSettings = representationSettings with { CustomAttributes = customAttributes };
             }
 
-            representationSettings = representationSettings with { IsVariableWidth = chords.Output.IsVariableWidth };
+            representationSettings = representationSettings with
+            {
+                IsVariableWidth = chords.Output.IsVariableWidth,
+                Simplification = 
+                    (songModel.Show7 ? SimplificationMode.None : SimplificationMode.Remove7)
+                    | (songModel.Show9 ? SimplificationMode.None : SimplificationMode.Remove9AndMore)
+                    | (songModel.Show6 ? SimplificationMode.None : SimplificationMode.Remove6)
+                    | (songModel.ShowBass ? SimplificationMode.None : SimplificationMode.RemoveBass)
+                    | (songModel.ShowSus ? SimplificationMode.None : SimplificationMode.RemoveSus),
+            };
 
             ViewBag.RepresentationSettings = representationSettings;
 
