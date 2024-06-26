@@ -22,13 +22,17 @@
     @Html.ActionLink("\ud83d\udd17Permalink", "Song", Model, new { target = "_blank" })
 </div>
 <ul>
+    <li>
+        <a href="@chords.SourceUri">Source URL: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
+    </li>
+
     @if (Model.Highlight != null)
     {
         <li>
             @Html.ActionLink($"Clear highlighting {Model.Highlight}", "Song", Model with { Highlight = null })
         </li>
     }
-    
+
     <li>
         <span>Transpose: </span>
         @for (var i = -7; i <= 7; i++)
@@ -37,6 +41,7 @@
             {
                 <span> | </span>
             }
+
             @if (i == Model.Transpose)
             {
                 <span>@i</span>
@@ -47,7 +52,7 @@
             }
         }
     </li>
-    
+
     <li>
         <span>Preferred alteration: </span>
         @{
@@ -70,7 +75,7 @@
             }
         }
     </li>
-    
+
     <li>
         @using (Html.BeginForm("Song", "Home", Model, FormMethod.Get))
         {
