@@ -7,4 +7,6 @@ public record SongModel
     public bool IncludeTrace { get; set; }
 
     public string? Highlight { get; set; }
+
+    public int Transpose { get; set; } = 0;
 }

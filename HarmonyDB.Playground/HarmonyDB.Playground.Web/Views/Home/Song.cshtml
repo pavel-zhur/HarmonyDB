@@ -1,5 +1,6 @@
 ﻿@using System.Text.Json
 @using HarmonyDB.Source.Api.Model.V1
+@using OneShelf.Common.Songs.Tools
 @model SongModel
 
 @{
@@ -15,16 +16,46 @@
 
 <div>
     <h3 class="d-inline-block">@title</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "Song", "Home", Model, new { target = "_blank" })
+    @Html.ActionLink("\ud83d\udd17Permalink", "Song", Model, new { target = "_blank" })
 </div>
-@if (Model.IncludeTrace)
-{
-    @Html.ActionLink("Exclude the Index API trace for developers", "Song", "Home", Model with { IncludeTrace = false }, null)
-}
-else
-{
-    @Html.ActionLink("Include the Index API trace for developers", "Song", "Home", Model with { IncludeTrace = true }, null)
-}
+<ul>
+    <li>
+        @if (Model.IncludeTrace)
+        {
+            @Html.ActionLink("Exclude the Index API trace for developers", "Song", Model with { IncludeTrace = false })
+        }
+        else
+        {
+            @Html.ActionLink("Include the Index API trace for developers", "Song", Model with { IncludeTrace = true })
+        }
+    </li>
+
+    @if (Model.Highlight != null)
+    {
+        <li>
+            @Html.ActionLink($"Clear highlighting {Model.Highlight}", "Song", Model with { Highlight = null })
+        </li>
+    }
+    
+    <li>
+        <span>Transpose: </span>
+        @for (var i = -7; i <= 7; i++)
+        {
+            if (i > -7)
+            {
+                <span> | </span>
+            }
+            @if (i == Model.Transpose)
+            {
+                <span>@i</span>
+            }
+            else
+            {
+                @Html.ActionLink(i.Transposition(), "Song", Model with { Transpose = i })
+            }
+        }
+    </li>
+</ul>
 
 <div class="chords-block">
     @Html.Raw(chords.Output.AsHtml(ViewBag.RepresentationSettings))

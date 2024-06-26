@@ -57,7 +57,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
             ViewBag.Chords = chords;
 
-            var representationSettings = new RepresentationSettings();
+            var representationSettings = new RepresentationSettings(transpose: songModel.Transpose);
             var chordsData = chords.Output.AsChords(representationSettings);
 
             if (songModel.Highlight != null)

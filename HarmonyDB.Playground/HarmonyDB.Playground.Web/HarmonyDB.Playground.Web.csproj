@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Songs\OneShelf.Common.Songs.csproj" />
   </ItemGroup>
 
   <ItemGroup>

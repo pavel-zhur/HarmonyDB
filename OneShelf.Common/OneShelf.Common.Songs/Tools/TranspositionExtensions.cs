@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Frontend.Web.Tools;
+﻿namespace OneShelf.Common.Songs.Tools;
 
 public static class TranspositionExtensions
 {
