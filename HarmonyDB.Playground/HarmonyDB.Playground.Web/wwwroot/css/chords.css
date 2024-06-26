@@ -1,8 +1,4 @@
-﻿body:has(div.chords-block) {
-    user-select: none;
-}
-
-div.chords-block div.pre-variable-width {
+﻿div.chords-block div.pre-variable-width {
     white-space: pre-wrap;
     font-family: Tahoma, Roboto, Arial, Helvetica, sans-serif;
 }
@@ -48,6 +44,7 @@ div.chords-block {
         /* ReSharper disable once InvalidValue */
         text-wrap: nowrap;
         white-space: nowrap;
+        user-select: none;
     }
 
         div.chords-block .chord sub, div.chords-block .chord sup {
