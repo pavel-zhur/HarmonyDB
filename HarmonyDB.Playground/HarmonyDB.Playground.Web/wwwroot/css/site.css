@@ -34,3 +34,7 @@ span.in-progress {
 span.in-progress::after {
     content: "IN PROGRESS";
 }
+
+ul.sparse li {
+    margin-bottom: 0.25rem;
+}
