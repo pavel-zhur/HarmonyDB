@@ -76,7 +76,7 @@
         {
             <tr>
                 <td>@string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>())</td>
-                <td>@Html.ActionLink(song.Header.Title, "Song", "Home", new { song.Header.ExternalId })</td>
+                <td>@Html.ActionLink(song.Header.Title, "Song", "Home", new SongModel { ExternalId = song.Header.ExternalId, Highlight = Model.Query })</td>
                 <td>@song.Header.Source</td>
                 <td>@((int)song.Header.Rating)%</td>
                 <td>@((int)(song.Coverage * 100))%</td>

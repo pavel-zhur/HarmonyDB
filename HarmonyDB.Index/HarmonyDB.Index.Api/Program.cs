@@ -28,7 +28,6 @@ var host = new HostBuilder()
             .AddIndexApiClient(context.Configuration)
             .AddConcurrencyLimiter(context.Configuration)
             .AddScoped<CommonExecutions>()
-            .AddScoped<InputParser>()
             .AddIndexBusinessLogic(context.Configuration)
             .AddSecurityContext()
             .Configure<IndexApiOptions>(o => context.Configuration.GetSection(nameof(IndexApiOptions)).Bind(o));

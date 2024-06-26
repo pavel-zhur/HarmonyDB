@@ -8,5 +8,6 @@ public static class IServiceCollectionExtensions
     public static IServiceCollection AddIndexAnalysis(this IServiceCollection services) => services
         .AddSingleton<ChordDataParser>()
         .AddSingleton<ProgressionsBuilder>()
+        .AddSingleton<InputParser>()
         .AddSingleton<ProgressionsSearch>();
 }

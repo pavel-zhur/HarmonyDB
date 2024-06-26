@@ -1,3 +1,4 @@
+using HarmonyDB.Index.Analysis;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
 
@@ -14,7 +15,8 @@ namespace HarmonyDB.Playground.Web
 
             builder.Services
                 .AddIndexApiClient(builder.Configuration)
-                .AddSourceApiClient(builder.Configuration);
+                .AddSourceApiClient(builder.Configuration)
+                .AddIndexAnalysis();
 
             var app = builder.Build();
 

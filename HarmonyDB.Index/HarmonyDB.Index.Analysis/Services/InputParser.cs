@@ -1,8 +1,7 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
-using HarmonyDB.Index.Analysis.Services;
 
-namespace HarmonyDB.Index.Api.Services;
+namespace HarmonyDB.Index.Analysis.Services;
 
 public class InputParser
 {
@@ -28,14 +27,11 @@ public class InputParser
                 }.AsChild())
             .ToList(),
         };
+
         var chordsProgression =
-        _progressionsBuilder.BuildProgression(html.AsChords(new()).Select(_chordDataParser.GetProgressionData)
+            _progressionsBuilder.BuildProgression(html.AsChords(new()).Select(_chordDataParser.GetProgressionData)
                 .ToList());
 
-        var sequence = chordsProgression.ExtendedHarmonyMovementsSequences.Single();
-
-        Console.WriteLine(string.Join("   ", sequence.Movements.Select(m => m.Title)));
-
-        return sequence;
+        return chordsProgression.ExtendedHarmonyMovementsSequences.Single();
     }
 }

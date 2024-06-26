@@ -1,4 +1,5 @@
-﻿@using HarmonyDB.Source.Api.Model.V1
+﻿@using HarmonyDB.Common.Representations.OneShelf
+@using HarmonyDB.Source.Api.Model.V1
 @model SongModel
 
 @{
@@ -22,7 +23,7 @@ else
 }
 
 <div class="chords-block">
-    @Html.Raw(chords.Output.AsHtml(new()))
+    @Html.Raw(chords.Output.AsHtml(ViewBag.RepresentationSettings))
 </div>
 
 @await Html.PartialAsync("Trace")

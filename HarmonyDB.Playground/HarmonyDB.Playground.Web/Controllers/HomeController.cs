@@ -1,12 +1,16 @@
 using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using HarmonyDB.Index.Analysis.Models.V1;
+using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.Extensions.Options;
+using OneShelf.Common;
 using OneShelf.Common.Api.Client;
+using HarmonyDB.Common.Representations.OneShelf;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -15,12 +19,20 @@ namespace HarmonyDB.Playground.Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly IndexApiClient _indexApiClient;
         private readonly SourceApiClient _sourceApiClient;
+        private readonly ProgressionsSearch _progressionsSearch;
+        private readonly ProgressionsBuilder _progressionsBuilder;
+        private readonly ChordDataParser _chordDataParser;
+        private readonly InputParser _inputParser;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
             _sourceApiClient = sourceApiClient;
+            _progressionsSearch = progressionsSearch;
+            _progressionsBuilder = progressionsBuilder;
+            _chordDataParser = chordDataParser;
+            _inputParser = inputParser;
         }
 
         public IActionResult Index()
@@ -42,7 +54,31 @@ namespace HarmonyDB.Playground.Web.Controllers
                 ViewBag.Trace = new ApiTraceBag();
             }
 
-            ViewBag.Chords = (Chords)(await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+            Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+            ViewBag.Chords = chords;
+
+            var representationSettings = new RepresentationSettings();
+
+            if (songModel.Highlight != null)
+            {
+                var chordsProgression = _progressionsBuilder.BuildProgression(chords.Output.AsChords(new()).Select(_chordDataParser.GetProgressionData).ToList());
+                var searchProgression = _inputParser.Parse(songModel.Highlight);
+                var found = _progressionsSearch.Search(
+                    chordsProgression.Once().ToList(),
+                    searchProgression);
+
+                var customAttributes = chordsProgression.OriginalSequence
+                    .WithIndices()
+                    .Select(x => (x.x, x.i, isFirst: found.harmonyGroupsWithIsFirst.TryGetValue(x.x.harmonyGroup, out var isFirst) ? x.x.indexInHarmonyGroup == 0 && isFirst : (bool?)null))
+                    .Where(x => x.isFirst.HasValue)
+                    .ToDictionary(x => x.i, x => x.isFirst!.Value ? "search-first" : "search");
+
+                representationSettings = representationSettings with { CustomAttributes = customAttributes };
+            }
+
+            representationSettings = representationSettings with { IsVariableWidth = chords.Output.IsVariableWidth };
+
+            ViewBag.RepresentationSettings = representationSettings;
 
             return View(songModel);
         }
