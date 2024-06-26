@@ -58,10 +58,11 @@ namespace HarmonyDB.Playground.Web.Controllers
             ViewBag.Chords = chords;
 
             var representationSettings = new RepresentationSettings();
+            var chordsData = chords.Output.AsChords(representationSettings);
 
             if (songModel.Highlight != null)
             {
-                var chordsProgression = _progressionsBuilder.BuildProgression(chords.Output.AsChords(new()).Select(_chordDataParser.GetProgressionData).ToList());
+                var chordsProgression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
                 var searchProgression = _inputParser.Parse(songModel.Highlight);
                 var found = _progressionsSearch.Search(
                     chordsProgression.Once().ToList(),
@@ -79,6 +80,16 @@ namespace HarmonyDB.Playground.Web.Controllers
             representationSettings = representationSettings with { IsVariableWidth = chords.Output.IsVariableWidth };
 
             ViewBag.RepresentationSettings = representationSettings;
+
+            ViewBag.Parsed = chordsData
+                .Distinct()
+                .Select(x => (x, notes: _chordDataParser.GetNotes(x)))
+                .Where(x => x.notes.HasValue)
+                .ToDictionary(x => x.x, x => x.notes!.Value.SelectSingle(x => new PlayerModel
+                {
+                    Bass = x.bass,
+                    Main = x.main,
+                }));
 
             return View(songModel);
         }

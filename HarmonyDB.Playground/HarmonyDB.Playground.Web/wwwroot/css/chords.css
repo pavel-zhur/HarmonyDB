@@ -1,4 +1,8 @@
-﻿div.chords-block div.pre-variable-width {
+﻿body:has(div.chords-block) {
+    user-select: none;
+}
+
+div.chords-block div.pre-variable-width {
     white-space: pre-wrap;
     font-family: Tahoma, Roboto, Arial, Helvetica, sans-serif;
 }

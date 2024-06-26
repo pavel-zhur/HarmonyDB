@@ -1,4 +1,5 @@
-﻿@using HarmonyDB.Common.Representations.OneShelf
+﻿@using System.Text.Json
+@using HarmonyDB.Common.Representations.OneShelf
 @using HarmonyDB.Source.Api.Model.V1
 @model SongModel
 
@@ -8,6 +9,11 @@
 
     Chords chords = ViewBag.Chords;
 }
+
+<script src="~/js/Player.js"></script>
+@Html.Hidden("parsedChords", JsonSerializer.Serialize(ViewBag.Parsed), null)
+
+<button onclick="playChord()">play</button>
 
 <div>
     <h3 class="d-inline-block">@string.Join(", ", chords.Artists) &ndash; @chords.Title</h3>
