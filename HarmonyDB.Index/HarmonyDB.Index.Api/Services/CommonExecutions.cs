@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.DownstreamApi.Client;
+using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
@@ -14,6 +15,17 @@ public class CommonExecutions
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
+    }
+
+    public IndexHeader? PrepareForOutput(IndexHeader header)
+    {
+        header = header with { Source = _downstreamApiClient.GetSourceTitle(header.Source) };
+        if (string.IsNullOrWhiteSpace(header.Title)
+            || header.Artists?.Any(a => !string.IsNullOrWhiteSpace(a)) != true
+            || string.IsNullOrWhiteSpace(header.Source)) 
+            return null;
+
+        return header;
     }
 
     public async Task<GetSourcesAndExternalIdsResponse> GetSourcesAndExternalIds(IReadOnlyList<Uri> uris)

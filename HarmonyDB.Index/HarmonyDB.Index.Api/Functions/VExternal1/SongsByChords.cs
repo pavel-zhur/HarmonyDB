@@ -27,8 +27,9 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
+    private readonly CommonExecutions _commonExecutions;
 
-    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
+    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _progressionsCache = progressionsCache;
@@ -37,6 +38,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         _inputParser = inputParser;
         _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
+        _commonExecutions = commonExecutions;
         _options = options.Value;
     }
 
@@ -52,26 +54,32 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         }
 
         var progressions = await _progressionsCache.Get();
-        var headers = await _indexHeadersCache.Get();
+        var headers = (await _indexHeadersCache.Get())
+            .Headers
+            .Values
+            .Select(_commonExecutions.PrepareForOutput)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
         var found = _progressionsSearch.Search(
-            headers.Headers.Values.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
-                .Where(x => !string.IsNullOrWhiteSpace(x.h.Title) && x.h.Artists?.Any(a => !string.IsNullOrWhiteSpace(a)) == true && !string.IsNullOrWhiteSpace(_downstreamApiClient.GetSourceTitle(x.h.Source)))
+            headers.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
                 .Select(x => x.p.Value),
             _inputParser.Parse(request.Query));
 
-        var results = headers.Headers
-            .Select(h => progressions.TryGetValue(h.Key, out var progression) && found.TryGetValue(progression, out var coverage)
+        var results = headers
+            .Select(h => progressions.TryGetValue(h.ExternalId, out var progression) && found.TryGetValue(progression, out var coverage)
                 ? (h, coverage).OnceAsNullable()
                 : null)
             .Where(x => x.HasValue)
             .Select(x => x.Value)
-            .Where(x => x.coverage >= request.MinCoverage && x.h.Value.Rating >= request.MinRating)
-            .OrderByDescending<(KeyValuePair<string, IndexHeader> h, float coverage), int>(request.Ordering switch
+            .Where(x => x.coverage >= request.MinCoverage && x.h.Rating >= request.MinRating)
+            .OrderByDescending<(IndexHeader h, float coverage), int>(request.Ordering switch
             {
                 SongsByChordsRequestOrdering.ByRating => x =>
-                    (int)(x.h.Value.Rating * 10 ?? 0) * 10 + (int)(x.coverage * 1000),
+                    (int)(x.h.Rating * 10 ?? 0) * 10 + (int)(x.coverage * 1000),
                 SongsByChordsRequestOrdering.ByCoverage => x =>
-                    (int)(x.h.Value.Rating * 10 ?? 0) + (int)(x.coverage * 1000) * 10,
+                    (int)(x.h.Rating * 10 ?? 0) + (int)(x.coverage * 1000) * 10,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();
@@ -80,10 +88,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         {
             Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SongsByChordsResponseSong
             {
-                Header = x.h.Value with
-                {
-                    Source = _downstreamApiClient.GetSourceTitle(x.h.Value.Source),
-                },
+                Header = x.h,
                 Coverage = x.coverage,
             }).ToList(),
             Total = results.Count,
