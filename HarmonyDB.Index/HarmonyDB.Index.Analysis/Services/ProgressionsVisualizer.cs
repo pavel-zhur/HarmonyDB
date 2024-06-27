@@ -20,7 +20,7 @@ public class ProgressionsVisualizer
         foreach (var (loop, id) in loops.WithIndices())
         {
             var length = loop.EndMovement - loop.Start + 1;
-            var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, length)
+            var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, length).Append(loop.Start)
                 .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
                 .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
             var title = $"{loop.Successions}/{loop.Occurrences}, {loop.Coverage.Sum(h => progression.HarmonySequence[h].harmonyGroup.SelectSingle(x => x.EndChordIndex - x.StartChordIndex + 1)) * 100 / progression.OriginalSequence.Count}%";

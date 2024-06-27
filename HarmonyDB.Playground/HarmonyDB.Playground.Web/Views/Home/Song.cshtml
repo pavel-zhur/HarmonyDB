@@ -142,10 +142,19 @@
             @foreach (var (loop, id, loopTitle, chordsTitle, isCompound, _) in loopTitles.OrderBy(x => x.length))
             {
                 <li>
-                    <a style="@(isCompound ? "color: darkgray" : Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id })">
+                    @if (id == Model.LoopId)
+                    {
                         <span>@loopTitle</span>
                         <b><span>@chordsTitle</span></b>
-                    </a>
+                        @Html.ActionLink("Find other songs with this loop", "SongsByChords", new SongsByChordsModel { Query = chordsTitle, JustForm = true })
+                    }
+                    else
+                    {
+                        <a style="@(isCompound ? "color: darkgray" : Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id })">
+                            <span>@loopTitle</span>
+                            <b><span>@chordsTitle</span></b>
+                        </a>
+                    }
                 </li>
             }
         }
