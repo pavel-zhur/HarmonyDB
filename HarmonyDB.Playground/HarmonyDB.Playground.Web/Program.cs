@@ -39,8 +39,8 @@ namespace HarmonyDB.Playground.Web
 
                 options.DefaultRequestCulture = new(defaultCulture);
                 options.SupportedUICultures = supportedCultures;
+                options.FallBackToParentUICultures = true;
 
-                options.RequestCultureProviders.Clear();
                 options.RequestCultureProviders.Add(new RouteDataRequestCultureProvider
                 {
                     Options = options,
@@ -66,7 +66,7 @@ namespace HarmonyDB.Playground.Web
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: $"{{culture={defaultCulture}}}/{{controller=Home}}/{{action=Index}}/{{id?}}");
+                pattern: "{ui-culture?}/{controller=Home}/{action=Index}/{id?}");
 
             app.Run();
         }

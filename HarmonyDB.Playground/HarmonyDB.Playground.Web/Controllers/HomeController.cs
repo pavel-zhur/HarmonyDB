@@ -1,6 +1,7 @@
 using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Globalization;
 using HarmonyDB.Index.Analysis.Models.V1;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Client;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
+using Microsoft.AspNetCore.Localization;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -40,6 +42,18 @@ namespace HarmonyDB.Playground.Web.Controllers
         public IActionResult Index()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult SetCulture(string culture, string returnUrl)
+        {
+            Response.Cookies.Append(
+                CookieRequestCultureProvider.DefaultCookieName,
+                CookieRequestCultureProvider.MakeCookieValue(new(CultureInfo.CurrentCulture.Name, culture)),
+                new() { Expires = DateTimeOffset.UtcNow.AddYears(30) }
+            );
+
+            return LocalRedirect(returnUrl);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
