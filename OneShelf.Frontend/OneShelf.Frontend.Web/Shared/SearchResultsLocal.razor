@@ -389,7 +389,7 @@ else
         if (ProgressionsSearchContext.Results.HasValue)
         {
             var progressionsByVersionId = ProgressionsCacheLoader.Peek()!.ToDictionary(x => x.version.Id, x => x.progression);
-            var foundProgressionsWithCoverage = ProgressionsSearchContext.Results.Value.foundProgressionsWithCoverage;
+            var foundProgressionsWithCoverage = ProgressionsSearchContext.Results.Value.result.foundProgressionsWithCoverage;
             songs = songs
                 .Select(x =>
                 {
@@ -542,7 +542,7 @@ else
     private int GetHash()
     {
         return HashCode.Combine(Mode, Query, Mode is SongsMode.ArtistCompact ? SongId : 0, ArtistId, ShortlistedUserId, 
-            HashCode.Combine(CollectionIndex, CollectionIndexFailed, ProgressionsSearchContext.Results?.foundProgressionsWithCoverage.GetHashCode()), 
+        HashCode.Combine(CollectionIndex, CollectionIndexFailed, ProgressionsSearchContext.Results?.result.foundProgressionsWithCoverage.GetHashCode()),
             LikeCategoryId, _illustrations == null ? 1 : 0);
     }
 

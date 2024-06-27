@@ -34,6 +34,7 @@
 @inject ProgressionsBuilder ProgressionsBuilder
 @inject ChordDataParser ChordDataParser
 @inject IOptions<FrontendOptions> Options
+@inject ProgressionsVisualizer ProgressionsVisualizer
 
 <div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
 
@@ -367,7 +368,7 @@ else
                 @if (ProgressionsSearchContext.Results != null)
                 {
                     <div class="mt-1">
-                        Найдено @ProgressionsSearchContext.Results.Value.foundProgressionsWithCoverage.Count песен.
+                        Найдено @ProgressionsSearchContext.Results.Value.result.foundProgressionsWithCoverage.Count песен.
                         <span class="badge border-start border-width-3 text-body rounded-start-0 border-success my-link ms-1 bg-success bg-opacity-20 mb-1 mt-1" @onclick="() => StateChanged((false, false))">Смотреть</span>
                         <span class="badge border-start border-width-3 text-body rounded-start-0 border-success my-link ms-1 bg-danger bg-opacity-10 mb-1 mt-1" @onclick="SearchClear">Очистить</span>
                     </div>
@@ -381,10 +382,10 @@ else
         <CircleOfFifths Chords="@_chords.Output.AsChords(_representationSettings)" PlayOnClick="true" Played="CircleOfFifthsPlayed"></CircleOfFifths>
     }
 
-    @if (_loopTitles != null)
+    @if (_loopsMemory != null)
     {
         <div>
-            @foreach (var (id, title, chordsTitle, isCompound, _) in _loopTitles.OrderBy(x => x.length))
+            @foreach (var (_, id, title, chordsTitle, isCompound, _) in _loopsMemory.Value.titles.OrderBy(x => x.length))
             {
                 <div style="@(isCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
                     <span>@title</span>
@@ -449,9 +450,8 @@ else
     
     private bool _loops;
     private int? _loopId;
-    private List<(int id, string title, string chordsTitle, bool isCompound, int length)>? _loopTitles;
+    private (List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> titles, ChordsProgression progression)? _loopsMemory;
     private IReadOnlyDictionary<int, string>? _loopsCustomAttributes;
-    private (List<Loop> loops, ChordsProgression progression)? _loopsMemory;
 
     private bool _specialTonic;
     private (Note note, ChordType chordType)? _specialTonicCandidate;
@@ -635,13 +635,7 @@ else
         if (_progression == null)
             return none;
 
-        var result = _progression.OriginalSequence
-            .WithIndices()
-            .Select(x => (x.x, x.i, isFirst: ProgressionsSearchContext.Results.Value.harmonyGroupsWithIsFirst.TryGetValue(x.x.harmonyGroup, out var isFirst) ? x.x.indexInHarmonyGroup == 0 && isFirst : (bool?)null))
-            .Where(x => x.isFirst.HasValue)
-            .ToDictionary(x => x.i, x => x.isFirst!.Value ? "search-first" : "search");
-
-        return result;
+        return ProgressionsVisualizer.BuildCustomAttributesForSearch(_progression, ProgressionsSearchContext.Results.Value.result);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -655,7 +649,7 @@ else
             try
             {
                 _chords = null;
-                _loopTitles = null;
+                _loopsMemory = null;
                 _loopId = null;
                 _state = State.Loading;
                 _loops = false;
@@ -809,7 +803,7 @@ else
         if (!_loops || _chords == null)
         {
             _loopId = null;
-            _loopTitles = null;
+            _loopsMemory = null;
             _loopsCustomAttributes = null;
 
             _representationSettings = _representationSettings with
@@ -821,21 +815,7 @@ else
         {
             var chords = _chords.Output.AsChords(_representationSettings);
             var progression = ProgressionsBuilder.BuildProgression(chords.Select(ChordDataParser.GetProgressionData).ToList());
-            var loops = ProgressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
-            _loopTitles = new();
-
-            foreach (var (loop, id) in loops.WithIndices())
-            {
-                var length = loop.EndMovement - loop.Start + 1;
-                var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, length)
-                    .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
-                    .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
-                var title = $"{loop.Successions}/{loop.Occurrences}, {loop.Coverage.Sum(h => progression.HarmonySequence[h].harmonyGroup.SelectSingle(x => x.EndChordIndex - x.StartChordIndex + 1)) * 100 / progression.OriginalSequence.Count}%";
-
-                _loopTitles.Add((id, title, chordsTitle, loop.IsCompound, length));
-            }
-
-            _loopsMemory = (loops, progression);
+            _loopsMemory = (ProgressionsVisualizer.BuildLoopTitles(progression), progression);
 
             SetLoopsCustomAttributes();
 
@@ -848,27 +828,7 @@ else
 
     private void SetLoopsCustomAttributes()
     {
-        var loopsCustomAttributes = new Dictionary<int, string>();
-
-        foreach (var x in _loopsMemory.Value.loops.WithIndices()
-                     .Where(x => x.i == _loopId)
-                     .SelectMany(l => l.x.Coverage
-                         .Select(i => _loopsMemory.Value.progression.HarmonySequence[i].harmonyGroup)
-                         .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
-        {
-            loopsCustomAttributes[x] = "search";
-        }
-
-        foreach (var x in _loopsMemory.Value.loops.WithIndices()
-                     .Where(x => x.i == _loopId)
-                     .SelectMany(l => l.x.FoundFirsts
-                         .Select(i => _loopsMemory.Value.progression.HarmonySequence[i].harmonyGroup)
-                         .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
-        {
-            loopsCustomAttributes[x] = "search-first";
-        }
-
-        _loopsCustomAttributes = loopsCustomAttributes;
+        _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForLoop(_loopsMemory.Value.titles, _loopsMemory.Value.progression, _loopId);
     }
 
     private async Task InvertSearch()

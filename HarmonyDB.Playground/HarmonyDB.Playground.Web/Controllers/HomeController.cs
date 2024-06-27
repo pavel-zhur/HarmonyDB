@@ -23,8 +23,9 @@ namespace HarmonyDB.Playground.Web.Controllers
         private readonly ProgressionsBuilder _progressionsBuilder;
         private readonly ChordDataParser _chordDataParser;
         private readonly InputParser _inputParser;
+        private readonly ProgressionsVisualizer _progressionsVisualizer;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
@@ -33,6 +34,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             _progressionsBuilder = progressionsBuilder;
             _chordDataParser = chordDataParser;
             _inputParser = inputParser;
+            _progressionsVisualizer = progressionsVisualizer;
         }
 
         public IActionResult Index()
@@ -62,23 +64,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                 alteration: songModel.Alteration);
 
             var chordsData = chords.Output.AsChords(representationSettings);
-
-            if (songModel.Highlight != null)
-            {
-                var chordsProgression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
-                var searchProgression = _inputParser.Parse(songModel.Highlight);
-                var found = _progressionsSearch.Search(
-                    chordsProgression.Once().ToList(),
-                    searchProgression);
-
-                var customAttributes = chordsProgression.OriginalSequence
-                    .WithIndices()
-                    .Select(x => (x.x, x.i, isFirst: found.harmonyGroupsWithIsFirst.TryGetValue(x.x.harmonyGroup, out var isFirst) ? x.x.indexInHarmonyGroup == 0 && isFirst : (bool?)null))
-                    .Where(x => x.isFirst.HasValue)
-                    .ToDictionary(x => x.i, x => x.isFirst!.Value ? "search-first" : "search");
-
-                representationSettings = representationSettings with { CustomAttributes = customAttributes };
-            }
+            var chordsProgression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
 
             representationSettings = representationSettings with
             {
@@ -91,8 +77,6 @@ namespace HarmonyDB.Playground.Web.Controllers
                     | (songModel.ShowSus ? SimplificationMode.None : SimplificationMode.RemoveSus),
             };
 
-            ViewBag.RepresentationSettings = representationSettings;
-
             ViewBag.Parsed = chordsData
                 .Distinct()
                 .Select(x => (x, notes: _chordDataParser.GetNotes(x)))
@@ -102,6 +86,30 @@ namespace HarmonyDB.Playground.Web.Controllers
                     Bass = x.bass,
                     Main = x.main,
                 }));
+
+            if (songModel.DetectLoops)
+            {
+                var loopTitles = _progressionsVisualizer.BuildLoopTitles(chordsProgression);
+                if (songModel.LoopId.HasValue)
+                {
+                    var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loopTitles, chordsProgression, songModel.LoopId.Value);
+
+                    representationSettings = representationSettings with { CustomAttributes = customAttributes };
+                }
+
+                ViewBag.LoopTitles = loopTitles;
+            }
+            else if (songModel.Highlight != null)
+            {
+                var searchProgression = _inputParser.Parse(songModel.Highlight);
+                var found = _progressionsSearch.Search(chordsProgression.Once().ToList(), searchProgression);
+
+                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForSearch(chordsProgression, found);
+
+                representationSettings = representationSettings with { CustomAttributes = customAttributes };
+            }
+
+            ViewBag.RepresentationSettings = representationSettings;
 
             return View(songModel);
         }

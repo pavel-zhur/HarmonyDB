@@ -2,6 +2,7 @@
 @using System.Text.Json
 @using HarmonyDB.Common
 @using HarmonyDB.Common.Transposition
+@using HarmonyDB.Index.Analysis.Models
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
 @model SongModel
@@ -26,7 +27,7 @@
         <a href="@chords.SourceUri">Source URL: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
     </li>
 
-    @if (Model.Highlight != null)
+    @if (Model is { Highlight: not null, DetectLoops: false })
     {
         <li>
             @Html.ActionLink($"Clear highlighting {Model.Highlight}", "Song", Model with { Highlight = null })
@@ -110,6 +111,17 @@
     </li>
 
     <li>
+        @if (Model.DetectLoops)
+        {
+            @Html.ActionLink("Hide detected loops", "Song", Model with { DetectLoops = false })
+        }
+        else
+        {
+            @Html.ActionLink("Show detected loops", "Song", Model with { DetectLoops = true })
+        }
+    </li>
+
+    <li>
         @if (Model.IncludeTrace)
         {
             @Html.ActionLink("Exclude the Index API trace for developers", "Song", Model with { IncludeTrace = false })
@@ -121,6 +133,26 @@
     </li>
 </ul>
 
+@if (Model.DetectLoops)
+{
+    <h3 class="mt-3">Detected Loops</h3>
+    <ul>
+        @{
+            List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> loopTitles = ViewBag.LoopTitles;
+            @foreach (var (loop, id, loopTitle, chordsTitle, isCompound, _) in loopTitles.OrderBy(x => x.length))
+            {
+                <li>
+                    <a style="@(isCompound ? "color: darkgray" : Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id })">
+                        <span>@loopTitle</span>
+                        <b><span>@chordsTitle</span></b>
+                    </a>
+                </li>
+            }
+        }
+    </ul>
+}
+
+<h3 class="mt-3">Chords</h3>
 <div class="chords-block">
     @Html.Raw(chords.Output.AsHtml(ViewBag.RepresentationSettings))
 </div>
