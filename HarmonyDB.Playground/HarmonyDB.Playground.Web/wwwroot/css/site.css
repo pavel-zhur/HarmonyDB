@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -21,7 +21,7 @@ body {
   margin-bottom: 60px;
 }
 
-span.in-progress {
+span.in-progress, span.in-progress-ru {
     background-color: #04AA6D;
     color: white;
     padding: 1px 4px;
@@ -35,6 +35,14 @@ span.in-progress::after {
     content: "IN PROGRESS";
 }
 
+span.in-progress-ru::after {
+    content: "В РАЗРАБОТКЕ";
+}
+
 ul.sparse li {
     margin-bottom: 0.25rem;
+}
+
+.search-highlighted {
+    background-color: chartreuse;
 }

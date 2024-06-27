@@ -20,7 +20,7 @@ public class ProgressionsSearchContext
 
     public event Action<ProgressionsSearchSource>? SearchResultsChanged;
 
-    public (Dictionary<ChordsProgression, float> foundProgressionsWithCoverage, Dictionary<HarmonyGroup, bool> harmonyGroupsWithIsFirst, string title)? Results { get; private set; }
+    public ((Dictionary<ChordsProgression, float> foundProgressionsWithCoverage, Dictionary<HarmonyGroup, bool> harmonyGroupsWithIsFirst) result, string title)? Results { get; private set; }
 
     public void Clear(ProgressionsSearchSource source)
     {
@@ -42,8 +42,7 @@ public class ProgressionsSearchContext
 
             Results = _progressionsSearch.Search(progressions.Select(x => x.progression).ToList(), sequence)
                 .SelectSingle(x => (
-                    x.foundProgressionsWithCoverage,
-                    x.harmonyGroupsWithIsFirst, 
+                    x, 
                     string.Join(" - ", sequence.Movements.Select(x => x.To).Prepend(sequence.Movements.First().From).Select(x => x.HarmonyRepresentation))));
             OnSearchChanged(source);
         }

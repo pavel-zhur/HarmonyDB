@@ -2,7 +2,7 @@
     ViewData["Title"] = "Home Page";
 }
 
-<h1 class="display-4">An illustrative tool for music analysis</h1>
+<h1 class="display-4">An illustrative tool for music harmony analysis</h1>
 
 <p>
     Welcome to the playground interface for the Harmony DB! I intend to make it a tool to help study and research the music theory, understand harmony movements by exploring the database, and find out how chord progressions can evolve.
@@ -20,12 +20,17 @@
 <h1 class="display-4 mt-5">Available Queries</h1>
 <p>Here are the types of requests that are currently implemented:</p>
 <h3 class="mt-3">
-    @Html.ActionLink("\u2713 Search songs by chords sequence \u2192", "Search", "Home")
+    @Html.ActionLink("\u2713 Search songs by chords sequence \u2192", "SongsByChords", "Home")
 </h3>
 <p>Allows you to find examples of songs that contain a given chord sequence. The results are sorted by coverage or by song rating.</p>
 
 <h3 class="mt-3">
-    @Html.ActionLink("\u2713 See the most popular chord progressions \u2192", "Loops", "Home")
+    @Html.ActionLink("\u2713 Search songs by title \u2192", "SongsByHeader", "Home")
+</h3>
+<p>Allows you to find songs by partial words in title or artists.</p>
+
+<h3 class="mt-3">
+    @Html.ActionLink("\u2713 See the most popular chord progressions \u2192", "Loops", "Home", new LoopsModel { JustForm = true })
 </h3>
 <p>All songs have been analyzed and the chord progression loops (repetitive subsequences) have been extracted. This query shows all progressions, starting with the most popular.</p>
 <p>For loops, statistics on how often a cycle continuously follows itself or how often it is followed by a different cycle is also calculated.</p>

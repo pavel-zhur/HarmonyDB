@@ -1,12 +1,18 @@
 using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Globalization;
+using HarmonyDB.Index.Analysis.Models.V1;
+using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.Extensions.Options;
+using OneShelf.Common;
 using OneShelf.Common.Api.Client;
+using HarmonyDB.Common.Representations.OneShelf;
+using Microsoft.AspNetCore.Localization;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -15,17 +21,39 @@ namespace HarmonyDB.Playground.Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly IndexApiClient _indexApiClient;
         private readonly SourceApiClient _sourceApiClient;
+        private readonly ProgressionsSearch _progressionsSearch;
+        private readonly ProgressionsBuilder _progressionsBuilder;
+        private readonly ChordDataParser _chordDataParser;
+        private readonly InputParser _inputParser;
+        private readonly ProgressionsVisualizer _progressionsVisualizer;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
             _sourceApiClient = sourceApiClient;
+            _progressionsSearch = progressionsSearch;
+            _progressionsBuilder = progressionsBuilder;
+            _chordDataParser = chordDataParser;
+            _inputParser = inputParser;
+            _progressionsVisualizer = progressionsVisualizer;
         }
 
         public IActionResult Index()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult SetCulture(string culture, string returnUrl)
+        {
+            Response.Cookies.Append(
+                CookieRequestCultureProvider.DefaultCookieName,
+                CookieRequestCultureProvider.MakeCookieValue(new(CultureInfo.CurrentCulture.Name, culture)),
+                new() { Expires = DateTimeOffset.UtcNow.AddYears(30) }
+            );
+
+            return LocalRedirect(returnUrl);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -42,30 +70,108 @@ namespace HarmonyDB.Playground.Web.Controllers
                 ViewBag.Trace = new ApiTraceBag();
             }
 
-            ViewBag.Chords = (Chords)(await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+            Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+            ViewBag.Chords = chords;
+
+            var representationSettings = new RepresentationSettings(
+                transpose: songModel.Transpose, 
+                alteration: songModel.Alteration);
+
+            var chordsData = chords.Output.AsChords(representationSettings);
+            var chordsProgression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
+
+            representationSettings = representationSettings with
+            {
+                IsVariableWidth = chords.Output.IsVariableWidth,
+                Simplification = 
+                    (songModel.Show7 ? SimplificationMode.None : SimplificationMode.Remove7)
+                    | (songModel.Show9 ? SimplificationMode.None : SimplificationMode.Remove9AndMore)
+                    | (songModel.Show6 ? SimplificationMode.None : SimplificationMode.Remove6)
+                    | (songModel.ShowBass ? SimplificationMode.None : SimplificationMode.RemoveBass)
+                    | (songModel.ShowSus ? SimplificationMode.None : SimplificationMode.RemoveSus),
+            };
+
+            ViewBag.Parsed = chordsData
+                .Distinct()
+                .Select(x => (x, notes: _chordDataParser.GetNotes(x)))
+                .Where(x => x.notes.HasValue)
+                .ToDictionary(x => x.x, x => x.notes!.Value.SelectSingle(x => new PlayerModel
+                {
+                    Bass = x.bass,
+                    Main = x.main,
+                }));
+
+            if (songModel.DetectLoops)
+            {
+                var loopTitles = _progressionsVisualizer.BuildLoopTitles(chordsProgression);
+                if (songModel.LoopId.HasValue)
+                {
+                    var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loopTitles, chordsProgression, songModel.LoopId.Value);
+
+                    representationSettings = representationSettings with { CustomAttributes = customAttributes };
+                }
+
+                ViewBag.LoopTitles = loopTitles;
+            }
+            else if (songModel.Highlight != null)
+            {
+                var searchProgression = _inputParser.Parse(songModel.Highlight);
+                var found = _progressionsSearch.Search(chordsProgression.Once().ToList(), searchProgression);
+
+                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForSearch(chordsProgression, found);
+
+                representationSettings = representationSettings with { CustomAttributes = customAttributes };
+            }
+
+            ViewBag.RepresentationSettings = representationSettings;
 
             return View(songModel);
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery]SearchModel searchModel)
+        public async Task<IActionResult> SongsByChords([FromQuery]SongsByChordsModel songsByChordsModel)
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
+                if (!string.IsNullOrWhiteSpace(songsByChordsModel.Query) && !songsByChordsModel.JustForm)
                 {
-                    if (searchModel.IncludeTrace)
+                    if (songsByChordsModel.IncludeTrace)
                     {
                         ViewBag.Trace = new ApiTraceBag();
                     }
 
-                    ViewBag.Response = await _indexApiClient.Search(searchModel, ViewBag.Trace);
+                    ViewBag.Response = await _indexApiClient.SongsByChords(songsByChordsModel, ViewBag.Trace);
                 }
 
-                searchModel.JustForm = false;
-                if (string.IsNullOrEmpty(searchModel.Query)) searchModel = searchModel with { Query = "F G Am F" };
+                songsByChordsModel.JustForm = false;
+                if (string.IsNullOrEmpty(songsByChordsModel.Query)) songsByChordsModel = songsByChordsModel with { Query = "F G Am F" };
 
-                return View(searchModel);
+                return View(songsByChordsModel);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SongsByHeader([FromQuery]SongsByHeaderModel songsByHeaderModel)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(songsByHeaderModel.Query) && !songsByHeaderModel.JustForm)
+                {
+                    if (songsByHeaderModel.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.SongsByHeader(songsByHeaderModel, ViewBag.Trace);
+                }
+
+                songsByHeaderModel.JustForm = false;
+
+                return View(songsByHeaderModel);
             }
             catch (ConcurrencyException)
             {

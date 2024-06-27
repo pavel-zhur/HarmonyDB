@@ -1,17 +1,9 @@
-﻿namespace OneShelf.Common.Songs.FullTextSearch;
+﻿using HarmonyDB.Common.FullTextSearch;
+
+namespace OneShelf.Common.Songs.FullTextSearch;
 
 public static class FullTextSearchLogic
 {
-    public static readonly char[] Separators =
-    {
-        '-',
-        ',',
-        ' ',
-        '\r',
-        '\n',
-        '\'',
-    };
-
     public static (List<T> found, bool isUserSpecific) Find<T>(
         IReadOnlyCollection<(T song, IReadOnlyCollection<string> words)> cache,
         string query,
@@ -21,7 +13,7 @@ public static class FullTextSearchLogic
         var terms = query
             .ToLowerInvariant()
             .ToSearchSyntax()
-            .Split(Separators, StringSplitOptions.RemoveEmptyEntries)
+            .Split(FullTextSearchExtensions.Separators, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim())
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct()
@@ -115,16 +107,10 @@ public static class FullTextSearchLogic
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .SelectMany(x => x
                         .ToSearchSyntax()
-                        .Split(Separators, StringSplitOptions.RemoveEmptyEntries)
+                        .Split(FullTextSearchExtensions.Separators, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.Trim())
                         .Where(x => !string.IsNullOrWhiteSpace(x)))
                     .ToHashSet()))
             .ToList();
     }
-
-    public static string ToSearchSyntax(this string text) => text.Replace("ё", "е");
-
-    public static string SearchSyntaxRemoveSeparators(this string text) => text.Replace("'", "");
-
-    public static bool SearchSyntaxAnySeparatorsToRemove(this string text) => text.Contains('\'');
 }

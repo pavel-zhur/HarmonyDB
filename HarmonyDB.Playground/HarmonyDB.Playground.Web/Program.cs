@@ -1,5 +1,10 @@
+using System.Globalization;
+using HarmonyDB.Index.Analysis;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
+using Microsoft.AspNetCore.Localization.Routing;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Playground.Web
 {
@@ -10,11 +15,37 @@ namespace HarmonyDB.Playground.Web
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services
+                .AddControllersWithViews(o => 
+                    o.Filters.Add<MiddlewareFilterAttribute<LocalizationPipeline>>())
+                .AddViewLocalization()
+                .AddDataAnnotationsLocalization();
 
             builder.Services
+                .AddLocalization()
                 .AddIndexApiClient(builder.Configuration)
-                .AddSourceApiClient(builder.Configuration);
+                .AddSourceApiClient(builder.Configuration)
+                .AddIndexAnalysis();
+
+            const string defaultCulture = "en";
+
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                var supportedCultures = new[]
+                {
+                    new CultureInfo(defaultCulture),
+                    new CultureInfo("ru"),
+                };
+
+                options.DefaultRequestCulture = new(defaultCulture);
+                options.SupportedUICultures = supportedCultures;
+                options.FallBackToParentUICultures = true;
+
+                options.RequestCultureProviders.Add(new RouteDataRequestCultureProvider
+                {
+                    Options = options,
+                });
+            });
 
             var app = builder.Build();
 
@@ -35,7 +66,7 @@ namespace HarmonyDB.Playground.Web
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{ui-culture?}/{controller=Home}/{action=Index}/{id?}");
 
             app.Run();
         }

@@ -1,9 +1,12 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@inject IViewLocalizer ViewLocalizer
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Harmony DB</title>
+    <title>@ViewData["Title"], Harmony DB</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/chords.css" asp-append-version="true" />
@@ -25,13 +28,27 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Index">@ViewLocalizer["Home"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Search">Progressions Search</a>
+                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="SongsByChords">@ViewLocalizer["Songs by Chords"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Loops" asp-route-JustForm="True">Loops Statistics</a>
+                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="SongsByHeader">@ViewLocalizer["Songs by Title"]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Loops" asp-route-JustForm="True">@ViewLocalizer["Loops Statistics"]</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @{
+                            var returnUrl = $"~{Context.Request.Path.Value}{Context.Request.QueryString}";
+                        }
+                        <li class="nav-item">
+                            @Html.ActionLink("\ud83c\udf0e English", "SetCulture", "Home", new { culture = "en", returnUrl }, new { @class = "nav-link text-black" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl }, new { @class = "nav-link text-black" })
                         </li>
                     </ul>
                 </div>
@@ -46,7 +63,9 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - Harmony DB - {#version#}
+            &copy; 2024 - Harmony DB - {#version#} | 
+            🌎 @Html.ActionLink("English", "SetCulture", "Home", new { culture = "en", returnUrl }) | 
+            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl })
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -24,8 +24,9 @@ public class IndexFunctions
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
+    private readonly FullTextSearchCache _fullTextSearchCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -34,6 +35,7 @@ public class IndexFunctions
         _indexHeadersCache = indexHeadersCache;
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
+        _fullTextSearchCache = fullTextSearchCache;
 
         securityContext.InitService();
     }
@@ -162,5 +164,17 @@ public class IndexFunctions
     public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
     {
         return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.Parse(searchQuery)).Count);
+    }
+
+    [Function(nameof(VDevFindHeaderAndCount))]
+    public async Task<IActionResult> VDevFindHeaderAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
+    {
+        var fullTextSearch = await _fullTextSearchCache.Get();
+        var found = fullTextSearch.Find(searchQuery);
+        return new OkObjectResult(new
+        {
+            found.Count,
+            Top100 = found.Take(100).ToList(),
+        });
     }
 }
