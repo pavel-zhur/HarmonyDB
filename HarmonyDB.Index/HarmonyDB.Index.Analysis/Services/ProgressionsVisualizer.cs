@@ -7,6 +7,9 @@ public class ProgressionsVisualizer
 {
     private readonly ProgressionsSearch _progressionsSearch;
 
+    public const string AttributeSearch = "search";
+    public const string AttributeSearchFirst = "search-first";
+
     public ProgressionsVisualizer(ProgressionsSearch progressionsSearch)
     {
         _progressionsSearch = progressionsSearch;
@@ -43,7 +46,7 @@ public class ProgressionsVisualizer
                     ? x.x.indexInHarmonyGroup == 0 && isFirst
                     : (bool?)null))
             .Where(x => x.isFirst.HasValue)
-            .ToDictionary(x => x.i, x => x.isFirst!.Value ? "search-first" : "search");
+            .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
     public IReadOnlyDictionary<int, string> BuildCustomAttributesForLoop(IReadOnlyList<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> loops, ChordsProgression progression, int? loopId)
     {
@@ -55,7 +58,7 @@ public class ProgressionsVisualizer
                          .Select(i => progression.HarmonySequence[i].harmonyGroup)
                          .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
         {
-            loopsCustomAttributes[x] = "search";
+            loopsCustomAttributes[x] = AttributeSearch;
         }
 
         foreach (var x in loops.WithIndices()
@@ -64,7 +67,7 @@ public class ProgressionsVisualizer
                          .Select(i => progression.HarmonySequence[i].harmonyGroup)
                          .SelectMany(g => Enumerable.Range(g.StartChordIndex, g.EndChordIndex - g.StartChordIndex + 1))))
         {
-            loopsCustomAttributes[x] = "search-first";
+            loopsCustomAttributes[x] = AttributeSearchFirst;
         }
 
         return loopsCustomAttributes;

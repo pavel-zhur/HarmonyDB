@@ -70,7 +70,7 @@ else
                 @foreach (var (chord, i) in item.progression.OriginalSequence.WithIndices())
                 {
                     <b 
-                        chord-custom="@(_searchingFrom?.progression == item.progression && _searchingFrom?.chordIndex == i ? "search-first" : null)"
+                        chord-custom="@(_searchingFrom?.progression == item.progression && _searchingFrom?.chordIndex == i ? ProgressionsVisualizer.AttributeSearchFirst : null)"
                         @onclick="() => ChordClick(item.progression, i)" 
                         class="chord me-2 @(chord.extendedMovementsSequence == null ? "no-click" : "") @(chord.indexInHarmonyGroup == 0 ? "my-bolder" : null) @(_searchingFrom?.progression == item.progression && _searchingFrom?.chordIndex == i ? null : chord.original.HarmonyData?.ChordType is null or ChordType.Unknown ? "chord-error" : chord.original.IsStandard ? null : "chord-yellow")"
                         >@(_harmonyView ? chord.original.HarmonyRepresentation : chord.original.OriginalRepresentation)</b>
@@ -80,9 +80,8 @@ else
                 <span>Гармония: </span>
                 @foreach (var (harmonyGroup, _, _) in item.progression.HarmonySequence)
                 {
-                    <b 
-                        chord-custom="@(_found?.harmonyGroupsWithIsFirst.TryGetValue(harmonyGroup, out var isFirst) == true ? isFirst ? "search-first" : "search" : null)" 
-                        class="chord no-click me-2 my-bolder @(_found?.harmonyGroupsWithIsFirst.ContainsKey(harmonyGroup) == true ? null : harmonyGroup.HarmonyData == null ? "chord-error" : harmonyGroup.IsStandard ? null : "chord-yellow")"
+                    <b chord-custom="@(_found?.harmonyGroupsWithIsFirst.TryGetValue(harmonyGroup, out var isFirst) == true ? isFirst ? ProgressionsVisualizer.AttributeSearchFirst : ProgressionsVisualizer.AttributeSearch : null)"
+                       class="chord no-click me-2 my-bolder @(_found?.harmonyGroupsWithIsFirst.ContainsKey(harmonyGroup) == true ? null : harmonyGroup.HarmonyData == null ? "chord-error" : harmonyGroup.IsStandard ? null : "chord-yellow")"
                         >@harmonyGroup.HarmonyRepresentation</b>
                 }
             </div>
