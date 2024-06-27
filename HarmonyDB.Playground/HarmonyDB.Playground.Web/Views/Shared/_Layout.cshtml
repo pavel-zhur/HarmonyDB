@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
+﻿@using System.Text.Encodings.Web
+@using System.Web
+@using Microsoft.AspNetCore.Mvc.Localization
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @inject IViewLocalizer ViewLocalizer
 <!DOCTYPE html>
@@ -45,10 +47,10 @@
                             var returnUrl = $"~{Context.Request.Path.Value}{Context.Request.QueryString}";
                         }
                         <li class="nav-item">
-                            @Html.ActionLink("\ud83c\udf0e English", "SetCulture", "Home", new { culture = "en", returnUrl }, new { @class = "nav-link text-black" })
+                            <a class="nav-link text-black" href="/en/Home/SetCulture?culture=en&returnUrl=@HttpUtility.UrlEncode(returnUrl.Replace("~/ru", "~/en"))">🌎English</a>
                         </li>
                         <li class="nav-item">
-                            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl }, new { @class = "nav-link text-black" })
+                            <a class="nav-link text-black" href="/ru/Home/SetCulture?culture=ru&returnUrl=@HttpUtility.UrlEncode(returnUrl.Replace("~/en", "~/ru"))">Русский</a>
                         </li>
                     </ul>
                 </div>
@@ -64,8 +66,8 @@
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2024 - Harmony DB - {#version#} | 
-            🌎 @Html.ActionLink("English", "SetCulture", "Home", new { culture = "en", returnUrl }) | 
-            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl })
+            <a class="text-muted" href="/en/Home/SetCulture?culture=en&returnUrl=@HttpUtility.UrlEncode(returnUrl.Replace("~/ru", "~/en"))">🌎English</a> | 
+            <a class="text-muted" href="/ru/Home/SetCulture?culture=ru&returnUrl=@HttpUtility.UrlEncode(returnUrl.Replace("~/en", "~/ru"))">Русский</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
