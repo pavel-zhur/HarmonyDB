@@ -5,11 +5,13 @@
 @using HarmonyDB.Index.Analysis.Models
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
 @model SongModel
 
 @{
     Chords chords = ViewBag.Chords;
-    var title = $"{string.Join(", ", chords.Artists ?? [])} – {chords.Title}, Harmony DB";
+    var title = $"{string.Join(", ", chords.Artists ?? [])} – {chords.Title}";
 
     ViewBag.Title = title;
     Layout = "_Layout";
@@ -20,22 +22,22 @@
 
 <div>
     <h3 class="d-inline-block">@title</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "Song", Model, new { target = "_blank" })
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Song", Model, new { target = "_blank" })
 </div>
 <ul>
     <li>
-        <a href="@chords.SourceUri">Source URL: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
+        <a href="@chords.SourceUri">@ViewLocalizer["Source URL"]: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
     </li>
 
     @if (Model is { Highlight: not null, DetectLoops: false })
     {
         <li>
-            @Html.ActionLink($"Clear highlighting {Model.Highlight}", "Song", Model with { Highlight = null })
+            @Html.ActionLink($"{ViewLocalizer["Clear highlighting"].Value} {Model.Highlight}", "Song", Model with { Highlight = null })
         </li>
     }
 
     <li>
-        <span>Transpose: </span>
+        <span>@ViewLocalizer["Transpose"]: </span>
         @for (var i = -7; i <= 7; i++)
         {
             if (i > -7)
@@ -55,7 +57,7 @@
     </li>
 
     <li>
-        <span>Preferred alteration: </span>
+        <span>@ViewLocalizer["Preferred alteration"]: </span>
         @{
             (string title, NoteAlteration? alteration)[] alterations = [("Original", null), ("Flats", NoteAlteration.Flat), ("Sharps", NoteAlteration.Sharp)];
         }
@@ -68,11 +70,11 @@
 
             if (alteration.alteration == Model.Alteration)
             {
-                <span>@alteration.title</span>
+                <span>@ViewLocalizer[alteration.title]</span>
             }
             else
             {
-                @Html.ActionLink(alteration.title, "Song", Model with { Alteration = alteration.alteration })
+                @Html.ActionLink(ViewLocalizer[alteration.title].Value, "Song", Model with { Alteration = alteration.alteration })
             }
         }
     </li>
@@ -85,7 +87,7 @@
             @Html.HiddenFor(x => x.Transpose)
             @Html.HiddenFor(x => x.ExternalId)
             @Html.HiddenFor(x => x.IncludeTrace)
-            <span>Show complex chords: </span>
+            <span>@ViewLocalizer["Show complex chords"]: </span>
             <label>
                 @Html.CheckBoxFor(x => x.Show7)
                 <span> 7</span>
@@ -96,7 +98,7 @@
             </label>
             <label>
                 @Html.CheckBoxFor(x => x.ShowBass)
-                <span> bass</span>
+                <span> @ViewLocalizer["bass"]</span>
             </label>
             <label>
                 @Html.CheckBoxFor(x => x.Show6)
@@ -106,36 +108,36 @@
                 @Html.CheckBoxFor(x => x.Show9)
                 <span> 9, 11, 13</span>
             </label>
-            <input type="submit" value="Apply"/>
+            <input type="submit" value="@ViewLocalizer["Apply"]"/>
         }
     </li>
 
     <li>
         @if (Model.DetectLoops)
         {
-            @Html.ActionLink("Hide detected loops", "Song", Model with { DetectLoops = false })
+            @Html.ActionLink(ViewLocalizer["Hide detected loops"].Value, "Song", Model with { DetectLoops = false })
         }
         else
         {
-            @Html.ActionLink("Show detected loops", "Song", Model with { DetectLoops = true })
+            @Html.ActionLink(ViewLocalizer["Show detected loops"].Value, "Song", Model with { DetectLoops = true })
         }
     </li>
 
     <li>
         @if (Model.IncludeTrace)
         {
-            @Html.ActionLink("Exclude the Index API trace for developers", "Song", Model with { IncludeTrace = false })
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
         }
         else
         {
-            @Html.ActionLink("Include the Index API trace for developers", "Song", Model with { IncludeTrace = true })
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = true })
         }
     </li>
 </ul>
 
 @if (Model.DetectLoops)
 {
-    <h3 class="mt-3">Detected Loops</h3>
+    <h3 class="mt-3">@ViewLocalizer["Detected Loops"]</h3>
     <ul>
         @{
             List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> loopTitles = ViewBag.LoopTitles;
@@ -146,7 +148,7 @@
                     {
                         <span>@loopTitle</span>
                         <b><span>@chordsTitle</span></b>
-                        @Html.ActionLink("Find other songs with this loop", "SongsByChords", new SongsByChordsModel { Query = chordsTitle, JustForm = true })
+                        @Html.ActionLink(ViewLocalizer["Find other songs with this loop"].Value, "SongsByChords", new SongsByChordsModel { Query = chordsTitle, JustForm = true })
                     }
                     else
                     {
@@ -161,7 +163,7 @@
     </ul>
 }
 
-<h3 class="mt-3">Chords</h3>
+<h3 class="mt-3">@ViewLocalizer["Chords"]</h3>
 <div class="chords-block">
     @Html.Raw(chords.Output.AsHtml(ViewBag.RepresentationSettings))
 </div>

@@ -1,17 +1,19 @@
 ﻿@using HarmonyDB.Common.FullTextSearch
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
 @model SongsByHeaderModel
 
 @{
     SongsByHeaderResponse? response = ViewBag.Response;
 
-    ViewBag.Title = $"{(response == null ? null : $"{response.Total} found - ")}Songs By Title, Harmony DB";
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Songs By Title"].Value}";
     Layout = "_Layout";
 }
 
 <div>
-    <h3 class="d-inline-block">Search songs by title and artists</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "SongsByHeader", "Home", Model with
+    <h3 class="d-inline-block">@ViewLocalizer["Search songs by title and artists"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "SongsByHeader", "Home", Model with
     {
         JustForm = true,
 }, new { target = "_blank" })
@@ -20,39 +22,39 @@
 @using (Html.BeginForm("SongsByHeader", "Home", Model, FormMethod.Get))
 {
     <p>
-        Part of title and artists: @Html.TextBoxFor(x => x.Query)
+        @ViewLocalizer["Part of title and artists"]: @Html.TextBoxFor(x => x.Query)
     </p>
     <p>
-        Min rating (whole, 0&ndash;100): @Html.TextBoxFor(x => x.MinRating)
+        @ViewLocalizer["Min rating (whole, 0–100)"]: @Html.TextBoxFor(x => x.MinRating)
     </p>
     <p>
-        Songs Per Page: @Html.TextBoxFor(x => x.SongsPerPage)
+        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)
     </p>
     <p>
         <label>
             @Html.CheckBoxFor(x => x.IncludeTrace)
-            Include the Index API trace for developers
+            @ViewLocalizer["Include the Index API trace for developers"]
         </label>
     </p>
-    <input type="submit" value="Search" onclick="this.form.submit(); this.disabled=true; this.value='Querying (takes 5–60 seconds)…'; " />
+    <input type="submit" value="@ViewLocalizer["Search"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
 }
 
 @if (response != null)
 {
     <div class="mt-4">
-        <h3 class="d-inline-block">Results</h3>
-        @Html.ActionLink("\ud83d\udd17Permalink", "SongsByHeader", "Home", Model, new { target = "_blank" })
+        <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "SongsByHeader", "Home", Model, new { target = "_blank" })
     </div>
 
     @await Html.PartialAsync("Paging", Model)
 
     <table>
         <thead>
-        <tr class="fw-bold">
-            <td>Song</td>
-            <td class="ps-2">Source</td>
-            <td class="ps-2">Rating</td>
-        </tr>
+            <tr class="fw-bold">
+                <td>@ViewLocalizer["Song"]</td>
+                <td class="ps-2">@ViewLocalizer["Source"]</td>
+                <td class="ps-2">@ViewLocalizer["Rating"]</td>
+            </tr>
         </thead>
         @foreach (var song in response.Songs)
         {

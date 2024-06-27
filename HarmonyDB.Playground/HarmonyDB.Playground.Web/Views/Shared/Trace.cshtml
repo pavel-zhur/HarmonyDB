@@ -1,31 +1,33 @@
 ﻿@using System.Text.Json
+@using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common.Api.Client
+@inject IViewLocalizer ViewLocalizer
 @{
     ApiTraceBag? trace = ViewBag.Trace;
 }
 
 @if (trace != null)
 {
-    <h3 class="mt-4">Trace</h3>
+    <h3 class="mt-4">@ViewLocalizer["Trace"]</h3>
     @foreach (var request in trace.Requests)
     {
         <h4>@request.Method @request.Url</h4>
         @if (request.Request != null)
         {
             <p>
-                <h4>Request:</h4>
+                <h4>@ViewLocalizer["Request"]:</h4>
                 <pre>@JsonSerializer.Serialize(request.Request, new JsonSerializerOptions { WriteIndented = true, })</pre>
             </p>
         }
         @if (request.Response != null)
         {
             <p>
-                <h4>Response:</h4>
+                <h4>@ViewLocalizer["Response"]:</h4>
                 <pre>@JsonSerializer.Serialize(request.Response, new JsonSerializerOptions { WriteIndented = true, })</pre>
             </p>
         }
         <p>
-            Time taken: @request.TimeTaken
+            @ViewLocalizer["Time taken"]: @request.TimeTaken
         </p>
     }
 }

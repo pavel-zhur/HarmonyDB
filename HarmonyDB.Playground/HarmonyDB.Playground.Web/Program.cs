@@ -38,7 +38,6 @@ namespace HarmonyDB.Playground.Web
                 };
 
                 options.DefaultRequestCulture = new(defaultCulture);
-                options.SupportedCultures = supportedCultures;
                 options.SupportedUICultures = supportedCultures;
 
                 options.RequestCultureProviders.Clear();

@@ -1,75 +1,77 @@
 ﻿@using System.Text.Json
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using OneShelf.Common.Api.Client
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
 @model SongsByChordsModel
 
 @{
     SongsByChordsResponse? response = ViewBag.Response;
 
-    ViewBag.Title = $"{(response == null ? null : $"{response.Total} found - ")}Songs By Chords, Harmony DB";
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Songs By Chords"].Value}";
     Layout = "_Layout";
 }
 
 <div>
-    <h3 class="d-inline-block">Search songs by chords sequence</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "SongsByChords", "Home", Model with
+    <h3 class="d-inline-block">@ViewLocalizer["Search songs by chords sequence"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "SongsByChords", "Home", Model with
     {
         JustForm = true,
-}, new { target = "_blank" })
+    }, new { target = "_blank" })
 </div>
 
 @using (Html.BeginForm("SongsByChords", "Home", Model, FormMethod.Get))
 {
     <p>
-        Progression: @Html.TextBoxFor(x => x.Query)
+        @ViewLocalizer["Progression"]: @Html.TextBoxFor(x => x.Query, htmlAttributes: new { id = "search-by-chords-query" })
     </p>
     <p>
-        Ordering:
+        @ViewLocalizer["Ordering"]:
         <label>
             @Html.RadioButtonFor(x => x.Ordering, SongsByChordsRequestOrdering.ByCoverage)
-            By Coverage
+            @ViewLocalizer["By Coverage"]
         </label>
         
         <label>
             @Html.RadioButtonFor(x => x.Ordering, SongsByChordsRequestOrdering.ByRating)
-            By Rating
+            @ViewLocalizer["By Rating"]
         </label>
     </p>
     <p>
-        Min coverage (real, 0&ndash;1): @Html.TextBoxFor(x => x.MinCoverage)
+        @ViewLocalizer["Min coverage (real, 0–1)"]: @Html.TextBoxFor(x => x.MinCoverage)
     </p>
     <p>
-        Min rating (whole, 0&ndash;100): @Html.TextBoxFor(x => x.MinRating)
+        @ViewLocalizer["Min rating (whole, 0–100)"]: @Html.TextBoxFor(x => x.MinRating)
     </p>
     <p>
-        Songs Per Page: @Html.TextBoxFor(x => x.SongsPerPage)
+        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)
     </p>
     <p>
         <label>
             @Html.CheckBoxFor(x => x.IncludeTrace)
-            Include the Index API trace for developers
+            @ViewLocalizer["Include the Index API trace for developers"]
         </label>
     </p>
-    <input type="submit" value="Search" onclick="this.form.submit(); this.disabled=true; this.value='Querying (takes 5–60 seconds)…'; " />
+    <input type="submit" value="@ViewLocalizer["Search"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
 }
 
 @if (response != null)
 {
     <div class="mt-4">
-        <h3 class="d-inline-block">Results</h3>
-        @Html.ActionLink("\ud83d\udd17Permalink", "SongsByChords", "Home", Model, new { target = "_blank" })
+        <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "SongsByChords", "Home", Model, new { target = "_blank" })
     </div>
 
     @await Html.PartialAsync("Paging", Model)
 
     <table>
         <thead>
-        <tr class="fw-bold">
-            <td>Song</td>
-            <td class="ps-2">Source</td>
-            <td class="ps-2">Rating</td>
-            <td class="ps-2">Coverage</td>
-        </tr>
+            <tr class="fw-bold">
+                <td>@ViewLocalizer["Song"]</td>
+                <td class="ps-2">@ViewLocalizer["Source"]</td>
+                <td class="ps-2">@ViewLocalizer["Rating"]</td>
+                <td class="ps-2">@ViewLocalizer["Coverage"]</td>
+            </tr>
         </thead>
         @foreach (var song in response.Songs)
         {

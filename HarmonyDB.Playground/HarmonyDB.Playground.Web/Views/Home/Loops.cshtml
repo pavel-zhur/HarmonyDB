@@ -1,72 +1,74 @@
 ﻿@using HarmonyDB.Index.Api.Model.VExternal1
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
 @model LoopsModel
 
 @{
     LoopsResponse? response = ViewBag.Response;
 
-    ViewBag.Title = $"{(response == null ? null : $"{response.Total} found - ")}Popular Loops, Harmony DB";
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Popular Loops"].Value}";
     Layout = "_Layout";
 }
 
 <div>
-    <h3 class="d-inline-block">See the most popular chord progressions</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "Loops", "Home", Model with
+    <h3 class="d-inline-block">@ViewLocalizer["See the most popular chord progressions"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loops", "Home", Model with
     {
         JustForm = true,
-}, new { target = "_blank" })
+    }, new { target = "_blank" })
 </div>
 
 @using (Html.BeginForm("Loops", "Home", Model, FormMethod.Get))
 {
     <p>
-        Ordering:
+        @ViewLocalizer["Ordering"]:
         @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<LoopsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
-        Min length: @Html.TextBoxFor(x => x.MinLength)
+        @ViewLocalizer["Min length"]: @Html.TextBoxFor(x => x.MinLength)
     </p>
     <p>
-        Max length: @Html.TextBoxFor(x => x.MaxLength)
+        @ViewLocalizer["Max length"]: @Html.TextBoxFor(x => x.MaxLength)
     </p>
     <p>
-        Min total songs: @Html.TextBoxFor(x => x.MinTotalSongs)
+        @ViewLocalizer["Min total songs"]: @Html.TextBoxFor(x => x.MinTotalSongs)
     </p>
     <p>
-        Min total occurrences: @Html.TextBoxFor(x => x.MinTotalOccurrences)
+        @ViewLocalizer["Min total occurrences"]: @Html.TextBoxFor(x => x.MinTotalOccurrences)
     </p>
     <p>
-        Min total successions: @Html.TextBoxFor(x => x.MinTotalSuccessions)
+        @ViewLocalizer["Min total successions"]: @Html.TextBoxFor(x => x.MinTotalSuccessions)
     </p>
     <p>
-        Loops Per Page: @Html.TextBoxFor(x => x.LoopsPerPage)
+        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)
     </p>
     <p>
         <label>
             @Html.CheckBoxFor(x => x.IncludeTrace)
-            Include the Index API trace for developers
+            @ViewLocalizer["Include the Index API trace for developers"]
         </label>
     </p>
-    <input type="submit" value="List" onclick="this.form.submit(); this.disabled=true; this.value='Querying (takes 5–60 seconds)…'; " />
+    <input type="submit" value="@ViewLocalizer["List"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
 }
 
 @if (response != null)
 {
     <div class="mt-4">
-        <h3 class="d-inline-block">Results</h3>
-        @Html.ActionLink("\ud83d\udd17Permalink", "Loops", "Home", Model, new { target = "_blank" })
+        <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loops", "Home", Model, new { target = "_blank" })
     </div>
 
     @await Html.PartialAsync("Paging", Model)
 
     <table>
         <thead>
-        <tr>
-            <td>Progression</td>
-            <td>Length</td>
-            <td>Total Songs</td>
-            <td>Total Occurrences</td>
-            <td>Total Successions</td>
-        </tr>
+            <tr>
+                <td>@ViewLocalizer["Progression"]</td>
+                <td>@ViewLocalizer["Length"]</td>
+                <td>@ViewLocalizer["Total Songs"]</td>
+                <td>@ViewLocalizer["Total Occurrences"]</td>
+                <td>@ViewLocalizer["Total Successions"]</td>
+            </tr>
         </thead>
         @foreach (var loop in response.Loops)
         {
