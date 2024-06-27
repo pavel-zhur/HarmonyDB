@@ -20,7 +20,7 @@
 @using (Html.BeginForm("SongsByHeader", "Home", Model, FormMethod.Get))
 {
     <p>
-        Progression: @Html.TextBoxFor(x => x.Query)
+        Part of title and artists: @Html.TextBoxFor(x => x.Query)
     </p>
     <p>
         Min rating (whole, 0&ndash;100): @Html.TextBoxFor(x => x.MinRating)
