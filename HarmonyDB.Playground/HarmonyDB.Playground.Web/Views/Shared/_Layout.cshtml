@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using System.Globalization
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -37,6 +38,14 @@
                             <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Loops" asp-route-JustForm="True">Loops Statistics</a>
                         </li>
                     </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/en">🌎 English</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/ru">Русский</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -49,7 +58,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - Harmony DB - {#version#}
+            &copy; 2024 - Harmony DB - {#version#} | 🌎 <a class="text-dark" href="/en">English</a> | <a class="text-dark" href="/ru">Русский</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

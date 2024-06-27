@@ -171,7 +171,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Playground", "Har
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Playground.Web", "HarmonyDB.Playground\HarmonyDB.Playground.Web\HarmonyDB.Playground.Web.csproj", "{C63D176C-03AB-4403-BE88-E8FE4EFE736D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Common.FullTextSearch", "HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj", "{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Common.FullTextSearch", "HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj", "{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
