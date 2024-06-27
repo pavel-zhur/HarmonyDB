@@ -2,10 +2,10 @@
 @model LoopsModel
 
 @{
-    ViewBag.Title = "Popular Loops";
-    Layout = "_Layout";
-
     LoopsResponse? response = ViewBag.Response;
+
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} found - ")}Popular Loops, Harmony DB";
+    Layout = "_Layout";
 }
 
 <div>
@@ -71,7 +71,7 @@
         @foreach (var loop in response.Loops)
         {
             <tr>
-                <td>@Html.ActionLink(loop.Progression, "Search", new SearchModel { Query = loop.Progression, JustForm = true })</td>
+                <td>@Html.ActionLink(loop.Progression, "SongsByChords", new SongsByChordsModel { Query = loop.Progression, JustForm = true })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
                 <td>@loop.TotalOccurrences.ToString("N0")</td>

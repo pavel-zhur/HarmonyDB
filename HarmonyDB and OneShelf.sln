@@ -169,7 +169,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Source", "Harmony
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Playground", "HarmonyDB.Playground", "{47FED0C3-B336-4FC6-86FE-51A78872C2DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Playground.Web", "HarmonyDB.Playground\HarmonyDB.Playground.Web\HarmonyDB.Playground.Web.csproj", "{C63D176C-03AB-4403-BE88-E8FE4EFE736D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Playground.Web", "HarmonyDB.Playground\HarmonyDB.Playground.Web\HarmonyDB.Playground.Web.csproj", "{C63D176C-03AB-4403-BE88-E8FE4EFE736D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Common.FullTextSearch", "HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj", "{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -421,6 +423,10 @@ Global
 		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C63D176C-03AB-4403-BE88-E8FE4EFE736D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -488,6 +494,7 @@ Global
 		{92969108-D9C8-4FF8-B083-B10463EB0FEC} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
 		{F2CFF546-5D77-4E7D-BE8B-611022AD6ECA} = {7548FF8E-E1B9-4939-96E9-03DBD5236709}
 		{C63D176C-03AB-4403-BE88-E8FE4EFE736D} = {47FED0C3-B336-4FC6-86FE-51A78872C2DE}
+		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D} = {2950865E-9D1A-406E-B0C6-4C249E2E4D61}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}

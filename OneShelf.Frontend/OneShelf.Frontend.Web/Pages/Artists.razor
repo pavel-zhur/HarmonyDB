@@ -1,4 +1,5 @@
 ﻿@page "/artists"
+@using HarmonyDB.Common.FullTextSearch
 @using OneShelf.Common.Songs
 @using OneShelf.Common.Songs.FullTextSearch
 @using OneShelf.Frontend.Api.Model.V3.Databasish
@@ -163,7 +164,7 @@
 
         if (!string.IsNullOrWhiteSpace(Query))
         {
-            var terms = Query.ToLowerInvariant().ToSearchSyntax().Split(FullTextSearchLogic.Separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var terms = Query.ToLowerInvariant().ToSearchSyntax().Split(FullTextSearchExtensions.Separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             artists = artists.Where(x => terms.All(t => x.withSynonyms.Contains(t)));
         }
 

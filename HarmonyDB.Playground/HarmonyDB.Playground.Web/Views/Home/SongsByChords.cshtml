@@ -1,24 +1,24 @@
 ﻿@using System.Text.Json
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using OneShelf.Common.Api.Client
-@model SearchModel
+@model SongsByChordsModel
 
 @{
-    ViewBag.Title = "Progressions Search";
-    Layout = "_Layout";
+    SongsByChordsResponse? response = ViewBag.Response;
 
-    SearchResponse? response = ViewBag.Response;
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} found - ")}Songs By Chords, Harmony DB";
+    Layout = "_Layout";
 }
 
 <div>
     <h3 class="d-inline-block">Search songs by chords sequence</h3>
-    @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model with
+    @Html.ActionLink("\ud83d\udd17Permalink", "SongsByChords", "Home", Model with
     {
         JustForm = true,
 }, new { target = "_blank" })
 </div>
 
-@using (Html.BeginForm("Search", "Home", Model, FormMethod.Get))
+@using (Html.BeginForm("SongsByChords", "Home", Model, FormMethod.Get))
 {
     <p>
         Progression: @Html.TextBoxFor(x => x.Query)
@@ -26,12 +26,12 @@
     <p>
         Ordering:
         <label>
-            @Html.RadioButtonFor(x => x.Ordering, SearchRequestOrdering.ByCoverage)
+            @Html.RadioButtonFor(x => x.Ordering, SongsByChordsRequestOrdering.ByCoverage)
             By Coverage
         </label>
         
         <label>
-            @Html.RadioButtonFor(x => x.Ordering, SearchRequestOrdering.ByRating)
+            @Html.RadioButtonFor(x => x.Ordering, SongsByChordsRequestOrdering.ByRating)
             By Rating
         </label>
     </p>
@@ -57,7 +57,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">Results</h3>
-        @Html.ActionLink("\ud83d\udd17Permalink", "Search", "Home", Model, new { target = "_blank" })
+        @Html.ActionLink("\ud83d\udd17Permalink", "SongsByChords", "Home", Model, new { target = "_blank" })
     </div>
 
     @await Html.PartialAsync("Paging", Model)

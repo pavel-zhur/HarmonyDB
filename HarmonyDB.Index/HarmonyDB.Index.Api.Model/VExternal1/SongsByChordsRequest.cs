@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public record SearchRequest : PagedRequestBase
+public record SongsByChordsRequest : PagedRequestBase
 {
     public required string Query { get; init; }
 
@@ -13,5 +13,5 @@ public record SearchRequest : PagedRequestBase
     public int SongsPerPage { get; init; } = 100;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public SearchRequestOrdering Ordering { get; init; } = SearchRequestOrdering.ByRating;
+    public SongsByChordsRequestOrdering Ordering { get; init; } = SongsByChordsRequestOrdering.ByRating;
 }

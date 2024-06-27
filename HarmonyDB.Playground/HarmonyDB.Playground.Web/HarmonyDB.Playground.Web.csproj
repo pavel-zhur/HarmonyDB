@@ -8,15 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <UpToDateCheckInput Remove="Views\Home\Search.cshtml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="Views\Home\Search.cshtml" />
     <_ContentIncludedByDefault Remove="Views\Shared\Concurrency.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />

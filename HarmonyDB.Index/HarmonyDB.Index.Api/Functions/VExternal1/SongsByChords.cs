@@ -18,7 +18,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
+public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByChordsResponse>
 {
     private readonly ProgressionsCache _progressionsCache;
     private readonly IndexHeadersCache _indexHeadersCache;
@@ -28,7 +28,7 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
 
-    public Search(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
+    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _progressionsCache = progressionsCache;
@@ -40,15 +40,15 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1Search)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SearchRequest request)
+    [Function(IndexApiUrls.VExternal1SongsByChords)]
+    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongsByChordsRequest request)
         => RunHandler(request);
 
-    protected override async Task<SearchResponse> Execute(SearchRequest request)
+    protected override async Task<SongsByChordsResponse> Execute(SongsByChordsRequest request)
     {
         if (_options.RedirectCachesToIndex)
         {
-            return await _indexApiClient.Search(request);
+            return await _indexApiClient.SongsByChords(request);
         }
 
         var progressions = await _progressionsCache.Get();
@@ -68,9 +68,9 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
             .Where(x => x.coverage >= request.MinCoverage && x.h.Value.Rating >= request.MinRating)
             .OrderByDescending<(KeyValuePair<string, IndexHeader> h, float coverage), int>(request.Ordering switch
             {
-                SearchRequestOrdering.ByRating => x =>
+                SongsByChordsRequestOrdering.ByRating => x =>
                     (int)(x.h.Value.Rating * 10 ?? 0) * 10 + (int)(x.coverage * 1000),
-                SearchRequestOrdering.ByCoverage => x =>
+                SongsByChordsRequestOrdering.ByCoverage => x =>
                     (int)(x.h.Value.Rating * 10 ?? 0) + (int)(x.coverage * 1000) * 10,
                 _ => throw new ArgumentOutOfRangeException(),
             })
@@ -78,7 +78,7 @@ public class Search : ServiceFunctionBase<SearchRequest, SearchResponse>
 
         return new()
         {
-            Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SearchResponseSong
+            Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SongsByChordsResponseSong
             {
                 Header = x.h.Value with
                 {

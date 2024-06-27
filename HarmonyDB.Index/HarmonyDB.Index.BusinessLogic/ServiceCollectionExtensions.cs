@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<ProgressionsCache>()
             .AddSingleton<LoopsStatisticsCache>()
             .AddSingleton<IndexHeadersCache>()
+            .AddSingleton<FullTextSearchCache>()
             .AddIndexAnalysis()
             .Configure<FileCacheBaseOptions>(o => configuration.GetSection(nameof(FileCacheBaseOptions)).Bind(o));
 }

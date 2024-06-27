@@ -107,24 +107,49 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery]SearchModel searchModel)
+        public async Task<IActionResult> SongsByChords([FromQuery]SongsByChordsModel songsByChordsModel)
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(searchModel.Query) && !searchModel.JustForm)
+                if (!string.IsNullOrWhiteSpace(songsByChordsModel.Query) && !songsByChordsModel.JustForm)
                 {
-                    if (searchModel.IncludeTrace)
+                    if (songsByChordsModel.IncludeTrace)
                     {
                         ViewBag.Trace = new ApiTraceBag();
                     }
 
-                    ViewBag.Response = await _indexApiClient.Search(searchModel, ViewBag.Trace);
+                    ViewBag.Response = await _indexApiClient.SongsByChords(songsByChordsModel, ViewBag.Trace);
                 }
 
-                searchModel.JustForm = false;
-                if (string.IsNullOrEmpty(searchModel.Query)) searchModel = searchModel with { Query = "F G Am F" };
+                songsByChordsModel.JustForm = false;
+                if (string.IsNullOrEmpty(songsByChordsModel.Query)) songsByChordsModel = songsByChordsModel with { Query = "F G Am F" };
 
-                return View(searchModel);
+                return View(songsByChordsModel);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SongsByHeader([FromQuery]SongsByHeaderModel songsByHeaderModel)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(songsByHeaderModel.Query) && !songsByHeaderModel.JustForm)
+                {
+                    if (songsByHeaderModel.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.SongsByHeader(songsByHeaderModel, ViewBag.Trace);
+                }
+
+                songsByHeaderModel.JustForm = false;
+
+                return View(songsByHeaderModel);
             }
             catch (ConcurrencyException)
             {

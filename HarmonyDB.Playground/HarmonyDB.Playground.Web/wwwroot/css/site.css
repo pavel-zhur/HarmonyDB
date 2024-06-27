@@ -38,3 +38,7 @@ span.in-progress::after {
 ul.sparse li {
     margin-bottom: 0.25rem;
 }
+
+.search-highlighted {
+    background-color: chartreuse;
+}

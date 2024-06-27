@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Common.Tools;
+﻿namespace HarmonyDB.Common.Transposition;
 
 public static class TranspositionExtensions
 {
