@@ -45,10 +45,10 @@
                             var returnUrl = $"~{Context.Request.Path.Value}{Context.Request.QueryString}";
                         }
                         <li class="nav-item">
-                            @Html.ActionLink("\ud83c\udf0e English", "SetCulture", "Home", new { culture = "en", returnUrl })
+                            @Html.ActionLink("\ud83c\udf0e English", "SetCulture", "Home", new { culture = "en", returnUrl }, new { @class = "nav-link text-black" })
                         </li>
                         <li class="nav-item">
-                            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl })
+                            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl }, new { @class = "nav-link text-black" })
                         </li>
                     </ul>
                 </div>
@@ -63,7 +63,9 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - Harmony DB - {#version#} | 🌎 <a class="text-dark" href="/en">English</a> | <a class="text-dark" href="/ru">Русский</a>
+            &copy; 2024 - Harmony DB - {#version#} | 
+            🌎 @Html.ActionLink("English", "SetCulture", "Home", new { culture = "en", returnUrl }) | 
+            @Html.ActionLink("Русский", "SetCulture", "Home", new { culture = "ru", returnUrl })
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
