@@ -201,17 +201,17 @@ public class ProgressionsSearch
                 {
                     if (roots[r][start] == roots[r][endMovement + 1] && movements.Span[start].FromType == movements.Span[endMovement].ToType) // if is a loop
                     {
-                        var searchPhraseLength = endMovement - start + 1;
+                        var length = endMovement - start + 1;
 
                         // if such loop is already identified (no shift), continue
-                        var startWithNoShiftCheck = startsOfLoopIds[r][start].Where(id => loops[id].EndMovement - loops[id].Start + 1 == searchPhraseLength).Select(x => (int?)x).SingleOrDefault();
+                        var startWithNoShiftCheck = startsOfLoopIds[r][start].Where(id => loops[id].EndMovement - loops[id].Start + 1 == length).Select(x => (int?)x).SingleOrDefault();
                         if (startWithNoShiftCheck.HasValue)
                         {
                             beginsWithKnownId ??= (startWithNoShiftCheck.Value, 0);
                             continue;
                         }
 
-                        var searchPhrase = movements.Slice(start, endMovement - start + 1);
+                        var searchPhrase = movements.Slice(start, length);
 
                         // if such loop is already identified, possibly with a shift, continue
                         int? foundShift = null;
@@ -234,8 +234,8 @@ public class ProgressionsSearch
                         if (beginsWithKnownId.HasValue) // remove repetitions of type A A A A A A
                         {
                             var subLength = loops[beginsWithKnownId.Value.id].EndMovement - loops[beginsWithKnownId.Value.id].Start + 1;
-                            var repetitions = searchPhraseLength / subLength;
-                            if (searchPhraseLength % subLength == 0
+                            var repetitions = length / subLength;
+                            if (length % subLength == 0
                                 && Enumerable
                                     .Range(1, repetitions - 1)
                                     .All(x => CompactHarmonyMovement.AreEqual(searchPhrase.Slice(x & subLength, subLength),
@@ -264,7 +264,7 @@ public class ProgressionsSearch
                         if (foundFirstsFulls.Count > 1) // if it exists more than once
                         {
                             var isCompound = Enumerable
-                                .Range(start, endMovement - start + 1)
+                                .Range(start, length)
                                 .Select(i => (sequences[r].Movements.Span[i].FromType, roots[r][i]))
                                 .AnyDuplicates(out _);
 
@@ -274,7 +274,7 @@ public class ProgressionsSearch
                                     .Select(x => x.foundStartMovementIndex)
                                     .OrderBy(x => x)
                                     .WithPrevious()
-                                    .Count(p => p.current - p.previous == searchPhraseLength));
+                                    .Count(p => p.current - p.previous == length));
 
                             if (isCompound && successions == 0) // if it's compound and never repeats immediately, it is not needed
                             {
