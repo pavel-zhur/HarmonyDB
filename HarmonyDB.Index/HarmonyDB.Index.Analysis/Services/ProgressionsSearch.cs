@@ -280,55 +280,59 @@ public class ProgressionsSearch
                             foundFirstsFulls.AddRange(searchResult.foundFirstsFulls.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
                         }
 
-                        if (foundFirstsFulls.Count > 1) // if it exists more than once
-                        {
-                            var isCompound = IsCompound(searchPhrase);
-
-                            var successions = foundFirstsFulls
-                                .GroupBy(x => x.sequenceIndex)
-                                .Sum(g => g
-                                    .Select(x => x.foundStartMovementIndex)
-                                    .OrderBy(x => x)
-                                    .WithPrevious()
-                                    .Count(p => p.current - p.previous == length));
-
-                            if (isCompound && successions == 0) // if it's compound and never repeats immediately, it is not needed
-                            {
-                                continue;
-                            }
-
-                            loops.Add(new()
-                            {
-                                SequenceIndex = r,
-                                Start = start,
-                                EndMovement = endMovement,
-                                Occurrences = foundFirstsFulls.Count,
-                                Successions = successions,
-                                Coverage = found.Select(x => sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex).ToHashSet(),
-                                FoundFirsts = foundFirsts.Select(x => sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex).ToHashSet(),
-                                Progression = searchPhrase,
-                                IsCompound = isCompound,
-                            });
-
-                            foreach (var (sequenceIndex, foundStartMovementIndex) in found)
-                            {
-                                participationsInLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
-                            }
-
-                            foreach (var (sequenceIndex, foundStartMovementIndex) in foundFirstsFulls) // mark each finding
-                            {
-                                startsOfLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
-                                endsOfLoopIds[sequenceIndex][foundStartMovementIndex + searchPhrase.Length].Add(loopId);
-                            }
-
-                            beginsWithKnownId ??= (loopId, 0);
-                            loopId++;
-                        }
-                        else
+                        if (foundFirstsFulls.Count <= 1) // never repeats
                         {
                             // a progression with this start and end doesn't exist more than once, a longer with the same start won't exist
                             break; // break loop over endMovement, go to next start
                         }
+
+                        var isCompound = IsCompound(searchPhrase);
+
+                        var successions = foundFirstsFulls
+                            .GroupBy(x => x.sequenceIndex)
+                            .Sum(g => g
+                                .Select(x => x.foundStartMovementIndex)
+                                .OrderBy(x => x)
+                                .WithPrevious()
+                                .Count(p => p.current - p.previous == length));
+
+                        if (isCompound &&
+                            successions == 0) // if it's compound and never repeats immediately, it is not needed
+                        {
+                            continue;
+                        }
+
+                        loops.Add(new()
+                        {
+                            SequenceIndex = r,
+                            Start = start,
+                            EndMovement = endMovement,
+                            Occurrences = foundFirstsFulls.Count,
+                            Successions = successions,
+                            Coverage = found.Select(x =>
+                                    sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex)
+                                .ToHashSet(),
+                            FoundFirsts = foundFirsts.Select(x =>
+                                    sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex)
+                                .ToHashSet(),
+                            Progression = searchPhrase,
+                            IsCompound = isCompound,
+                        });
+
+                        foreach (var (sequenceIndex, foundStartMovementIndex) in found)
+                        {
+                            participationsInLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
+                        }
+
+                        foreach (var (sequenceIndex, foundStartMovementIndex) in
+                                 foundFirstsFulls) // mark each finding
+                        {
+                            startsOfLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
+                            endsOfLoopIds[sequenceIndex][foundStartMovementIndex + searchPhrase.Length].Add(loopId);
+                        }
+
+                        beginsWithKnownId ??= (loopId, 0);
+                        loopId++;
                     }
                 }
             }
