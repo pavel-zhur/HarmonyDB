@@ -1,5 +1,4 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
-using Convert = System.Convert;
 
 namespace HarmonyDB.Index.Analysis.Models;
 
@@ -16,6 +15,8 @@ public class Loop
     public required HashSet<int> FoundFirsts { get; init; }
     public required ReadOnlyMemory<CompactHarmonyMovement> Progression { get; init; }
     public required bool IsCompound { get; init; }
+
+    public int Length => EndMovement - Start + 1;
 
     public static ReadOnlyMemory<CompactHarmonyMovement> Deserialize(string progression)
     {

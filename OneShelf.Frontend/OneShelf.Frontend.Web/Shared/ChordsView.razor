@@ -385,9 +385,9 @@ else
     @if (_loopsMemory != null)
     {
         <div>
-            @foreach (var (_, id, title, chordsTitle, isCompound, _) in _loopsMemory.Value.titles.OrderBy(x => x.length))
+            @foreach (var ((loop, title, chordsTitle), id) in _loopsMemory.Value.titles.WithIndices().OrderBy(x => x.x.loop.Length))
             {
-                <div style="@(isCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
+                <div style="@(loop.IsCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
                     <span>@title</span>
                     <b><span>@chordsTitle</span></b>
                 </div>
@@ -450,7 +450,7 @@ else
     
     private bool _loops;
     private int? _loopId;
-    private (List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> titles, ChordsProgression progression)? _loopsMemory;
+    private (List<(Loop loop, string title, string chordsTitle)> titles, ChordsProgression progression)? _loopsMemory;
     private IReadOnlyDictionary<int, string>? _loopsCustomAttributes;
 
     private bool _specialTonic;

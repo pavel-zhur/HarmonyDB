@@ -276,10 +276,10 @@ public class ProgressionsSearch
                                     .WithPrevious()
                                     .Count(p => p.current - p.previous == searchPhraseLength));
 
-                            if (isCompound && successions == 0) // if it's compound and never repeats immediately, it is not needed
-                            {
-                                continue;
-                            }
+                            //if (isCompound && successions == 0) // if it's compound and never repeats immediately, it is not needed
+                            //{
+                            //    continue;
+                            //}
 
                             loops.Add(new()
                             {

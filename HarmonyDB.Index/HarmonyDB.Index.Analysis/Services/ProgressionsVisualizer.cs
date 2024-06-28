@@ -15,20 +15,19 @@ public class ProgressionsVisualizer
         _progressionsSearch = progressionsSearch;
     }
 
-    public List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> BuildLoopTitles(ChordsProgression progression)
+    public List<(Loop loop, string title, string chordsTitle)> BuildLoopTitles(ChordsProgression progression)
     {
         var loops = _progressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
-        var loopTitles = new List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)>();
+        var loopTitles = new List<(Loop loop, string title, string chordsTitle)>();
 
         foreach (var (loop, id) in loops.WithIndices())
         {
-            var length = loop.EndMovement - loop.Start + 1;
-            var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, length).Append(loop.Start)
+            var chordsTitle = string.Join(" ", Enumerable.Range(loop.Start, loop.Length).Append(loop.Start)
                 .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
                 .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
             var title = $"{loop.Successions}/{loop.Occurrences}, {loop.Coverage.Sum(h => progression.HarmonySequence[h].harmonyGroup.SelectSingle(x => x.EndChordIndex - x.StartChordIndex + 1)) * 100 / progression.OriginalSequence.Count}%";
 
-            loopTitles.Add((loop, id, title, chordsTitle, loop.IsCompound, length));
+            loopTitles.Add((loop, title, chordsTitle));
         }
 
         return loopTitles;
@@ -48,7 +47,7 @@ public class ProgressionsVisualizer
             .Where(x => x.isFirst.HasValue)
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
-    public IReadOnlyDictionary<int, string> BuildCustomAttributesForLoop(IReadOnlyList<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> loops, ChordsProgression progression, int? loopId)
+    public IReadOnlyDictionary<int, string> BuildCustomAttributesForLoop(IReadOnlyList<(Loop loop, string title, string chordsTitle)> loops, ChordsProgression progression, int? loopId)
     {
         var loopsCustomAttributes = new Dictionary<int, string>();
 
