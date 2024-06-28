@@ -99,7 +99,7 @@ public class ProgressionsCacheLoader : CacheLoaderBase
             try
             {
                 var chords = await _dataProvider.GetChords(externalId, false);
-                var progression = chords.Output.AsChords(new()).Select(x => _chordDataParser.GetProgressionData(x)).ToList();
+                var progression = chords.Output.AsChords(new()).Select(_chordDataParser.GetProgressionData).ToList();
 
                 await _dataProvider.SaveChordsProgression(externalId, progression);
                 progressionsProgress.Add(externalId);
