@@ -282,7 +282,7 @@ public class ProgressionsSearch
 
                         if (foundFirstsFulls.Count > 1) // if it exists more than once
                         {
-                            var isCompound = IsCompound(sequence);
+                            var isCompound = IsCompound(searchPhrase);
 
                             var successions = foundFirstsFulls
                                 .GroupBy(x => x.sequenceIndex)
