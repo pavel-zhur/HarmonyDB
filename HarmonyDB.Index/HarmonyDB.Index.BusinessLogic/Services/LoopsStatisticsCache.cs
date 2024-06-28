@@ -54,6 +54,7 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
                     TotalOccurrences = l.Value.TotalOccurrences,
                     TotalSuccessions = l.Value.TotalSuccessions,
                     TotalSongs = l.Value.ExternalIds.Count,
+                    IsCompound = _progressionsSearch.IsCompound(sequence),
                 };
             })
             .OrderByDescending(x => x.TotalOccurrences)

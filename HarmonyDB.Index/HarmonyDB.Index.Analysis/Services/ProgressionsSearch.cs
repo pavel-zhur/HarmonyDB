@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Common.Representations.OneShelf;
+﻿using System.Runtime.InteropServices;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Interfaces;
@@ -173,6 +174,24 @@ public class ProgressionsSearch
                sequenceMovement == ChordType.Unknown || searchPhraseMovement is not (ChordType.Minor or ChordType.Major) && sequenceMovement is not (ChordType.Minor or ChordType.Major);
     }
 
+    public bool IsCompound(ReadOnlyMemory<CompactHarmonyMovement> progression)
+    {
+        HashSet<(ChordType type, int note)> chords = new();
+        var startNote = Note.Normalize(0);
+
+        foreach (var movement in MemoryMarshal.ToEnumerable(progression))
+        {
+            if (!chords.Add((movement.FromType, startNote)))
+            {
+                return true;
+            }
+
+            startNote = Note.Normalize(startNote + movement.RootDelta);
+        }
+
+        return false;
+    }
+
     public List<Loop> FindAllLoops(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
     {
         var roots = sequences
@@ -263,10 +282,7 @@ public class ProgressionsSearch
 
                         if (foundFirstsFulls.Count > 1) // if it exists more than once
                         {
-                            var isCompound = Enumerable
-                                .Range(start, length)
-                                .Select(i => (sequence.Span[i].FromType, roots[r][i]))
-                                .AnyDuplicates(out _);
+                            var isCompound = IsCompound(sequence);
 
                             var successions = foundFirstsFulls
                                 .GroupBy(x => x.sequenceIndex)

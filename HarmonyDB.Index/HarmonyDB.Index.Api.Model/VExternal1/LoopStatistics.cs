@@ -11,4 +11,6 @@ public class LoopStatistics
     public required int TotalSuccessions { get; init; }
 
     public required int TotalOccurrences { get; init; }
+
+    public required bool IsCompound { get; init; }
 }
