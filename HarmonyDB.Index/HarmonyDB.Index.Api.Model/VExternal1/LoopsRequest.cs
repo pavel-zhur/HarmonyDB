@@ -19,5 +19,5 @@ public record LoopsRequest : PagedRequestBase
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public LoopsRequestOrdering Ordering { get; init; } = LoopsRequestOrdering.SongsDesc;
 
-    public LoopsRequestCompoundFilter Compound { get; init; } = LoopsRequestCompoundFilter.Both;
+    public LoopsRequestCompoundFilter Compound { get; init; } = LoopsRequestCompoundFilter.Simple;
 }
