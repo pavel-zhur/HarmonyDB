@@ -81,7 +81,7 @@ public class DataProvider
             new IndexedItem
             {
                 Key = key,
-                Contents = JsonSerializer.Serialize(CompressedChordProgressionDataV1.Compress(progression)),
+                Contents = JsonSerializer.Serialize(CompressedChordsProgressionDataV1.Compress(progression)),
                 Version = 1,
             }.Once().ToList());
         await _myIndexedDb.AddItems(
