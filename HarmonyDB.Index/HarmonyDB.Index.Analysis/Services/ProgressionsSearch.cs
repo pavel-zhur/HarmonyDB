@@ -51,7 +51,11 @@ public class ProgressionsSearch
     public Dictionary<ISearchableChordsProgression, float> Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, int? top = int.MaxValue)
         => Search(progressions, searchPhrase, false, top).foundProgressionsWithCoverage;
 
-    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, bool harmonyGroupsToo, int? top = int.MaxValue)
+    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(
+        IEnumerable<ISearchableChordsProgression> progressions, 
+        HarmonyMovementsSequence searchPhrase,
+        bool harmonyGroupsToo,
+        int? top = int.MaxValue)
     {
         (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) result = (new(), new());
 
