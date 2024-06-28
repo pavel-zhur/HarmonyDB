@@ -193,13 +193,13 @@ public class ProgressionsSearch
         
         for (var r = 0; r < sequences.Count; r++) // in each sequence
         {
-            var movements = sequences[r].Movements;
-            for (var start = 0; start < movements.Length - 1; start++) // potential starts
+            var sequence = sequences[r].Movements;
+            for (var start = 0; start < sequence.Length - 1; start++) // potential starts
             {
                 (int id, int shift)? beginsWithKnownId = null;
-                for (var endMovement = start + 1; endMovement <= movements.Length - 1; endMovement++) // potential ends
+                for (var endMovement = start + 1; endMovement <= sequence.Length - 1; endMovement++) // potential ends
                 {
-                    if (roots[r][start] == roots[r][endMovement + 1] && movements.Span[start].FromType == movements.Span[endMovement].ToType) // if is a loop
+                    if (roots[r][start] == roots[r][endMovement + 1] && sequence.Span[start].FromType == sequence.Span[endMovement].ToType) // if is a loop
                     {
                         var length = endMovement - start + 1;
 
@@ -211,7 +211,7 @@ public class ProgressionsSearch
                             continue;
                         }
 
-                        var searchPhrase = movements.Slice(start, length);
+                        var searchPhrase = sequence.Slice(start, length);
 
                         // if such loop is already identified, possibly with a shift, continue
                         int? foundShift = null;
@@ -265,7 +265,7 @@ public class ProgressionsSearch
                         {
                             var isCompound = Enumerable
                                 .Range(start, length)
-                                .Select(i => (sequences[r].Movements.Span[i].FromType, roots[r][i]))
+                                .Select(i => (sequence.Span[i].FromType, roots[r][i]))
                                 .AnyDuplicates(out _);
 
                             var successions = foundFirstsFulls
