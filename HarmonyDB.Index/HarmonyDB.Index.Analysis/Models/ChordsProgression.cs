@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Models;
 
 public class ChordsProgression : ISearchableChordsProgression
 {
-    public required IReadOnlyList<(ChordProgressionDataV1 original, HarmonyGroup harmonyGroup, int indexInHarmonyGroup, HarmonyMovementsSequence? standardMovementsSequence, HarmonyMovementsSequence? extendedMovementsSequence)> OriginalSequence { get; init; }
+    public required IReadOnlyList<(ChordDataV1 original, HarmonyGroup harmonyGroup, int indexInHarmonyGroup, HarmonyMovementsSequence? standardMovementsSequence, HarmonyMovementsSequence? extendedMovementsSequence)> OriginalSequence { get; init; }
 
     public required IReadOnlyList<(HarmonyGroup harmonyGroup, HarmonyMovementsSequence? standardMovementsSequence, HarmonyMovementsSequence? extendedMovementsSequence)> HarmonySequence { get; init; }
 

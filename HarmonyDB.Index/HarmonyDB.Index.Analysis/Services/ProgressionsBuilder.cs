@@ -16,7 +16,7 @@ public class ProgressionsBuilder
         _logger = logger;
     }
 
-    public ChordsProgression BuildProgression(List<ChordProgressionDataV1> sequence, bool buildStandardToo = false)
+    public ChordsProgression BuildProgression(List<ChordDataV1> sequence, bool buildStandardToo = false)
     {
         var siblingStandards = BuildSiblingStandards(sequence);
 
@@ -106,7 +106,7 @@ public class ProgressionsBuilder
                 incompatible: x.c.incompatible.Contains(x.x.i)));
 
         var harmonySequence = new List<HarmonyGroup>();
-        var originalSequence = new List<ChordProgressionDataV1>();
+        var originalSequence = new List<ChordDataV1>();
         HarmonyDataV1? harmonyData = null;
         int? minChordIndex = null, maxChordIndex = null;
 
@@ -286,12 +286,12 @@ public class ProgressionsBuilder
             })
             .ToList();
 
-    private static List<(ChordProgressionDataV1 current, ChordProgressionDataV1? previousStandard, int? previousStandardIndex, ChordProgressionDataV1? nextStandard)> BuildSiblingStandards(List<ChordProgressionDataV1> sequence)
+    private static List<(ChordDataV1 current, ChordDataV1? previousStandard, int? previousStandardIndex, ChordDataV1? nextStandard)> BuildSiblingStandards(List<ChordDataV1> sequence)
     {
-        var previousStandard = (ChordProgressionDataV1?)null;
+        var previousStandard = (ChordDataV1?)null;
         int? previousStandardIndex = null;
-        var currentPromise = new Promise<ChordProgressionDataV1>();
-        var withPreviousAndNextPromise = new List<(ChordProgressionDataV1 current, ChordProgressionDataV1? previousStandard, int? previousStandardIndex, Promise<ChordProgressionDataV1>? nextStandard)>();
+        var currentPromise = new Promise<ChordDataV1>();
+        var withPreviousAndNextPromise = new List<(ChordDataV1 current, ChordDataV1? previousStandard, int? previousStandardIndex, Promise<ChordDataV1>? nextStandard)>();
 
         foreach (var (current, i) in sequence.WithIndices())
         {

@@ -2,7 +2,7 @@
 
 namespace HarmonyDB.Index.Analysis.Models.V1;
 
-public record ChordProgressionDataV1
+public record ChordDataV1
 {
     public required string OriginalRepresentation { get; init; }
 

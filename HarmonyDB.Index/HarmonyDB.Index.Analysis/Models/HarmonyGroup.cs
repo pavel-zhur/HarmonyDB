@@ -6,7 +6,7 @@ public class HarmonyGroup
 {
     public required int Index { get; init; }
 
-    public required IReadOnlyList<ChordProgressionDataV1> OriginalSequence { get; init; }
+    public required IReadOnlyList<ChordDataV1> OriginalSequence { get; init; }
 
     public required HarmonyDataV1? HarmonyData { get; init; }
 

@@ -71,7 +71,7 @@ public class DataProvider
         return progressions;
     }
 
-    public async Task SaveChordsProgression(string externalId, List<ChordProgressionDataV1> progression)
+    public async Task SaveChordsProgression(string externalId, List<ChordDataV1> progression)
     {
         using var _ = await _savingLock.LockAsync();
 
