@@ -196,23 +196,6 @@ public class ProgressionsSearch
         return false;
     }
 
-    //public List<Loop> FindAllLoops2(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
-    //{
-    //    var roots = sequences
-    //        .Select(x => Enumerable.Range(0, x.Movements.Length).Aggregate(
-    //            new List<int> { x.FirstRoot },
-    //            (result, i) =>
-    //            {
-    //                result.Add(Note.Normalize(result[^1] + x.Movements.Span[i].RootDelta));
-    //                return result;
-    //            }))
-    //        .ToList();
-
-    //    var loops = new List<Loop>();
-
-
-    //}
-
     public List<Loop> FindAllLoops(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
     {
         var roots = sequences
