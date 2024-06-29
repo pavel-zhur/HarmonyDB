@@ -427,6 +427,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         {
             Assert.Equal(loop.sequence.Length, loop.endMovement - loop.start + 1);
             Assert.True(loop.endMovement <= loop.endPaintMovement);
+            Assert.InRange(loop.start, 0, sequence.Movements.Length - 1);
+            Assert.InRange(loop.endMovement, 0, sequence.Movements.Length - 1);
+            Assert.InRange(loop.endPaintMovement, 0, sequence.Movements.Length - 1);
             logger.LogInformation($"found {loop.sequence.Length} + {loop.endPaintMovement - loop.endMovement} ({loop.start}..{loop.endMovement}..{loop.endPaintMovement}): {string.Join(" ", Enumerable.Range(loop.start, loop.endPaintMovement - loop.start + 1).Select(i => roots[i + 1]).Prepend(roots[loop.start]))}");
         }
     }
