@@ -3,11 +3,10 @@ using HarmonyDB.Index.Analysis.Models.CompactV1;
 
 namespace HarmonyDB.Index.Analysis.Models;
 
-public class Loop
+public record Loop
 {
     public required int SequenceIndex { get; init; }
     public required int Start { get; init; }
-    public required int EndMovement { get; init; }
     public required int Occurrences { get; init; }
     public required int Successions { get; init; }
     public required HashSet<int> Coverage { get; init; }
@@ -15,6 +14,7 @@ public class Loop
     public required ReadOnlyMemory<CompactHarmonyMovement> Progression { get; init; }
     public required bool IsCompound { get; init; }
 
+    public int EndMovement => Start + Length - 1;
     public int Length => Progression.Length;
 
     public static ReadOnlyMemory<CompactHarmonyMovement> Deserialize(string progression)
@@ -47,7 +47,8 @@ public class Loop
         return Convert.ToBase64String(bytes);
     }
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression()
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(out _);
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int invariants)
     {
         var buffer = new byte[4];
         var idSequences = MemoryMarshal.ToEnumerable(Progression)
@@ -62,10 +63,12 @@ public class Loop
 
         var shifts = Enumerable.Range(0, Length).ToList();
         var iteration = 0;
+        invariants = 1;
         while (shifts.Count > 1)
         {
             if (iteration == Length) // multiple shifts possible
             {
+                invariants = shifts.Count;
                 shifts = [shifts.First()];
                 break;
             }
