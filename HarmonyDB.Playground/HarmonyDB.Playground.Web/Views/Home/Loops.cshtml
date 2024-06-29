@@ -49,6 +49,12 @@
         </label>
     </p>
     <p>
+        <label>
+            @Html.CheckBoxFor(x => x.IncludeRootsStatistics)
+            @ViewLocalizer["Include the roots statistics trace"]
+        </label>
+    </p>
+    <p>
         @ViewLocalizer["Compound"]:
         @Html.DropDownListFor(x => x.Compound, Enum.GetValues<LoopsRequestCompoundFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
@@ -73,6 +79,10 @@
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 <td>@ViewLocalizer["Total Successions"]</td>
                 <td>@ViewLocalizer["Compound"]</td>
+                @if (Model.IncludeRootsStatistics)
+                {
+                    <td>@ViewLocalizer["Roots Statistics"]</td>
+                }
             </tr>
         </thead>
         @foreach (var loop in response.Loops)
@@ -84,6 +94,10 @@
                 <td>@loop.TotalOccurrences.ToString("N0")</td>
                 <td>@loop.TotalSuccessions.ToString("N0")</td>
                 <td>@loop.IsCompound</td>
+                @if (Model.IncludeRootsStatistics)
+                {
+                    <td>@string.Join(", ", loop.RootsStatistics)</td>
+                }
             </tr>
         }
     </table>

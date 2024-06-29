@@ -47,8 +47,11 @@ public record Loop
         return Convert.ToBase64String(bytes);
     }
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(out _);
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int invariants)
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(out _, out _);
+
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift) => GetNormalizedProgression(out shift, out _);
+
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift, out int invariants)
     {
         var buffer = new byte[4];
         var idSequences = MemoryMarshal.ToEnumerable(Progression)
@@ -81,7 +84,8 @@ public record Loop
             iteration++;
         }
 
-        return Enumerable.Range(shifts.Single(), Length)
+        shift = shifts.Single();
+        return Enumerable.Range(shift, Length)
             .Select(s => Progression.Span[s % Length])
             .ToArray();
     }

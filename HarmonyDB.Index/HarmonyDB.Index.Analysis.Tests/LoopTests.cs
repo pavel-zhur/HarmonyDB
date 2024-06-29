@@ -41,7 +41,7 @@ public class LoopTests(ILogger<LoopTests> logger)
             Successions = 0,
         };
 
-        loop.GetNormalizedProgression(out var invariants);
+        loop.GetNormalizedProgression(out _, out var invariants);
         Assert.Equal(repetitions, invariants);
     }
 

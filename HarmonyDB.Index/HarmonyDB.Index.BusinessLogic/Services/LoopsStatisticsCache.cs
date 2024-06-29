@@ -33,11 +33,14 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
     {
         string ToChord(int note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
 
+        Logger.LogInformation("{count} unique songs participating in the loops statistics.", fileModel.Values.SelectMany(x => x.ExternalIds).Distinct().Count());
+
         return fileModel
             .Select(l =>
             {
                 var sequence = Loop.Deserialize(l.Key);
-                var note = sequence.Span[0].FromType == ChordType.Minor ? 0 : 3;
+                var rootsStatistics = Convert.FromBase64String(l.Value.Counts).AsIReadOnlyList();
+                var note = rootsStatistics.WithIndices().MaxBy(x => x.x).i;
                 return new LoopStatistics
                 {
                     Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
@@ -55,6 +58,7 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
                     TotalSuccessions = l.Value.TotalSuccessions,
                     TotalSongs = l.Value.ExternalIds.Count,
                     IsCompound = _progressionsSearch.IsCompound(sequence),
+                    RootsStatistics = rootsStatistics,
                 };
             })
             .OrderByDescending(x => x.TotalOccurrences)
@@ -67,11 +71,11 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
         await StreamCompressSerialize(await GetAllLoops(await _progressionsCache.Get()));
     }
 
-    private async Task<ConcurrentDictionary<string, CompactLoopStatistics>> GetAllLoops(IReadOnlyDictionary<string, CompactChordsProgression> dictionary)
+    private async Task<Dictionary<string, CompactLoopStatistics>> GetAllLoops(IReadOnlyDictionary<string, CompactChordsProgression> dictionary)
     {
         var cc = 0;
         var cf = 0;
-        ConcurrentDictionary<string, CompactLoopStatistics> loopsBag = new();
+        ConcurrentDictionary<string, (CompactLoopStatistics loopStatistics, int[] counts)> loopStatisticsBag = new();
 
         await Parallel.ForEachAsync(dictionary, (x, _) =>
         {
@@ -82,17 +86,28 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
 
                 foreach (var loop in loops)
                 {
-                    var serialized = Loop.Serialize(loop.GetNormalizedProgression());
-                    var bag = loopsBag.GetOrAdd(serialized, _ => new()
+                    var serialized = Loop.Serialize(loop.GetNormalizedProgression(out var shift));
+                    var root = Note.Normalize(
+                        compactChordsProgression
+                            .ExtendedHarmonyMovementsSequences[loop.SequenceIndex]
+                            .FirstRoot
+                        + MemoryMarshal.ToEnumerable(compactChordsProgression
+                                .ExtendedHarmonyMovementsSequences[loop.SequenceIndex].Movements)
+                            .Take(loop.Start + shift)
+                            .Sum(x => x.RootDelta));
+
+                    var (loopStatistics, counts) = loopStatisticsBag.GetOrAdd(serialized, _ => (new()
                     {
                         ExternalIds = new(),
-                    });
+                        Counts = null!, // will be overridden later
+                    }, new int[12]));
 
-                    lock (bag)
+                    lock (loopStatistics)
                     {
-                        bag.ExternalIds.Add(externalId);
-                        bag.TotalOccurrences += loop.Occurrences;
-                        bag.TotalSuccessions += loop.Successions;
+                        loopStatistics.ExternalIds.Add(externalId);
+                        loopStatistics.TotalOccurrences += loop.Occurrences;
+                        loopStatistics.TotalSuccessions += loop.Successions;
+                        counts[root]++;
                     }
                 }
 
@@ -107,6 +122,16 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
             return ValueTask.CompletedTask;
         });
 
-        return loopsBag;
+        return loopStatisticsBag
+            .ToDictionary(
+                x => x.Key, 
+                x =>
+                {
+                    var max = x.Value.counts.Max();
+                    return x.Value.loopStatistics with
+                    {
+                        Counts = Convert.ToBase64String(x.Value.counts.Select(x => (byte)(max <= 255 ? x : x * 255 / max)).ToArray()),
+                    };
+                });
     }
 }

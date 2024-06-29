@@ -126,6 +126,9 @@
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
+  <data name="Include the roots statistics trace" xml:space="preserve">
+    <value>Показать отладку статистики тональностей цикла</value>
+  </data>
   <data name="Length" xml:space="preserve">
     <value>Длина</value>
   </data>
@@ -167,6 +170,9 @@
   </data>
   <data name="Results" xml:space="preserve">
     <value>Результаты</value>
+  </data>
+  <data name="Roots Statistics" xml:space="preserve">
+    <value>Статистика тональностей</value>
   </data>
   <data name="See the most popular chord progressions" xml:space="preserve">
     <value>Популярные аккордовые последовательности</value>

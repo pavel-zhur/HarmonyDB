@@ -13,4 +13,6 @@ public class LoopStatistics
     public required int TotalOccurrences { get; init; }
 
     public required bool IsCompound { get; init; }
+
+    public required IReadOnlyList<byte> RootsStatistics { get; init; }
 }
