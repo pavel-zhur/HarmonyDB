@@ -12,7 +12,7 @@ public record struct CompactHarmonyMovement : ISearchableHarmonyMovement
     public required ChordType ToType { get; init; }
 
     public static bool Equals(ref readonly CompactHarmonyMovement first, ref readonly CompactHarmonyMovement second) =>
-        second.RootDelta == first.RootDelta && second.FromType == first.FromType && second.ToType == first.ToType;
+        first.Equals(second);
 
     public static bool AreNormalizedEqual(ReadOnlyMemory<CompactHarmonyMovement> progression1,
         ReadOnlyMemory<CompactHarmonyMovement> progression2)
