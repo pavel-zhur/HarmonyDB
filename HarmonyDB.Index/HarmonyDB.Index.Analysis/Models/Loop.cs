@@ -48,6 +48,36 @@ public class Loop
         return Convert.ToBase64String(bytes);
     }
 
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression2()
+    {
+        var buffer = new byte[4];
+        var idSequences = MemoryMarshal.ToEnumerable(Progression)
+            .Select(p =>
+            {
+                buffer[0] = p.RootDelta;
+                buffer[1] = (byte)p.FromType;
+                buffer[2] = (byte)p.ToType;
+                return BitConverter.ToInt32(buffer);
+            })
+            .ToArray();
+
+        var shifts = Enumerable.Range(0, Length).ToList();
+        var iteration = 0;
+        while (shifts.Count > 1)
+        {
+            if (iteration == Length) throw new("Could not have happened.");
+            shifts = shifts
+                .GroupBy(s => idSequences[(s + iteration) % Length])
+                .MinBy(g => g.Key)!
+                .ToList();
+
+            iteration++;
+        }
+
+        return Enumerable.Range(shifts.Single(), Length)
+            .Select(s => Progression.Span[s % Length])
+            .ToArray();
+    }
     public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression()
     {
         if (_normalizedProgression == null)
