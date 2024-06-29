@@ -500,4 +500,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
 
         return loops;
     }
+
+    private HarmonyMovementsSequenceStructure GetStructure(
+        CompactHarmonyMovementsSequence compactHarmonyMovementsSequence)
+    {
+        var loops = FindSimpleLoops(compactHarmonyMovementsSequence);
+
+        foreach (var (loop, start, endMovement, endPaintMovement) in loops)
+        {
+            var loopId = Loop.Serialize(loop);
+
+        }
+    }
 }
