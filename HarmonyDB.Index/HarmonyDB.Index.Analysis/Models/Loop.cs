@@ -1,11 +1,10 @@
-﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
+﻿using System.Runtime.InteropServices;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
 
 namespace HarmonyDB.Index.Analysis.Models;
 
 public class Loop
 {
-    private ReadOnlyMemory<CompactHarmonyMovement>? _normalizedProgression;
-
     public required int SequenceIndex { get; init; }
     public required int Start { get; init; }
     public required int EndMovement { get; init; }
@@ -16,7 +15,7 @@ public class Loop
     public required ReadOnlyMemory<CompactHarmonyMovement> Progression { get; init; }
     public required bool IsCompound { get; init; }
 
-    public int Length => EndMovement - Start + 1;
+    public int Length => Progression.Length;
 
     public static ReadOnlyMemory<CompactHarmonyMovement> Deserialize(string progression)
     {
@@ -48,7 +47,7 @@ public class Loop
         return Convert.ToBase64String(bytes);
     }
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression2()
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression()
     {
         var buffer = new byte[4];
         var idSequences = MemoryMarshal.ToEnumerable(Progression)
@@ -65,7 +64,12 @@ public class Loop
         var iteration = 0;
         while (shifts.Count > 1)
         {
-            if (iteration == Length) throw new("Could not have happened.");
+            if (iteration == Length) // multiple shifts possible
+            {
+                shifts = [shifts.First()];
+                break;
+            }
+
             shifts = shifts
                 .GroupBy(s => idSequences[(s + iteration) % Length])
                 .MinBy(g => g.Key)!
@@ -77,35 +81,5 @@ public class Loop
         return Enumerable.Range(shifts.Single(), Length)
             .Select(s => Progression.Span[s % Length])
             .ToArray();
-    }
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression()
-    {
-        if (_normalizedProgression == null)
-        {
-            var array = Progression.ToArray();
-            var length = array.Length;
-
-            IEnumerable<CompactHarmonyMovement> Shift(int i) => array[i..].Concat(array[..i]);
-
-            int[] CreateIdSequence(int shift) => Shift(shift).Select(x => BitConverter.ToInt32(new byte[]
-            {
-                x.RootDelta,
-                (byte)x.FromType,
-                (byte)x.ToType,
-                0,
-            })).ToArray();
-
-            var options = Enumerable.Range(0, length - 1)
-                .Select(shift => (idSequence: CreateIdSequence(shift), shift))
-                .ToList();
-
-            var bestShift = Enumerable.Range(0, length - 1).Aggregate(options.OrderBy(o => o.idSequence[0]),
-                    (s, a) => s.ThenByDescending(x => x.idSequence[a]))
-                .First().shift;
-
-            _normalizedProgression = Shift(bestShift).ToArray();
-        }
-
-        return _normalizedProgression.Value;
     }
 }

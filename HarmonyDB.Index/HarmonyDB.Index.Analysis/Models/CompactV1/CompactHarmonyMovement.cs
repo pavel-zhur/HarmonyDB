@@ -3,7 +3,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Models.CompactV1;
 
-public struct CompactHarmonyMovement : ISearchableHarmonyMovement
+public record struct CompactHarmonyMovement : ISearchableHarmonyMovement
 {
     public required byte RootDelta { get; init; }
 
