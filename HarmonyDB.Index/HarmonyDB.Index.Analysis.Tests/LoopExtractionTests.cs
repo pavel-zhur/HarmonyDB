@@ -299,6 +299,35 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
 
         Assert.Equal(3, loops.Count);
         Assert.Equal(loops[0].Normalized, loops[2].Normalized);
+        Assert.Equal(loops[0].NormalizationStartRoot, loops[2].NormalizationStartRoot);
+        Assert.Equal(loops[0].NormalizationShift, loops[2].NormalizationShift);
+    }
+
+    [Fact]
+    public void SelfJumpDifferentShift()
+    {
+        var sequence = new[]
+        {
+            3, 3, 6,
+            3, 3, 6,
+            6, 6,
+            3, 3, 6,
+            3, 3, 6,
+        }.Select(
+            d => new CompactHarmonyMovement
+            {
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
+
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
+
+        Assert.Equal(3, loops.Count);
+        Assert.Equal(loops[0].Normalized, loops[2].Normalized);
+        Assert.Equal(loops[0].NormalizationStartRoot, loops[2].NormalizationStartRoot);
+        Assert.NotEqual(loops[0].NormalizationShift, loops[2].NormalizationShift);
     }
 
     [Fact]
@@ -324,6 +353,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
 
         Assert.Equal(3, loops.Count);
         Assert.Equal(loops[0].Normalized, loops[2].Normalized);
+        Assert.Equal(loops[0].NormalizationStartRoot, loops[2].NormalizationStartRoot);
+        Assert.Equal(loops[0].NormalizationShift, loops[2].NormalizationShift);
     }
 
     [Fact]
@@ -349,6 +380,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
 
         Assert.Equal(2, loops.Count);
         Assert.Equal(loops[0].Normalized, loops[1].Normalized);
+        Assert.NotEqual(loops[0].NormalizationStartRoot, loops[1].NormalizationStartRoot);
     }
 
     [Fact]
@@ -374,6 +406,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
 
         Assert.Equal(3, loops.Count);
         Assert.Equal(loops[0].Normalized, loops[2].Normalized);
+        Assert.NotEqual(loops[0].NormalizationStartRoot, loops[2].NormalizationStartRoot);
     }
 
     [Fact]
