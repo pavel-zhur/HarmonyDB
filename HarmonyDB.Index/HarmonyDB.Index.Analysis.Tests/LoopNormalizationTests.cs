@@ -53,7 +53,7 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
 
         // these asserts may very rarey fail, when an edge case never happens in 100 repetitons. Almost impossible.
         Assert.Equal(0, minNormalizationShift);
-        Assert.Equal(length - 3, maxNormalizationShift);
+        Assert.Equal(length - 1, maxNormalizationShift);
     }
 
     [Fact]
