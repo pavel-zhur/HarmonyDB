@@ -81,7 +81,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Single(loops);
-        Assert.Equal((0, 12 * 8 - 1), loops[0].SelectSingle(x => (x.start, x.endPaintMovement)));
+        Assert.Equal((0, 12 * 8 - 1), loops[0].SelectSingle(x => (x.StartIndex, x.EndIndex)));
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Single(loops);
-        Assert.Equal((0, 11), loops[0].SelectSingle(x => (x.start, x.endPaintMovement)));
+        Assert.Equal((0, 11), loops[0].SelectSingle(x => (x.StartIndex, x.EndIndex)));
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         var loops = FindSimpleLoops(sequence, firstRoot);
         Trace(sequence, firstRoot, loops);
 
-        Assert.Equal(103, loops[^1].endPaintMovement);
-        Assert.Equal(2, loops[^1].SelectSingle(x => x.sequence.Length));
+        Assert.Equal(103, loops[^1].EndIndex);
+        Assert.Equal(2, loops[^1].SelectSingle(x => x.LoopLength));
     }
 
     [Fact]
@@ -135,8 +135,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         var loops = FindSimpleLoops(sequence, firstRoot);
         Trace(sequence, firstRoot, loops);
 
-        Assert.Equal(103, loops[^1].endPaintMovement);
-        Assert.Equal(2, loops[^1].SelectSingle(x => x.sequence.Length));
+        Assert.Equal(103, loops[^1].EndIndex);
+        Assert.Equal(2, loops[^1].SelectSingle(x => x.LoopLength));
     }
 
     [Fact]
@@ -155,9 +155,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         var loops = FindSimpleLoops(sequence, firstRoot);
         Trace(sequence, firstRoot, loops);
 
-        Assert.Equal(0, loops[0].start);
-        Assert.Equal(2, loops[0].SelectSingle(x => x.sequence.Length));
-        Assert.True(loops[0].endPaintMovement >= 4);
+        Assert.Equal(0, loops[0].StartIndex);
+        Assert.Equal(2, loops[0].SelectSingle(x => x.LoopLength));
+        Assert.True(loops[0].EndIndex >= 4);
     }
 
     [Fact]
@@ -175,9 +175,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         var loops = FindSimpleLoops(sequence, 0);
         Trace(sequence, 0, loops);
 
-        Assert.Equal(1, loops[0].start);
-        Assert.Equal(2, loops[0].SelectSingle(x => x.sequence.Length));
-        Assert.True(loops[0].endPaintMovement >= 5);
+        Assert.Equal(1, loops[0].StartIndex);
+        Assert.Equal(2, loops[0].SelectSingle(x => x.LoopLength));
+        Assert.True(loops[0].EndIndex >= 5);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
-        Assert.True(loops[1].start - 1 > loops[0].endPaintMovement);
+        Assert.True(loops[1].StartIndex - 1 > loops[0].EndIndex);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
-        Assert.True(loops[1].start - 1 > loops[0].endPaintMovement);
+        Assert.True(loops[1].StartIndex - 1 > loops[0].EndIndex);
     }
 
     [Fact]
@@ -272,8 +272,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.True(loops[1].start < loops[0].endPaintMovement);
-        Assert.True(loops[2].start < loops[1].endPaintMovement);
+        Assert.True(loops[1].StartIndex < loops[0].EndIndex);
+        Assert.True(loops[2].StartIndex < loops[1].EndIndex);
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(loops[0].normalized, loops[2].normalized);
+        Assert.Equal(loops[0].Normalized, loops[2].Normalized);
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(loops[0].normalized, loops[2].normalized);
+        Assert.Equal(loops[0].Normalized, loops[2].Normalized);
     }
 
     [Fact]
@@ -348,7 +348,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
-        Assert.Equal(loops[0].normalized, loops[1].normalized);
+        Assert.Equal(loops[0].Normalized, loops[1].Normalized);
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(loops[0].normalized, loops[2].normalized);
+        Assert.Equal(loops[0].Normalized, loops[2].Normalized);
     }
 
     [Fact]
@@ -400,33 +400,33 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     private void Trace(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         byte firstRoot,
-        List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)> loops)
+        List<LoopBlock> loops)
     {
         var roots = CreateRoots(sequence, firstRoot);
         logger.LogInformation($"roots: {string.Join(" ", roots)}");
         foreach (var loop in loops)
         {
-            var endMovement = loop.start + loop.sequence.Length - 1;
-            Assert.Equal(loop.sequence.Length, endMovement - loop.start + 1);
-            Assert.True(endMovement <= loop.endPaintMovement);
-            Assert.InRange(loop.start, 0, sequence.Length - 1);
+            var endMovement = loop.StartIndex + loop.LoopLength - 1;
+            Assert.Equal(loop.LoopLength, endMovement - loop.StartIndex + 1);
+            Assert.True(endMovement <= loop.EndIndex);
+            Assert.InRange(loop.StartIndex, 0, sequence.Length - 1);
             Assert.InRange(endMovement, 0, sequence.Length - 1);
-            Assert.InRange(loop.endPaintMovement, 0, sequence.Length - 1);
-            Assert.Equal((loop.normalized, loop.normalizationShift), (Loop.Serialize(Loop.GetNormalizedProgression(loop.sequence, out var shift, out _)), shift));
+            Assert.InRange(loop.EndIndex, 0, sequence.Length - 1);
+            Assert.Equal((loop.Normalized, loop.NormalizationShift), (Loop.Serialize(Loop.GetNormalizedProgression(loop.Loop, out var shift, out _)), shift));
             
-            var rootsTrace = string.Join(" ", Enumerable.Range(loop.start, loop.endPaintMovement - loop.start + 1).Select(i => roots[i + 1]).Prepend(roots[loop.start]));
-            var normalized = Loop.Deserialize(loop.normalized);
-            var normalizedRoots = CreateRoots(normalized, loop.normalizationStartRoot);
-            var normalizedRecreation = string.Join(" ", Enumerable.Range(0, loop.endPaintMovement - loop.start + 1)
+            var rootsTrace = string.Join(" ", Enumerable.Range(loop.StartIndex, loop.EndIndex - loop.StartIndex + 1).Select(i => roots[i + 1]).Prepend(roots[loop.StartIndex]));
+            var normalized = Loop.Deserialize(loop.Normalized);
+            var normalizedRoots = CreateRoots(normalized, loop.NormalizationStartRoot);
+            var normalizedRecreation = string.Join(" ", Enumerable.Range(0, loop.EndIndex - loop.StartIndex + 1)
                 .Prepend(-1 + normalized.Length)
-                .Select(x => x - loop.normalizationShift + normalized.Length)
+                .Select(x => x - loop.NormalizationShift + normalized.Length)
                 .Select(i => normalizedRoots[(i % normalized.Length) + 1]));
 
             Assert.Equal(rootsTrace, normalizedRecreation);
 
-            logger.LogInformation($"found {loop.sequence.Length}" +
-                                  $" + {loop.endPaintMovement - endMovement}" +
-                                  $" ({loop.start}..{endMovement}..{loop.endPaintMovement}):" +
+            logger.LogInformation($"found {loop.LoopLength}" +
+                                  $" + {loop.EndIndex - endMovement}" +
+                                  $" ({loop.StartIndex}..{endMovement}..{loop.EndIndex}):" +
                                   $" {rootsTrace};");
         }
     }
@@ -442,8 +442,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         return roots;
     }
 
-    private List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)> FindSimpleLoops(
-        ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
+    private List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
     {
         var roots = CreateRoots(sequence, firstRoot);
 
@@ -452,7 +451,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
             { (roots[0], sequence.Span[0].FromType), -1 }
         };
 
-        var loops = new List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)>();
+        var loops = new List<LoopBlock>();
 
         var movementIndex = 0;
         while (movementIndex < sequence.Length)
@@ -490,12 +489,37 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
             movementIndex--; // now points to the movement leading to the last root of the found sequence
 
             var normalized = Loop.Serialize(Loop.GetNormalizedProgression(foundLoop, out var normalizationShift, out _));
-            loops.Add((foundLoop, normalized, normalizationShift, roots[movementIndexToLoopStart + 1 + normalizationShift], movementIndexToLoopStart + 1, movementIndex));
+            loops.Add(new()
+            {
+                Loop = foundLoop,
+                Normalized = normalized,
+                NormalizationShift = normalizationShift,
+                NormalizationStartRoot = roots[movementIndexToLoopStart + 1 + normalizationShift],
+                StartIndex = movementIndexToLoopStart + 1,
+                EndIndex = movementIndex,
+            });
 
             movementIndex -= foundLoop.Length - 1;
             indices.Clear();
         }
 
         return loops;
+    }
+
+    public record struct LoopBlock
+    {
+        public required ReadOnlyMemory<CompactHarmonyMovement> Loop { get; init; }
+
+        public int LoopLength => Loop.Length;
+
+        public required string Normalized { get; init; }
+
+        public required int NormalizationShift { get; init; }
+
+        public required byte NormalizationStartRoot { get; init; }
+
+        public required int StartIndex { get; init; }
+
+        public required int EndIndex { get; init; }
     }
 }
