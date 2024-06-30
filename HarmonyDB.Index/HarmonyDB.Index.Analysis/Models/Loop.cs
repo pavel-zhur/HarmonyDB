@@ -49,14 +49,27 @@ public record Loop
         return Convert.ToBase64String(bytes);
     }
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(out _, out _);
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(Progression, out _, out _);
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift) => GetNormalizedProgression(out shift, out _);
+    /// <param name="shift">
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Returns the number of steps the normalized progression start is ahead the original progression start.
+    /// For invariants > 0, returns the minimal possible shift.
+    /// </param>
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift) => GetNormalizedProgression(Progression, out shift, out _);
 
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift, out int invariants)
+    public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression)
+        => GetNormalizedProgression(progression, out _, out _);
+
+    /// <param name="shift">
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Returns the number of steps the normalized progression start is ahead the original progression start.
+    /// For invariants > 0, returns the minimal possible shift.
+    /// </param>
+    public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int shift, out int invariants)
     {
         var buffer = new byte[4];
-        var idSequences = MemoryMarshal.ToEnumerable(Progression)
+        var idSequences = MemoryMarshal.ToEnumerable(progression)
             .Select(p =>
             {
                 buffer[0] = p.RootDelta;
@@ -66,12 +79,12 @@ public record Loop
             })
             .ToArray();
 
-        var shifts = Enumerable.Range(0, Length).ToList();
+        var shifts = Enumerable.Range(0, progression.Length).ToList();
         var iteration = 0;
         invariants = 1;
         while (shifts.Count > 1)
         {
-            if (iteration == Length) // multiple shifts possible
+            if (iteration == progression.Length) // multiple shifts possible
             {
                 invariants = shifts.Count;
                 shifts = [shifts.First()];
@@ -79,7 +92,7 @@ public record Loop
             }
 
             shifts = shifts
-                .GroupBy(s => idSequences[(s + iteration) % Length])
+                .GroupBy(s => idSequences[(s + iteration) % progression.Length])
                 .MinBy(g => g.Key)!
                 .ToList();
 
@@ -87,8 +100,8 @@ public record Loop
         }
 
         shift = shifts.Single();
-        return Enumerable.Range(shift, Length)
-            .Select(s => Progression.Span[s % Length])
+        return Enumerable.Range(shift, progression.Length)
+            .Select(s => progression.Span[s % progression.Length])
             .ToArray();
     }
 }
