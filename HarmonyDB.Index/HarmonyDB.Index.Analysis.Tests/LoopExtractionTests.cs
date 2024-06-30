@@ -448,19 +448,20 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
             Assert.Equal((loop.Normalized, loop.NormalizationShift), (Loop.Serialize(Loop.GetNormalizedProgression(loop.Loop, out var shift, out _)), shift));
             
             var rootsTrace = string.Join(" ", Enumerable.Range(loop.StartIndex, loop.EndIndex - loop.StartIndex + 1).Select(i => roots[i + 1]).Prepend(roots[loop.StartIndex]));
-            var normalized = Loop.Deserialize(loop.Normalized);
-            var normalizedRoots = CreateRoots(normalized, loop.NormalizationStartRoot);
-            var normalizedRecreation = string.Join(" ", Enumerable.Range(0, loop.EndIndex - loop.StartIndex + 1)
-                .Prepend(-1 + normalized.Length)
-                .Select(x => x - loop.NormalizationShift + normalized.Length)
-                .Select(i => normalizedRoots[(i % normalized.Length) + 1]));
-
-            Assert.Equal(rootsTrace, normalizedRecreation);
 
             logger.LogInformation($"found {loop.LoopLength}" +
                                   $" + {loop.EndIndex - endMovement}" +
                                   $" ({loop.StartIndex}..{endMovement}..{loop.EndIndex}):" +
                                   $" {rootsTrace};");
+
+            var normalized = Loop.Deserialize(loop.Normalized);
+            var normalizedRoots = CreateRoots(normalized, loop.NormalizationStartRoot);
+            var normalizedRecreation = string.Join(" ", Enumerable.Range(0, loop.EndIndex - loop.StartIndex + 1)
+                .Prepend(-1 + normalized.Length)
+                .Select(x => x + loop.NormalizationShift)
+                .Select(i => normalizedRoots[(i % normalized.Length) + 1]));
+
+            Assert.Equal(rootsTrace, normalizedRecreation);
         }
     }
 
@@ -527,7 +528,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
                 Loop = foundLoop,
                 Normalized = normalized,
                 NormalizationShift = normalizationShift,
-                NormalizationStartRoot = roots[movementIndexToLoopStart + 1 + normalizationShift],
+                NormalizationStartRoot = roots[movementIndexToLoopStart + 1 + Loop.InvertNormalizationShift(normalizationShift, foundLoop.Length)],
                 StartIndex = movementIndexToLoopStart + 1,
                 EndIndex = movementIndex,
             });

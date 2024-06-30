@@ -86,7 +86,8 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
 
                 foreach (var loop in loops)
                 {
-                    var serialized = Loop.Serialize(loop.GetNormalizedProgression(out var shift));
+                    var serialized = Loop.Serialize(loop.GetNormalizedProgression(out var normalizationShift));
+                    var shift = Loop.InvertNormalizationShift(normalizationShift, loop.Length);
                     var root = Note.Normalize(
                         compactChordsProgression
                             .ExtendedHarmonyMovementsSequences[loop.SequenceIndex]
