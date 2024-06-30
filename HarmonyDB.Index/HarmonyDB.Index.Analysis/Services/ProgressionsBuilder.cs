@@ -270,7 +270,7 @@ public class ProgressionsBuilder
                 FirstRoot = c.chunk.First().previous!.HarmonyData!.Root,
                 Movements = c.chunk.Select(p =>
                 {
-                    var delta = Note.Normalize(p.current.HarmonyData!.Root - p.previous.HarmonyData!.Root);
+                    var delta = Note.Normalize(p.current.HarmonyData!.Root - p.previous!.HarmonyData!.Root);
                     var titleDelta = delta > 7 ? delta - Note.Modulus : delta;
 
                     return new HarmonyMovement

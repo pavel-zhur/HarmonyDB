@@ -331,7 +331,8 @@ public class ProgressionsSearch
                             .Select(x => x.foundStartMovementIndex)
                             .OrderBy(x => x)
                             .WithPrevious()
-                            .Count(p => p.current - p.previous == length));
+                            .Where(x => x.previous.HasValue)
+                            .Count(p => p.current - p.previous!.Value == length));
 
                     if (isCompound &&
                         successions == 0) // if it's compound and never repeats immediately, it is not needed

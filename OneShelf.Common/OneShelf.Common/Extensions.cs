@@ -78,8 +78,9 @@ public static class Extensions
         => source.WithIsFirst().WithIsLast().Select(x => (x.x.x, x.x.isFirst, x.isLast));
 
     public static IEnumerable<(T? previous, T current)> WithPrevious<T>(this IEnumerable<T> source)
+        where T : class
     {
-        T? previous = default;
+        T? previous = null;
         foreach (var x in source)
         {
             yield return (previous, x);
