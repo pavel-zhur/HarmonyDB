@@ -51,22 +51,24 @@ public record Loop
 
     public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(Progression, out _, out _);
 
-    /// <param name="shift">
+    /// <param name="normalizedShift">
     /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the number of steps the normalized progression start is ahead the original progression start.
+    /// Returns the number of steps the normalized progression start is behind the original progression start.
+    /// In other words, returns the index of the start of the original progression in the normalized progression.
     /// For invariants > 0, returns the minimal possible shift.
     /// </param>
-    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int shift) => GetNormalizedProgression(Progression, out shift, out _);
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int normalizationShift) => GetNormalizedProgression(Progression, out normalizationShift, out _);
 
-    public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression)
-        => GetNormalizedProgression(progression, out _, out _);
+    public static int InvertNormalizationShift(int normalizationShift, int progressionLength) =>
+        (progressionLength - normalizationShift) % progressionLength;
 
-    /// <param name="shift">
+    /// <param name="normalizedShift">
     /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the number of steps the normalized progression start is ahead the original progression start.
+    /// Returns the number of steps the normalized progression start is behind the original progression start.
+    /// In other words, returns the index of the start of the original progression in the normalized progression.
     /// For invariants > 0, returns the minimal possible shift.
     /// </param>
-    public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int shift, out int invariants)
+    public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int normalizationShift, out int invariants)
     {
         var buffer = new byte[4];
         var idSequences = MemoryMarshal.ToEnumerable(progression)
@@ -79,29 +81,30 @@ public record Loop
             })
             .ToArray();
 
-        var shifts = Enumerable.Range(0, progression.Length).ToList();
+        var length = progression.Length;
+        var shifts = Enumerable.Range(0, length).ToList();
         var iteration = 0;
         invariants = 1;
         while (shifts.Count > 1)
         {
-            if (iteration == progression.Length) // multiple shifts possible
+            if (iteration == length) // multiple shifts possible
             {
                 invariants = shifts.Count;
-                shifts = [shifts.First()];
+                shifts = [shifts.Last()];
                 break;
             }
 
             shifts = shifts
-                .GroupBy(s => idSequences[(s + iteration) % progression.Length])
+                .GroupBy(s => idSequences[(s + iteration) % length])
                 .MinBy(g => g.Key)!
                 .ToList();
 
             iteration++;
         }
 
-        shift = shifts.Single();
-        return Enumerable.Range(shift, progression.Length)
-            .Select(s => progression.Span[s % progression.Length])
+        normalizationShift = InvertNormalizationShift(shifts.Single(), length);
+        return Enumerable.Range(shifts.Single(), length)
+            .Select(s => progression.Span[s % length])
             .ToArray();
     }
 }
