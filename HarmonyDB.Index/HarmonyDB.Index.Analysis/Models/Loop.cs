@@ -90,7 +90,6 @@ public record Loop
             if (iteration == length) // multiple shifts possible
             {
                 invariants = shifts.Count;
-                shifts = [shifts.Last()];
                 break;
             }
 
@@ -102,8 +101,10 @@ public record Loop
             iteration++;
         }
 
-        normalizationShift = InvertNormalizationShift(shifts.Single(), length);
-        return Enumerable.Range(shifts.Single(), length)
+        normalizationShift = shifts
+            .Select(x => InvertNormalizationShift(x, length))
+            .Min();
+        return Enumerable.Range(shifts.First(), length)
             .Select(s => progression.Span[s % length])
             .ToArray();
     }
