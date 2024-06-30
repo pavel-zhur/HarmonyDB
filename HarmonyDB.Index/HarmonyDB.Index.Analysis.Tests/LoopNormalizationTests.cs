@@ -51,7 +51,7 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
             Assert.Equal(repetitions, invariants);
         }
 
-        // these asserts may very rarey fail, when an edge case never happens in 100 repetitons. Almost impossible.
+        // these assertions may very rarely fail, when an edge case never happens in 1000 repetitions. Almost impossible.
         Assert.Equal(0, minNormalizationShift);
         Assert.Equal(length - 1, maxNormalizationShift);
     }
@@ -112,7 +112,7 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
             }
         }
 
-        // these asserts may very rarey fail, when an edge case never happens in 1000 repetitons. Almost impossible.
+        // these assertions may very rarely fail, when an edge case never happens in 1000 repetitions. Almost impossible.
         Assert.Equal(0, minNormalizationShift);
         Assert.Equal(length - 1, maxNormalizationShift);
     }
