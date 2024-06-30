@@ -298,7 +298,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
+        Assert.Equal(loops[0].normalized, loops[2].normalized);
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
+        Assert.Equal(loops[0].normalized, loops[2].normalized);
     }
 
     [Fact]
@@ -348,7 +348,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
-        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[1].sequence)));
+        Assert.Equal(loops[0].normalized, loops[1].normalized);
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
+        Assert.Equal(loops[0].normalized, loops[2].normalized);
     }
 
     [Fact]
@@ -412,6 +412,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
             Assert.InRange(loop.start, 0, sequence.Length - 1);
             Assert.InRange(endMovement, 0, sequence.Length - 1);
             Assert.InRange(loop.endPaintMovement, 0, sequence.Length - 1);
+            Assert.Equal((loop.normalized, loop.normalizationShift), (Loop.Serialize(Loop.GetNormalizedProgression(loop.sequence, out var shift, out _)), shift));
             
             var rootsTrace = string.Join(" ", Enumerable.Range(loop.start, loop.endPaintMovement - loop.start + 1).Select(i => roots[i + 1]).Prepend(roots[loop.start]));
             var normalized = Loop.Deserialize(loop.normalized);
