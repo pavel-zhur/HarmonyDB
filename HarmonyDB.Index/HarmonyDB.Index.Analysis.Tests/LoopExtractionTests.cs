@@ -12,20 +12,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void NoneShort()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = new[] { 1 }.Select(d => new CompactHarmonyMovement
         {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = new[] { 1 }.Select(d => new CompactHarmonyMovement
-            {
-                RootDelta = (byte)d,
-                ToType = ChordType.Augmented,
-                FromType = ChordType.Augmented,
-            }).ToArray(),
-        };
+            RootDelta = (byte)d,
+            ToType = ChordType.Augmented,
+            FromType = ChordType.Augmented,
+        }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var firstRoot = (byte)Random.Shared.Next(0, 12);
+        var loops = FindSimpleLoops(sequence, firstRoot);
+        Trace(sequence, firstRoot, loops);
 
         Assert.Empty(loops);
     }
@@ -33,20 +29,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void NoneLong()
     {
-        var sequence = new CompactHarmonyMovementsSequence
-        {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = Enumerable.Repeat(7, 11).Select(d => new CompactHarmonyMovement
+        var sequence = Enumerable.Repeat(7, 11).Select(d => new CompactHarmonyMovement
             {
                 RootDelta = (byte)d,
                 ToType = ChordType.Augmented,
                 FromType = ChordType.Augmented,
-            }).ToArray(),
-        };
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var firstRoot = (byte)Random.Shared.Next(0, 12);
+        var loops = FindSimpleLoops(sequence, firstRoot);
+        Trace(sequence, firstRoot, loops);
 
         Assert.Empty(loops);
     }
@@ -58,20 +50,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         ChordType GetFromType() => index == 0 ? ChordType.Augmented : (ChordType)((index - 1) / 12);
         ChordType GetToType() => (ChordType)(index++ / 12);
 
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = Enumerable.Repeat(7, 12 * 8 - 1).Select(d => new CompactHarmonyMovement
         {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = Enumerable.Repeat(7, 12 * 8 - 1).Select(d => new CompactHarmonyMovement
-            {
-                RootDelta = (byte)d,
-                FromType = GetFromType(),
-                ToType = GetToType(),
-            }).ToArray(),
-        };
+            RootDelta = (byte)d,
+            FromType = GetFromType(),
+            ToType = GetToType(),
+        }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Empty(loops);
     }
@@ -83,64 +70,51 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         ChordType GetFromType() => index == 0 ? ChordType.Augmented : (ChordType)((index - 1) / 12);
         ChordType GetToType() => (ChordType)(index++ / 12);
 
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = Enumerable.Repeat(7, 12 * 8).Select(d => new CompactHarmonyMovement
         {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = Enumerable.Repeat(7, 12 * 8).Select(d => new CompactHarmonyMovement
-            {
-                RootDelta = (byte)d,
-                FromType = GetFromType(),
-                ToType = GetToType(),
-            }).ToArray(),
-        };
+            RootDelta = (byte)d,
+            FromType = GetFromType(),
+            ToType = GetToType(),
+        }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Single(loops);
-        Assert.Equal((0, 12 * 8 - 1, 12 * 8 - 1), loops[0].SelectSingle(x => (x.start, x.endMovement, x.endPaintMovement)));
+        Assert.Equal((0, 12 * 8 - 1), loops[0].SelectSingle(x => (x.start, x.endPaintMovement)));
     }
 
     [Fact]
     public void OneLong()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = Enumerable.Repeat(7, 12).Select(d => new CompactHarmonyMovement
         {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = Enumerable.Repeat(7, 12).Select(d => new CompactHarmonyMovement
-            {
-                RootDelta = (byte)d,
-                ToType = ChordType.Augmented,
-                FromType = ChordType.Augmented,
-            }).ToArray(),
-        };
+            RootDelta = (byte)d,
+            ToType = ChordType.Augmented,
+            FromType = ChordType.Augmented,
+        }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Single(loops);
-        Assert.Equal((0, 11, 11), loops[0].SelectSingle(x => (x.start, x.endMovement, x.endPaintMovement)));
+        Assert.Equal((0, 11), loops[0].SelectSingle(x => (x.start, x.endPaintMovement)));
     }
 
     [Fact]
     public void EndingPlusOne()
     {
-        var sequence = new CompactHarmonyMovementsSequence
-        {
-            FirstRoot = 0,
-            FirstMovementFromIndex = 0,
-            Movements = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7, 1]).Select(d => new CompactHarmonyMovement
+        var sequence = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7, 1]).Select(
+            d => new CompactHarmonyMovement
             {
                 RootDelta = (byte)d,
                 ToType = ChordType.Augmented,
                 FromType = ChordType.Augmented,
-            }).ToArray(),
-        };
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var firstRoot = (byte)Random.Shared.Next(0, 12);
+        var loops = FindSimpleLoops(sequence, firstRoot);
+        Trace(sequence, firstRoot, loops);
 
         Assert.Equal(103, loops[^1].endPaintMovement);
         Assert.Equal(2, loops[^1].SelectSingle(x => x.sequence.Length));
@@ -149,21 +123,17 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void Ending()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7]).Select(
+            d => new CompactHarmonyMovement
             {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7]).Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var firstRoot = (byte)Random.Shared.Next(0, 12);
+        var loops = FindSimpleLoops(sequence, firstRoot);
+        Trace(sequence, firstRoot, loops);
 
         Assert.Equal(103, loops[^1].endPaintMovement);
         Assert.Equal(2, loops[^1].SelectSingle(x => x.sequence.Length));
@@ -172,21 +142,18 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void Beginning()
     {
-        var sequence = new CompactHarmonyMovementsSequence
-            {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[] {5, 7, 5, 7, 5}.Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))).Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+        var sequence = new[] { 5, 7, 5, 7, 5 }.Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)))
+            .Select(
+                d => new CompactHarmonyMovement
+                {
+                    RootDelta = (byte)d,
+                    ToType = ChordType.Augmented,
+                    FromType = ChordType.Augmented,
+                }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var firstRoot = (byte)Random.Shared.Next(0, 12);
+        var loops = FindSimpleLoops(sequence, firstRoot);
+        Trace(sequence, firstRoot, loops);
 
         Assert.Equal(0, loops[0].start);
         Assert.Equal(2, loops[0].SelectSingle(x => x.sequence.Length));
@@ -196,21 +163,17 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void BeginningPlusOne()
     {
-        var sequence = new CompactHarmonyMovementsSequence
-            {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[] {1, 5, 7, 5, 7, 5}.Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))).Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+        var sequence = new[] { 1, 5, 7, 5, 7, 5 }
+            .Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))).Select(
+                d => new CompactHarmonyMovement
+                {
+                    RootDelta = (byte)d,
+                    ToType = ChordType.Augmented,
+                    FromType = ChordType.Augmented,
+                }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(1, loops[0].start);
         Assert.Equal(2, loops[0].SelectSingle(x => x.sequence.Length));
@@ -222,49 +185,65 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     {
         for (var i = 0; i < 100; i++)
         {
-            var sequence = new CompactHarmonyMovementsSequence
-            {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+            var sequence = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Select(
+                d => new CompactHarmonyMovement
+                {
+                    RootDelta = (byte)d,
+                    ToType = ChordType.Augmented,
+                    FromType = ChordType.Augmented,
+                }).ToArray();
 
-            var loops = FindSimpleLoops(sequence);
-            Trace(sequence, loops);
+            var firstRoot = (byte)Random.Shared.Next(0, 12);
+            var loops = FindSimpleLoops(sequence, firstRoot);
+            Trace(sequence, firstRoot, loops);
         }
     }
 
     [Fact]
-    public void Gap()
+    public void GapLong()
     {
-        var sequence = new CompactHarmonyMovementsSequence
-            {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[]
-                {
-                    2, 2, 1, 1, 2, 2, 1, 1,
-                    2, 2, 1, 1, 2, 2, 1, 1,
-                    3, 4, 6,
-                    8, 4, 8, 4,
-                    
-                }.Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+        var sequence = new[]
+        {
+            2, 2, 1, 1, 2, 2, 1, 1,
+            2, 2, 1, 1, 2, 2, 1, 1,
+            3, 4, 6,
+            8, 4, 8, 4,
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        }.Select(
+            d => new CompactHarmonyMovement
+            {
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
+
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
+
+        Assert.Equal(2, loops.Count);
+        Assert.True(loops[1].start - 1 > loops[0].endPaintMovement);
+    }
+
+    [Fact]
+    public void GapImmediate()
+    {
+        var sequence = new[]
+        {
+            2, 2, 1, 1, 2, 2, 1, 1,
+            2, 2, 1, 1, 2, 2, 1, 1,
+            13,
+            8, 4, 8, 4,
+
+        }.Select(
+            d => new CompactHarmonyMovement
+            {
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
+
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
         Assert.True(loops[1].start - 1 > loops[0].endPaintMovement);
@@ -273,29 +252,24 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void Overlap()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = new[]
+        {
+            2, 2, 1, 1, 2, 2, 1, 1,
+            2, 2, 1, 1, 2, 2, 1, 1,
+            2, 2, 1, 1, 1, 2, 2, 1,
+            2, 2, 1, 1, 1, 2, 2, 1,
+            2, 2, 1, 1, 2, 1, 2, 1,
+            2, 2, 1, 1, 2, 1, 2, 1,
+        }.Select(
+            d => new CompactHarmonyMovement
             {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[]
-                {
-                    2, 2, 1, 1, 2, 2, 1, 1,
-                    2, 2, 1, 1, 2, 2, 1, 1,
-                    2, 2, 1, 1, 1, 2, 2, 1, 
-                    2, 2, 1, 1, 1, 2, 2, 1, 
-                    2, 2, 1, 1, 2, 1, 2, 1,
-                    2, 2, 1, 1, 2, 1, 2, 1,
-                }.Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
         Assert.True(loops[1].start < loops[0].endPaintMovement);
@@ -305,91 +279,101 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
     [Fact]
     public void SelfJump()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = new[]
+        {
+            3, 3, 6,
+            3, 3, 6,
+            3, 9,
+            3, 3, 6,
+            3, 3, 6,
+        }.Select(
+            d => new CompactHarmonyMovement
             {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[]
-                {
-                    3, 3, 6,
-                    3, 3, 6,
-                    3, 9,
-                    3, 3, 6,
-                    3, 3, 6,
-                }.Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(Loop.Serialize(loops[0].sequence), Loop.Serialize(loops[2].sequence));
+        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
     }
 
     [Fact]
     public void SelfJumpLong()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = new[]
+        {
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+            1, 2, 9,
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+        }.Select(
+            d => new CompactHarmonyMovement
             {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[]
-                {
-                    1, 2, 1, 2, 6,
-                    1, 2, 1, 2, 6,
-                    1, 2, 9,
-                    1, 2, 1, 2, 6,
-                    1, 2, 1, 2, 6,
-                }.Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(3, loops.Count);
-        Assert.Equal(Loop.Serialize(loops[0].sequence), Loop.Serialize(loops[2].sequence));
+        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
     }
 
     [Fact]
-    public void SelfJumpWithModulation()
+    public void SelfJumpWithModulationWithOverlap()
     {
-        var sequence = new CompactHarmonyMovementsSequence
+        var sequence = new[]
+        {
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+            1, 2,
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+        }.Select(
+            d => new CompactHarmonyMovement
             {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = new[]
-                {
-                    1, 2, 1, 2, 6,
-                    1, 2, 1, 2, 6,
-                    1, 2, 
-                    1, 2, 1, 2, 6,
-                    1, 2, 1, 2, 6,
-                }.Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = ChordType.Augmented,
-                        FromType = ChordType.Augmented,
-                    }).ToArray(),
-            };
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
 
-        var loops = FindSimpleLoops(sequence);
-        Trace(sequence, loops);
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
 
         Assert.Equal(2, loops.Count);
-        Assert.Equal(Loop.Serialize(loops[0].sequence), Loop.Serialize(loops[1].sequence));
+        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[1].sequence)));
+    }
+
+    [Fact]
+    public void SelfJumpWithModulationWithJoint()
+    {
+        var sequence = new[]
+        {
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+            1, 10,
+            1, 2, 1, 2, 6,
+            1, 2, 1, 2, 6,
+        }.Select(
+            d => new CompactHarmonyMovement
+            {
+                RootDelta = (byte)d,
+                ToType = ChordType.Augmented,
+                FromType = ChordType.Augmented,
+            }).ToArray();
+
+        var loops = FindSimpleLoops(sequence, 0);
+        Trace(sequence, 0, loops);
+
+        Assert.Equal(3, loops.Count);
+        Assert.Equal(Loop.Serialize(Loop.GetNormalizedProgression(loops[0].sequence)), Loop.Serialize(Loop.GetNormalizedProgression(loops[2].sequence)));
     }
 
     [Fact]
@@ -399,64 +383,75 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
         {
             ChordType GetRandomChordType() => (ChordType)Random.Shared.Next((int)ChordType.Major, (int)ChordType.Augmented + 1);
             var chordType = GetRandomChordType();
-            var sequence = new CompactHarmonyMovementsSequence
-            {
-                FirstRoot = 0,
-                FirstMovementFromIndex = 0,
-                Movements = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Select(
-                    d => new CompactHarmonyMovement
-                    {
-                        RootDelta = (byte)d,
-                        ToType = chordType = GetRandomChordType(),
-                        FromType = chordType,
-                    }).ToArray(),
-            };
+            var sequence = Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Select(
+                d => new CompactHarmonyMovement
+                {
+                    RootDelta = (byte)d,
+                    FromType = chordType,
+                    ToType = chordType = GetRandomChordType(),
+                }).ToArray();
 
-            var loops = FindSimpleLoops(sequence);
-            Trace(sequence, loops);
+            var firstRoot = (byte)Random.Shared.Next(0, 12);
+            var loops = FindSimpleLoops(sequence, firstRoot);
+            Trace(sequence, firstRoot, loops);
         }
     }
 
     private void Trace(
-        CompactHarmonyMovementsSequence sequence, 
-        List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, int start, int endMovement, int endPaintMovement)> loops)
+        ReadOnlyMemory<CompactHarmonyMovement> sequence,
+        byte firstRoot,
+        List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)> loops)
     {
-        var roots = CreateRoots(sequence);
+        var roots = CreateRoots(sequence, firstRoot);
         logger.LogInformation($"roots: {string.Join(" ", roots)}");
         foreach (var loop in loops)
         {
-            Assert.Equal(loop.sequence.Length, loop.endMovement - loop.start + 1);
-            Assert.True(loop.endMovement <= loop.endPaintMovement);
-            Assert.InRange(loop.start, 0, sequence.Movements.Length - 1);
-            Assert.InRange(loop.endMovement, 0, sequence.Movements.Length - 1);
-            Assert.InRange(loop.endPaintMovement, 0, sequence.Movements.Length - 1);
-            logger.LogInformation($"found {loop.sequence.Length} + {loop.endPaintMovement - loop.endMovement} ({loop.start}..{loop.endMovement}..{loop.endPaintMovement}): {string.Join(" ", Enumerable.Range(loop.start, loop.endPaintMovement - loop.start + 1).Select(i => roots[i + 1]).Prepend(roots[loop.start]))}");
+            var endMovement = loop.start + loop.sequence.Length - 1;
+            Assert.Equal(loop.sequence.Length, endMovement - loop.start + 1);
+            Assert.True(endMovement <= loop.endPaintMovement);
+            Assert.InRange(loop.start, 0, sequence.Length - 1);
+            Assert.InRange(endMovement, 0, sequence.Length - 1);
+            Assert.InRange(loop.endPaintMovement, 0, sequence.Length - 1);
+            
+            var rootsTrace = string.Join(" ", Enumerable.Range(loop.start, loop.endPaintMovement - loop.start + 1).Select(i => roots[i + 1]).Prepend(roots[loop.start]));
+            var normalized = Loop.Deserialize(loop.normalized);
+            var normalizedRoots = CreateRoots(normalized, loop.normalizationStartRoot);
+            var normalizedRecreation = string.Join(" ", Enumerable.Range(0, loop.endPaintMovement - loop.start + 1)
+                .Prepend(-1 + normalized.Length)
+                .Select(x => x - loop.normalizationShift + normalized.Length)
+                .Select(i => normalizedRoots[(i % normalized.Length) + 1]));
+
+            Assert.Equal(rootsTrace, normalizedRecreation);
+
+            logger.LogInformation($"found {loop.sequence.Length}" +
+                                  $" + {loop.endPaintMovement - endMovement}" +
+                                  $" ({loop.start}..{endMovement}..{loop.endPaintMovement}):" +
+                                  $" {rootsTrace};");
         }
     }
 
-    private List<byte> CreateRoots(CompactHarmonyMovementsSequence compactHarmonyMovementsSequence)
+    private List<byte> CreateRoots(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
     {
-        var nextRoot = compactHarmonyMovementsSequence.FirstRoot;
-        var roots = nextRoot
+        var roots = firstRoot
             .Once()
-            .Concat(MemoryMarshal.ToEnumerable(compactHarmonyMovementsSequence.Movements)
-                .Select(d => nextRoot = Note.Normalize(d.RootDelta + nextRoot)))
+            .Concat(MemoryMarshal.ToEnumerable(sequence)
+                .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
         return roots;
     }
 
-    private List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, int start, int endMovement, int endPaintMovement)> FindSimpleLoops(CompactHarmonyMovementsSequence compactHarmonyMovementsSequence)
+    private List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)> FindSimpleLoops(
+        ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
     {
-        var roots = CreateRoots(compactHarmonyMovementsSequence);
-        var sequence = compactHarmonyMovementsSequence.Movements;
+        var roots = CreateRoots(sequence, firstRoot);
 
         Dictionary<(byte root, ChordType chordType), int> indices = new()
         {
             { (roots[0], sequence.Span[0].FromType), -1 }
         };
 
-        var loops = new List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, int start, int endMovement, int endPaintMovement)>();
+        var loops = new List<(ReadOnlyMemory<CompactHarmonyMovement> sequence, string normalized, int normalizationShift, byte normalizationStartRoot, int start, int endPaintMovement)>();
 
         var movementIndex = 0;
         while (movementIndex < sequence.Length)
@@ -492,7 +487,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger)
             }
 
             movementIndex--; // now points to the movement leading to the last root of the found sequence
-            loops.Add((foundLoop, movementIndexToLoopStart + 1, movementIndexToLoopStart + foundLoop.Length, movementIndex));
+
+            var normalized = Loop.Serialize(Loop.GetNormalizedProgression(foundLoop, out var normalizationShift, out _));
+            loops.Add((foundLoop, normalized, normalizationShift, roots[movementIndexToLoopStart + 1 + normalizationShift], movementIndexToLoopStart + 1, movementIndex));
 
             movementIndex -= foundLoop.Length - 1;
             indices.Clear();
