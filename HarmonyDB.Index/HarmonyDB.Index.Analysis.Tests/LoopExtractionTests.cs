@@ -626,6 +626,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.Equal(loopSelfJumpsBlock.HasModulations, loopSelfJumpsBlock.NormalizationRootsFlow.Count > 1);
             Assert.Equal(loopSelfJumpsBlock.IsModulation, loopSelfJumpsBlock.NormalizationRootsFlow[0] != loopSelfJumpsBlock.NormalizationRootsFlow[^1]);
 
+            // child self jumps are linked
+            Assert.True(loopSelfJumpsBlock.ChildJumps.WithPrevious().Skip(1).All(x => x.current.Loop1 == x.previous!.Loop2));
+
             var endMovement = loopSelfJumpsBlock.StartIndex + loopSelfJumpsBlock.LoopLength - 1;
 
             var normalized = Loop.Deserialize(loopSelfJumpsBlock.Normalized);
@@ -735,7 +738,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             // the middle loop is not the same
             Assert.NotEqual(loopSelfJumpBlock.JointLoop?.Normalized, loopSelfJumpBlock.Normalized);
 
-            // the middle loop is not outside the outer loops
+            // the middle loop is inside the outer loops
             if (loopSelfJumpBlock.JointLoop != null)
             {
                 Assert.True(loopSelfJumpBlock.JointLoop.StartIndex > loopSelfJumpBlock.Loop1.StartIndex);
