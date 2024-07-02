@@ -46,7 +46,7 @@ public record LoopSelfJumpBlock : IBlock
     /// For <see cref="LoopSelfJumpType.ModulationAmbiguousChord"/> type, the meanings are (equalNormalizedLoop1RootIndex, equalNormalizedLoop2RootIndex).
     /// For <see cref="LoopSelfJumpType.ModulationOverlap"/> type, returns null.
     /// </summary>
-    public (int rootIndex1, int rootIndex2)? JumpPoints
+    public (int root1Index, int root2Index)? JumpPoints
         => Type == LoopSelfJumpType.ModulationOverlap
             ? null
             : ((Loop1.EndIndex
@@ -54,4 +54,12 @@ public record LoopSelfJumpBlock : IBlock
                 + Loop1.NormalizationShift
                 + 1
                 ) % Loop1.LoopLength, Loop2.NormalizationShift);
+
+    public (int overlapStartRoot1Index, int overlapStartRoot2Index, int overlapLength)? OverlapJumpPoints
+        => Type != LoopSelfJumpType.ModulationOverlap
+            ? null
+            : ((Loop2.StartIndex
+                - Loop1.StartIndex
+                + Loop1.NormalizationShift
+                ) % Loop1.LoopLength, Loop2.NormalizationShift, Loop1.EndIndex - Loop2.StartIndex + 1);
 }
