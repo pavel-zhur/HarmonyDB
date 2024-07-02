@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using HarmonyDB.Index.Analysis.Tests.Attempt;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit.DependencyInjection.Logging;
 
@@ -13,6 +14,7 @@ public class Startup
             {
                 services
                     .AddIndexAnalysis()
+                    .AddScoped<Service>()
                     .AddLogging(b => b.AddXunitOutput());
             });
     }

@@ -16,6 +16,8 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
     {
         var minNormalizationShift = int.MaxValue;
         var maxNormalizationShift = int.MinValue;
+        var minInvertedShift = int.MaxValue;
+        var maxInvertedShift = int.MinValue;
         const int length = 3;
         for (var i = 0; i < 100; i++)
         {
@@ -46,14 +48,19 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
             };
 
             Loop.GetNormalizedProgression(loop.Progression, out var normalizationShift, out var invariants);
+            var invertedShift = Loop.InvertNormalizationShift(normalizationShift, loop.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
+            minInvertedShift = Math.Min(minInvertedShift, invertedShift);
+            maxInvertedShift = Math.Max(maxInvertedShift, invertedShift);
             Assert.Equal(repetitions, invariants);
         }
 
         // these assertions may very rarely fail, when an edge case never happens in 1000 repetitions. Almost impossible.
         Assert.Equal(0, minNormalizationShift);
+        Assert.Equal(0, minInvertedShift);
         Assert.Equal(length - 1, maxNormalizationShift);
+        Assert.Equal(length * repetitions - 1, maxInvertedShift);
     }
 
     [Fact]
@@ -91,15 +98,23 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
 
         var minNormalizationShift = int.MaxValue;
         var maxNormalizationShift = int.MinValue;
+        var minInvertedShift = int.MaxValue;
+        var maxInvertedShift = int.MinValue;
         foreach (var (loop1, loop2) in loops)
         {
             var progression1 = loop1.GetNormalizedProgression(out var normalizationShift);
+            var invertedShift = Loop.InvertNormalizationShift(normalizationShift, progression1.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
+            minInvertedShift = Math.Min(minInvertedShift, invertedShift);
+            maxInvertedShift = Math.Max(maxInvertedShift, invertedShift);
 
             var progression2 = loop2.GetNormalizedProgression(out normalizationShift);
+            invertedShift = Loop.InvertNormalizationShift(normalizationShift, progression1.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
+            minInvertedShift = Math.Min(minInvertedShift, invertedShift);
+            maxInvertedShift = Math.Max(maxInvertedShift, invertedShift);
             var serialized1 = Loop.Serialize(progression1);
             var serialized2 = Loop.Serialize(progression2);
             if (serialized1 != serialized2)
@@ -114,6 +129,8 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
 
         // these assertions may very rarely fail, when an edge case never happens in 1000 repetitions. Almost impossible.
         Assert.Equal(0, minNormalizationShift);
+        Assert.Equal(0, minInvertedShift);
         Assert.Equal(length - 1, maxNormalizationShift);
+        Assert.Equal(length - 1, maxInvertedShift);
     }
 }
