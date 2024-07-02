@@ -150,13 +150,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     [Fact]
     public void Random100X100()
     {
+        HashSet<int> modulationOverlapsAccumulator = new();
         for (var i = 0; i < 100; i++)
         {
             var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)));
             var loops = service.FindSimpleLoops(sequence, firstRoot);
             var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
-            TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+            TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, modulationOverlapsAccumulator, false);
         }
+
+        logger.LogInformation("modulationOverlapsAccumulator: {data}", string.Join(", ", modulationOverlapsAccumulator.OrderBy(x => x)));
     }
 
     [Fact]
@@ -254,6 +257,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.False(loopSelfJumpsBlocks.Single().HasModulations);
             Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
             Assert.Single(loopSelfJumpsBlocks.Single().NormalizationRootsFlow);
+            Assert.Equal(LoopSelfJumpType.SameKeyJointLoop, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
         }
     }
 
@@ -277,6 +281,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(3, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
         Assert.Equal(loopSelfJumpsBlocks.Single().NormalizationRootsFlow[0], loopSelfJumpsBlocks.Single().NormalizationRootsFlow[2]);
+        Assert.Equal(LoopSelfJumpType.ModulationAmbiguousChord, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
+        Assert.Equal(LoopSelfJumpType.ModulationJointLoop, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
     }
 
     [Fact]
@@ -297,6 +303,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.True(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(3, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
         Assert.Equal(loopSelfJumpsBlocks.Single().NormalizationRootsFlow, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Distinct());
+        Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
+        Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
     }
 
     [Fact]
@@ -316,6 +324,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.False(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Single(loopSelfJumpsBlocks.Single().NormalizationRootsFlow);
+        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.Type == LoopSelfJumpType.SameKeyJointLoop));
     }
 
     [Fact]
@@ -379,6 +388,38 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     }
 
     [Fact]
+    public void SelfJumpWithModulationWithMultipleOverlaps()
+    {
+        var overlaps = new List<int>();
+        foreach (var sequenceChords in new[]
+                 {
+                     "C C# D# E F# C C# D# E F# C C# D# E F# G A D# E F# G A D# E F# G A",
+                     "C C# D# E F# G C C# D# E F# G C C# D# E F# G A Bb D# E F# G A Bb D# E F# G A Bb",
+                     "C C# D# E C C# D# E C C# D# E F# G D# E F# G D# E F# G",
+                 })
+        {
+            var (sequence, firstRoot) = InputChords(sequenceChords);
+
+            var loops = service.FindSimpleLoops(sequence, firstRoot);
+            var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+            HashSet<int> modulationOverlapsAccumulator = new();
+            TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, modulationOverlapsAccumulator);
+            logger.LogInformation("modulationOverlapsAccumulator: {data}",
+                string.Join(", ", modulationOverlapsAccumulator.OrderBy(x => x)));
+
+            Assert.Single(loopSelfJumpsBlocks.Single().ChildJumps);
+            Assert.Equal(2, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
+            Assert.Equal(LoopSelfJumpType.ModulationOverlap, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
+            Assert.Single(modulationOverlapsAccumulator);
+            overlaps.Add(modulationOverlapsAccumulator.Single());
+        }
+
+        Assert.Equal(2, overlaps[0]);
+        Assert.Equal(3, overlaps[1]);
+        Assert.Equal(1, overlaps[2]);
+    }
+
+    [Fact]
     public void SelfJumpWithModulationWithOverlap()
     {
         var (sequence, firstRoot) = InputDeltas(1, 2, 1, 2, 6,
@@ -389,7 +430,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         var loops = service.FindSimpleLoops(sequence, firstRoot);
         var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
-        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+        HashSet<int> modulationOverlapsAccumulator = new();
+        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, modulationOverlapsAccumulator);
+        logger.LogInformation("modulationOverlapsAccumulator: {data}", string.Join(", ", modulationOverlapsAccumulator.OrderBy(x => x)));
 
         Assert.Equal(2, loops.Count);
         Assert.Equal(loops[0].Normalized, loops[1].Normalized);
@@ -399,6 +442,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.True(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.True(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(2, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
+        Assert.Equal(LoopSelfJumpType.ModulationOverlap, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
     }
 
     [Fact]
@@ -423,6 +467,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.True(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.True(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(2, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
+        Assert.Equal(LoopSelfJumpType.ModulationJointLoop, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
     }
 
     [Fact]
@@ -450,12 +495,14 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.True(loopSelfJumpsBlocks.Single().HasModulations);
             Assert.True(loopSelfJumpsBlocks.Single().IsModulation);
             Assert.Equal(2, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
+            Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
         }
     }
 
     [Fact]
     public void Random100X100WithChordTypes()
     {
+        HashSet<int> modulationOverlapsAccumulator = new();
         for (var i = 0; i < 100; i++)
         {
             ChordType GetRandomChordType() => (ChordType)Random.Shared.Next((int)ChordType.Major, (int)ChordType.Augmented + 1);
@@ -471,15 +518,19 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             var firstRoot = (byte)Random.Shared.Next(0, 12);
             var loops = service.FindSimpleLoops(sequence, firstRoot);
             var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
-            TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+            TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, modulationOverlapsAccumulator, false);
         }
+
+        logger.LogInformation("modulationOverlapsAccumulator: {data}", string.Join(", ", modulationOverlapsAccumulator.OrderBy(x => x)));
     }
 
     private void TraceAndTest(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         byte firstRoot,
         List<LoopBlock> loops,
-        List<LoopSelfMultiJumpBlock> loopSelfJumpsBlocks)
+        List<LoopSelfMultiJumpBlock> loopSelfJumpsBlocks,
+        HashSet<int>? modulationOverlapsAccumulator = null,
+        bool trace = true)
     {
         // sequence integrity test
         Assert.True(MemoryMarshal.ToEnumerable(sequence).WithPrevious().Skip(1).All(p => p.current.FromType == p.previous!.Value.ToType), "sequential to type and from type mismatch");
@@ -495,8 +546,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                 .Select(i =>
                     $"{roots[i]}{(i == 0 ? sequence.Span[0].FromType : sequence.Span[i - 1].ToType).ChordTypeToString()}"));
 
-        logger.LogInformation(
+        if (trace)
+        {
+            logger.LogInformation(
                 $"loops: {loops.Count}, self jumps: {loopSelfJumpsBlocks.Count}, roots: {CreateRootsTraceByIndices(0, sequence.Length - 1)}");
+        }
 
         // blocks sequential loops test
         Assert.True(loopSelfJumpsBlocks.All(x => x.ChildJumps.WithPrevious().Skip(1).All(p => p.current.Loop1 == p.previous!.Loop2)));
@@ -512,6 +566,48 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             // the middle loop is not the same
             Assert.NotEqual(loopSelfJumpBlock.JointLoop?.Normalized, loopSelfJumpBlock.Normalized);
+
+            switch (loopSelfJumpBlock.Type)
+            {
+                case LoopSelfJumpType.SameKeyJointLoop:
+                    // exactly one extra movement
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.NotNull(loopSelfJumpBlock.JointLoop);
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.False(loopSelfJumpBlock.IsModulation);
+                    break;
+
+                case LoopSelfJumpType.ModulationJointLoop:
+                    // exactly one extra movement
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.NotNull(loopSelfJumpBlock.JointLoop);
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                case LoopSelfJumpType.ModulationJointMovement:
+                    // exactly one extra movement
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.Null(loopSelfJumpBlock.JointLoop);
+                    Assert.NotNull(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                case LoopSelfJumpType.ModulationAmbiguousChord:
+                    // exactly zero extra movements
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 1, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.Null(loopSelfJumpBlock.JointLoop);
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                case LoopSelfJumpType.ModulationOverlap:
+                    Assert.True(loopSelfJumpBlock.Loop1.EndIndex + 1 > loopSelfJumpBlock.Loop2.StartIndex);
+                    modulationOverlapsAccumulator?.Add(loopSelfJumpBlock.Loop1.EndIndex + 1 - loopSelfJumpBlock.Loop2.StartIndex); // from 1 to infinity
+                    Assert.Null(loopSelfJumpBlock.JointLoop);
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         foreach (var loopSelfJumpsBlock in loopSelfJumpsBlocks)
@@ -544,13 +640,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                            $" roots: {CreateRootsTrace(j)}";
                 }));
 
-            logger.LogInformation($"SJS {loopSelfJumpsBlock.LoopLength}" +
-                                  $" + {loopSelfJumpsBlock.EndIndex - endMovement}" +
-                                  $" ({loopSelfJumpsBlock.StartIndex}..{endMovement}..{loopSelfJumpsBlock.EndIndex}):" +
-                                  $" (keys={string.Join(", ", loopSelfJumpsBlock.NormalizationRootsFlow)})" +
-                                  $" (has-modulations={loopSelfJumpsBlock.HasModulations})" +
-                                  $"\nall roots: {CreateRootsTrace(loopSelfJumpsBlock)};" +
-                                  $"\njumps:\n{childJumps}");
+            if (trace)
+            {
+                logger.LogInformation($"SJS {loopSelfJumpsBlock.LoopLength}" +
+                                      $" + {loopSelfJumpsBlock.EndIndex - endMovement}" +
+                                      $" ({loopSelfJumpsBlock.StartIndex}..{endMovement}..{loopSelfJumpsBlock.EndIndex}):" +
+                                      $" (keys={string.Join(", ", loopSelfJumpsBlock.NormalizationRootsFlow)})" +
+                                      $" (has-modulations={loopSelfJumpsBlock.HasModulations})" +
+                                      $"\nall roots: {CreateRootsTrace(loopSelfJumpsBlock)};" +
+                                      $"\njumps:\n{childJumps}");
+            }
         }
 
         foreach (var loop in loops)
@@ -568,10 +667,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             var rootsTrace = CreateRootsTrace(loop);
 
-            logger.LogInformation($"L {loop.LoopLength}" +
+            if (trace)
+            {
+                logger.LogInformation($"L {loop.LoopLength}" +
                                       $" + {loop.EndIndex - endLoopIndex}" +
                                       $" ({loop.StartIndex}..{endLoopIndex}..{loop.EndIndex}):" +
                                       $" {rootsTrace};");
+            }
 
             var normalized = Loop.Deserialize(loop.Normalized);
             var normalizedRoots = service.CreateRoots(normalized, loop.NormalizationRoot);
