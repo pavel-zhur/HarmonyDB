@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
+﻿using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
 
 namespace HarmonyDB.Index.Analysis.Tests.Attempt.Models;
 
@@ -41,10 +42,20 @@ public record LoopSelfJumpBlock : IBlock
     public (int fromNormalizedRootIndex, int toNormalizedRootIndex)? SameKeyJumpPoints
         => IsModulation
             ? null
-            : ((
-                Loop1.EndIndex
+            : ((Loop1.EndIndex
                 - Loop1.StartIndex
                 + Loop1.NormalizationShift
                 + 1
-            ) % Loop1.LoopLength, Loop2.NormalizationShift);
+                ) % Loop1.LoopLength, Loop2.NormalizationShift);
+
+    public byte ModulationDelta => Note.Normalize(Loop2.NormalizationRoot - Loop1.NormalizationRoot);
+
+    public (int equalNormalizedLoop1RootIndex, int equalNormalizedLoop2RootIndex)? AmbiguousChordPoints
+        => Type != LoopSelfJumpType.ModulationAmbiguousChord
+            ? null
+            : ((Loop1.EndIndex
+                - Loop1.StartIndex
+                + Loop1.NormalizationShift
+                + 1
+                ) % Loop1.LoopLength, Loop2.NormalizationShift);
 }
