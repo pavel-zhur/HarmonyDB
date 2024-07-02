@@ -174,7 +174,6 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Single(loopSelfJumpsBlocks);
         Assert.Equal(2, loopSelfJumpsBlocks.Single().ChildJumps.Count);
         Assert.Equal(4, loopSelfJumpsBlocks.Single().ChildLoops.Count);
-        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.JointMovement == null));
     }
 
     [Fact]
@@ -253,11 +252,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.Single(loopSelfJumpsBlocks);
             Assert.Single(loopSelfJumpsBlocks.Single().ChildJumps);
             Assert.NotNull(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointLoop);
-            Assert.Null(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointMovement);
+            Assert.NotNull(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointMovement);
             Assert.False(loopSelfJumpsBlocks.Single().HasModulations);
             Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
             Assert.Single(loopSelfJumpsBlocks.Single().NormalizationRootsFlow);
-            Assert.Equal(LoopSelfJumpType.SameKeyJointLoop, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
+            Assert.Equal(LoopSelfJumpType.SameKeyJoint, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
         }
     }
 
@@ -273,16 +272,17 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Single(loopSelfJumpsBlocks);
         Assert.Equal(2, loopSelfJumpsBlocks.Single().ChildJumps.Count);
         Assert.Equal(4, loopSelfJumpsBlocks.Single().ChildLoops.Count);
-        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.JointMovement == null));
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.IsModulation));
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[0].SelectSingle(x => x.JointLoop == null));
+        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[0].SelectSingle(x => x.JointMovement == null));
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[1].SelectSingle(x => x.JointLoop != null));
+        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[1].SelectSingle(x => x.JointMovement != null));
         Assert.True(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(3, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
         Assert.Equal(loopSelfJumpsBlocks.Single().NormalizationRootsFlow[0], loopSelfJumpsBlocks.Single().NormalizationRootsFlow[2]);
         Assert.Equal(LoopSelfJumpType.ModulationAmbiguousChord, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
-        Assert.Equal(LoopSelfJumpType.ModulationJointLoop, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
+        Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
     }
 
     [Fact]
@@ -320,11 +320,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(2, loopSelfJumpsBlocks.Single().ChildJumps.Count);
         Assert.Equal(5, loopSelfJumpsBlocks.Single().ChildLoops.Count);
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.JointLoop != null));
-        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.JointMovement == null));
+        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.JointMovement != null));
         Assert.False(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.False(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Single(loopSelfJumpsBlocks.Single().NormalizationRootsFlow);
-        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.Type == LoopSelfJumpType.SameKeyJointLoop));
+        Assert.True(loopSelfJumpsBlocks.Single().ChildJumps.All(x => x.Type == LoopSelfJumpType.SameKeyJoint));
     }
 
     [Fact]
@@ -463,11 +463,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(loops[0].Normalized, loops[2].Normalized);
         Assert.NotEqual(loops[0].NormalizationRoot, loops[2].NormalizationRoot);
         Assert.NotNull(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointLoop);
-        Assert.Null(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointMovement);
+        Assert.NotNull(loopSelfJumpsBlocks.Single().ChildJumps.Single().JointMovement);
         Assert.True(loopSelfJumpsBlocks.Single().HasModulations);
         Assert.True(loopSelfJumpsBlocks.Single().IsModulation);
         Assert.Equal(2, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Count);
-        Assert.Equal(LoopSelfJumpType.ModulationJointLoop, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
+        Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps.Single().Type);
     }
 
     [Fact]
@@ -524,6 +524,27 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         logger.LogInformation("modulationOverlapsAccumulator: {data}", string.Join(", ", modulationOverlapsAccumulator.OrderBy(x => x)));
     }
 
+    [Theory]
+    [InlineData(0, 8, "A# C F G Am C F G Am F G Am C F G Am C D")]
+    [InlineData(0, 10, "A# C F G Am C F G Am G Am C F G Am C D")]
+    [InlineData(0, 7, "Am Dm F E Am Dm F E Am E Am Dm F E Am Dm F E")]
+    public void JointLoopIndicesCheck(int fromNormalizedRoot, int toNormalizedRoot, string inputChords)
+    {
+        var (sequence, firstRoot) = InputChords(inputChords);
+        var loops = service.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+
+        var loopSelfMultiJumpBlock = loopSelfJumpsBlocks.Single();
+        var loopSelfJumpBlock = loopSelfJumpsBlocks.Single().ChildJumps.Single();
+        var normalizedRoots = service.CreateRoots(
+            Loop.Deserialize(loopSelfMultiJumpBlock.Normalized),
+            loopSelfMultiJumpBlock.NormalizationRootsFlow.Single());
+        Assert.Equal((fromNormalizedRoot, toNormalizedRoot), 
+            (normalizedRoots[loopSelfJumpBlock.SameKeyJumpPoints!.Value.fromNormalizedRootIndex], 
+                normalizedRoots[loopSelfJumpBlock.SameKeyJumpPoints.Value.toNormalizedRootIndex]));
+    }
+    
     private void TraceAndTest(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         byte firstRoot,
@@ -555,61 +576,6 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         // blocks sequential loops test
         Assert.True(loopSelfJumpsBlocks.All(x => x.ChildJumps.WithPrevious().Skip(1).All(p => p.current.Loop1 == p.previous!.Loop2)));
 
-        foreach (var loopSelfJumpBlock in loopSelfJumpsBlocks.SelectMany(x => x.ChildJumps))
-        {
-            // joint loop and movement are never set together
-            Assert.True(loopSelfJumpBlock.JointLoop == null || loopSelfJumpBlock.JointMovement == null);
-
-            // end and start with the same loop and the jumps block normalized is the same
-            Assert.Equal(loopSelfJumpBlock.Loop1.Normalized, loopSelfJumpBlock.Loop2.Normalized);
-            Assert.Equal(loopSelfJumpBlock.Loop1.Normalized, loopSelfJumpBlock.Normalized);
-
-            // the middle loop is not the same
-            Assert.NotEqual(loopSelfJumpBlock.JointLoop?.Normalized, loopSelfJumpBlock.Normalized);
-
-            switch (loopSelfJumpBlock.Type)
-            {
-                case LoopSelfJumpType.SameKeyJointLoop:
-                    // exactly one extra movement
-                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
-                    Assert.NotNull(loopSelfJumpBlock.JointLoop);
-                    Assert.Null(loopSelfJumpBlock.JointMovement);
-                    Assert.False(loopSelfJumpBlock.IsModulation);
-                    break;
-
-                case LoopSelfJumpType.ModulationJointLoop:
-                    // exactly one extra movement
-                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
-                    Assert.NotNull(loopSelfJumpBlock.JointLoop);
-                    Assert.Null(loopSelfJumpBlock.JointMovement);
-                    Assert.True(loopSelfJumpBlock.IsModulation);
-                    break;
-                case LoopSelfJumpType.ModulationJointMovement:
-                    // exactly one extra movement
-                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
-                    Assert.Null(loopSelfJumpBlock.JointLoop);
-                    Assert.NotNull(loopSelfJumpBlock.JointMovement);
-                    Assert.True(loopSelfJumpBlock.IsModulation);
-                    break;
-                case LoopSelfJumpType.ModulationAmbiguousChord:
-                    // exactly zero extra movements
-                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 1, loopSelfJumpBlock.Loop2.StartIndex);
-                    Assert.Null(loopSelfJumpBlock.JointLoop);
-                    Assert.Null(loopSelfJumpBlock.JointMovement);
-                    Assert.True(loopSelfJumpBlock.IsModulation);
-                    break;
-                case LoopSelfJumpType.ModulationOverlap:
-                    Assert.True(loopSelfJumpBlock.Loop1.EndIndex + 1 > loopSelfJumpBlock.Loop2.StartIndex);
-                    modulationOverlapsAccumulator?.Add(loopSelfJumpBlock.Loop1.EndIndex + 1 - loopSelfJumpBlock.Loop2.StartIndex); // from 1 to infinity
-                    Assert.Null(loopSelfJumpBlock.JointLoop);
-                    Assert.Null(loopSelfJumpBlock.JointMovement);
-                    Assert.True(loopSelfJumpBlock.IsModulation);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         foreach (var loopSelfJumpsBlock in loopSelfJumpsBlocks)
         {
             // has modulations integrity
@@ -621,8 +587,6 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.Equal(loopSelfJumpsBlock.HasModulations, loopSelfJumpsBlock.NormalizationRootsFlow.Count > 1);
             Assert.Equal(loopSelfJumpsBlock.IsModulation, loopSelfJumpsBlock.NormalizationRootsFlow[0] != loopSelfJumpsBlock.NormalizationRootsFlow[^1]);
 
-            // ends and starts
-            
             var endMovement = loopSelfJumpsBlock.StartIndex + loopSelfJumpsBlock.LoopLength - 1;
 
             var childJumps = string.Join(Environment.NewLine, loopSelfJumpsBlock.ChildJumps.Select(j =>
@@ -649,6 +613,78 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                                       $" (has-modulations={loopSelfJumpsBlock.HasModulations})" +
                                       $"\nall roots: {CreateRootsTrace(loopSelfJumpsBlock)};" +
                                       $"\njumps:\n{childJumps}");
+            }
+        }
+
+        foreach (var loopSelfJumpBlock in loopSelfJumpsBlocks.SelectMany(x => x.ChildJumps))
+        {
+            // from and to are not equal and not sequential for non-modulated jumps
+            if (loopSelfJumpBlock.Type == LoopSelfJumpType.SameKeyJoint)
+            {
+                Assert.NotNull(loopSelfJumpBlock.SameKeyJumpPoints);
+                var from = loopSelfJumpBlock.SameKeyJumpPoints.Value.fromNormalizedRootIndex;
+                var to = loopSelfJumpBlock.SameKeyJumpPoints.Value.toNormalizedRootIndex;
+                Assert.NotEqual(from, to);
+                Assert.NotEqual((from + 1) % loopSelfJumpBlock.LoopLength, to);
+            }
+            else
+            {
+                Assert.Null(loopSelfJumpBlock.SameKeyJumpPoints);
+            }
+
+            // the joint movement null reason and the loops gap need to correspond
+            var loopsGap = loopSelfJumpBlock.Loop2.StartIndex - loopSelfJumpBlock.Loop1.EndIndex;
+            if (loopSelfJumpBlock.JointMovement == null)
+            {
+                switch (loopsGap, loopSelfJumpBlock.Type)
+                {
+                    case (1, LoopSelfJumpType.ModulationAmbiguousChord):
+                        break;
+                    case ( < 1, LoopSelfJumpType.ModulationOverlap):
+                        break;
+                    default:
+                        Assert.Fail("The joint movement null reason and the loops gap do not correspond.");
+                        break;
+                }
+            }
+
+            // end and start with the same loop and the jumps block normalized is the same
+            Assert.Equal(loopSelfJumpBlock.Loop1.Normalized, loopSelfJumpBlock.Loop2.Normalized);
+            Assert.Equal(loopSelfJumpBlock.Loop1.Normalized, loopSelfJumpBlock.Normalized);
+
+            // the middle loop is not the same
+            Assert.NotEqual(loopSelfJumpBlock.JointLoop?.Normalized, loopSelfJumpBlock.Normalized);
+
+            switch (loopSelfJumpBlock.Type)
+            {
+                case LoopSelfJumpType.SameKeyJoint:
+                    // exactly one extra movement
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.NotNull(loopSelfJumpBlock.JointLoop);
+                    Assert.NotNull(loopSelfJumpBlock.JointMovement);
+                    Assert.False(loopSelfJumpBlock.IsModulation);
+                    break;
+
+                case LoopSelfJumpType.ModulationJointMovement:
+                    // exactly one extra movement
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 2, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.NotNull(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                case LoopSelfJumpType.ModulationAmbiguousChord:
+                    // exactly zero extra movements
+                    Assert.Equal(loopSelfJumpBlock.Loop1.EndIndex + 1, loopSelfJumpBlock.Loop2.StartIndex);
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                case LoopSelfJumpType.ModulationOverlap:
+                    Assert.True(loopSelfJumpBlock.Loop1.EndIndex + 1 > loopSelfJumpBlock.Loop2.StartIndex);
+                    modulationOverlapsAccumulator?.Add(loopSelfJumpBlock.Loop1.EndIndex + 1 - loopSelfJumpBlock.Loop2.StartIndex); // from 1 to infinity
+                    Assert.Null(loopSelfJumpBlock.JointMovement);
+                    Assert.True(loopSelfJumpBlock.IsModulation);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

@@ -137,16 +137,14 @@ public class Service
                                 Loop1 = previousLoop,
                                 Loop2 = currentLoop,
                                 JointLoop = jointLoop,
-                                JointMovement = jointLoop != null
-                                    ? null
-                                    : loopsGap == 2 ? sequence.Span[previousLoop.EndIndex + 1] : null,
+                                JointMovement = loopsGap switch
+                                {
+                                    2 => sequence.Span[previousLoop.EndIndex + 1],
+                                    1 => null, // single ambiguous chord
+                                    < 1 => null, // multiple ambiguous chords, overlap
+                                    _ => throw new ArgumentOutOfRangeException()
+                                },
                             };
-
-                            //switch (loopsGap)
-                            //{
-                            //    case < 1 when !result.IsModulation: throw new ArgumentOutOfRangeException(nameof(loopsGap), loopsGap, "The loops gap cannot be less than 1."),
-                            //    case 1: 
-                            //}
 
                             return result;
                         })

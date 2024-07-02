@@ -27,16 +27,24 @@ public record LoopSelfJumpBlock : IBlock
         get
         {
             if (!IsModulation)
-                return LoopSelfJumpType.SameKeyJointLoop;
+                return LoopSelfJumpType.SameKeyJoint;
 
             if (Loop1.EndIndex >= Loop2.StartIndex)
                 return LoopSelfJumpType.ModulationOverlap;
 
-            return JointLoop != null
-                ? LoopSelfJumpType.ModulationJointLoop
-                : JointMovement != null
+            return JointMovement != null
                     ? LoopSelfJumpType.ModulationJointMovement
                     : LoopSelfJumpType.ModulationAmbiguousChord;
         }
     }
+
+    public (int fromNormalizedRootIndex, int toNormalizedRootIndex)? SameKeyJumpPoints
+        => IsModulation
+            ? null
+            : ((
+                Loop1.EndIndex
+                - Loop1.StartIndex
+                + Loop1.NormalizationShift
+                + 1
+            ) % Loop1.LoopLength, Loop2.NormalizationShift);
 }
