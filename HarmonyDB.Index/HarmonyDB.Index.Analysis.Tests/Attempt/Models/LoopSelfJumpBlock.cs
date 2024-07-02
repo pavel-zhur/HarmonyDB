@@ -21,4 +21,22 @@ public record LoopSelfJumpBlock : IBlock
     public required LoopBlock? JointLoop { get; init; }
 
     public required CompactHarmonyMovement? JointMovement { get; set; }
+
+    public LoopSelfJumpType Type
+    {
+        get
+        {
+            if (!IsModulation)
+                return LoopSelfJumpType.SameKeyJointLoop;
+
+            if (Loop1.EndIndex >= Loop2.StartIndex)
+                return LoopSelfJumpType.ModulationOverlap;
+
+            return JointLoop != null
+                ? LoopSelfJumpType.ModulationJointLoop
+                : JointMovement != null
+                    ? LoopSelfJumpType.ModulationJointMovement
+                    : LoopSelfJumpType.ModulationAmbiguousChord;
+        }
+    }
 }
