@@ -2,9 +2,8 @@
 
 public enum LoopSelfJumpType
 {
-    ModulationJointLoop,
     ModulationJointMovement,
     ModulationAmbiguousChord,
     ModulationOverlap,
-    SameKeyJointLoop,
+    SameKeyJoint,
 }
