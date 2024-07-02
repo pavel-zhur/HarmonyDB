@@ -51,22 +51,28 @@ public record Loop
 
     public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression() => GetNormalizedProgression(Progression, out _, out _);
 
-    /// <param name="normalizedShift">
+    /// <param name="normalizationShift">
     /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the number of steps the normalized progression start is behind the original progression start.
-    /// In other words, returns the index of the start of the original progression in the normalized progression.
-    /// For invariants > 0, returns the minimal possible shift.
+    /// Returns the index of the start of the original progression in the normalized progression.
+    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
+    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
     /// </param>
     public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(out int normalizationShift) => GetNormalizedProgression(Progression, out normalizationShift, out _);
 
+    /// <returns>
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Inverts the number of steps one progression is ahead to the number of steps it is behind,
+    /// where a progression may be the normalized progression or the original progression.
+    /// Unaware of invariants.
+    /// </returns>
     public static int InvertNormalizationShift(int normalizationShift, int progressionLength) =>
         (progressionLength - normalizationShift) % progressionLength;
 
-    /// <param name="normalizedShift">
+    /// <param name="normalizationShift">
     /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the number of steps the normalized progression start is behind the original progression start.
-    /// In other words, returns the index of the start of the original progression in the normalized progression.
-    /// For invariants > 0, returns the minimal possible shift.
+    /// Returns the index of the start of the original progression in the normalized progression.
+    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
+    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
     /// </param>
     public static ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int normalizationShift, out int invariants)
     {
