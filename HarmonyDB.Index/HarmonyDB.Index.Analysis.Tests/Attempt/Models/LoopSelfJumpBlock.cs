@@ -39,19 +39,15 @@ public record LoopSelfJumpBlock : IBlock
         }
     }
 
-    public (int fromNormalizedRootIndex, int toNormalizedRootIndex)? SameKeyJumpPoints
-        => IsModulation
-            ? null
-            : ((Loop1.EndIndex
-                - Loop1.StartIndex
-                + Loop1.NormalizationShift
-                + 1
-                ) % Loop1.LoopLength, Loop2.NormalizationShift);
-
     public byte ModulationDelta => Note.Normalize(Loop2.NormalizationRoot - Loop1.NormalizationRoot);
 
-    public (int equalNormalizedLoop1RootIndex, int equalNormalizedLoop2RootIndex)? AmbiguousChordPoints
-        => Type != LoopSelfJumpType.ModulationAmbiguousChord
+    /// <summary>
+    /// For <see cref="LoopSelfJumpType.SameKeyJoint"/> and <see cref="LoopSelfJumpType.ModulationJointMovement"/> type, the meanings are (fromNormalizedRootIndex, toNormalizedRootIndex).
+    /// For <see cref="LoopSelfJumpType.ModulationAmbiguousChord"/> type, the meanings are (equalNormalizedLoop1RootIndex, equalNormalizedLoop2RootIndex).
+    /// For <see cref="LoopSelfJumpType.ModulationOverlap"/> type, returns null.
+    /// </summary>
+    public (int rootIndex1, int rootIndex2)? JumpPoints
+        => Type == LoopSelfJumpType.ModulationOverlap
             ? null
             : ((Loop1.EndIndex
                 - Loop1.StartIndex

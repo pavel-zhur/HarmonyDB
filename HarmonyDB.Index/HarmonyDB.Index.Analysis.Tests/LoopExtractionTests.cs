@@ -231,16 +231,20 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     }
 
     [Theory]
-    [InlineData(0, 7, "Am Dm F E Am Dm F E Am E Am Dm F E Am Dm F E Am")]
-    [InlineData(0, 8, "Am Dm F E Am Dm F E Am F E Am Dm F E Am Dm F E Am")]
-    [InlineData(5, 7, "Am Dm F E Am Dm F E Am Dm E Am Dm F E Am Dm F E Am")]
-    [InlineData(5, 0, "Am Dm F E Am Dm F E Am Dm Am Dm F E Am Dm F E Am")]
-    [InlineData(8, 0, "Am Dm F E Am Dm F E Am Dm F Am Dm F E Am Dm F E Am")]
-    [InlineData(8, 5, "Am Dm F E Am Dm F E Am Dm F Dm F E Am Dm F E Am")]
-    [InlineData(7, 5, "Am Dm F E Am Dm F E Am Dm F E Dm F E Am Dm F E Am")]
-    [InlineData(7, 8, "Am Dm F E Am Dm F E Am Dm F E F E Am Dm F E Am")]
-    [InlineData(8, 9, "A#m D#m F# E# A#m D#m F# E# A#m D#m F# E# F# E# A#m D#m F# E# A#m")]
-    public void SelfJumpSimple(int fromNormalizationRoot, int toNormalizationRoot, string sequenceChords)
+    // F E Am Dm
+    [InlineData(0, 7, 2, 1, "Am Dm F E Am Dm F E Am E Am Dm F E Am Dm F E Am")]
+    [InlineData(0, 8, 2, 0, "Am Dm F E Am Dm F E Am F E Am Dm F E Am Dm F E Am")]
+    [InlineData(5, 7, 3, 1, "Am Dm F E Am Dm F E Am Dm E Am Dm F E Am Dm F E Am")]
+    [InlineData(5, 0, 3, 2, "Am Dm F E Am Dm F E Am Dm Am Dm F E Am Dm F E Am")]
+    [InlineData(8, 0, 0, 2, "Am Dm F E Am Dm F E Am Dm F Am Dm F E Am Dm F E Am")]
+    [InlineData(8, 5, 0, 3, "Am Dm F E Am Dm F E Am Dm F Dm F E Am Dm F E Am")]
+    [InlineData(7, 5, 1, 3, "Am Dm F E Am Dm F E Am Dm F E Dm F E Am Dm F E Am")]
+    [InlineData(7, 8, 1, 0, "Am Dm F E Am Dm F E Am Dm F E F E Am Dm F E Am")]
+    [InlineData(8, 9, 1, 0, "A#m D#m F# E# A#m D#m F# E# A#m D#m F# E# F# E# A#m D#m F# E# A#m")]
+    public void SelfJumpSimple(
+        byte fromNormalizationRoot, byte toNormalizationRoot,
+        byte rootIndex1, byte rootIndex2,
+        string sequenceChords)
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
         var loops = service.FindSimpleLoops(sequence, firstRoot);
@@ -260,9 +264,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Single(loopSelfMultiJumpBlock.NormalizationRootsFlow);
         Assert.Equal(LoopSelfJumpType.SameKeyJoint, loopSelfJumpBlock.Type);
         
-        Assert.Equal(
-            (fromNormalizationRoot, toNormalizationRoot),
-            ToNormalizedRoots(loopSelfJumpBlock.SameKeyJumpPoints!.Value, loopSelfJumpBlock.Normalized, loopSelfJumpBlock.Loop1.NormalizationRoot));
+        AssertNormalized((fromNormalizationRoot, toNormalizationRoot), (rootIndex1, rootIndex2), loopSelfJumpBlock);
     }
 
     private (byte root1, int root2) ToNormalizedRoots((int rootIndex1, int rootIndex2) rootIndices, string normalized,
@@ -299,16 +301,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[0].SelectSingle(x => x.JointMovement == null));
         Assert.Equal(LoopSelfJumpType.ModulationAmbiguousChord, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
 
-        Assert.Equal((3, 3), ToNormalizedRoots(
-            loopSelfJumpsBlocks.Single().ChildJumps[0].AmbiguousChordPoints!.Value,
-            loopSelfJumpsBlocks.Single().Normalized,
-            loopSelfJumpsBlocks.Single().ChildJumps[0].Loop1.NormalizationRoot,
-            loopSelfJumpsBlocks.Single().ChildJumps[0].Loop2.NormalizationRoot));
-        Assert.Equal((0, 1), loopSelfJumpsBlocks.Single().ChildJumps[0].AmbiguousChordPoints);
+        AssertNormalized((3, 3), (0, 1), loopSelfJumpsBlocks.Single().ChildJumps[0]);
 
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[1].SelectSingle(x => x.JointLoop != null));
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[1].SelectSingle(x => x.JointMovement != null));
         Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
+
+        AssertNormalized((10, 8), (0, 1), loopSelfJumpsBlocks.Single().ChildJumps[1]);
     }
 
     [Theory]
@@ -342,12 +341,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(hasJointLoop, loopSelfJumpsBlocks.Single().ChildJumps[0].JointLoop != null);
         Assert.True(loopSelfJumpsBlocks.Single().ChildJumps[0].JointMovement == null);
         Assert.Equal(LoopSelfJumpType.ModulationAmbiguousChord, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
-        Assert.Equal((root, root), ToNormalizedRoots(
-            loopSelfJumpsBlocks.Single().ChildJumps[0].AmbiguousChordPoints!.Value, 
-            loopSelfJumpsBlocks.Single().Normalized, 
-            loopSelfJumpsBlocks.Single().ChildJumps[0].Loop1.NormalizationRoot, 
-            loopSelfJumpsBlocks.Single().ChildJumps[0].Loop2.NormalizationRoot));
-        Assert.Equal((rootIndex1, rootIndex2), loopSelfJumpsBlocks.Single().ChildJumps[0].AmbiguousChordPoints);
+
+        AssertNormalized((root, root), (rootIndex1, rootIndex2), loopSelfJumpsBlocks.Single().ChildJumps[0]);
     }
 
     [Fact]
@@ -370,6 +365,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(loopSelfJumpsBlocks.Single().NormalizationRootsFlow, loopSelfJumpsBlocks.Single().NormalizationRootsFlow.Distinct());
         Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[0].Type);
         Assert.Equal(LoopSelfJumpType.ModulationJointMovement, loopSelfJumpsBlocks.Single().ChildJumps[1].Type);
+
+        AssertNormalized((8, 5), (1, 0), loopSelfJumpsBlocks.Single().ChildJumps[0]);
+        AssertNormalized((10, 0), (1, 1), loopSelfJumpsBlocks.Single().ChildJumps[1]);
     }
 
     [Fact]
@@ -605,7 +603,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         Assert.Equal(
             (fromNormalizationRoot, toNormalizationRoot),
-            ToNormalizedRoots(loopSelfJumpBlock.SameKeyJumpPoints!.Value, loopSelfJumpBlock.Normalized, loopSelfJumpBlock.Loop1.NormalizationRoot));
+            ToNormalizedRoots(loopSelfJumpBlock.JumpPoints!.Value, loopSelfJumpBlock.Normalized, loopSelfJumpBlock.Loop1.NormalizationRoot));
     }
     
     private void TraceAndTest(
@@ -659,7 +657,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     Assert.True(j.Loop2.StartIndex - j.Loop1.EndIndex is 1 or 2 or <= 0);
 
                     string? jumpPoints = null;
-                    (int rootIndex1, int rootIndex2)? points = j.SameKeyJumpPoints ?? j.AmbiguousChordPoints;
+                    var points = j.JumpPoints;
                     if (points.HasValue)
                     {
                         var normalizedRoots1 = service.CreateRoots(normalized, j.Loop1.NormalizationRoot);
@@ -668,6 +666,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
                         switch (j.Type)
                         {
+                            case LoopSelfJumpType.ModulationJointMovement:
+                                break;
                             case LoopSelfJumpType.SameKeyJoint:
                                 Assert.Equal(j.Loop1.NormalizationRoot, j.Loop2.NormalizationRoot);
                                 break;
@@ -708,17 +708,17 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.InRange(loopSelfJumpBlock.ModulationDelta, 0, 11);
 
             // from and to are not equal and not sequential for non-modulated jumps
-            if (loopSelfJumpBlock.Type == LoopSelfJumpType.SameKeyJoint)
+            if (loopSelfJumpBlock.Type is LoopSelfJumpType.SameKeyJoint)
             {
-                Assert.NotNull(loopSelfJumpBlock.SameKeyJumpPoints);
-                var from = loopSelfJumpBlock.SameKeyJumpPoints.Value.fromNormalizedRootIndex;
-                var to = loopSelfJumpBlock.SameKeyJumpPoints.Value.toNormalizedRootIndex;
+                Assert.NotNull(loopSelfJumpBlock.JumpPoints);
+                var from = loopSelfJumpBlock.JumpPoints.Value.rootIndex1;
+                var to = loopSelfJumpBlock.JumpPoints.Value.rootIndex2;
                 Assert.NotEqual(from, to);
                 Assert.NotEqual((from + 1) % loopSelfJumpBlock.LoopLength, to);
             }
-            else
+            else if (loopSelfJumpBlock.Type == LoopSelfJumpType.ModulationOverlap)
             {
-                Assert.Null(loopSelfJumpBlock.SameKeyJumpPoints);
+                Assert.Null(loopSelfJumpBlock.JumpPoints);
             }
 
             // the joint movement null reason and the loops gap need to correspond
@@ -834,6 +834,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     (roots[loop.EndIndex + 2], sequence.Span[loop.EndIndex + 1].ToType));
             }
         }
+    }
+
+    private void AssertNormalized((byte root1, byte root2) roots, (int rootIndex1, int rootIndex2) rootIndices, LoopSelfJumpBlock loopSelfJumpBlocks)
+    {
+        Assert.Equal(roots, ToNormalizedRoots(
+            loopSelfJumpBlocks.JumpPoints!.Value,
+            loopSelfJumpBlocks.Normalized,
+            loopSelfJumpBlocks.Loop1.NormalizationRoot,
+            loopSelfJumpBlocks.Loop2.NormalizationRoot));
+        Assert.Equal(rootIndices, loopSelfJumpBlocks.JumpPoints);
     }
 
     private (ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot) InputDeltas(params int[] deltas)
