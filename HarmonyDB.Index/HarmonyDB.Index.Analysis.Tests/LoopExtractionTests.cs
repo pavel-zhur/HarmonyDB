@@ -629,6 +629,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             // child self jumps are linked
             Assert.True(loopSelfJumpsBlock.ChildJumps.WithPrevious().Skip(1).All(x => x.current.Loop1 == x.previous!.Loop2));
 
+            // child loops are the same as child jumps
+            Assert.Equal(
+                loopSelfJumpsBlock.ChildLoops, 
+                loopSelfJumpsBlock.ChildJumps
+                    .SelectMany((x, i) => i == 0 ? (LoopBlock?[])[x.Loop1, x.JointLoop, x.Loop2] : [x.JointLoop, x.Loop2])
+                    .Where(x => x != null));
+
             var endMovement = loopSelfJumpsBlock.StartIndex + loopSelfJumpsBlock.LoopLength - 1;
 
             var normalized = Loop.Deserialize(loopSelfJumpsBlock.Normalized);
