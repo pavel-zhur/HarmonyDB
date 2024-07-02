@@ -735,6 +735,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             // the middle loop is not the same
             Assert.NotEqual(loopSelfJumpBlock.JointLoop?.Normalized, loopSelfJumpBlock.Normalized);
 
+            // the middle loop is not outside the outer loops
+            if (loopSelfJumpBlock.JointLoop != null)
+            {
+                Assert.True(loopSelfJumpBlock.JointLoop.StartIndex > loopSelfJumpBlock.Loop1.StartIndex);
+                Assert.True(loopSelfJumpBlock.JointLoop.EndIndex < loopSelfJumpBlock.Loop2.EndIndex);
+            }
+
             switch (loopSelfJumpBlock.Type)
             {
                 case LoopSelfJumpType.SameKeyJoint:
