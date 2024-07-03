@@ -14,6 +14,68 @@ namespace HarmonyDB.Index.Analysis.Tests;
 public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, Service service)
 {
     [Fact]
+    public async Task HopeNoAmbiguousSelfJumps()
+    {
+        var source = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+        var counters = await Task.WhenAll(Enumerable.Range(0, 3).Select(async i =>
+        {
+            await Task.Yield();
+            return Worker(i, source.Token);
+        }));
+        logger.LogInformation(string.Join(", ", counters));
+
+        int Worker(int i, CancellationToken cancellationToken)
+        {
+            var counter = 0;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                counter++;
+                ChordType last = ChordType.Major;
+                ChordType GetRandomChordType()
+                {
+                    while (true)
+                    {
+                        var next = (ChordType)Random.Shared.Next((int)ChordType.Major, (int)ChordType.Augmented - 3);
+                        if (next != last)
+                        {
+                            last = next;
+                            return next;
+                        }
+                    }
+                }
+
+                var chordType = GetRandomChordType();
+                var sequence = Enumerable.Range(0, 20).Select(_ => Random.Shared.Next(0, 12)).Select(
+                    d => new CompactHarmonyMovement
+                    {
+                        RootDelta = (byte)d,
+                        FromType = chordType,
+                        ToType = chordType = GetRandomChordType(),
+                    }).ToArray();
+
+                var firstRoot = (byte)Random.Shared.Next(0, 12);
+                var loops = service.FindSimpleLoops(sequence, firstRoot);
+                var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+
+                if (loopSelfJumpsBlocks.Count > 1)
+                {
+                    logger.LogInformation($"{i}: {loopSelfJumpsBlocks.Count}");
+                    if (loopSelfJumpsBlocks
+                        .SelectMany((x, i) => x.ChildLoops.Select(x => (x.StartIndex, x.EndIndex)))
+                        .AnyDuplicates(out _))
+                    {
+                        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+                        Assert.Fail("Found!");
+                    }
+                }
+            }
+
+            return counter;
+        }
+    }
+
+
+    [Fact]
     public void NoneShort()
     {
         var (sequence, firstRoot) = InputDeltas(1);
@@ -583,6 +645,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(
             (fromNormalizationRoot, toNormalizationRoot),
             ToNormalizedRoots(loopSelfJumpBlock.JumpPoints!.Value, loopSelfJumpBlock.Normalized, loopSelfJumpBlock.Loop1.NormalizationRoot));
+    }
+
+    [Fact]
+    public void MultipleJumpsBlocks()
+    {
+        var (sequence, firstRoot) = InputChords("Am C D Am C D Am D Am C D E C D E C E C D E C D E");
+        var loops = service.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfMultiJumpBlocks = service.FindSelfJumps(sequence, loops);
+        Assert.Equal(2, loopSelfMultiJumpBlocks.Count);
     }
     
     private void TraceAndTest(
