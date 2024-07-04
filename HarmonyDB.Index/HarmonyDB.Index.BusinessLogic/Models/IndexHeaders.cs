@@ -12,6 +12,7 @@ public class IndexHeaders
         var sources = new Dictionary<string, int>();
         var titles = new Dictionary<string, int>();
         var artists = new Dictionary<string, int>();
+        var bestTonalities = new Dictionary<string, int>();
 
         int Add(string value, Dictionary<string, int> dictionary) => dictionary.TryGetValue(value, out var result)
             ? result
@@ -35,6 +36,18 @@ public class IndexHeaders
             {
                 writer1.Write(Add(artist, artists));
             }
+
+            writer1.Write((byte)(header.BestTonality?.IsReliable switch
+            {
+                true => 1,
+                false => 0,
+                null => 2,
+            }));
+
+            if (header.BestTonality != null)
+            {
+                writer1.Write(Add(header.BestTonality.Tonality, bestTonalities));
+            }
         }
 
         void Write(Dictionary<string, int> catalog)
@@ -49,6 +62,7 @@ public class IndexHeaders
         Write(sources);
         Write(titles);
         Write(artists);
+        Write(bestTonalities);
 
         return stream2.ToArray().Concat(stream1.ToArray()).ToArray();
     }
@@ -73,11 +87,13 @@ public class IndexHeaders
         var sources = Read1();
         var titles = Read1();
         var artists = Read1();
+        var bestTonalities = Read1();
 
         var count = reader.ReadInt32();
         var result = new List<IndexHeader>();
         for (var i = 0; i < count; i++)
         {
+            byte tonality;
             result.Add(new()
             {
                 ExternalId = reader.ReadString(),
@@ -85,6 +101,15 @@ public class IndexHeaders
                 Title = titles[reader.ReadInt32()],
                 Rating = reader.ReadSingle().SelectSingle(x => x == -1f ? (float?)null : x),
                 Artists = Enumerable.Range(0, reader.ReadInt32()).Select(_ => artists[reader.ReadInt32()]!).ToList(),
+                BestTonality = (tonality = reader.ReadByte()) switch
+                {
+                    2 => null,
+                    _ => new()
+                    {
+                        IsReliable = tonality == 1,
+                        Tonality = bestTonalities[reader.ReadInt32()]!,
+                    }
+                },
             });
         }
 
