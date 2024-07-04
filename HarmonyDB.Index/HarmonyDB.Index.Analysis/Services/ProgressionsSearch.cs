@@ -196,34 +196,6 @@ public class ProgressionsSearch
         return false;
     }
 
-
-
-    //public List<Loop> FindAllLoops2(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
-    //{
-    //    var roots = sequences
-    //        .Select(x => Enumerable.Range(0, x.Movements.Length).Aggregate(
-    //            new List<int> { x.FirstRoot },
-    //            (result, i) =>
-    //            {
-    //                result.Add(Note.Normalize(result[^1] + x.Movements.Span[i].RootDelta));
-    //                return result;
-    //            }))
-    //        .ToList();
-
-    //    var loopId = 0;
-    //    var startsOfLoopIds = sequences.Select(s => Enumerable.Range(0, s.Movements.Length + 1).Select(_ => new List<int>()).ToList()).ToList();
-    //    var endsOfLoopIds = sequences.Select(s => Enumerable.Range(0, s.Movements.Length + 1).Select(_ => new List<int>()).ToList()).ToList();
-    //    var participationsInLoopIds = sequences.Select(s => Enumerable.Range(0, s.Movements.Length + 1).Select(_ => new HashSet<int>()).ToList()).ToList();
-    //    var loops = new List<Loop>();
-
-    //    for (var r = 0; r < sequences.Count; r++) // in each sequence
-    //    {
-    //        var sequence = sequences[r].Movements;
-    //        var current = 0;
-    //        while (true)
-    //    }
-    //}
-
     public List<Loop> FindAllLoops(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
     {
         var roots = sequences
