@@ -27,4 +27,7 @@ public record LoopBlock : IBlock
     public required int StartIndex { get; init; }
 
     public required int EndIndex { get; init; }
+
+    [Obsolete]
+    public bool AllChordsRepeatAtLeastTwice => EndIndex - StartIndex + 1 >= LoopLength * 2 - 1;
 }
