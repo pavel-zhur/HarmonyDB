@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, CompactLoopStatistics>, List<LoopStatistics>>
+public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, CompactLoopStatistics>, IReadOnlyList<LoopStatistics>>
 {
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly ProgressionsCache _progressionsCache;
