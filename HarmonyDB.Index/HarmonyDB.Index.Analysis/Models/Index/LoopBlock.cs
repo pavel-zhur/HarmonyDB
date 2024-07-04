@@ -1,6 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 
-namespace HarmonyDB.Index.Analysis.Tests.Attempt.Models;
+namespace HarmonyDB.Index.Analysis.Models.Index;
 
 public record LoopBlock : IBlock
 {
