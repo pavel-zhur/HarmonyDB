@@ -24,4 +24,7 @@ public record SongBetaModel
 
     [Obsolete]
     public int? LoopId { get; init; }
+
+    [Obsolete]
+    public int? SelfJumpId { get; init; }
 }
