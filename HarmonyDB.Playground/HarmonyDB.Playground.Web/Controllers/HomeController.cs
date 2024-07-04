@@ -63,6 +63,61 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> SongBeta(SongBetaModel songModel)
+        {
+            if (songModel.IncludeTrace)
+            {
+                ViewBag.Trace = new ApiTraceBag();
+            }
+
+            Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
+            ViewBag.Chords = chords;
+
+            var representationSettings = new RepresentationSettings(
+                transpose: songModel.Transpose, 
+                alteration: songModel.Alteration);
+
+            var chordsData = chords.Output.AsChords(representationSettings);
+            var progression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
+
+            representationSettings = representationSettings with
+            {
+                IsVariableWidth = chords.Output.IsVariableWidth,
+                Simplification = 
+                    (songModel.Show7 ? SimplificationMode.None : SimplificationMode.Remove7)
+                    | (songModel.Show9 ? SimplificationMode.None : SimplificationMode.Remove9AndMore)
+                    | (songModel.Show6 ? SimplificationMode.None : SimplificationMode.Remove6)
+                    | (songModel.ShowBass ? SimplificationMode.None : SimplificationMode.RemoveBass)
+                    | (songModel.ShowSus ? SimplificationMode.None : SimplificationMode.RemoveSus),
+            };
+
+            ViewBag.Parsed = chordsData
+                .Distinct()
+                .Select(x => (x, notes: _chordDataParser.GetNotes(x)))
+                .Where(x => x.notes.HasValue)
+                .ToDictionary(x => x.x, x => x.notes!.Value.SelectSingle(x => new PlayerModel
+                {
+                    Bass = x.bass,
+                    Main = x.main,
+                }));
+
+            var loops = _progressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
+            if (songModel.LoopId.HasValue)
+            {
+                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loops, progression, songModel.LoopId.Value);
+
+                representationSettings = representationSettings with { CustomAttributes = customAttributes };
+            }
+
+            ViewBag.Loops = loops;
+            ViewBag.Progression = progression;
+
+            ViewBag.RepresentationSettings = representationSettings;
+
+            return View(songModel);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Song(SongModel songModel)
         {
             if (songModel.IncludeTrace)
