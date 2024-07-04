@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Common.Representations.OneShelf;
+﻿using System.Runtime.InteropServices;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Interfaces;
@@ -50,7 +51,11 @@ public class ProgressionsSearch
     public Dictionary<ISearchableChordsProgression, float> Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, int? top = int.MaxValue)
         => Search(progressions, searchPhrase, false, top).foundProgressionsWithCoverage;
 
-    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, bool harmonyGroupsToo, int? top = int.MaxValue)
+    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(
+        IEnumerable<ISearchableChordsProgression> progressions, 
+        HarmonyMovementsSequence searchPhrase,
+        bool harmonyGroupsToo,
+        int? top = int.MaxValue)
     {
         (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) result = (new(), new());
 
@@ -173,6 +178,24 @@ public class ProgressionsSearch
                sequenceMovement == ChordType.Unknown || searchPhraseMovement is not (ChordType.Minor or ChordType.Major) && sequenceMovement is not (ChordType.Minor or ChordType.Major);
     }
 
+    public bool IsCompound(ReadOnlyMemory<CompactHarmonyMovement> progression)
+    {
+        HashSet<(ChordType type, int note)> chords = new();
+        var startNote = Note.Normalize(0);
+
+        foreach (var movement in MemoryMarshal.ToEnumerable(progression))
+        {
+            if (!chords.Add((movement.FromType, startNote)))
+            {
+                return true;
+            }
+
+            startNote = Note.Normalize(startNote + movement.RootDelta);
+        }
+
+        return false;
+    }
+
     public List<Loop> FindAllLoops(IReadOnlyList<CompactHarmonyMovementsSequence> sequences)
     {
         var roots = sequences
@@ -193,127 +216,131 @@ public class ProgressionsSearch
         
         for (var r = 0; r < sequences.Count; r++) // in each sequence
         {
-            var movements = sequences[r].Movements;
-            for (var start = 0; start < movements.Length - 1; start++) // potential starts
+            var sequence = sequences[r].Movements;
+            for (var start = 0; start < sequence.Length - 1; start++) // potential starts
             {
                 (int id, int shift)? beginsWithKnownId = null;
-                for (var endMovement = start + 1; endMovement <= movements.Length - 1; endMovement++) // potential ends
+                for (var endMovement = start + 1; endMovement <= sequence.Length - 1; endMovement++) // potential ends
                 {
-                    if (roots[r][start] == roots[r][endMovement + 1] && movements.Span[start].FromType == movements.Span[endMovement].ToType) // if is a loop
+                    if (roots[r][start] != roots[r][endMovement + 1] ||
+                        sequence.Span[start].FromType != sequence.Span[endMovement].ToType)
+                        continue; // if is not a loop
+
+                    var length = endMovement - start + 1;
+
+                    // if such loop is already identified (no shift), continue
+                    var startWithNoShiftCheck = startsOfLoopIds[r][start]
+                        .Where(id => loops[id].EndMovement - loops[id].Start + 1 == length)
+                        .Select(x => (int?)x)
+                        .SingleOrDefault();
+                    if (startWithNoShiftCheck.HasValue)
                     {
-                        var searchPhraseLength = endMovement - start + 1;
+                        beginsWithKnownId ??= (startWithNoShiftCheck.Value, 0);
+                        continue;
+                    }
 
-                        // if such loop is already identified (no shift), continue
-                        var startWithNoShiftCheck = startsOfLoopIds[r][start].Where(id => loops[id].EndMovement - loops[id].Start + 1 == searchPhraseLength).Select(x => (int?)x).SingleOrDefault();
-                        if (startWithNoShiftCheck.HasValue)
+                    var searchPhrase = sequence.Slice(start, length);
+
+                    // if such loop is already identified, possibly with a shift, continue
+                    int? foundShift = null;
+                    var foundLoop = loops.WithIndices().Where(l =>
                         {
-                            beginsWithKnownId ??= (startWithNoShiftCheck.Value, 0);
+                            if (l.x.EndMovement - l.x.Start != endMovement - start) return false;
+                            var shift = CompactHarmonyMovement.AreEqual(searchPhrase, l.x.Progression);
+                            foundShift ??= shift;
+                            return shift.HasValue;
+                        })
+                        .AsNullable()
+                        .SingleOrDefault();
+
+                    if (foundLoop.HasValue)
+                    {
+                        beginsWithKnownId ??= (foundLoop.Value.i, foundShift!.Value);
+                        continue;
+                    }
+
+                    if (beginsWithKnownId.HasValue) // remove repetitions of type A A A A A A
+                    {
+                        var subLength = loops[beginsWithKnownId.Value.id].EndMovement - loops[beginsWithKnownId.Value.id].Start + 1;
+                        var repetitions = length / subLength;
+                        if (length % subLength == 0
+                            && Enumerable
+                                .Range(1, repetitions - 1)
+                                .All(x => CompactHarmonyMovement.AreEqual(searchPhrase.Slice(x & subLength, subLength),
+                                    loops[beginsWithKnownId.Value.id].Progression,
+                                    fixedShift: beginsWithKnownId.Value.shift).HasValue))
+                        {
                             continue;
-                        }
-
-                        var searchPhrase = movements.Slice(start, endMovement - start + 1);
-
-                        // if such loop is already identified, possibly with a shift, continue
-                        int? foundShift = null;
-                        var foundLoop = loops.WithIndices().Where(l =>
-                            {
-                                if (l.x.EndMovement - l.x.Start != endMovement - start) return false;
-                                var shift = CompactHarmonyMovement.AreEqual(searchPhrase, l.x.Progression);
-                                foundShift ??= shift;
-                                return shift.HasValue;
-                            })
-                            .AsNullable()
-                            .SingleOrDefault();
-
-                        if (foundLoop.HasValue)
-                        {
-                            beginsWithKnownId ??= (foundLoop.Value.i, foundShift!.Value);
-                            continue;
-                        }
-
-                        if (beginsWithKnownId.HasValue) // remove repetitions of type A A A A A A
-                        {
-                            var subLength = loops[beginsWithKnownId.Value.id].EndMovement - loops[beginsWithKnownId.Value.id].Start + 1;
-                            var repetitions = searchPhraseLength / subLength;
-                            if (searchPhraseLength % subLength == 0
-                                && Enumerable
-                                    .Range(1, repetitions - 1)
-                                    .All(x => CompactHarmonyMovement.AreEqual(searchPhrase.Slice(x & subLength, subLength),
-                                        loops[beginsWithKnownId.Value.id].Progression,
-                                        fixedShift: beginsWithKnownId.Value.shift).HasValue))
-                            {
-                                continue;
-                            }
-                        }
-
-                        var found = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
-                        var foundFirsts = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
-                        var foundFirstsFulls = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
-                        for (var sequenceIndex = 0; sequenceIndex < sequences.Count; sequenceIndex++) // look in every sequence
-                        {
-                            var lookInSequence = sequences[sequenceIndex];
-                            var firstMovementFromIndex = lookInSequence.FirstMovementFromIndex;
-
-                            // gather results
-                            var searchResult = FindMatchingSubsequences(lookInSequence, searchPhrase, true);
-                            found.AddRange(searchResult.found.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
-                            foundFirsts.AddRange(searchResult.foundFirsts.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
-                            foundFirstsFulls.AddRange(searchResult.foundFirstsFulls.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
-                        }
-
-                        if (foundFirstsFulls.Count > 1) // if it exists more than once
-                        {
-                            var isCompound = Enumerable
-                                .Range(start, endMovement - start + 1)
-                                .Select(i => (sequences[r].Movements.Span[i].FromType, roots[r][i]))
-                                .AnyDuplicates(out _);
-
-                            var successions = foundFirstsFulls
-                                .GroupBy(x => x.sequenceIndex)
-                                .Sum(g => g
-                                    .Select(x => x.foundStartMovementIndex)
-                                    .OrderBy(x => x)
-                                    .WithPrevious()
-                                    .Count(p => p.current - p.previous == searchPhraseLength));
-
-                            if (isCompound && successions == 0) // if it's compound and never repeats immediately, it is not needed
-                            {
-                                continue;
-                            }
-
-                            loops.Add(new()
-                            {
-                                SequenceIndex = r,
-                                Start = start,
-                                EndMovement = endMovement,
-                                Occurrences = foundFirstsFulls.Count,
-                                Successions = successions,
-                                Coverage = found.Select(x => sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex).ToHashSet(),
-                                FoundFirsts = foundFirsts.Select(x => sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex).ToHashSet(),
-                                Progression = searchPhrase,
-                                IsCompound = isCompound,
-                            });
-
-                            foreach (var (sequenceIndex, foundStartMovementIndex) in found)
-                            {
-                                participationsInLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
-                            }
-
-                            foreach (var (sequenceIndex, foundStartMovementIndex) in foundFirstsFulls) // mark each finding
-                            {
-                                startsOfLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
-                                endsOfLoopIds[sequenceIndex][foundStartMovementIndex + searchPhrase.Length].Add(loopId);
-                            }
-
-                            beginsWithKnownId ??= (loopId, 0);
-                            loopId++;
-                        }
-                        else
-                        {
-                            // a progression with this start and end doesn't exist more than once, a longer with the same start won't exist
-                            break; // break loop over endMovement, go to next start
                         }
                     }
+
+                    var found = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
+                    var foundFirsts = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
+                    var foundFirstsFulls = new HashSet<(int sequenceIndex, int foundStartMovementIndex)>();
+                    for (var sequenceIndex = 0; sequenceIndex < sequences.Count; sequenceIndex++) // look in every sequence
+                    {
+                        var lookInSequence = sequences[sequenceIndex];
+                        var firstMovementFromIndex = lookInSequence.FirstMovementFromIndex;
+
+                        // gather results
+                        var searchResult = FindMatchingSubsequences(lookInSequence, searchPhrase, true);
+                        found.AddRange(searchResult.found.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
+                        foundFirsts.AddRange(searchResult.foundFirsts.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
+                        foundFirstsFulls.AddRange(searchResult.foundFirstsFulls.Select(x => (sequenceIndex, x - firstMovementFromIndex)));
+                    }
+
+                    if (foundFirstsFulls.Count <= 1) // never repeats
+                    {
+                        // a progression with this start and end doesn't exist more than once, a longer with the same start won't exist
+                        break; // break loop over endMovement, go to next start
+                    }
+
+                    var isCompound = IsCompound(searchPhrase);
+
+                    var successions = foundFirstsFulls
+                        .GroupBy(x => x.sequenceIndex)
+                        .Sum(g => g
+                            .Select(x => x.foundStartMovementIndex)
+                            .OrderBy(x => x)
+                            .WithPrevious()
+                            .Count(p => p.current - p.previous == length));
+
+                    if (isCompound &&
+                        successions == 0) // if it's compound and never repeats immediately, it is not needed
+                    {
+                        continue;
+                    }
+
+                    loops.Add(new()
+                    {
+                        SequenceIndex = r,
+                        Start = start,
+                        Occurrences = foundFirstsFulls.Count,
+                        Successions = successions,
+                        Coverage = found.Select(x =>
+                                sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex)
+                            .ToHashSet(),
+                        FoundFirsts = foundFirsts.Select(x =>
+                                sequences[x.sequenceIndex].FirstMovementFromIndex + x.foundStartMovementIndex)
+                            .ToHashSet(),
+                        Progression = searchPhrase,
+                        IsCompound = isCompound,
+                    });
+
+                    foreach (var (sequenceIndex, foundStartMovementIndex) in found)
+                    {
+                        participationsInLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
+                    }
+
+                    foreach (var (sequenceIndex, foundStartMovementIndex) in
+                             foundFirstsFulls) // mark each finding
+                    {
+                        startsOfLoopIds[sequenceIndex][foundStartMovementIndex].Add(loopId);
+                        endsOfLoopIds[sequenceIndex][foundStartMovementIndex + searchPhrase.Length].Add(loopId);
+                    }
+
+                    beginsWithKnownId ??= (loopId, 0);
+                    loopId++;
                 }
             }
         }

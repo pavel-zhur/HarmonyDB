@@ -83,7 +83,7 @@ public class ProgressionsCacheLoader : CacheLoaderBase
                 await OnUpdated(progressionsProgress, progress);
             }
 
-            progressions[id] = _progressionsBuilder.BuildProgression(JsonSerializer.Deserialize<CompressedChordProgressionDataV1>(item.Contents)!.Decompress());
+            progressions[id] = _progressionsBuilder.BuildProgression(JsonSerializer.Deserialize<CompressedChordsProgressionDataV1>(item.Contents)!.Decompress());
         }
 
         foreach (var (externalId, i) in toGet.WithIndices())
@@ -99,7 +99,7 @@ public class ProgressionsCacheLoader : CacheLoaderBase
             try
             {
                 var chords = await _dataProvider.GetChords(externalId, false);
-                var progression = chords.Output.AsChords(new()).Select(x => _chordDataParser.GetProgressionData(x)).ToList();
+                var progression = chords.Output.AsChords(new()).Select(_chordDataParser.GetProgressionData).ToList();
 
                 await _dataProvider.SaveChordsProgression(externalId, progression);
                 progressionsProgress.Add(externalId);

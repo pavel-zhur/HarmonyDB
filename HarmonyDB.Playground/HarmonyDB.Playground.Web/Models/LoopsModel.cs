@@ -7,4 +7,6 @@ public record LoopsModel : LoopsRequest
     public bool IncludeTrace { get; init; }
 
     public bool JustForm { get; set; }
+
+    public bool IncludeRootsStatistics { get; init; }
 }

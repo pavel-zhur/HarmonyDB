@@ -54,6 +54,13 @@ public class Loops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
             LoopsRequestOrdering.OccurrencesDesc => results.OrderByDescending(x => x.TotalOccurrences),
             _ => throw new ArgumentOutOfRangeException()
         })
+            .Where(x => (x.IsCompound, request.Compound) switch
+            {
+                (_, LoopsRequestCompoundFilter.Both) => true,
+                (true, LoopsRequestCompoundFilter.Compound) => true,
+                (false, LoopsRequestCompoundFilter.Simple) => true,
+                _ => false,
+            })
             .Where(x => x.Length >= request.MinLength)
             .Where(x => x.Length <= (request.MaxLength ?? int.MaxValue))
             .Where(x => x.TotalSongs >= request.MinTotalSongs)

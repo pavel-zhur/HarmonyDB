@@ -385,11 +385,11 @@ else
     @if (_loopsMemory != null)
     {
         <div>
-            @foreach (var (_, id, title, chordsTitle, isCompound, _) in _loopsMemory.Value.titles.OrderBy(x => x.length))
+            @foreach (var (loop, id) in _loopsMemory.Value.loops.WithIndices().OrderBy(x => x.x.Length))
             {
-                <div style="@(isCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
-                    <span>@title</span>
-                    <b><span>@chordsTitle</span></b>
+                <div style="@(loop.IsCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
+                    <span>@ProgressionsVisualizer.GetLoopStatisticsTitle(_loopsMemory.Value.progression, loop)</span>
+                    <b><span>@ProgressionsVisualizer.GetLoopChordsTitle(_loopsMemory.Value.progression, loop)</span></b>
                 </div>
             }
         </div>
@@ -450,7 +450,7 @@ else
     
     private bool _loops;
     private int? _loopId;
-    private (List<(Loop loop, int id, string title, string chordsTitle, bool isCompound, int length)> titles, ChordsProgression progression)? _loopsMemory;
+    private (List<Loop> loops, ChordsProgression progression)? _loopsMemory;
     private IReadOnlyDictionary<int, string>? _loopsCustomAttributes;
 
     private bool _specialTonic;
@@ -815,7 +815,8 @@ else
         {
             var chords = _chords.Output.AsChords(_representationSettings);
             var progression = ProgressionsBuilder.BuildProgression(chords.Select(ChordDataParser.GetProgressionData).ToList());
-            _loopsMemory = (ProgressionsVisualizer.BuildLoopTitles(progression), progression);
+            var loops = ProgressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
+            _loopsMemory = (loops, progression);
 
             SetLoopsCustomAttributes();
 
@@ -828,7 +829,7 @@ else
 
     private void SetLoopsCustomAttributes()
     {
-        _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForLoop(_loopsMemory.Value.titles, _loopsMemory.Value.progression, _loopId);
+        _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForLoop(_loopsMemory.Value.loops, _loopsMemory.Value.progression, _loopId);
     }
 
     private async Task InvertSearch()

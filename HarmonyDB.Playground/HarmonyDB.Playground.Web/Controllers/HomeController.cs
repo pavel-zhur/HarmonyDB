@@ -78,7 +78,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                 alteration: songModel.Alteration);
 
             var chordsData = chords.Output.AsChords(representationSettings);
-            var chordsProgression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
+            var progression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
 
             representationSettings = representationSettings with
             {
@@ -103,22 +103,23 @@ namespace HarmonyDB.Playground.Web.Controllers
 
             if (songModel.DetectLoops)
             {
-                var loopTitles = _progressionsVisualizer.BuildLoopTitles(chordsProgression);
+                var loops = _progressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
                 if (songModel.LoopId.HasValue)
                 {
-                    var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loopTitles, chordsProgression, songModel.LoopId.Value);
+                    var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loops, progression, songModel.LoopId.Value);
 
                     representationSettings = representationSettings with { CustomAttributes = customAttributes };
                 }
 
-                ViewBag.LoopTitles = loopTitles;
+                ViewBag.Loops = loops;
+                ViewBag.Progression = progression;
             }
             else if (songModel.Highlight != null)
             {
                 var searchProgression = _inputParser.Parse(songModel.Highlight);
-                var found = _progressionsSearch.Search(chordsProgression.Once().ToList(), searchProgression);
+                var found = _progressionsSearch.Search(progression.Once().ToList(), searchProgression);
 
-                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForSearch(chordsProgression, found);
+                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForSearch(progression, found);
 
                 representationSettings = representationSettings with { CustomAttributes = customAttributes };
             }

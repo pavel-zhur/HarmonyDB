@@ -54,7 +54,7 @@ public class ChordDataParser
         }, main, root, fingering);
     }
 
-    public ChordProgressionDataV1 GetProgressionData(string chordData)
+    public ChordDataV1 GetProgressionData(string chordData)
     {
         var originalRepresentation = Regex.Replace(
             chordData,

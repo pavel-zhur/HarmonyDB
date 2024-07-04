@@ -71,7 +71,7 @@ public class DataProvider
         return progressions;
     }
 
-    public async Task SaveChordsProgression(string externalId, List<ChordProgressionDataV1> progression)
+    public async Task SaveChordsProgression(string externalId, List<ChordDataV1> progression)
     {
         using var _ = await _savingLock.LockAsync();
 
@@ -81,7 +81,7 @@ public class DataProvider
             new IndexedItem
             {
                 Key = key,
-                Contents = JsonSerializer.Serialize(CompressedChordProgressionDataV1.Compress(progression)),
+                Contents = JsonSerializer.Serialize(CompressedChordsProgressionDataV1.Compress(progression)),
                 Version = 1,
             }.Once().ToList());
         await _myIndexedDb.AddItems(

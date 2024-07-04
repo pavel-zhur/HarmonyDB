@@ -1,6 +1,5 @@
 ﻿using HarmonyDB.Common;
 using HarmonyDB.Index.Analysis.Services;
-using OneShelf.Common;
 using Xunit.Abstractions;
 
 namespace HarmonyDB.Index.Analysis.Tests
