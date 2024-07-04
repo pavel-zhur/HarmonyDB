@@ -92,6 +92,22 @@ public static class Extensions
         }
     }
 
+    public static IEnumerable<(T previous, T current)> AsPairs<T>(this IEnumerable<T> source)
+    {
+        T? previous = default;
+        foreach (var (x, isFirst) in source.WithIsFirst())
+        {
+            if (isFirst)
+            {
+                previous = x;
+                continue;
+            }
+
+            yield return (previous!, x);
+            previous = x;
+        }
+    }
+
     public static List<(List<T> chunk, TCriterium criterium)> ToChunks<T, TCriterium>(this IEnumerable<T> source, Func<T, TCriterium> criteriumGetter)
         where TCriterium : struct
     {
