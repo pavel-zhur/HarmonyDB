@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Services;
@@ -14,6 +15,11 @@ public class ProgressionsVisualizer
     public string GetLoopChordsTitle(ChordsProgression progression, Loop loop) =>
         string.Join(" ", Enumerable.Range(loop.Start, loop.Length).Append(loop.Start)
             .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
+            .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
+
+    public string GetLoopChordsTitle(ChordsProgression progression, LoopBlock loop) =>
+        string.Join(" ", Enumerable.Range(loop.StartIndex, loop.LoopLength).Append(loop.StartIndex)
+            .Select(i => progression.ExtendedHarmonyMovementsSequences[0].FirstMovementFromIndex + i)
             .Select(i => progression.HarmonySequence[i].harmonyGroup.HarmonyRepresentation));
 
     public IReadOnlyDictionary<int, string> BuildCustomAttributesForSearch(

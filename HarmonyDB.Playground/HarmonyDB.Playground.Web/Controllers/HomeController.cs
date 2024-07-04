@@ -22,12 +22,13 @@ namespace HarmonyDB.Playground.Web.Controllers
         private readonly IndexApiClient _indexApiClient;
         private readonly SourceApiClient _sourceApiClient;
         private readonly ProgressionsSearch _progressionsSearch;
+        private readonly IndexExtractor _indexExtractor;
         private readonly ProgressionsBuilder _progressionsBuilder;
         private readonly ChordDataParser _chordDataParser;
         private readonly InputParser _inputParser;
         private readonly ProgressionsVisualizer _progressionsVisualizer;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer, IndexExtractor indexExtractor)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
@@ -37,6 +38,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             _chordDataParser = chordDataParser;
             _inputParser = inputParser;
             _progressionsVisualizer = progressionsVisualizer;
+            _indexExtractor = indexExtractor;
         }
 
         public IActionResult Index()
@@ -101,12 +103,13 @@ namespace HarmonyDB.Playground.Web.Controllers
                     Main = x.main,
                 }));
 
-            var loops = _progressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
+            var compactHarmonyMovementsSequence = progression.Compact().ExtendedHarmonyMovementsSequences.First();
+            var loops = _indexExtractor.FindSimpleLoops(compactHarmonyMovementsSequence.Movements, compactHarmonyMovementsSequence.FirstRoot);
             if (songModel.LoopId.HasValue)
             {
-                var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loops, progression, songModel.LoopId.Value);
+                //var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loops, progression, songModel.LoopId.Value);
 
-                representationSettings = representationSettings with { CustomAttributes = customAttributes };
+                //representationSettings = representationSettings with { CustomAttributes = customAttributes };
             }
 
             ViewBag.Loops = loops;
