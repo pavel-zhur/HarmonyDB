@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class IndexHeadersCache : FileCacheBase<byte[], IndexHeaders>
+public class IndexHeadersCache : BytesFileCacheBase<IndexHeaders>
 {
     public IndexHeadersCache(ILogger<IndexHeadersCache> logger, IOptions<FileCacheBaseOptions> options)
         : base(logger, options)
