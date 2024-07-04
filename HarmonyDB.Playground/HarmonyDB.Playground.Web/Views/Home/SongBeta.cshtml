@@ -151,7 +151,7 @@
         List<LoopBlock> loops = ViewBag.Loops;
         @foreach (var (loop, id) in loops.WithIndices())
         {
-            var statisticsTitle = ":) ";
+            var statisticsTitle = ProgressionsVisualizer.GetLoopStatisticsTitle(loop);
             var chordsTitle = ProgressionsVisualizer.GetLoopChordsTitle(progression, loop);
             <li>
                 @if (id == Model.LoopId)

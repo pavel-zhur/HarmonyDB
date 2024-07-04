@@ -12,6 +12,9 @@ public class ProgressionsVisualizer
     public string GetLoopStatisticsTitle(ChordsProgression progression, Loop loop) =>
         $"{loop.Successions}/{loop.Occurrences}, {loop.Coverage.Sum(h => progression.HarmonySequence[h].harmonyGroup.SelectSingle(x => x.EndChordIndex - x.StartChordIndex + 1)) * 100 / progression.OriginalSequence.Count}%";
 
+    public string GetLoopStatisticsTitle(LoopBlock loop)
+        => $"{(loop.EndIndex - loop.StartIndex + 1) / (float)loop.LoopLength:#.##}x";
+
     public string GetLoopChordsTitle(ChordsProgression progression, Loop loop) =>
         string.Join(" ", Enumerable.Range(loop.Start, loop.Length).Append(loop.Start)
             .Select(i => progression.ExtendedHarmonyMovementsSequences[loop.SequenceIndex].FirstMovementFromIndex + i)
