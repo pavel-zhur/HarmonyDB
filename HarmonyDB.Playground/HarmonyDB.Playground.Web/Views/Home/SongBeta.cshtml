@@ -24,7 +24,7 @@
 
 <div>
     <h3 class="d-inline-block">@title</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Song", Model, new { target = "_blank" })
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "SongBeta", Model, new { target = "_blank" })
 </div>
 <ul>
     <li>
@@ -46,7 +46,7 @@
             }
             else
             {
-                @Html.ActionLink(i.Transposition(), "Song", Model with { Transpose = i })
+                @Html.ActionLink(i.Transposition(), "SongBeta", Model with { Transpose = i })
             }
         }
     </li>
@@ -69,13 +69,13 @@
             }
             else
             {
-                @Html.ActionLink(ViewLocalizer[alteration.title].Value, "Song", Model with { Alteration = alteration.alteration })
+                @Html.ActionLink(ViewLocalizer[alteration.title].Value, "SongBeta", Model with { Alteration = alteration.alteration })
             }
         }
     </li>
 
     <li>
-        @using (Html.BeginForm("Song", "Home", Model, FormMethod.Get))
+        @using (Html.BeginForm("SongBeta", "Home", Model, FormMethod.Get))
         {
             @Html.HiddenFor(x => x.Alteration)
             @Html.HiddenFor(x => x.Transpose)
@@ -109,20 +109,46 @@
     <li>
         @if (Model.IncludeTrace)
         {
-            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "SongBeta", Model with { IncludeTrace = false })
         }
         else
         {
-            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = true })
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "SongBeta", Model with { IncludeTrace = true })
         }
     </li>
+</ul>
+
+<h3 class="mt-3">@ViewLocalizer["Self Jumps"]</h3>
+<ul>
+    @{
+        List<LoopSelfMultiJumpBlock> selfJumps = ViewBag.SelfJumps;
+        ChordsProgression progression = ViewBag.Progression;
+        @foreach (var (selfJump, id) in selfJumps.WithIndices())
+        {
+            var statisticsTitle = ":) ";
+            var chordsTitle = ProgressionsVisualizer.GetLoopChordsTitle(progression, selfJump);
+            <li>
+                @if (id == Model.SelfJumpId)
+                {
+                    <span>@statisticsTitle</span>
+                    <b><span>@chordsTitle</span></b>
+                }
+                else
+                {
+                    <a style="@(Model.SelfJumpId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("SongBeta", values: Model with { SelfJumpId = id })">
+                        <span>@statisticsTitle</span>
+                        <b><span>@chordsTitle</span></b>
+                    </a>
+                }
+            </li>
+        }
+    }
 </ul>
 
 <h3 class="mt-3">@ViewLocalizer["Detected Loops"]</h3>
 <ul>
     @{
         List<LoopBlock> loops = ViewBag.Loops;
-        ChordsProgression progression = ViewBag.Progression;
         @foreach (var (loop, id) in loops.WithIndices())
         {
             var statisticsTitle = ":) ";
@@ -136,7 +162,7 @@
                 }
                 else
                 {
-                    <a style="@(Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id })">
+                    <a style="@(Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("SongBeta", values: Model with { LoopId = id })">
                         <span>@statisticsTitle</span>
                         <b><span>@chordsTitle</span></b>
                     </a>
