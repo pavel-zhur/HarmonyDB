@@ -1,28 +1,22 @@
-﻿using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Index.Analysis.Models.CompactV1;
+﻿using System.Runtime.InteropServices;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using HarmonyDB.Index.Analysis.Services;
-using HarmonyDB.Index.Analysis.Tests.Attempt.Models;
 
-namespace HarmonyDB.Index.Analysis.Tests.Attempt;
+namespace HarmonyDB.Index.Analysis.Services;
 
-public class Service
+public class IndexExtractor
 {
-    internal List<byte> CreateRoots(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
-    {
-        var roots = firstRoot
+    public List<byte> CreateRoots(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
+        => firstRoot
             .Once()
             .Concat(MemoryMarshal.ToEnumerable(sequence)
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
-        return roots;
-    }
-
-    internal List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
+    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
     {
         var roots = CreateRoots(sequence, firstRoot);
 
@@ -45,10 +39,11 @@ public class Service
 
             var movementIndexToLoopStart = indices[key];
             var loopStartRoot = roots[movementIndexToLoopStart + 1];
-            Assert.Equal(loopStartRoot, roots[movementIndex + 1]);
-            Assert.Equal(
-                movementIndexToLoopStart == -1 ? sequence.Span[0].FromType : sequence.Span[movementIndexToLoopStart].ToType,
-                sequence.Span[movementIndex].ToType);
+            if (loopStartRoot != roots[movementIndex + 1])
+                throw new("Could not have happened.");
+
+            if((movementIndexToLoopStart == -1 ? sequence.Span[0].FromType : sequence.Span[movementIndexToLoopStart].ToType) != sequence.Span[movementIndex].ToType)
+                throw new("Could not have happened.");
 
             var foundLoop = sequence.Slice(movementIndexToLoopStart + 1, movementIndex - movementIndexToLoopStart);
             var movementIndexInLoop = 0;
@@ -86,7 +81,7 @@ public class Service
         return loops;
     }
 
-    internal List<LoopSelfMultiJumpBlock> FindSelfJumps(ReadOnlyMemory<CompactHarmonyMovement> sequence, List<LoopBlock> loops)
+    public List<LoopSelfMultiJumpBlock> FindSelfJumps(ReadOnlyMemory<CompactHarmonyMovement> sequence, List<LoopBlock> loops)
         => loops
             .WithIndices()
             .GroupBy(x => x.x.Normalized)

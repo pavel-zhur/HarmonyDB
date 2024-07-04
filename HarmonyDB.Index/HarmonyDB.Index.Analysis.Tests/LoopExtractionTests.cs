@@ -2,16 +2,15 @@
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Services;
-using HarmonyDB.Index.Analysis.Tests.Attempt;
-using HarmonyDB.Index.Analysis.Tests.Attempt.Models;
 using HarmonyDB.Index.Analysis.Tools;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
-public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, Service service)
+public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor)
 {
     [Fact]
     public async Task HopeNoAmbiguousSelfJumps()
@@ -54,8 +53,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     }).ToArray();
 
                 var firstRoot = (byte)Random.Shared.Next(0, 12);
-                var loops = service.FindSimpleLoops(sequence, firstRoot);
-                var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+                var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+                var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
                 if (loopSelfJumpsBlocks.Count > 1)
                 {
@@ -79,8 +78,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void NoneShort()
     {
         var (sequence, firstRoot) = InputDeltas(1);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -91,8 +90,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void NoneLong()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Repeat(7, 11));
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Empty(loops);
@@ -113,8 +112,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }).ToArray();
 
         byte firstRoot = 0;
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Empty(loops);
@@ -135,8 +134,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }).ToArray();
 
         byte firstRoot = 0;
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loops);
@@ -147,8 +146,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void OneLong()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Repeat(7, 12), 0);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loops);
@@ -159,8 +158,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void EndingPlusOne()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7, 1]));
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(103, loops[^1].EndIndex);
@@ -171,8 +170,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void Ending()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7]));
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(103, loops[^1].EndIndex);
@@ -183,8 +182,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void Beginning()
     {
         var (sequence, firstRoot) = InputDeltas(new[] { 5, 7, 5, 7, 5 }.Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))));
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(0, loops[0].StartIndex);
@@ -200,8 +199,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             .Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))), 
             0);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(1, loops[0].StartIndex);
@@ -215,8 +214,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         for (var i = 0; i < 100; i++)
         {
             var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)));
-            var loops = service.FindSimpleLoops(sequence, firstRoot);
-            var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+            var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+            var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, false);
         }
     }
@@ -226,8 +225,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "C# F# C# F# C# G# C# G# C# G# C# G# F# C# F# C# F# C# F#";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -244,8 +243,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 4, 6,
             8, 4, 8, 4);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(2, loops.Count);
@@ -261,8 +260,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             13,
             8, 4, 8, 4);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(2, loops.Count);
@@ -280,8 +279,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             2, 2, 1, 1, 2, 1, 2, 1,
             2, 2, 1, 1, 2, 1, 2, 1);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(3, loops.Count);
@@ -306,8 +305,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         string sequenceChords)
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -329,11 +328,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     private (byte root1, int root2) ToNormalizedRoots((int rootIndex1, int rootIndex2) rootIndices, string normalized,
         byte normalizationRoot1, byte? normalizationRoot2 = null)
         => Loop.Deserialize(normalized)
-            .SelectSingle(s => (s, roots: service.CreateRoots(s, normalizationRoot1)))
+            .SelectSingle(s => (s, roots: indexExtractor.CreateRoots(s, normalizationRoot1)))
             .SelectSingle(r =>
                 normalizationRoot2 == null
                     ? (roots1: r.roots, roots2: r.roots)
-                    : (roots1: r.roots, roots2: service.CreateRoots(r.s, normalizationRoot2.Value)))
+                    : (roots1: r.roots, roots2: indexExtractor.CreateRoots(r.s, normalizationRoot2.Value)))
             .SelectSingle(r => (r.roots1[rootIndices.rootIndex1], r.roots2[rootIndices.rootIndex2]));
 
     [Fact]
@@ -343,8 +342,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         //                            4 1 4 1 4 1 4 1
         var sequenceChords = "C F C F C G C G C G C G F C F C F C F";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -385,8 +384,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         string sequenceChords)
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -409,8 +408,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "C F C F D G D G D G A E A E A E";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -434,8 +433,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "Am Dm F E Am Dm F E Am E Am Dm F E Am Dm F E Am E Am Dm F E";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks);
@@ -459,8 +458,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 3, 6,
             3, 3, 6);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(3, loops.Count);
@@ -479,8 +478,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 3, 6,
             3, 3, 6);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(3, loops.Count);
@@ -499,8 +498,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(3, loops.Count);
@@ -517,8 +516,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Single(loopSelfJumpsBlocks.Single().ChildJumps);
@@ -537,8 +536,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(2, loops.Count);
@@ -562,8 +561,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         Assert.Equal(3, loops.Count);
@@ -590,8 +589,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         {
             var (sequence, firstRoot) = InputChords(chords);
 
-            var loops = service.FindSimpleLoops(sequence, firstRoot);
-            var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+            var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+            var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
             Assert.Equal(2, loops.Count);
@@ -622,8 +621,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                 }).ToArray();
 
             var firstRoot = (byte)Random.Shared.Next(0, 12);
-            var loops = service.FindSimpleLoops(sequence, firstRoot);
-            var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+            var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+            var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, false);
         }
     }
@@ -635,8 +634,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void JointLoopIndicesCheck(int fromNormalizationRoot, int toNormalizationRoot, string inputChords)
     {
         var (sequence, firstRoot) = InputChords(inputChords);
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfJumpsBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
         var loopSelfMultiJumpBlock = loopSelfJumpsBlocks.Single();
@@ -651,8 +650,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void MultipleJumpsBlocks()
     {
         var (sequence, firstRoot) = InputChords("Am C D Am C D Am D Am C D E C D E C E C D E C D E");
-        var loops = service.FindSimpleLoops(sequence, firstRoot);
-        var loopSelfMultiJumpBlocks = service.FindSelfJumps(sequence, loops);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfMultiJumpBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         Assert.Equal(2, loopSelfMultiJumpBlocks.Count);
     }
     
@@ -666,7 +665,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         // sequence integrity test
         Assert.True(MemoryMarshal.ToEnumerable(sequence).WithPrevious().Skip(1).All(p => p.current.FromType == p.previous!.Value.ToType), "sequential to type and from type mismatch");
 
-        var roots = service.CreateRoots(sequence, firstRoot);
+        var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
         string CreateRootsTrace(IBlock block) => CreateRootsTraceByIndices(block.StartIndex, block.EndIndex);
 
@@ -718,8 +717,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     string? jumpPoints = null;
                     if (j.JumpPoints.HasValue)
                     {
-                        var normalizedRoots1 = service.CreateRoots(normalized, j.Loop1.NormalizationRoot);
-                        var normalizedRoots2 = service.CreateRoots(normalized, j.Loop2.NormalizationRoot);
+                        var normalizedRoots1 = indexExtractor.CreateRoots(normalized, j.Loop1.NormalizationRoot);
+                        var normalizedRoots2 = indexExtractor.CreateRoots(normalized, j.Loop2.NormalizationRoot);
                         jumpPoints = $"[{j.JumpPoints}] {normalizedRoots1[j.JumpPoints.Value.root1Index]} -> {normalizedRoots2[j.JumpPoints.Value.root2Index]}";
 
                         switch (j.Type)
@@ -737,8 +736,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
                     if (j.OverlapJumpPoints.HasValue)
                     {
-                        var normalizedRoots1 = service.CreateRoots(normalized, j.Loop1.NormalizationRoot);
-                        var normalizedRoots2 = service.CreateRoots(normalized, j.Loop2.NormalizationRoot);
+                        var normalizedRoots1 = indexExtractor.CreateRoots(normalized, j.Loop1.NormalizationRoot);
+                        var normalizedRoots2 = indexExtractor.CreateRoots(normalized, j.Loop2.NormalizationRoot);
                         Assert.Equal(normalizedRoots1[j.OverlapJumpPoints.Value.overlapStartRoot1Index], normalizedRoots2[j.OverlapJumpPoints.Value.overlapStartRoot2Index]);
                         jumpPoints = $"[{j.OverlapJumpPoints}] {normalizedRoots1[j.OverlapJumpPoints.Value.overlapStartRoot1Index]} -> {normalizedRoots2[j.OverlapJumpPoints.Value.overlapStartRoot2Index]}";
                     }
@@ -880,7 +879,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             }
 
             var normalized = Loop.Deserialize(loop.Normalized);
-            var normalizedRoots = service.CreateRoots(normalized, loop.NormalizationRoot);
+            var normalizedRoots = indexExtractor.CreateRoots(normalized, loop.NormalizationRoot);
             var normalizedRootsIndices = Enumerable.Range(0, loop.EndIndex - loop.StartIndex + 1)
                 .Prepend(-1 + normalized.Length)
                 .Select(x => x + loop.NormalizationShift)
