@@ -1,16 +1,20 @@
-﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
+﻿using System.Runtime.CompilerServices;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
-using OneShelf.Common;
 using Microsoft.Extensions.Options;
+using OneShelf.Common;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class LoopsStatistics2Cache : FileCacheBase<object, object>
+public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
 {
+    private const int ProbabilitiesLength = Note.Modulus * 2;
+
     private readonly ProgressionsCache _progressionsCache;
     private readonly IndexExtractor _indexExtractor;
     private readonly IndexHeadersCache _indexHeadersCache;
@@ -28,41 +32,9 @@ public class LoopsStatistics2Cache : FileCacheBase<object, object>
 
     protected override string Key => "LoopStatistics2";
 
-    protected override List<object> ToPresentationModel(object fileModel)
+    protected override List<LoopStatistics> ToPresentationModel(object fileModel)
     {
         throw new NotImplementedException();
-        //string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
-
-        //Logger.LogInformation("{count} unique songs participating in the loops statistics.", fileModel.Values.SelectMany(x => x.ExternalIds).Distinct().Count());
-
-        //return fileModel
-        //    .Select(l =>
-        //    {
-        //        var sequence = Loop.Deserialize(l.Key);
-        //        var rootsStatistics = Convert.FromBase64String(l.Value.Counts).AsIReadOnlyList();
-        //        var note = (byte)rootsStatistics.WithIndices().MaxBy(x => x.x).i;
-        //        return new LoopStatistics2
-        //        {
-        //            Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
-        //                .Once()
-        //                .Concat(
-        //                    MemoryMarshal.ToEnumerable(sequence)
-        //                    //.Take(sequence.Length - 1)
-        //                    .Select(m =>
-        //                    {
-        //                        note = Note.Normalize(note + m.RootDelta);
-        //                        return ToChord(note, m.ToType);
-        //                    }))),
-        //            Length = sequence.Length,
-        //            TotalOccurrences = l.Value.TotalOccurrences,
-        //            TotalSuccessions = l.Value.TotalSuccessions,
-        //            TotalSongs = l.Value.ExternalIds.Count,
-        //            RootsStatistics = rootsStatistics,
-        //        };
-        //    })
-        //    .OrderByDescending(x => x.TotalOccurrences)
-        //    .ThenByDescending(x => x.TotalSuccessions)
-        //    .ToList();
     }
 
     public async Task Rebuild()
@@ -71,34 +43,213 @@ public class LoopsStatistics2Cache : FileCacheBase<object, object>
         var indexHeaders = await _indexHeadersCache.Get();
 
         var songsKeys = GetSongsKeys(indexHeaders);
-        var loopsKeys = await GetLoopsKeys(progressions, songsKeys);
+        var known = await GetKnownSongsLoopsKeys(progressions, songsKeys);
+        var all = await GetAllSongsLoops(progressions);
 
-        var loopsKeysNormalized = loopsKeys.GroupBy(x => x.Key.normalized)
-            .OrderByDescending(x => x.Sum(x => x.Value.Sum(x => x.successions)))
+        var allExternalIds = all.Select(x => x.externalId).ToHashSet();
+
+        var initialSongsKeys = songsKeys.Where(x => allExternalIds.Contains(x.Key)).ToDictionary(x => x.Key, x =>
+        {
+            var result = CreateNewProbabilities(true);
+            result[ToIndex(x.Value.songRoot, x.Value.mode)] = 1;
+            return result;
+        });
+
+        initialSongsKeys.AddRange(allExternalIds
+            .Where(x => !initialSongsKeys.ContainsKey(x))
+            .Select(x => (p: x, CreateNewProbabilities(false))),
+            false);
+
+        var initialLoopsKeys = known
+            .GroupBy(x => x.normalized)
             .ToDictionary(
                 x => x.Key,
-                g => g
-                    .SelectMany(x =>
+                x => x
+                    .Select(x => (x.weight, index: ToIndex(x.loopRoot, x.mode)))
+                    .GroupBy(x => x.index, x => x.weight)
+                    .Select(g => (index: g.Key, weight: g.Sum()))
+                    .ToList()
+                    .SelectSingle(x =>
                     {
-                        return x.Value.Select(y => (
-                            y.normalizationRootNormalized,
-                            y.songMode,
-                            y.occurrences,
-                            y.successions,
-                            x.Key.externalId));
-                    })
-                    .GroupBy(x => (x.normalizationRootNormalized, x.songMode))
-                    .OrderByDescending(x => x.Sum(x => x.successions))
-                    .ToDictionary(x => x.Key,
-                        x => x.Select(x => (x.externalId, x.occurrences, x.successions)).ToList()));
+                        var result = CreateNewProbabilities(true);
+                        var total = x.Sum(x => x.weight);
+                        foreach (var (index, weight) in x)
+                        {
+                            result[index] = (float)weight / total;
+                        }
 
-        //await StreamCompressSerialize(await GetAllLoops(await _progressionsCache.Get()));
-        throw new NotImplementedException();
+                        return result;
+                    }));
+
+        initialLoopsKeys.AddRange(all
+            .Select(x => x.normalized)
+            .Where(x => !initialLoopsKeys.ContainsKey(x))
+            .Select(x => (x, CreateNewProbabilities(false))), 
+            false);
+
+        Balance(all, initialSongsKeys, initialLoopsKeys);
     }
 
-    private Dictionary<string, (byte root, ChordType type)> GetSongsKeys(IndexHeaders indexHeaders)
+    private void Balance(
+        List<(string normalized, string externalId, byte normalizationRoot, int weight)> all, 
+        Dictionary<string, float[]> songsKeys,
+        Dictionary<string, float[]> loopsKeys)
     {
-        return indexHeaders
+        var previousSongsKeys = songsKeys.ToDictionary(x => x.Key, x => x.Value.ToArray());
+        var previousLoopsKeys = loopsKeys.ToDictionary(x => x.Key, x => x.Value.ToArray());
+
+        var songLoops = all
+            .GroupBy(x => x.externalId)
+            .Select(g => (
+                externalId: g.Key,
+                loops: g
+                    .GroupBy(x => x.normalized)
+                    .Select(g => (
+                        normalized: g.Key,
+                        data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
+                    .ToList()))
+            .ToList();
+
+        var loopSongs = all
+            .GroupBy(x => x.normalized)
+            .Select(g => (
+                normalized: g.Key,
+                songs: g
+                    .GroupBy(x => x.externalId)
+                    .Select(g => (
+                        externalId: g.Key,
+                        data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
+                    .ToList()))
+            .ToList();
+
+        while (true)
+        {
+            songsKeys = CalculateSongsKeys(previousLoopsKeys, songLoops);
+            loopsKeys = CalculateLoopsKeys(previousSongsKeys, loopSongs);
+
+            var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
+            var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
+
+            _logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}");
+
+            previousLoopsKeys = loopsKeys;
+            previousSongsKeys = songsKeys;
+        }
+    }
+
+    private Dictionary<string, float[]> CalculateLoopsKeys(
+        Dictionary<string, float[]> songsKeys,
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs) 
+        => loopSongs.ToDictionary(
+            x => x.normalized, // for each loop
+            x => x.songs
+                .SelectMany(x => // for each song
+                {
+                    var songKeys = songsKeys[x.externalId]; // what keys that song is in (probabilities)
+                    var data = x.data; // loop containment in the song, with weights and normalizationRoot
+
+                    // Normalize(normalizationRoot - songRoot) == loopRoot
+                    // Normalize(normalizationRoot - loopRoot) == songRoot
+                    // Normalize(loopRoot + songRoot) == normalizationRoot
+
+                    return songKeys
+                        .WithIndices()
+                        .SelectMany(x =>
+                        {
+                            var (songRoot, chordType) = FromIndex(x.i);
+                            var songProbability = x.x;
+                            return data.Select(x =>
+                            {
+                                var loopRoot = Note.Normalize(x.normalizationRoot - songRoot);
+                                return (index: ToIndex(loopRoot, chordType), value: songProbability * x.weight);
+                            }).ToList();
+                        });
+                })
+                .ToList()
+                .SelectSingle(values =>
+                {
+                    var sum = values.Sum(x => x.value);
+                    var result = CreateNewProbabilities(true);
+                    foreach (var (index, value) in values)
+                    {
+                        result[index] = value / sum;
+                    }
+
+                    return result;
+                }));
+
+    private Dictionary<string, float[]> CalculateSongsKeys(
+        Dictionary<string, float[]> loopsKeys,
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops)
+        => songLoops.ToDictionary(
+            x => x.externalId, // for each song
+            x => x.loops
+                .SelectMany(x => // for each loop
+                {
+                    var loopKeys = loopsKeys[x.normalized]; // what keys that loop is in (probabilities)
+                    var data = x.data; // songs containing the loop, with weights and normalizationRoot
+
+                    // Normalize(normalizationRoot - songRoot) == loopRoot
+                    // Normalize(normalizationRoot - loopRoot) == songRoot
+                    // Normalize(loopRoot + songRoot) == normalizationRoot
+
+                    return loopKeys
+                        .WithIndices()
+                        .SelectMany(x =>
+                        {
+                            var (loopRoot, chordType) = FromIndex(x.i);
+                            var loopProbability = x.x;
+                            return data.Select(x =>
+                            {
+                                var songRoot = Note.Normalize(x.normalizationRoot - loopRoot);
+                                return (index: ToIndex(songRoot, chordType), value: loopProbability * x.weight);
+                            }).ToList();
+                        });
+                })
+                .ToList()
+                .SelectSingle(values =>
+                {
+                    var sum = values.Sum(x => x.value);
+                    var result = CreateNewProbabilities(true);
+                    foreach (var (index, value) in values)
+                    {
+                        result[index] = value / sum;
+                    }
+
+                    return result;
+                }));
+
+    private static float[] CreateNewProbabilities(bool empty)
+    {
+        var result = new float[ProbabilitiesLength];
+        if (!empty)
+        {
+            for (var i = 0; i < ProbabilitiesLength; i++)
+            {
+                result[i] = 1f / ProbabilitiesLength;
+            }
+        }
+
+        return result;
+    }
+
+    private (float average, float max, float sum) CalculateDelta(Dictionary<string, float[]> previousValues, Dictionary<string, float[]> values)
+    {
+        var all = previousValues
+            .SelectMany(p => p.Value.Zip(values[p.Key]).Select(p => Math.Abs(p.First - p.Second)))
+            .ToList();
+
+        return (all.Average(), all.Max(), all.Sum());
+    }
+
+    private static int GetWeight(int occurrences, int successions) => occurrences + successions * 2;
+
+    private static int ToIndex(byte root, ChordType chordType) => root * 2 + (int)chordType;
+
+    private static (byte root, ChordType chordType) FromIndex(int index) => ((byte)(index / 2), (ChordType)(index % 2));
+
+    private Dictionary<string, (byte songRoot, ChordType mode)> GetSongsKeys(IndexHeaders indexHeaders) =>
+        indexHeaders
             .Headers
             .Where(x => x.Value.BestTonality?.IsReliable == true)
             .Select(x =>
@@ -111,38 +262,38 @@ public class LoopsStatistics2Cache : FileCacheBase<object, object>
                         throw new("Root note not found.");
 
                     tonality = tonality.Substring(1);
-                    ChordType chordType;
+                    ChordType mode;
 
                     switch (tonality)
                     {
                         case "#":
                             note = note.Sharp();
-                            chordType = ChordType.Major;
+                            mode = ChordType.Major;
                             break;
                         case "b":
                             note = note.Flat();
-                            chordType = ChordType.Major;
+                            mode = ChordType.Major;
                             break;
                         case "#m":
                             note = note.Sharp();
-                            chordType = ChordType.Minor;
+                            mode = ChordType.Minor;
                             break;
                         case "bm":
                             note = note.Flat();
-                            chordType = ChordType.Minor;
+                            mode = ChordType.Minor;
                             break;
                         case "":
-                            chordType = ChordType.Major;
+                            mode = ChordType.Major;
                             break;
                         case "m":
-                            chordType = ChordType.Minor;
+                            mode = ChordType.Minor;
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(tonality), tonality,
                                 "Unexpected alteration / minority.");
                     }
 
-                    return ((string externalId, byte root, ChordType type)?)(x.Key, note.Value, chordType);
+                    return ((string externalId, byte songRoot, ChordType type)?)(x.Key, note.Value, mode);
                 }
                 catch (Exception e)
                 {
@@ -151,31 +302,30 @@ public class LoopsStatistics2Cache : FileCacheBase<object, object>
                 }
             })
             .Where(x => x.HasValue)
-            .ToDictionary(x => x.Value.externalId, x => (x.Value.root, x.Value.type));
-    }
+            .ToDictionary(x => x.Value.externalId, x => (x.Value.songRoot, x.Value.type));
 
-    private async Task<Dictionary<(string normalized, string externalId), List<(byte normalizationRootNormalized, ChordType songMode, int occurrences, int successions)>>> GetLoopsKeys(
+    private async Task<List<(string normalized, string externalId, byte loopRoot, ChordType mode, int weight)>> GetKnownSongsLoopsKeys(
         IReadOnlyDictionary<string, CompactChordsProgression> progressions,
-        Dictionary<string, (byte root, ChordType type)> songsKeys)
+        Dictionary<string, (byte songRoot, ChordType mode)> songsKeys)
     {
         var cc = 0;
         var cf = 0;
-        Dictionary<(string normalized, string externalId), List<(byte normalizationRootNormalized, ChordType songMode, int occurrences, int successions)>> result = new();
+        List<(string normalized, string externalId, byte loopRoot, ChordType mode, int weight)> result = new();
 
         await Parallel.ForEachAsync(progressions.Where(x => songsKeys.ContainsKey(x.Key)), (x, __) =>
         {
             var (externalId, compactChordsProgression) = x;
-            var (songRoot, songMode) = songsKeys[x.Key];
+            var (songRoot, mode) = songsKeys[x.Key];
             try
             {
-                var loopResults = new Dictionary<(string normalized, byte normalizationRootNormalized, ChordType songMode), (int occurrences, int successions)>();
+                var loopResults = new Dictionary<(string normalized, byte loopRoot, ChordType mode), (int occurrences, int successions)>();
                 foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
                 {
                     var loops = _indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
 
                     foreach (var loop in loops)
                     {
-                        var key = (loop.Normalized, Note.Normalize(loop.NormalizationRoot - songRoot), songMode);
+                        var key = (loop.Normalized, Note.Normalize(loop.NormalizationRoot - songRoot), mode);
                         var counters = loopResults.GetValueOrDefault(key);
                         loopResults[key] = (
                             counters.occurrences + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength,
@@ -186,17 +336,62 @@ public class LoopsStatistics2Cache : FileCacheBase<object, object>
                 }
 
                 var items = loopResults
-                    .GroupBy(p => (p.Key.normalized, externalId))
-                    .Select(g => (
-                        g.Key,
-                        g
-                            .Select(x => (x.Key.normalizationRootNormalized, x.Key.songMode, x.Value.occurrences, x.Value.successions))
-                            .ToList()))
+                    .Select(p => (p.Key.normalized, externalId, p.Key.loopRoot, p.Key.mode, GetWeight(p.Value.occurrences, p.Value.successions)))
                     .ToList();
 
                 lock (result)
                 {
-                    result.AddRange(items, false);
+                    result.AddRange(items);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error adding the loop.");
+                Interlocked.Increment(ref cf);
+            }
+
+            return ValueTask.CompletedTask;
+        });
+
+        return result;
+    }
+
+    private async Task<List<(string normalized, string externalId, byte normalizationRoot, int weight)>> GetAllSongsLoops(
+        IReadOnlyDictionary<string, CompactChordsProgression> progressions)
+    {
+        var cc = 0;
+        var cf = 0;
+        List<(string normalized, string externalId, byte normalizationRoot, int weight)> result = new();
+
+        await Parallel.ForEachAsync(progressions, (x, __) =>
+        {
+            var (externalId, compactChordsProgression) = x;
+            try
+            {
+                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (int occurrences, int successions)>();
+                foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
+                {
+                    var loops = _indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
+
+                    foreach (var loop in loops)
+                    {
+                        var key = (loop.Normalized, loop.NormalizationRoot);
+                        var counters = loopResults.GetValueOrDefault(key);
+                        loopResults[key] = (
+                            counters.occurrences + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength,
+                            counters.successions + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength - 1);
+                    }
+
+                    if (cc++ % 1000 == 0) Logger.LogInformation($"{cc} s, {cf} f");
+                }
+
+                var items = loopResults
+                    .Select(p => (p.Key.normalized, externalId, p.Key.normalizationRoot, GetWeight(p.Value.occurrences, p.Value.successions)))
+                    .ToList();
+
+                lock (result)
+                {
+                    result.AddRange(items);
                 }
             }
             catch (Exception e)
