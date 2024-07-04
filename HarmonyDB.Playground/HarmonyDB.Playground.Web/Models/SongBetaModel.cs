@@ -22,5 +22,6 @@ public record SongBetaModel
 
     public bool ShowSus { get; init; } = true;
 
+    [Obsolete]
     public int? LoopId { get; init; }
 }
