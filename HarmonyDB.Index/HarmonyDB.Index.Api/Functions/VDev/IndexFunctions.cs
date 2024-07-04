@@ -21,12 +21,13 @@ public class IndexFunctions
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
+    private readonly LoopsStatistics2Cache _loopsStatistics2Cache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly FullTextSearchCache _fullTextSearchCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, LoopsStatistics2Cache loopsStatistics2Cache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -36,6 +37,7 @@ public class IndexFunctions
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
         _fullTextSearchCache = fullTextSearchCache;
+        _loopsStatistics2Cache = loopsStatistics2Cache;
 
         securityContext.InitService();
     }
@@ -158,6 +160,13 @@ public class IndexFunctions
     {
         await _loopsStatisticsCache.Rebuild();
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
+    }
+
+    [Function(nameof(VDevRebuildLoopStatistics2Cache))]
+    public async Task<IActionResult> VDevRebuildLoopStatistics2Cache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _loopsStatistics2Cache.Rebuild();
+        return new OkObjectResult((await _loopsStatistics2Cache.Get()).Count);
     }
 
     [Function(nameof(VDevFindAndCount))]
