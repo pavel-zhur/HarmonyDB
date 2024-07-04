@@ -261,16 +261,15 @@ public class ProgressionsBuilder
     }
 
     internal static IReadOnlyList<HarmonyMovementsSequence> GetHarmonyMovementsSequences(List<HarmonyGroup> sequence, Func<HarmonyGroup, bool> isValid) =>
-        sequence.WithPrevious()
-            .Where(x => x.previous != null)
-            .ToChunks(pair => isValid(pair.previous!) && isValid(pair.current))
+        sequence.AsPairs()
+            .ToChunks(pair => isValid(pair.previous) && isValid(pair.current))
             .Where(c => c.criterium)
             .Select(c => new HarmonyMovementsSequence
             {
                 FirstRoot = c.chunk.First().previous!.HarmonyData!.Root,
                 Movements = c.chunk.Select(p =>
                 {
-                    var delta = Note.Normalize(p.current.HarmonyData!.Root - p.previous!.HarmonyData!.Root);
+                    var delta = Note.Normalize(p.current.HarmonyData!.Root - p.previous.HarmonyData!.Root);
                     var titleDelta = delta > 7 ? delta - Note.Modulus : delta;
 
                     return new HarmonyMovement
