@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Services;
@@ -39,6 +40,9 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
 
     public async Task Rebuild()
     {
+        //await Try();
+        //return;
+        
         var progressions = await _progressionsCache.Get();
         var indexHeaders = await _indexHeadersCache.Get();
 
@@ -46,18 +50,29 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         var known = await GetKnownSongsLoopsKeys(progressions, songsKeys);
         var all = await GetAllSongsLoops(progressions);
 
+        //var knownExternalIds = known.Select(x => x.externalId).ToHashSet();
+        //all = all
+        //    .Where(x => knownExternalIds.Contains(x.externalId))
+        //    .Concat(all.GroupBy(x => x.externalId).Where(x => !knownExternalIds.Contains(x.Key)).Take(20000).SelectMany(x => x))
+        //    .OrderBy(_ => Random.Shared.NextDouble())
+        //    .ToList();
+
         var allExternalIds = all.Select(x => x.externalId).ToHashSet();
 
-        var initialSongsKeys = songsKeys.Where(x => allExternalIds.Contains(x.Key)).ToDictionary(x => x.Key, x =>
-        {
-            var result = CreateNewProbabilities(true);
-            result[ToIndex(x.Value.songRoot, x.Value.mode)] = 1;
-            return result;
-        });
+        var initialSongsKeys = songsKeys
+            .Where(x => allExternalIds.Contains(x.Key))
+            .ToDictionary(
+                x => x.Key,
+                x =>
+                {
+                    var result = CreateNewProbabilities(true);
+                    result[ToIndex(x.Value.songRoot, x.Value.mode)] = 1;
+                    return (probabilities: result, stable: true);
+                });
 
         initialSongsKeys.AddRange(allExternalIds
             .Where(x => !initialSongsKeys.ContainsKey(x))
-            .Select(x => (p: x, CreateNewProbabilities(false))),
+            .Select(x => (p: x, (CreateNewProbabilities(false), false))),
             false);
 
         var initialLoopsKeys = known
@@ -78,25 +93,50 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                             result[index] = (float)weight / total;
                         }
 
-                        return result;
+                        return (probabilities: result, stable: false);
                     }));
 
         initialLoopsKeys.AddRange(all
             .Select(x => x.normalized)
             .Where(x => !initialLoopsKeys.ContainsKey(x))
-            .Select(x => (x, CreateNewProbabilities(false))), 
+            .Select(x => (x, (CreateNewProbabilities(false), false))), 
             false);
 
         Balance(all, initialSongsKeys, initialLoopsKeys);
     }
 
-    private void Balance(
-        List<(string normalized, string externalId, byte normalizationRoot, int weight)> all, 
-        Dictionary<string, float[]> songsKeys,
-        Dictionary<string, float[]> loopsKeys)
+    private async Task Try()
     {
-        var previousSongsKeys = songsKeys.ToDictionary(x => x.Key, x => x.Value.ToArray());
-        var previousLoopsKeys = loopsKeys.ToDictionary(x => x.Key, x => x.Value.ToArray());
+        //Balance(new()
+        //    {
+        //    ("L1", "S1", 5, 10),
+        //    ("L2", "S1", 1, 10),
+        //    ("L3", "S1", 8, 10),
+
+        //    ("L1", "S2", 6, 10),
+        //    ("L2", "S2", 2, 10),
+        //    ("L3", "S2", 9, 10),
+        //},
+        //    new Dictionary<string, float[]>
+        //    {
+        //        { "S1", Enumerable.Range(0, 24).Select(x => x == 2 ? 1f/5 : x == 5 ? 4f / 5 : 0).ToArray() },
+        //        { "S2", CreateNewProbabilities(false) },
+        //    },
+        //    new Dictionary<string, float[]>
+        //    {
+        //        { "L1", CreateNewProbabilities(false) },
+        //        { "L2", CreateNewProbabilities(false) },
+        //        { "L3", CreateNewProbabilities(false) },
+        //    });
+    }
+
+    private void Balance(
+        List<(string normalized, string externalId, byte normalizationRoot, int weight)> all,
+        Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
+        Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
+    {
+        Dictionary<string, (float[] probabilities, bool stable)> previousSongsKeys = songsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
+        Dictionary<string, (float[] probabilities, bool stable)> previousLoopsKeys = loopsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
 
         var songLoops = all
             .GroupBy(x => x.externalId)
@@ -124,25 +164,27 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
 
         while (true)
         {
-            songsKeys = CalculateSongsKeys(previousLoopsKeys, songLoops);
-            loopsKeys = CalculateLoopsKeys(previousSongsKeys, loopSongs);
+            CalculateSongsKeys(previousLoopsKeys, songLoops, songsKeys);
+            CalculateLoopsKeys(previousSongsKeys, loopSongs, loopsKeys);
 
             var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
             var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
 
             _logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}");
 
-            previousLoopsKeys = loopsKeys;
-            previousSongsKeys = songsKeys;
+            (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
+            (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);
         }
     }
 
-    private Dictionary<string, float[]> CalculateLoopsKeys(
-        Dictionary<string, float[]> songsKeys,
-        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs) 
-        => loopSongs.ToDictionary(
-            x => x.normalized, // for each loop
-            x => x.songs
+    private void CalculateLoopsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)>
+            loopSongs, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    {
+        Parallel.ForEach(loopSongs, x =>
+        {
+            if (result[x.normalized].stable) return;
+            var values = x.songs // for each loop
                 .SelectMany(x => // for each song
                 {
                     var songKeys = songsKeys[x.externalId]; // what keys that song is in (probabilities)
@@ -153,6 +195,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                     // Normalize(loopRoot + songRoot) == normalizationRoot
 
                     return songKeys
+                        .probabilities
                         .WithIndices()
                         .SelectMany(x =>
                         {
@@ -165,25 +208,40 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                             }).ToList();
                         });
                 })
-                .ToList()
-                .SelectSingle(values =>
+                .GroupBy(x => x.index)
+                .Select(g => (index: g.Key, value: g.Sum(x => x.value)))
+                .ToList();
+
+            var sum = values.Sum(x => x.value);
+            
+            var probabilities = result[x.normalized].probabilities;
+
+            if (sum <= float.Epsilon)
+            {
+                for (var i = 0; i < ProbabilitiesLength; i++)
                 {
-                    var sum = values.Sum(x => x.value);
-                    var result = CreateNewProbabilities(true);
-                    foreach (var (index, value) in values)
-                    {
-                        result[index] = value / sum;
-                    }
+                    probabilities[i] = 1f / ProbabilitiesLength;
+                }
+            }
+            else
+            {
+                probabilities.Initialize();
+                foreach (var (index, value) in values)
+                {
+                    probabilities[index] = value / sum;
+                }
+            }
+        });
+    }
 
-                    return result;
-                }));
-
-    private Dictionary<string, float[]> CalculateSongsKeys(
-        Dictionary<string, float[]> loopsKeys,
-        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops)
-        => songLoops.ToDictionary(
-            x => x.externalId, // for each song
-            x => x.loops
+    private void CalculateSongsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)>
+            songLoops, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    {
+        Parallel.ForEach(songLoops, x =>
+        {
+            if (result[x.externalId].stable) return;
+            var values = x.loops // for each song
                 .SelectMany(x => // for each loop
                 {
                     var loopKeys = loopsKeys[x.normalized]; // what keys that loop is in (probabilities)
@@ -194,6 +252,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                     // Normalize(loopRoot + songRoot) == normalizationRoot
 
                     return loopKeys
+                        .probabilities
                         .WithIndices()
                         .SelectMany(x =>
                         {
@@ -206,18 +265,30 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                             }).ToList();
                         });
                 })
-                .ToList()
-                .SelectSingle(values =>
-                {
-                    var sum = values.Sum(x => x.value);
-                    var result = CreateNewProbabilities(true);
-                    foreach (var (index, value) in values)
-                    {
-                        result[index] = value / sum;
-                    }
+                .GroupBy(x => x.index)
+                .Select(g => (index: g.Key, value: g.Sum(x => x.value)))
+                .ToList();
 
-                    return result;
-                }));
+            var sum = values.Sum(x => x.value);
+
+            var probabilities = result[x.externalId].probabilities;
+            if (sum <= float.Epsilon)
+            {
+                for (var i = 0; i < ProbabilitiesLength; i++)
+                {
+                    probabilities[i] = 1f / ProbabilitiesLength;
+                }
+            }
+            else
+            {
+                probabilities.Initialize();
+                foreach (var (index, value) in values)
+                {
+                    probabilities[index] = value / sum;
+                }
+            }
+        });
+    }
 
     private static float[] CreateNewProbabilities(bool empty)
     {
@@ -233,10 +304,10 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         return result;
     }
 
-    private (float average, float max, float sum) CalculateDelta(Dictionary<string, float[]> previousValues, Dictionary<string, float[]> values)
+    private (float average, float max, float sum) CalculateDelta(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> previousValues, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> values)
     {
         var all = previousValues
-            .SelectMany(p => p.Value.Zip(values[p.Key]).Select(p => Math.Abs(p.First - p.Second)))
+            .SelectMany(p => p.Value.probabilities.Zip(values[p.Key].probabilities).Select(p => Math.Abs(p.First - p.Second)))
             .ToList();
 
         return (all.Average(), all.Max(), all.Sum());
