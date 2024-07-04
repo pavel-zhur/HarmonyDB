@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Tests.Attempt.Models;
+﻿namespace HarmonyDB.Index.Analysis.Models.Index;
 
 public interface IBlock
 {
