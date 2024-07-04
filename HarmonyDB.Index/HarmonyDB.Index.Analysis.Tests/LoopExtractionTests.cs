@@ -12,6 +12,23 @@ namespace HarmonyDB.Index.Analysis.Tests;
 
 public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor)
 {
+    [InlineData("Am D G E Am D G E Am D G E Am D G E", 5)] // normalized start of Am-D-G-E is D.
+    [InlineData("Gm C F D Gm C F D Gm C F D Gm C F D", 3)]
+    [InlineData("Bb G E Am D G E Am D G E Am D G E", 5)]
+    [InlineData("Bb Am D G E Am D G E Am D G E Am D G E", 5)]
+    [InlineData("F# Gm C F D Gm C F D Gm C F D Gm C F D", 3)]
+    [Theory]
+    public void NormalizationRootInterpretationCorrect(string chordsInput, byte expectedNormalizedRoot)
+    {
+        var (sequence, firstRoot) = InputChords(chordsInput);
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
+
+        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+
+        Assert.Equal(expectedNormalizedRoot, loops.Single().NormalizationRoot);
+    }
+
     [Fact]
     public async Task HopeNoAmbiguousSelfJumps()
     {
