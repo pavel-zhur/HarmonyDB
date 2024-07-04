@@ -59,7 +59,7 @@ public class ChordDataParser
         var originalRepresentation = Regex.Replace(
             chordData,
             NotePattern,
-            match => new Note(int.Parse(match.Groups[1].Value), ParseNoteAlteration(match.Groups[2].Value)).Representation(new()));
+            match => new Note(byte.Parse(match.Groups[1].Value), ParseNoteAlteration(match.Groups[2].Value)).Representation(new()));
 
         var chord = GetChord(chordData);
         if (!chord.HasValue)
