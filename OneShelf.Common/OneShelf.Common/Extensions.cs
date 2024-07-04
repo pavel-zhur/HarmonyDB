@@ -19,6 +19,9 @@ public static class Extensions
     public static bool AnyDuplicates<T>(this IEnumerable<T> source, out T? firstDuplicate)
         => source.AnyDuplicates(x => x, out firstDuplicate);
 
+    public static bool AnyDuplicates<T>(this IEnumerable<T> source)
+        => source.AnyDuplicates(x => x, out _);
+
     public static bool AnyDuplicates<TSource, TItem>(this IEnumerable<TSource> source, Func<TSource, TItem> selector, out TItem? firstDuplicate)
     {
         var group = source.GroupBy(selector).FirstOrDefault(x => x.Count() > 1);
