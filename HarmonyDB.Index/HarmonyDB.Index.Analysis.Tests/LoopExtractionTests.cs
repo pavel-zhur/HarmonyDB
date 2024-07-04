@@ -691,7 +691,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         bool trace = true)
     {
         // sequence integrity test
-        Assert.True(MemoryMarshal.ToEnumerable(sequence).WithPrevious().Skip(1).All(p => p.current.FromType == p.previous!.Value.ToType), "sequential to type and from type mismatch");
+        Assert.True(MemoryMarshal.ToEnumerable(sequence).WithPrevious().Skip(1).All(p => p.current.FromType == p.previous!.Value.ToType), 
+            "sequential to type and from type mismatch");
+
+        Assert.False(loops.Select(l => l.StartIndex).AnyDuplicates());
+        Assert.False(loops.Select(l => l.EndIndex).AnyDuplicates());
+        Assert.False(loopSelfJumpsBlocks.Select(l => l.StartIndex).AnyDuplicates());
+        Assert.False(loopSelfJumpsBlocks.Select(l => l.EndIndex).AnyDuplicates());
 
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
