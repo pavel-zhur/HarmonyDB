@@ -14,5 +14,5 @@ public record CompactLoopStatistics
     public int TotalSuccessions { get; set; }
 
     [JsonPropertyName("c")]
-    public required string Counts { get; set; }
+    public required string Counts { get; init; }
 }
