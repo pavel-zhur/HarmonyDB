@@ -138,7 +138,7 @@ public static class Extensions
         }
     }
 
-    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> items, bool overwrite) 
+    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, IEnumerable<(TKey key, TValue value)> items, bool overwrite)
         where TKey : notnull
     {
         foreach (var (key, value) in items)
