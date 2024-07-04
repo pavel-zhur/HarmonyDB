@@ -13,10 +13,9 @@ public abstract class BytesFileCacheBase<TPresentationModel> : FileCacheBase<byt
 
     protected override async Task<byte[]?> StreamDeserialize(Stream stream)
     {
-        var result = new byte[stream.Length];
-        var length = await stream.ReadAsync(result, 0, result.Length);
-        if (length != stream.Length) throw new("Fewer bytes are read than the stream length. Could not have happened.");
-        return result;
+        using var result = new MemoryStream();
+        await stream.CopyToAsync(result);
+        return result.ToArray();
     }
 
     protected override async Task StreamSerialize(Stream stream, byte[] model)
