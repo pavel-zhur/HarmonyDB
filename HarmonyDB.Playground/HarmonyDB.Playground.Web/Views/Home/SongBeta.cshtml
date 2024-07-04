@@ -162,7 +162,7 @@
                 }
                 else
                 {
-                    <a style="@(Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("SongBeta", values: Model with { LoopId = id })">
+                    <a style="@(!loop.AllChordsRepeatAtLeastTwice ? "color: darkgray" : Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("SongBeta", values: Model with { LoopId = id })">
                         <span>@statisticsTitle</span>
                         <b><span>@chordsTitle</span></b>
                     </a>
