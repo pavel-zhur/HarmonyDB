@@ -9,6 +9,7 @@ public static class ServiceCollectionExtensions
         .AddSingleton<ChordDataParser>()
         .AddSingleton<ProgressionsBuilder>()
         .AddSingleton<ProgressionsVisualizer>()
+        .AddSingleton<IndexExtractor>()
         .AddSingleton<InputParser>()
         .AddSingleton<ProgressionsSearch>();
 }
