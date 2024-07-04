@@ -55,7 +55,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             using var _ = await _lock.LockAsync();
             await using var file = File.OpenWrite(FilePath);
             await using var gzip = new GZipStream(file, CompressionMode.Compress);
-            await JsonSerializer.SerializeAsync(gzip, model);
+            await StreamSerialize(gzip, model);
             _cache = new()
             {
                 Data = ToPresentationModel(model),
@@ -68,13 +68,23 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             using var _ = await _lock.LockAsync();
             var stream = await blobClient1.OpenWriteAsync(true);
             await using var gzip = new GZipStream(stream, CompressionMode.Compress);
-            await JsonSerializer.SerializeAsync(gzip, model);
+            await StreamSerialize(gzip, model);
         }
         else
         {
             throw new ArgumentOutOfRangeException(nameof(_options.WriteSource), _options.WriteSource,
                 "The write source is out of range.");
         }
+    }
+
+    protected virtual async Task<TFileModel?> StreamDeserialize(Stream stream)
+    {
+        return await JsonSerializer.DeserializeAsync<TFileModel>(stream);
+    }
+
+    protected virtual async Task StreamSerialize(Stream stream, TFileModel model)
+    {
+        await JsonSerializer.SerializeAsync(stream, model);
     }
 
     private async Task<TFileModel?> StreamDecompressDeserialize()
@@ -85,7 +95,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
             await using var file = File.OpenRead(FilePath);
             await using var gzip = new GZipStream(file, CompressionMode.Decompress);
-            return JsonSerializer.Deserialize<TFileModel>(gzip)!;
+            return await StreamDeserialize(gzip);
         }
 
         if (_options.ReadSource == FileCacheSource.Storage)
@@ -96,7 +106,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
                 var blobClient = client.GetBlobClient(FileName);
                 var stream = await blobClient.OpenReadAsync();
                 await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-                return JsonSerializer.Deserialize<TFileModel>(gzip)!;
+                return await StreamDeserialize(gzip);
             }
             catch (RequestFailedException e) when (e.Status == 404)
             {
