@@ -72,8 +72,36 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             return counter;
         }
     }
+    
+    [Fact]
+    public void SelfJumpsDifferentDeltasNotFound()
+    {
+        var (sequence, firstRoot) = InputChords("C A C D C A C D C A C D C A C");
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
+        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+        Assert.Empty(loopSelfJumpsBlocks);
+    }
+    
+    [Fact]
+    public void SelfJumpsSameDeltaNoAmbiguity()
+    {
+        var (sequence, firstRoot) = InputChords(
+            "C F C G C F C G C F C G C F C G C F C G C A#m" +
+            " C G C F C G C F C G C F C G C F C G C F C G C Bm" +
+            " F C G C F C G C F C G C F C G C F C G C Bm" +
+            " G C F C G C F C G C F C G C F C G C F C G C");
+        var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot);
+        var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
+        TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
+        Assert.Equal(4, loopSelfJumpsBlocks.Count);
+
+        // important: same normalization
+        Assert.Single(loopSelfJumpsBlocks.Select(x => x.Normalized).Distinct());
+    }
+    
     [Fact]
     public void NoneShort()
     {
