@@ -90,9 +90,7 @@ public class ProgressionsSearch
 
                 if (harmonyGroupsToo)
                 {
-                    result.harmonyGroupsWithIsFirst.AddRange(totalFound.Select(i =>
-                        new KeyValuePair<(ISearchableChordsProgression progression, int index), bool>(
-                            (progression, i), totalFoundFirsts!.Contains(i))), false);
+                    result.harmonyGroupsWithIsFirst.AddRange(totalFound.Select(i => ((progression, i), totalFoundFirsts!.Contains(i))), false);
                 }
 
                 if (result.foundProgressionsWithCoverage.Count == top)
