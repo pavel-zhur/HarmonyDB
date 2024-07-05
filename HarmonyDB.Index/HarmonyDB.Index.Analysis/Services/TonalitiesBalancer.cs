@@ -32,7 +32,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
         var successfulInARow = 0;
         var iteration = 0;
-        var timestamp = DateTime.Now.Ticks;
         while (true)
         {
             var started = DateTime.Now;
@@ -58,8 +57,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 successfulInARow = 0;
             }
 
-            await Save(timestamp, iteration, songsKeys, loopsKeys);
-
             var saving = (DateTime.Now - started).TotalSeconds;
 
             if (successfulInARow > 3) break;
@@ -78,27 +75,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 ? (probabilities: stableSongsKeys[x.Key].probabilities.AsIReadOnlyList(), despiteStable: true)
                 : (probabilities: x.Value.probabilities.AsIReadOnlyList(), despiteStable: false)),
             loopsKeys.ToDictionary(x => x.Key, x => x.Value.probabilities));
-    }
-
-    private async Task Save(
-        long timestamp, 
-        int iteration,
-        Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
-        Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
-    {
-        await File.WriteAllTextAsync($"iteration.{timestamp}.{iteration}.json", JsonSerializer.Serialize(new
-        {
-            songsKeys = songsKeys.Select(p => new
-            {
-                p.Key,
-                p.Value.probabilities,
-            }),
-            loopsKeys = loopsKeys.Select(p => new
-            {
-                p.Key,
-                p.Value.probabilities,
-            }),
-        }));
     }
 
     private static List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> loops)> ExtractNestedGroups(
