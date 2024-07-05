@@ -15,8 +15,8 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
         Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
     {
-        Dictionary<string, (float[] probabilities, bool stable)> previousSongsKeys = songsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
-        Dictionary<string, (float[] probabilities, bool stable)> previousLoopsKeys = loopsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
+        var previousSongsKeys = Clone(songsKeys);
+        var previousLoopsKeys = Clone(loopsKeys);
 
         var songLoops = all
             .GroupBy(x => x.externalId)
@@ -67,6 +67,11 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
             (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);
         }
+    }
+
+    private static Dictionary<string, (float[], bool stable)> Clone(Dictionary<string, (float[] probabilities, bool stable)> keys)
+    {
+        return keys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
     }
 
     public async Task<List<(string normalized, string externalId, byte loopRoot, ChordType mode, int weight)>> GetKnownSongsLoopsKeys(
@@ -226,9 +231,10 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         return (note.Value, mode);
     }
 
-    private void CalculateLoopsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
-        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)>
-            loopSongs, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    private void CalculateLoopsKeys(
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs, 
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
     {
         Parallel.ForEach(loopSongs, x =>
         {
@@ -283,9 +289,10 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         });
     }
 
-    private void CalculateSongsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
-        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)>
-            songLoops, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    private void CalculateSongsKeys(
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops,
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
     {
         Parallel.ForEach(songLoops, x =>
         {
