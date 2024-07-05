@@ -46,7 +46,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
 
             var deltas = (DateTime.Now - started).TotalSeconds;
-            started = DateTime.Now;
 
             if (songsDelta.max < 0.01 && loopsDelta.max < 0.01)
             {
