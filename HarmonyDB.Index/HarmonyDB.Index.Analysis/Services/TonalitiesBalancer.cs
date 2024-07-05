@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using HarmonyDB.Common.Representations.OneShelf;
+﻿using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models;
 using Microsoft.Extensions.Logging;
@@ -256,14 +254,14 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
     private void Calculate(
         IReadOnlyDictionary<string, (float[] probabilities, bool stable)> innerKeys,
-        List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> songs)> nestedGroups, 
+        List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> innerData)> nestedGroups, 
         IReadOnlyDictionary<string, (float[] probabilities, bool stable)> outputOuterKeys)
     {
         Parallel.ForEach(nestedGroups, x =>
         {
             // for each outer object
             if (outputOuterKeys[x.outerKey].stable) return;
-            var values = x.songs
+            var values = x.innerData
                 .SelectMany(x => // for each inner object
                 {
                     var innerKey = innerKeys[x.innerKey]; // what keys the inner object is in (probabilities)
