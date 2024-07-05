@@ -11,5 +11,6 @@ public static class ServiceCollectionExtensions
         .AddSingleton<ProgressionsVisualizer>()
         .AddSingleton<IndexExtractor>()
         .AddSingleton<InputParser>()
-        .AddSingleton<ProgressionsSearch>();
+        .AddSingleton<ProgressionsSearch>()
+        .AddSingleton<TonalitiesBalancer>();
 }
