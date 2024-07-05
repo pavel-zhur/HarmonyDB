@@ -159,4 +159,7 @@
   <data name="Source" xml:space="preserve">
     <value>Коллекция</value>
   </data>
+  <data name="Tonality" xml:space="preserve">
+    <value>Тональность</value>
+  </data>
 </root>

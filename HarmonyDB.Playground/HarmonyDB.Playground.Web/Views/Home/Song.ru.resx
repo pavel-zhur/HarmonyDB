@@ -147,6 +147,9 @@
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
+  <data name="Metadata tonality" xml:space="preserve">
+    <value>Тональность из метаданных</value>
+  </data>
   <data name="Original" xml:space="preserve">
     <value>Оригинальная</value>
   </data>
@@ -170,5 +173,8 @@
   </data>
   <data name="Transpose" xml:space="preserve">
     <value>Транспонирование</value>
+  </data>
+  <data name="unknown" xml:space="preserve">
+    <value>неизвестна</value>
   </data>
 </root>

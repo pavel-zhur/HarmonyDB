@@ -69,6 +69,7 @@
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
                 <td class="ps-2">@ViewLocalizer["Source"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonality"]</td>
                 <td class="ps-2">@ViewLocalizer["Rating"]</td>
                 <td class="ps-2">@ViewLocalizer["Coverage"]</td>
             </tr>
@@ -80,6 +81,7 @@
                     @string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.Header.Title, "Song", "Home", new SongModel { ExternalId = song.Header.ExternalId, Highlight = Model.Query })
                 </td>
                 <td class="pt-1 ps-2">@song.Header.Source</td>
+                <td class="pt-1 ps-2">@song.Header.BestTonality?.Tonality</td>
                 <td class="pt-1 ps-2">@((int)(song.Header.Rating ?? 0))%</td>
                 <td class="pt-1 ps-2">@((int)(song.Coverage * 100))%</td>
             </tr>
