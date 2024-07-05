@@ -18,29 +18,15 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         var previousSongsKeys = Clone(songsKeys);
         var previousLoopsKeys = Clone(loopsKeys);
 
-        var songLoops = all
-            .GroupBy(x => x.externalId)
-            .Select(g => (
-                externalId: g.Key,
-                loops: g
-                    .GroupBy(x => x.normalized)
-                    .Select(g => (
-                        normalized: g.Key,
-                        data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
-                    .ToList()))
-            .ToList();
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops = ExtractNestedGroups(
+            all,
+            x => x.externalId,
+            x => x.normalized);
 
-        var loopSongs = all
-            .GroupBy(x => x.normalized)
-            .Select(g => (
-                normalized: g.Key,
-                songs: g
-                    .GroupBy(x => x.externalId)
-                    .Select(g => (
-                        externalId: g.Key,
-                        data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
-                    .ToList()))
-            .ToList();
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs = ExtractNestedGroups(
+            all,
+            x => x.normalized,
+            x => x.externalId);
 
         var successfulInARow = 0;
         while (true)
@@ -67,6 +53,24 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
             (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);
         }
+    }
+
+    private static List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> loops)> ExtractNestedGroups(
+        List<(string normalized, string externalId, byte normalizationRoot, int weight)> all,
+        Func<(string normalized, string externalId, byte normalizationRoot, int weight), string> outer,
+        Func<(string normalized, string externalId, byte normalizationRoot, int weight), string> inner)
+    {
+        return all
+            .GroupBy(outer)
+            .Select(g => (
+                g.Key,
+                g
+                    .GroupBy(inner)
+                    .Select(g => (
+                        g.Key,
+                        g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
+                    .ToList()))
+            .ToList();
     }
 
     private static Dictionary<string, (float[], bool stable)> Clone(Dictionary<string, (float[] probabilities, bool stable)> keys)
