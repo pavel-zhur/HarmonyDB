@@ -13,4 +13,6 @@ public class TonalitiesIndexLoop
     public required int TotalOccurrences { get; init; }
 
     public required int TotalSuccessions { get; init; }
+
+    public required int TotalSongs { get; init; }
 }

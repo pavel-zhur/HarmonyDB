@@ -127,6 +127,7 @@ public class TonalitiesIndex
                         Probabilities = x.Probabilities,
                         TotalOccurrences = linksByLoopBySong[x.Normalized].Sum(x => x.Value.Sum(x => x.Occurrences)),
                         TotalSuccessions = linksByLoopBySong[x.Normalized].Sum(x => x.Value.Sum(x => x.Successions)),
+                        TotalSongs = linksByLoopBySong[x.Normalized].Count,
                         Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
                             .Once()
                             .Concat(
