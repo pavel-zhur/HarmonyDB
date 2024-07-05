@@ -6,7 +6,7 @@ public class CompactHarmonyMovementsSequence : ISearchableHarmonyMovementsSequen
 {
     public required int FirstMovementFromIndex { get; init; }
 
-    public required int FirstRoot { get; init; }
+    public required byte FirstRoot { get; init; }
 
     public required ReadOnlyMemory<CompactHarmonyMovement> Movements { get; init; }
 
