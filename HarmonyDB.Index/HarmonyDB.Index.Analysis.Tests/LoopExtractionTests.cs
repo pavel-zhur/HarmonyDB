@@ -691,7 +691,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         bool trace = true)
     {
         // sequence integrity test
-        Assert.True(MemoryMarshal.ToEnumerable(sequence).WithPrevious().Skip(1).All(p => p.current.FromType == p.previous!.Value.ToType), 
+        Assert.True(MemoryMarshal.ToEnumerable(sequence).AsPairs().All(p => p.current.FromType == p.previous.ToType), 
             "sequential to type and from type mismatch");
 
         Assert.False(loops.Select(l => l.StartIndex).AnyDuplicates());
@@ -717,7 +717,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }
 
         // blocks sequential loops test
-        Assert.True(loopSelfJumpsBlocks.All(x => x.ChildJumps.WithPrevious().Skip(1).All(p => p.current.Loop1 == p.previous!.Loop2)));
+        Assert.True(loopSelfJumpsBlocks.All(x => x.ChildJumps.AsPairs().All(p => p.current.Loop1 == p.previous.Loop2)));
 
         foreach (var loopSelfJumpsBlock in loopSelfJumpsBlocks)
         {
@@ -726,12 +726,12 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.True(!loopSelfJumpsBlock.IsModulation || loopSelfJumpsBlock.HasModulations); // IsModulation => HasModulation
 
             // normalization roots flow
-            Assert.True(loopSelfJumpsBlock.NormalizationRootsFlow.WithPrevious().Skip(1).All(p => p.current != p.previous));
+            Assert.True(loopSelfJumpsBlock.NormalizationRootsFlow.AsPairs().All(p => p.current != p.previous));
             Assert.Equal(loopSelfJumpsBlock.HasModulations, loopSelfJumpsBlock.NormalizationRootsFlow.Count > 1);
             Assert.Equal(loopSelfJumpsBlock.IsModulation, loopSelfJumpsBlock.NormalizationRootsFlow[0] != loopSelfJumpsBlock.NormalizationRootsFlow[^1]);
 
             // child self jumps are linked
-            Assert.True(loopSelfJumpsBlock.ChildJumps.WithPrevious().Skip(1).All(x => x.current.Loop1 == x.previous!.Loop2));
+            Assert.True(loopSelfJumpsBlock.ChildJumps.AsPairs().All(x => x.current.Loop1 == x.previous.Loop2));
 
             // child loops are the same as child jumps
             Assert.Equal(
