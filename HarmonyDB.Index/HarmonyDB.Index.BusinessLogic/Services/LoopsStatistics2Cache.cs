@@ -34,11 +34,8 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         throw new NotImplementedException();
     }
 
-    public async Task Rebuild()
+    public async Task Rebuild(int? limitUnknown = null)
     {
-        //await Try();
-        //return;
-        
         var progressions = await _progressionsCache.Get();
         var indexHeaders = await _indexHeadersCache.Get();
 
@@ -46,12 +43,18 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         var known = await _tonalitiesBalancer.GetKnownSongsLoopsKeys(progressions, songsKeys);
         var all = await _tonalitiesBalancer.GetAllSongsLoops(progressions);
 
-        //var knownExternalIds = known.Select(x => x.externalId).ToHashSet();
-        //all = all
-        //    .Where(x => knownExternalIds.Contains(x.externalId))
-        //    .Concat(all.GroupBy(x => x.externalId).Where(x => !knownExternalIds.Contains(x.Key)).Take(20000).SelectMany(x => x))
-        //    .OrderBy(_ => Random.Shared.NextDouble())
-        //    .ToList();
+        if (limitUnknown.HasValue)
+        {
+            var knownExternalIds = known.Select(x => x.externalId).ToHashSet();
+            all = all
+                .Where(x => knownExternalIds.Contains(x.externalId))
+                .Concat(all
+                    .GroupBy(x => x.externalId)
+                    .Where(x => !knownExternalIds.Contains(x.Key)).Take(limitUnknown.Value)
+                    .SelectMany(x => x))
+                .OrderBy(_ => Random.Shared.NextDouble())
+                .ToList();
+        }
 
         var allExternalIds = all.Select(x => x.externalId).ToHashSet();
 
