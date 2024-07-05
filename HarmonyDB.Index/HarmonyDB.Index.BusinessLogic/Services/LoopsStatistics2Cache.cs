@@ -50,8 +50,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         var known = await GetKnownSongsLoopsKeys(progressions, songsKeys);
         var all = await GetAllSongsLoops(progressions);
 
-        var knownExternalIds = known.Select(x => x.externalId).ToHashSet();
-
+        //var knownExternalIds = known.Select(x => x.externalId).ToHashSet();
         //all = all
         //    .Where(x => knownExternalIds.Contains(x.externalId))
         //    .Concat(all.GroupBy(x => x.externalId).Where(x => !knownExternalIds.Contains(x.Key)).Take(20000).SelectMany(x => x))
@@ -59,14 +58,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         //    .ToList();
 
         var allExternalIds = all.Select(x => x.externalId).ToHashSet();
-
-        var songWeights = all
-            .GroupBy(x => x.externalId)
-            .ToDictionary(x => x.Key, x => knownExternalIds.Contains(x.Key) ? 3 : 1);
-
-        var loopWeights = all
-            .GroupBy(x => x.normalized)
-            .ToDictionary(x => x.Key, x => x.Sum(x => x.weight));
 
         var initialSongsKeys = songsKeys
             .Where(x => allExternalIds.Contains(x.Key))
@@ -83,7 +74,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
             .Where(x => !initialSongsKeys.ContainsKey(x))
             .Select(x => (p: x, (CreateNewProbabilities(false), false))),
             false);
-        
+
         var initialLoopsKeys = known
             .GroupBy(x => x.normalized)
             .ToDictionary(
@@ -111,7 +102,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
             .Select(x => (x, (CreateNewProbabilities(false), false))), 
             false);
 
-        Balance(all, initialSongsKeys, initialLoopsKeys, songWeights, loopWeights);
+        Balance(all, initialSongsKeys, initialLoopsKeys);
     }
 
     private async Task Try()
@@ -142,9 +133,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
     private void Balance(
         List<(string normalized, string externalId, byte normalizationRoot, int weight)> all,
         Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
-        Dictionary<string, (float[] probabilities, bool stable)> loopsKeys,
-        Dictionary<string, int> songWeights,
-        Dictionary<string, int> loopWeights)
+        Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
     {
         Dictionary<string, (float[] probabilities, bool stable)> previousSongsKeys = songsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
         Dictionary<string, (float[] probabilities, bool stable)> previousLoopsKeys = loopsKeys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
@@ -157,7 +146,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                     .GroupBy(x => x.normalized)
                     .Select(g => (
                         normalized: g.Key,
-                        loopWeight: loopWeights.GetValueOrDefault(g.Key, 1),
                         data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
                     .ToList()))
             .ToList();
@@ -170,7 +158,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                     .GroupBy(x => x.externalId)
                     .Select(g => (
                         externalId: g.Key,
-                        songWeight: songWeights.GetValueOrDefault(g.Key, 1),
                         data: g.Select(x => (x.normalizationRoot, x.weight)).ToList()))
                     .ToList()))
             .ToList();
@@ -190,10 +177,9 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         }
     }
 
-    private void CalculateLoopsKeys(
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
-        List<(string normalized, List<(string externalId, int songWeight, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs,
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    private void CalculateLoopsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)>
+            loopSongs, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
     {
         Parallel.ForEach(loopSongs, x =>
         {
@@ -201,7 +187,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
             var values = x.songs // for each loop
                 .SelectMany(x => // for each song
                 {
-                    var songWeight = x.songWeight;
                     var songKeys = songsKeys[x.externalId]; // what keys that song is in (probabilities)
                     var data = x.data; // loop containment in the song, with weights and normalizationRoot
 
@@ -219,7 +204,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                             return data.Select(x =>
                             {
                                 var loopRoot = Note.Normalize(x.normalizationRoot - songRoot);
-                                return (index: ToIndex(loopRoot, chordType), value: songProbability * x.weight * songWeight);
+                                return (index: ToIndex(loopRoot, chordType), value: songProbability * x.weight);
                             }).ToList();
                         });
                 })
@@ -249,10 +234,9 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         });
     }
 
-    private void CalculateSongsKeys(
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
-        List<(string externalId, List<(string normalized, int loopWeight, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops,
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    private void CalculateSongsKeys(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)>
+            songLoops, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
     {
         Parallel.ForEach(songLoops, x =>
         {
@@ -260,7 +244,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
             var values = x.loops // for each song
                 .SelectMany(x => // for each loop
                 {
-                    var loopWeight = x.loopWeight;
                     var loopKeys = loopsKeys[x.normalized]; // what keys that loop is in (probabilities)
                     var data = x.data; // songs containing the loop, with weights and normalizationRoot
 
@@ -278,7 +261,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
                             return data.Select(x =>
                             {
                                 var songRoot = Note.Normalize(x.normalizationRoot - loopRoot);
-                                return (index: ToIndex(songRoot, chordType), value: loopProbability * x.weight * loopWeight);
+                                return (index: ToIndex(songRoot, chordType), value: loopProbability * x.weight);
                             }).ToList();
                         });
                 })
