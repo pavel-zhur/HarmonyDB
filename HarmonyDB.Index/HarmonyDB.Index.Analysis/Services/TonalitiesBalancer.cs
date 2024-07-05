@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using System;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -259,41 +260,25 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
     {
         Parallel.ForEach(nestedGroups, x =>
         {
-            // for each outer object
             if (outputOuterKeys[x.outerKey].stable) return;
-            var values = x.innerData
-                .SelectMany(x => // for each inner object
+
+            var values = new float[ProbabilitiesLength];
+            foreach (var (innerKeyId, relation) in x.innerData)
+            {
+                var innerKey = innerKeys[innerKeyId]; // what keys the inner object is in (probabilities)
+                for (var i = 0; i < ProbabilitiesLength; i++)
                 {
-                    var innerKey = innerKeys[x.innerKey]; // what keys the inner object is in (probabilities)
-                    var relation = x.data; // relation, with weights and normalizationRoot
+                    var (innerRoot, songMode) = FromIndex(i);
+                    var probability = innerKey.probabilities[i];
+                    foreach (var (normalizationRoot, weight) in relation)
+                    {
+                        var outerRoot = Note.Normalize(normalizationRoot - innerRoot);
+                        values[ToIndex(outerRoot, songMode)] += probability * weight;
+                    }
+                }
+            }
 
-                    // Normalize(normalizationRoot - songRoot) == loopRoot
-                    // Normalize(normalizationRoot - loopRoot) == songRoot
-                    // Normalize(loopRoot + songRoot) == normalizationRoot
-
-                    // Normalize(normalizationRoot - innerKey) == outerKey
-                    // Normalize(normalizationRoot - outerKey) == innerKey
-                    // Normalize(outerKey + innerKey) == normalizationRoot
-
-                    return innerKey
-                        .probabilities
-                        .WithIndices()
-                        .SelectMany(x =>
-                        {
-                            var (innerRoot, songMode) = FromIndex(x.i);
-                            var probability = x.x;
-                            return relation.Select(x =>
-                            {
-                                var outerRoot = Note.Normalize(x.normalizationRoot - innerRoot);
-                                return (index: ToIndex(outerRoot, songMode), value: probability * x.weight);
-                            }).ToList();
-                        });
-                })
-                .GroupBy(x => x.index)
-                .Select(g => (index: g.Key, value: g.Sum(x => x.value)))
-                .ToList();
-
-            var sum = values.Sum(x => x.value);
+            var sum = values.Sum();
 
             var probabilities = outputOuterKeys[x.outerKey].probabilities;
             if (sum <= float.Epsilon)
@@ -306,9 +291,9 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             else
             {
                 probabilities.Initialize();
-                foreach (var (index, value) in values)
+                for (var i = 0; i < ProbabilitiesLength; i++)
                 {
-                    probabilities[index] = value / sum;
+                    probabilities[i] = values[i] / sum;
                 }
             }
         });
