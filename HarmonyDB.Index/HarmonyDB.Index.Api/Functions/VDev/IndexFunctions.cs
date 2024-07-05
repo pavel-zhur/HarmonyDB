@@ -22,13 +22,13 @@ public class IndexFunctions
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
-    private readonly LoopsStatistics2Cache _loopsStatistics2Cache;
+    private readonly TonalitiesIndexCache _tonalitiesIndexCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly FullTextSearchCache _fullTextSearchCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, LoopsStatistics2Cache loopsStatistics2Cache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesIndexCache tonalitiesIndexCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -38,7 +38,7 @@ public class IndexFunctions
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
         _fullTextSearchCache = fullTextSearchCache;
-        _loopsStatistics2Cache = loopsStatistics2Cache;
+        _tonalitiesIndexCache = tonalitiesIndexCache;
 
         securityContext.InitService();
     }
@@ -150,6 +150,13 @@ public class IndexFunctions
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
     }
 
+    [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount))]
+    public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        var tonalitiesIndex = await _tonalitiesIndexCache.Get();
+        return new OkObjectResult((tonalitiesIndex.LoopsKeys.Count, tonalitiesIndex.SongsKeys.Count));
+    }
+
     [Function(nameof(VDevGetLoopStatisticsCacheTop1000))]
     public async Task<IActionResult> VDevGetLoopStatisticsCacheTop1000([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
@@ -161,13 +168,6 @@ public class IndexFunctions
     {
         await _loopsStatisticsCache.Rebuild();
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
-    }
-
-    [Function(nameof(VDevRebuildLoopStatistics2Cache))]
-    public async Task<IActionResult> VDevRebuildLoopStatistics2Cache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
-    {
-        await _loopsStatistics2Cache.Rebuild();
-        return new OkObjectResult((await _loopsStatistics2Cache.Get()).Count);
     }
 
     [Function(nameof(VDevFindAndCount))]

@@ -15,6 +15,6 @@ services
 
 var host = builder.Build();
 
-var loopsStatistics2Cache = host.Services.GetRequiredService<LoopsStatistics2Cache>();
+var tonalitiesIndexCache = host.Services.GetRequiredService<TonalitiesIndexCache>();
 
-await loopsStatistics2Cache.Rebuild(200000);
+await tonalitiesIndexCache.Rebuild(20000);

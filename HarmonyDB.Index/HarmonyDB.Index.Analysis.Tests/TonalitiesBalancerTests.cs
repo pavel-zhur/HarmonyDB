@@ -9,13 +9,13 @@ public class TonalitiesBalancerTests(ILogger<TonalitiesBalancerTests> logger, To
     public async Task Try()
     {
         await tonalitiesBalancer.Balance([
-                ("L1", "S1", 5, 10),
-                ("L2", "S1", 1, 10),
-                ("L3", "S1", 8, 10),
-
-                ("L1", "S2", 6, 10),
-                ("L2", "S2", 2, 10),
-                ("L3", "S2", 9, 10)
+                ("L1", "S1", 5, 10, 5),
+                ("L2", "S1", 1, 10, 5),
+                ("L3", "S1", 8, 10, 5),
+                
+                ("L1", "S2", 6, 10, 5),
+                ("L2", "S2", 2, 10, 5),
+                ("L3", "S2", 9, 10, 5)
             ],
             new Dictionary<string, (float[], bool)>
             {
