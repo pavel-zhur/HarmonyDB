@@ -12,6 +12,8 @@ public record Loop
     public required HashSet<int> Coverage { get; init; }
     public required HashSet<int> FoundFirsts { get; init; }
     public required ReadOnlyMemory<CompactHarmonyMovement> Progression { get; init; }
+
+    [Obsolete]
     public required bool IsCompound { get; init; }
 
     public int EndMovement => Start + Length - 1;
