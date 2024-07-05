@@ -6,9 +6,9 @@ public class TonalitiesIndexLoop
 
     public required string Normalized { get; init; }
 
-    public required IReadOnlyList<float> Probabilities { get; init; }
+    public required int Length { get; init; }
 
-    public required IReadOnlyDictionary<string, List<SongLoopLink>> Songs { get; init; }
+    public required IReadOnlyList<float> Probabilities { get; init; }
 
     public required int TotalOccurrences { get; init; }
 

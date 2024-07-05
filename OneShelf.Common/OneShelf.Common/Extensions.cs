@@ -11,6 +11,8 @@ public static class Extensions
     }
 
     public static IReadOnlyList<T> AsIReadOnlyList<T>(this IReadOnlyList<T> list) => list;
+    
+    public static IReadOnlyDictionary<TKey, TValue> AsIReadOnlyDictionary<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary) => dictionary;
 
     public static IEnumerable<T?> AsNullable<T>(this IEnumerable<T> enumeration)
         where T : struct

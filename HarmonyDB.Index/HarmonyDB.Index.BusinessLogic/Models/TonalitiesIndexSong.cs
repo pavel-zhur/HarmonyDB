@@ -7,6 +7,4 @@ public class TonalitiesIndexSong
     public required IReadOnlyList<float> Probabilities { get; init; }
 
     public required bool DespiteStable { get; init; }
-
-    public required IReadOnlyDictionary<string, List<SongLoopLink>> Loops { get; init; }
 }
