@@ -37,6 +37,18 @@
             @Html.ActionLink($"{ViewLocalizer["Clear highlighting"].Value} {Model.Highlight}", "Song", Model with { Highlight = null })
         </li>
     }
+    
+    <li>
+        <span>@ViewLocalizer["Metadata tonality"]: </span>
+        @if (string.IsNullOrWhiteSpace(chords.BestTonality))
+        {
+            <span style="color: darkgray">@ViewLocalizer["unknown"]</span>
+        }
+        else
+        {
+            <b>@chords.BestTonality</b>
+        }
+    </li>
 
     <li>
         <span>@ViewLocalizer["Transpose"]: </span>

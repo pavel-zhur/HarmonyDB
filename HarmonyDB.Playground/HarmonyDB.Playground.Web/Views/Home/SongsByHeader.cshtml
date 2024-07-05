@@ -53,6 +53,7 @@
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
                 <td class="ps-2">@ViewLocalizer["Source"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonality"]</td>
                 <td class="ps-2">@ViewLocalizer["Rating"]</td>
             </tr>
         </thead>
@@ -69,6 +70,7 @@
                     </a>
                 </td>
                 <td class="pt-1 ps-2">@song.Source</td>
+                <td class="pt-1 ps-2">@song.BestTonality?.Tonality</td>
                 <td class="pt-1 ps-2">@((int)(song.Rating ?? 0))%</td>
             </tr>
         }
