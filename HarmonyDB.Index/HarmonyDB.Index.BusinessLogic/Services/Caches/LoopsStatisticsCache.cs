@@ -11,8 +11,9 @@ using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using Microsoft.Extensions.Options;
+using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, CompactLoopStatistics>, IReadOnlyList<LoopStatistics>>
 {
@@ -125,7 +126,7 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
 
         return loopStatisticsBag
             .ToDictionary(
-                x => x.Key, 
+                x => x.Key,
                 x =>
                 {
                     var max = x.Value.counts.Max();

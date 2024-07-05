@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IO;
 using HarmonyDB.Index.BusinessLogic.Models;
+using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 public class ProgressionsCache : FileCacheBase<IReadOnlyDictionary<string, byte[]>, IReadOnlyDictionary<string, CompactChordsProgression>>
 {

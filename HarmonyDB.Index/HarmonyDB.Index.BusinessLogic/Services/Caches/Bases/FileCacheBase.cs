@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nito.AsyncEx;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 
 public abstract class FileCacheBase<TFileModel, TPresentationModel>
     where TPresentationModel : class
@@ -32,7 +32,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
     protected abstract string Key { get; }
 
     private string FileName => $"{Key}Cache.bin";
-    
+
     private string FilePath => Path.Combine(_options.DiskPath ?? throw new("The file path is required in the options."), FileName);
 
     protected abstract TPresentationModel ToPresentationModel(TFileModel fileModel);
@@ -151,7 +151,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             using var _ = await _lock.LockAsync();
             if (_cache != null) return;
 
-            var started = DateTime.Now; 
+            var started = DateTime.Now;
             var fileModel = await StreamDecompressDeserialize();
             if (fileModel == null)
             {
@@ -161,7 +161,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
                 };
             }
 
-            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds); 
+            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
             started = DateTime.Now;
 
             _cache = new()

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 
 public abstract class BytesFileCacheBase<TPresentationModel> : FileCacheBase<byte[], TPresentationModel>
     where TPresentationModel : class

@@ -1,8 +1,9 @@
 ﻿using HarmonyDB.Index.BusinessLogic.Models;
+using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 public class IndexHeadersCache : BytesFileCacheBase<IndexHeaders>
 {

@@ -9,6 +9,8 @@ using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
+using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
+using HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 

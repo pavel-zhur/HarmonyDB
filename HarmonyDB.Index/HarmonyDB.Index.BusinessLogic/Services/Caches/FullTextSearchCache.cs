@@ -1,8 +1,9 @@
 ﻿using HarmonyDB.Common.FullTextSearch;
 using HarmonyDB.Index.BusinessLogic.Models;
+using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 using Microsoft.Extensions.Logging;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 public class FullTextSearchCache : MemoryCacheBase<IndexHeaders, FullTextSearch>
 {
@@ -21,7 +22,7 @@ public class FullTextSearchCache : MemoryCacheBase<IndexHeaders, FullTextSearch>
     protected override FullTextSearch GetPresentationModel(IndexHeaders inputModel)
     {
         return new(inputModel.Headers.Values
-            .SelectMany(h => 
+            .SelectMany(h =>
                 (h.Artists ?? Enumerable.Empty<string>())
                     .Append(h.Title)
                     .Where(x => x != null)
