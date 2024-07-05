@@ -300,9 +300,8 @@ public class ProgressionsSearch
                         .Sum(g => g
                             .Select(x => x.foundStartMovementIndex)
                             .OrderBy(x => x)
-                            .WithPrevious()
-                            .Where(x => x.previous.HasValue)
-                            .Count(p => p.current - p.previous!.Value == length));
+                            .AsPairs()
+                            .Count(p => p.current - p.previous == length));
 
                     if (isCompound &&
                         successions == 0) // if it's compound and never repeats immediately, it is not needed
