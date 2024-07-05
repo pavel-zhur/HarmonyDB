@@ -31,8 +31,8 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         var successfulInARow = 0;
         while (true)
         {
-            CalculateSongsKeys(previousLoopsKeys, songLoops, songsKeys);
-            CalculateLoopsKeys(previousSongsKeys, loopSongs, loopsKeys);
+            Calculate(previousLoopsKeys, songLoops, songsKeys);
+            Calculate(previousSongsKeys, loopSongs, loopsKeys);
 
             var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
             var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
@@ -180,7 +180,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         return result;
     }
 
-    public int ToIndex(byte root, ChordType chordType) => root * 2 + (int)chordType;
+    public int ToIndex(byte root, ChordType songMode) => root * 2 + (int)songMode;
 
     public float[] CreateNewProbabilities(bool empty)
     {
@@ -235,35 +235,40 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         return (note.Value, mode);
     }
 
-    private void CalculateLoopsKeys(
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> songsKeys,
-        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight)> data)> songs)> loopSongs, 
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
+    private void Calculate(
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> innerKeys,
+        List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> songs)> nestedGroups, 
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> outputOuterKeys)
     {
-        Parallel.ForEach(loopSongs, x =>
+        Parallel.ForEach(nestedGroups, x =>
         {
-            if (result[x.normalized].stable) return;
-            var values = x.songs // for each loop
-                .SelectMany(x => // for each song
+            // for each outer object
+            if (outputOuterKeys[x.outerKey].stable) return;
+            var values = x.songs
+                .SelectMany(x => // for each inner object
                 {
-                    var songKeys = songsKeys[x.externalId]; // what keys that song is in (probabilities)
-                    var data = x.data; // loop containment in the song, with weights and normalizationRoot
+                    var innerKey = innerKeys[x.innerKey]; // what keys the inner object is in (probabilities)
+                    var relation = x.data; // relation, with weights and normalizationRoot
 
                     // Normalize(normalizationRoot - songRoot) == loopRoot
                     // Normalize(normalizationRoot - loopRoot) == songRoot
                     // Normalize(loopRoot + songRoot) == normalizationRoot
 
-                    return songKeys
+                    // Normalize(normalizationRoot - innerKey) == outerKey
+                    // Normalize(normalizationRoot - outerKey) == innerKey
+                    // Normalize(outerKey + innerKey) == normalizationRoot
+
+                    return innerKey
                         .probabilities
                         .WithIndices()
                         .SelectMany(x =>
                         {
-                            var (songRoot, chordType) = FromIndex(x.i);
-                            var songProbability = x.x;
-                            return data.Select(x =>
+                            var (innerRoot, songMode) = FromIndex(x.i);
+                            var probability = x.x;
+                            return relation.Select(x =>
                             {
-                                var loopRoot = Note.Normalize(x.normalizationRoot - songRoot);
-                                return (index: ToIndex(loopRoot, chordType), value: songProbability * x.weight);
+                                var outerRoot = Note.Normalize(x.normalizationRoot - innerRoot);
+                                return (index: ToIndex(outerRoot, songMode), value: probability * x.weight);
                             }).ToList();
                         });
                 })
@@ -273,65 +278,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
             var sum = values.Sum(x => x.value);
 
-            var probabilities = result[x.normalized].probabilities;
-
-            if (sum <= float.Epsilon)
-            {
-                for (var i = 0; i < ProbabilitiesLength; i++)
-                {
-                    probabilities[i] = 1f / ProbabilitiesLength;
-                }
-            }
-            else
-            {
-                probabilities.Initialize();
-                foreach (var (index, value) in values)
-                {
-                    probabilities[index] = value / sum;
-                }
-            }
-        });
-    }
-
-    private void CalculateSongsKeys(
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> loopsKeys,
-        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops,
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> result)
-    {
-        Parallel.ForEach(songLoops, x =>
-        {
-            if (result[x.externalId].stable) return;
-            var values = x.loops // for each song
-                .SelectMany(x => // for each loop
-                {
-                    var loopKeys = loopsKeys[x.normalized]; // what keys that loop is in (probabilities)
-                    var data = x.data; // songs containing the loop, with weights and normalizationRoot
-
-                    // Normalize(normalizationRoot - songRoot) == loopRoot
-                    // Normalize(normalizationRoot - loopRoot) == songRoot
-                    // Normalize(loopRoot + songRoot) == normalizationRoot
-
-                    return loopKeys
-                        .probabilities
-                        .WithIndices()
-                        .SelectMany(x =>
-                        {
-                            var (loopRoot, chordType) = FromIndex(x.i);
-                            var loopProbability = x.x;
-                            return data.Select(x =>
-                            {
-                                var songRoot = Note.Normalize(x.normalizationRoot - loopRoot);
-                                return (index: ToIndex(songRoot, chordType), value: loopProbability * x.weight);
-                            }).ToList();
-                        });
-                })
-                .GroupBy(x => x.index)
-                .Select(g => (index: g.Key, value: g.Sum(x => x.value)))
-                .ToList();
-
-            var sum = values.Sum(x => x.value);
-
-            var probabilities = result[x.externalId].probabilities;
+            var probabilities = outputOuterKeys[x.outerKey].probabilities;
             if (sum <= float.Epsilon)
             {
                 for (var i = 0; i < ProbabilitiesLength; i++)
@@ -361,5 +308,5 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
     private static int GetWeight(int occurrences, int successions) => occurrences + successions * 2;
 
-    private static (byte root, ChordType chordType) FromIndex(int index) => ((byte)(index / 2), (ChordType)(index % 2));
+    private static (byte root, ChordType songMode) FromIndex(int index) => ((byte)(index / 2), (ChordType)(index % 2));
 }
