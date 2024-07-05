@@ -113,11 +113,10 @@ public class IndexExtractor
                         .ToList(),
                     ChildJumps = j.indices
                         .Where(x => loops[x].Normalized == firstLoop.Normalized)
-                        .WithPrevious()
-                        .Where(p => p.previous.HasValue)
+                        .AsPairs()
                         .Select(p =>
                         {
-                            var previousLoop = loops[p.previous!.Value];
+                            var previousLoop = loops[p.previous];
                             var currentLoop = loops[p.current];
 
                             var jointLoop = p.previous == p.current - 1 ? null : loops[p.current - 1];
