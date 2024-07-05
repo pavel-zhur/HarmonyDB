@@ -101,7 +101,7 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
             .Select(x => (x, (_tonalitiesBalancer.CreateNewProbabilities(false), false))), 
             false);
 
-        _tonalitiesBalancer.Balance(all, initialSongsKeys, initialLoopsKeys);
+        await _tonalitiesBalancer.Balance(all, initialSongsKeys, initialLoopsKeys);
     }
 
     private Dictionary<string, (byte songRoot, ChordType mode)> GetSongsKeys(IndexHeaders indexHeaders) =>

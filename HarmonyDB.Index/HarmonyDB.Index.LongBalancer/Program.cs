@@ -17,4 +17,4 @@ var host = builder.Build();
 
 var loopsStatistics2Cache = host.Services.GetRequiredService<LoopsStatistics2Cache>();
 
-await loopsStatistics2Cache.Rebuild(20000);
+await loopsStatistics2Cache.Rebuild(200000);

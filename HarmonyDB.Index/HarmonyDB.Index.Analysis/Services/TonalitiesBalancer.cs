@@ -10,7 +10,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 {
     private const int ProbabilitiesLength = Note.Modulus * 2;
 
-    public void Balance(
+    public async Task Balance(
         List<(string normalized, string externalId, byte normalizationRoot, int weight)> all,
         Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
         Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
@@ -31,6 +31,8 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         var successfulInARow = 0;
         while (true)
         {
+            var started = DateTime.Now;
+
             Calculate(previousLoopsKeys, songLoops, songsKeys);
             Calculate(previousSongsKeys, loopSongs, loopsKeys);
 
@@ -48,7 +50,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
             if (successfulInARow > 3) break;
 
-            logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}");
+            logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}, took {(DateTime.Now - started).TotalSeconds:F} seconds");
 
             (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
             (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);

@@ -6,9 +6,9 @@ namespace HarmonyDB.Index.Analysis.Tests;
 public class TonalitiesBalancerTests(ILogger<TonalitiesBalancerTests> logger, TonalitiesBalancer tonalitiesBalancer)
 {
     [Fact]
-    public void Try()
+    public async Task Try()
     {
-        tonalitiesBalancer.Balance([
+        await tonalitiesBalancer.Balance([
                 ("L1", "S1", 5, 10),
                 ("L2", "S1", 1, 10),
                 ("L3", "S1", 8, 10),
