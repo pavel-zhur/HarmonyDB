@@ -56,10 +56,6 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             await using var file = File.OpenWrite(FilePath);
             await using var gzip = new GZipStream(file, CompressionMode.Compress);
             await StreamSerialize(gzip, model);
-            _cache = new()
-            {
-                Data = ToPresentationModel(model),
-            };
         }
         else if (_options.WriteSource == FileCacheSource.Storage)
         {

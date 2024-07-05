@@ -57,11 +57,9 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 successfulInARow = 0;
             }
 
-            var saving = (DateTime.Now - started).TotalSeconds;
+            if (successfulInARow > 5) break;
 
-            if (successfulInARow > 3) break;
-
-            logger.LogInformation($"iteration {++iteration}: songs {songsDelta}, loops {loopsDelta}, calc {calculation:F} s, deltas {deltas:F} s, saving {saving:F} s");
+            logger.LogInformation($"iteration {++iteration}: songs {songsDelta}, loops {loopsDelta}, calc {calculation:F} s, deltas {deltas:F} s");
 
             (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
             (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);

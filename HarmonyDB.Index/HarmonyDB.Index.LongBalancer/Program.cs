@@ -17,4 +17,4 @@ var host = builder.Build();
 
 var tonalitiesIndexCache = host.Services.GetRequiredService<TonalitiesIndexCache>();
 
-await tonalitiesIndexCache.Rebuild(20000);
+await tonalitiesIndexCache.Rebuild();

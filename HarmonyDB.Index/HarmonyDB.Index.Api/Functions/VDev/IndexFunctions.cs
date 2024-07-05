@@ -154,7 +154,11 @@ public class IndexFunctions
     public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         var tonalitiesIndex = await _tonalitiesIndexCache.Get();
-        return new OkObjectResult((tonalitiesIndex.LoopsKeys.Count, tonalitiesIndex.SongsKeys.Count));
+        return new OkObjectResult(new
+        {
+            Loops = tonalitiesIndex.LoopsKeys.Count,
+            Songs = tonalitiesIndex.SongsKeys.Count,
+        });
     }
 
     [Function(nameof(VDevGetLoopStatisticsCacheTop1000))]

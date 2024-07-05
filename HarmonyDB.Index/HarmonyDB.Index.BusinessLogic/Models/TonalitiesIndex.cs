@@ -156,15 +156,6 @@ public class TonalitiesIndex
                 writer.Write(f);
             }
         }
-        foreach (var (key, value) in loopsKeys)
-        {
-            normalizedValues[key] = normalizedValues.Count;
-            writer.Write(key);
-            foreach (var f in value)
-            {
-                writer.Write(f);
-            }
-        }
 
         writer.Write(songsKeys.Count);
         foreach (var (key, (probabilities, despiteStable)) in songsKeys)
