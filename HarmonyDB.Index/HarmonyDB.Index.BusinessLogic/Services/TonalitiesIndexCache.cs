@@ -73,8 +73,32 @@ public class TonalitiesIndexCache : BytesFileCacheBase<TonalitiesIndex>
             .Select(x => (p: x, (_tonalitiesBalancer.CreateNewProbabilities(false), false))),
             false);
 
-        var initialLoopsKeys = all.Select(x => x.normalized).Distinct().ToDictionary(x => x,
-            x => (_tonalitiesBalancer.CreateNewProbabilities(false), false));
+        var initialLoopsKeys = known
+            .GroupBy(x => x.normalized)
+            .ToDictionary(
+                x => x.Key,
+                x => x
+                    .Select(x => (x.weight, index: _tonalitiesBalancer.ToIndex(x.loopRoot, x.mode)))
+                    .GroupBy(x => x.index, x => x.weight)
+                    .Select(g => (index: g.Key, weight: g.Sum()))
+                    .ToList()
+                    .SelectSingle(x =>
+                    {
+                        var result = _tonalitiesBalancer.CreateNewProbabilities(true);
+                        var total = x.Sum(x => x.weight);
+                        foreach (var (index, weight) in x)
+                        {
+                            result[index] = (float)weight / total;
+                        }
+
+                        return (probabilities: result, stable: false);
+                    }));
+
+        initialLoopsKeys.AddRange(all
+                .Select(x => x.normalized)
+                .Where(x => !initialLoopsKeys.ContainsKey(x))
+                .Select(x => (x, (_tonalitiesBalancer.CreateNewProbabilities(false), false))),
+            false);
 
         var result = await _tonalitiesBalancer.Balance(all, initialSongsKeys, initialLoopsKeys);
         await StreamCompressSerialize(TonalitiesIndex.Serialize(result, all));
