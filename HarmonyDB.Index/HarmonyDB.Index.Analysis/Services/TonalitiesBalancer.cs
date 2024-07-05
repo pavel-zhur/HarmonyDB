@@ -1,4 +1,6 @@
-﻿using HarmonyDB.Common.Representations.OneShelf;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models;
 using Microsoft.Extensions.Logging;
@@ -36,8 +38,14 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             Calculate(previousLoopsKeys, songLoops, songsKeys);
             Calculate(previousSongsKeys, loopSongs, loopsKeys);
 
+            var calculation = (DateTime.Now - started).TotalSeconds;
+            started = DateTime.Now;
+
             var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
             var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
+
+            var deltas = (DateTime.Now - started).TotalSeconds;
+            started = DateTime.Now;
 
             if (songsDelta.max < 0.01 && loopsDelta.max < 0.01)
             {
@@ -48,13 +56,34 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 successfulInARow = 0;
             }
 
+            await Save(songsKeys, loopsKeys);
+
+            var saving = (DateTime.Now - started).TotalSeconds;
+
             if (successfulInARow > 3) break;
 
-            logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}, took {(DateTime.Now - started).TotalSeconds:F} seconds");
+            logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}, calc {calculation:F} s, deltas {deltas:F} s, saving {saving:F} s");
 
             (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
             (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);
         }
+    }
+
+    private async Task Save(Dictionary<string, (float[] probabilities, bool stable)> songsKeys, Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
+    {
+        await File.WriteAllTextAsync($"iteration.{DateTime.Now.Ticks}.json", JsonSerializer.Serialize(new
+        {
+            songsKeys = songsKeys.Select(p => new
+            {
+                p.Key,
+                p.Value.probabilities,
+            }),
+            loopsKeys = loopsKeys.Select(p => new
+            {
+                p.Key,
+                p.Value.probabilities,
+            }),
+        }));
     }
 
     private static List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> loops)> ExtractNestedGroups(
