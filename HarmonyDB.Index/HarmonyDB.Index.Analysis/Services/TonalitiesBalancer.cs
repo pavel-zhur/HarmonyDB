@@ -42,6 +42,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                     .ToList()))
             .ToList();
 
+        var successfulInARow = 0;
         while (true)
         {
             CalculateSongsKeys(previousLoopsKeys, songLoops, songsKeys);
@@ -49,6 +50,17 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
             var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
             var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
+
+            if (songsDelta.max < 0.01 && loopsDelta.max < 0.01)
+            {
+                successfulInARow++;
+            }
+            else
+            {
+                successfulInARow = 0;
+            }
+
+            if (successfulInARow > 3) break;
 
             logger.LogInformation($"delta: songs {songsDelta}, loops {loopsDelta}");
 

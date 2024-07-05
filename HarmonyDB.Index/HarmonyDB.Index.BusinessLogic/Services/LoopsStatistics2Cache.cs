@@ -101,31 +101,6 @@ public class LoopsStatistics2Cache : FileCacheBase<object, List<LoopStatistics>>
         _tonalitiesBalancer.Balance(all, initialSongsKeys, initialLoopsKeys);
     }
 
-    private async Task Try()
-    {
-        //Balance(new()
-        //    {
-        //    ("L1", "S1", 5, 10),
-        //    ("L2", "S1", 1, 10),
-        //    ("L3", "S1", 8, 10),
-
-        //    ("L1", "S2", 6, 10),
-        //    ("L2", "S2", 2, 10),
-        //    ("L3", "S2", 9, 10),
-        //},
-        //    new Dictionary<string, float[]>
-        //    {
-        //        { "S1", Enumerable.Range(0, 24).Select(x => x == 2 ? 1f/5 : x == 5 ? 4f / 5 : 0).ToArray() },
-        //        { "S2", CreateNewProbabilities(false) },
-        //    },
-        //    new Dictionary<string, float[]>
-        //    {
-        //        { "L1", CreateNewProbabilities(false) },
-        //        { "L2", CreateNewProbabilities(false) },
-        //        { "L3", CreateNewProbabilities(false) },
-        //    });
-    }
-
     private Dictionary<string, (byte songRoot, ChordType mode)> GetSongsKeys(IndexHeaders indexHeaders) =>
         indexHeaders
             .Headers
