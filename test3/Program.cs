@@ -169,10 +169,27 @@ public class MusicAnalyzer
     private double CalculateEntropy(string id, bool isSong)
     {
         IEnumerable<LoopLink> relevantLinks = isSong ? LoopLinks.Where(l => l.SongId == id) : LoopLinks.Where(l => l.LoopId == id);
-        var shiftCounts = relevantLinks.GroupBy(l => l.Shift).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
+        var shiftCounts = relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
         double totalLinks = relevantLinks.Sum(l => l.Count);
         double entropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
         return Math.Exp(-entropy);
+    }
+
+    private int GetRelativeShift(LoopLink loopLink, bool isSong)
+    {
+        var shift = loopLink.Shift;
+
+        // shift == loopTonality - songTonality
+        if (isSong)
+        {
+            int loopTonality = Loops[loopLink.LoopId].TonalityProbabilities.ToList().IndexOf(Loops[loopLink.LoopId].TonalityProbabilities.Max());
+            return (loopTonality - shift + Constants.TonalityCount) % Constants.TonalityCount;
+        }
+        else
+        {
+            int songTonality = Songs[loopLink.SongId].TonalityProbabilities.ToList().IndexOf(Songs[loopLink.SongId].TonalityProbabilities.Max());
+            return (songTonality + shift) % Constants.TonalityCount;
+        }
     }
 
     private double CalculateMaxChange(double[] oldProbabilities, double[] newProbabilities)
@@ -324,7 +341,7 @@ public static class Program
         var generator = new TestDataGenerator();
         var (songs, loops, loopLinks) = generator.GenerateTestData(generatorParameters);
 
-        // Вывод исходных данных
+        // Output initial data
         Console.WriteLine($"Generated {songs.Count} songs and {loops.Count} loops.");
         Console.WriteLine($"First 10 songs:");
         foreach (var song in songs.Take(10))
@@ -349,7 +366,7 @@ public static class Program
         var analyzer = new MusicAnalyzer(songs.ToDictionary(kv => kv.Key, kv => (ISong)kv.Value), loops.ToDictionary(kv => kv.Key, kv => (ILoop)kv.Value), loopLinks);
         analyzer.UpdateProbabilities();
 
-        // Примерный диапазон и средний score для плохих и хороших объектов
+        // Output score summaries for good and bad entities
         var allGoodSongs = songs.Values.Where(s => s.SecretTonalities.Length == 1);
         var allBadSongs = songs.Values.Where(s => s.SecretTonalities.Length > 1);
         var incorrectTonalitySongs = songs.Values.Where(s => s.IsKnownTonalityIncorrect);
@@ -382,7 +399,7 @@ public static class Program
         PrintStatistics(allGoodLoops.Select(l => l.Score), "Good Loops");
         PrintStatistics(allBadLoops.Select(l => l.Score), "Bad Loops");
 
-        // Вывод плохих песен с известной тональностью, у которых определенная тональность не равна KnownTonality
+        // Output bad songs with incorrect known tonality and their predicted tonalities
         Console.WriteLine("\nBad Songs with Incorrectly Known Tonality:");
         int incorrectDetectionCount = 0;
         foreach (var song in incorrectTonalitySongs)
@@ -397,7 +414,7 @@ public static class Program
         }
         Console.WriteLine($"Incorrectly Detected Songs with Incorrectly Known Tonality: {incorrectDetectionCount} / {incorrectTonalitySongs.Count()} ({(double)incorrectDetectionCount / incorrectTonalitySongs.Count():P2})");
 
-        // Вывод правильности определения тональностей для песен и циклов
+        // Output accuracy of detected tonalities for songs and loops
         Console.WriteLine("\nAccuracy of Detected Tonalities:");
         int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
         int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
