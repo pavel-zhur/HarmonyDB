@@ -79,11 +79,11 @@ else
 @code {
 
     private FingeringsModelIndex? _model;
-    private HashSet<string> _loading = new();
-    private HashSet<string> _switched = new();
-    private HashSet<(string typeUrl, FingeringsNote note)> _loading2 = new();
-    private HashSet<(string typeUrl, FingeringsNote note)> _unloading2 = new();
-    private HashSet<(string typeUrl, FingeringsNote note)> _switched2 = new();
+    private readonly HashSet<string> _loading = new();
+    private readonly HashSet<string> _switched = new();
+    private readonly HashSet<(string typeUrl, FingeringsNote note)> _loading2 = new();
+    private readonly HashSet<(string typeUrl, FingeringsNote note)> _unloading2 = new();
+    private readonly HashSet<(string typeUrl, FingeringsNote note)> _switched2 = new();
     private string? _search;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
