@@ -158,7 +158,7 @@ public class IndexFunctions
         {
             Loops = tonalitiesIndex.LoopsKeys.Count,
             Songs = tonalitiesIndex.SongsKeys.Count,
-            Links = tonalitiesIndex.LinksByLoopBySong.Sum(x => x.Value.Count),
+            Links = tonalitiesIndex.LinksByLoop.Sum(x => x.Count()),
         });
     }
 

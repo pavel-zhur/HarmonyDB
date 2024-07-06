@@ -13,22 +13,22 @@ public class TonalitiesIndex
     private TonalitiesIndex(
         List<TonalitiesIndexSong> songsKeys,
         List<TonalitiesIndexLoop> loopsKeys,
-        Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<SongLoopLink>>> linksBySongByLoop,
-        Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<SongLoopLink>>> linksByLoopBySong)
+        ILookup<string, SongLoopLink> linksBySongByLoop,
+        ILookup<string, SongLoopLink> linksByLoopBySong)
     {
         SongsKeys = songsKeys.ToDictionary(x => x.ExternalId);
         LoopsKeys = loopsKeys.ToDictionary(x => x.Normalized);
-        LinksBySongByLoop = linksBySongByLoop;
-        LinksByLoopBySong = linksByLoopBySong;
+        LinksBySong = linksBySongByLoop;
+        LinksByLoop = linksByLoopBySong;
     }
 
     public IReadOnlyDictionary<string, TonalitiesIndexLoop> LoopsKeys { get; }
 
     public IReadOnlyDictionary<string, TonalitiesIndexSong> SongsKeys { get; }
 
-    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<SongLoopLink>>> LinksBySongByLoop { get; }
+    public ILookup<string, SongLoopLink> LinksBySong { get; }
     
-    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<SongLoopLink>>> LinksByLoopBySong { get; }
+    public ILookup<string, SongLoopLink> LinksByLoop { get; }
 
     public static TonalitiesIndex Deserialize(byte[] serialized)
     {
@@ -61,48 +61,22 @@ public class TonalitiesIndex
             .ToList();
 
         var count = reader.ReadInt32();
-        var all = new List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)>();
+        var all = new List<SongLoopLink>();
         for (var i = 0; i < count; i++)
         {
-            all.Add((
-                loopsKeysPartial[reader.ReadInt32()].Normalized,
-                songsKeysPartial[reader.ReadInt32()].ExternalId,
-                reader.ReadByte(),
-                reader.ReadInt16(),
-                reader.ReadInt16()));
+            all.Add(new()
+            {
+                Normalized = loopsKeysPartial[reader.ReadInt32()].Normalized,
+                ExternalId = songsKeysPartial[reader.ReadInt32()].ExternalId,
+                NormalizationRoot = reader.ReadByte(),
+                Occurrences = reader.ReadInt16(),
+                Successions = reader.ReadInt16(),
+            });
         }
 
-        var linksBySongByLoop = all
-            .GroupBy(x => x.externalId)
-            .ToDictionary(
-                x => x.Key,
-                x => x
-                    .GroupBy(x => x.normalized)
-                    .ToDictionary(
-                        x => x.Key,
-                        x => x.Select(x => new SongLoopLink
-                        {
-                            NormalizationRoot = x.normalizationRoot,
-                            Occurrences = x.occurrences,
-                            Successions = x.successions,
-                        }).ToList().AsIReadOnlyList())
-                    .AsIReadOnlyDictionary());
+        var linksBySong = all.ToLookup(x => x.ExternalId);
 
-        var linksByLoopBySong = all
-            .GroupBy(x => x.normalized)
-            .ToDictionary(
-                x => x.Key,
-                x => x
-                    .GroupBy(x => x.externalId)
-                    .ToDictionary(
-                        x => x.Key,
-                        x => x.Select(x => new SongLoopLink
-                        {
-                            NormalizationRoot = x.normalizationRoot,
-                            Occurrences = x.occurrences,
-                            Successions = x.successions,
-                        }).ToList().AsIReadOnlyList())
-                    .AsIReadOnlyDictionary());
+        var linksByLoop = all.ToLookup(x => x.Normalized);
 
         string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
 
@@ -125,9 +99,9 @@ public class TonalitiesIndex
                         Normalized = x.Normalized,
                         Length = sequence.Length,
                         Probabilities = x.Probabilities,
-                        TotalOccurrences = linksByLoopBySong[x.Normalized].Sum(x => x.Value.Sum(x => x.Occurrences)),
-                        TotalSuccessions = linksByLoopBySong[x.Normalized].Sum(x => x.Value.Sum(x => x.Successions)),
-                        TotalSongs = linksByLoopBySong[x.Normalized].Count,
+                        TotalOccurrences = linksByLoop[x.Normalized].Sum(x => x.Occurrences),
+                        TotalSuccessions = linksByLoop[x.Normalized].Sum(x => x.Successions),
+                        TotalSongs = linksByLoop[x.Normalized].Select(x => x.ExternalId).Distinct().Count(),
                         Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
                             .Once()
                             .Concat(
@@ -141,8 +115,8 @@ public class TonalitiesIndex
                     };
                 })
                 .ToList(),
-            linksBySongByLoop,
-            linksByLoopBySong);
+            linksBySong,
+            linksByLoop);
     }
 
     public static byte[] Serialize(
