@@ -70,11 +70,11 @@ public class AiGeneratedKeysDetectionProgram(ITestOutputHelper logger)
 
         // Output bad songs with known tonality, where predicted tonality does not match the known tonality
         logger.WriteLine("\nBad Songs with Incorrectly Known Tonality:");
-        int incorrectDetectionCount = 0;
+        var incorrectDetectionCount = 0;
         foreach (var song in incorrectTonalitySongs)
         {
-            double[] calculatedProbabilities = analyzer.CalculateProbabilities(song.Id, true);
-            int predictedTonality = MusicAnalyzer.GetPredictedTonality(calculatedProbabilities);
+            var calculatedProbabilities = analyzer.CalculateProbabilities(song.Id, true);
+            var predictedTonality = MusicAnalyzer.GetPredictedTonality(calculatedProbabilities);
             if (!song.SecretTonalities.Contains(predictedTonality))
             {
                 incorrectDetectionCount++;
@@ -85,8 +85,8 @@ public class AiGeneratedKeysDetectionProgram(ITestOutputHelper logger)
 
         // Output the accuracy of detected tonalities for songs and loops
         logger.WriteLine("\nAccuracy of Detected Tonalities:");
-        int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
-        int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
+        var correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
+        var correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
 
         logger.WriteLine($"Correctly Detected Song Tonalities: {correctSongDetections} / {songs.Count} ({(double)correctSongDetections / songs.Count:P2})");
         logger.WriteLine($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {loops.Count} ({(double)correctLoopDetections / loops.Count:P2})");

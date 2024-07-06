@@ -2,8 +2,8 @@
 
 public class LoopLink
 {
-    public string SongId { get; set; }
-    public string LoopId { get; set; }
-    public int Shift { get; set; }
-    public int Count { get; set; }
+    public required string SongId { get; init; }
+    public required string LoopId { get; init; }
+    public int Shift { get; init; }
+    public int Count { get; init; }
 }
