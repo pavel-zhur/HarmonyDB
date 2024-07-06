@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Services.Caches;
+using static HarmonyDB.Index.Analysis.Services.TonalitiesBalancer;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
@@ -65,12 +66,12 @@ public class TonalitiesIndexCache : BytesFileCacheBase<TonalitiesIndex>
                 {
                     var result = _tonalitiesBalancer.CreateNewProbabilities(true);
                     result[_tonalitiesBalancer.ToIndex(x.Value.songRoot, x.Value.mode)] = 1;
-                    return (probabilities: result, stable: true);
+                    return (probabilities: result, stable: true, score: new ScoreHolder());
                 });
 
         initialSongsKeys.AddRange(allExternalIds
             .Where(x => !initialSongsKeys.ContainsKey(x))
-            .Select(x => (p: x, (_tonalitiesBalancer.CreateNewProbabilities(false), false))),
+            .Select(x => (p: x, (_tonalitiesBalancer.CreateNewProbabilities(false), false, new ScoreHolder()))),
             false);
 
         var initialLoopsKeys = known
@@ -91,13 +92,13 @@ public class TonalitiesIndexCache : BytesFileCacheBase<TonalitiesIndex>
                             result[index] = (float)weight / total;
                         }
 
-                        return (probabilities: result, stable: false);
+                        return (probabilities: result, stable: false, score: new ScoreHolder());
                     }));
 
         initialLoopsKeys.AddRange(all
                 .Select(x => x.normalized)
                 .Where(x => !initialLoopsKeys.ContainsKey(x))
-                .Select(x => (x, (_tonalitiesBalancer.CreateNewProbabilities(false), false))),
+                .Select(x => (x, (_tonalitiesBalancer.CreateNewProbabilities(false), false, new ScoreHolder()))),
             false);
 
         var result = await _tonalitiesBalancer.Balance(all, initialSongsKeys, initialLoopsKeys);
