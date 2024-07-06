@@ -200,6 +200,8 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
     public int ToIndex(byte root, ChordType songMode) => root * 2 + (int)songMode;
 
+    public (byte root, ChordType songMode) FromIndex(int index) => ((byte)(index / 2), (ChordType)(index % 2));
+
     public float[] CreateNewProbabilities(bool empty)
     {
         var result = new float[ProbabilitiesLength];
@@ -309,6 +311,4 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
     }
 
     private static int GetWeight(short occurrences, short successions) => occurrences + successions * 2;
-
-    private static (byte root, ChordType songMode) FromIndex(int index) => ((byte)(index / 2), (ChordType)(index % 2));
 }
