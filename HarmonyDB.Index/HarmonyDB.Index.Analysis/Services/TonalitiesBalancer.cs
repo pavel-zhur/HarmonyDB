@@ -4,6 +4,7 @@ using HarmonyDB.Index.Analysis.Models;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using System;
+using System.Collections.Concurrent;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -16,9 +17,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         Dictionary<string, (float[] probabilities, bool stable)> songsKeys,
         Dictionary<string, (float[] probabilities, bool stable)> loopsKeys)
     {
-        var previousSongsKeys = Clone(songsKeys);
-        var previousLoopsKeys = Clone(loopsKeys);
-
         List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight)> data)> loops)> songLoops = ExtractNestedGroups(
             all,
             x => x.externalId,
@@ -35,18 +33,12 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         {
             var started = DateTime.Now;
 
-            Calculate(previousLoopsKeys, songLoops, songsKeys);
-            Calculate(previousSongsKeys, loopSongs, loopsKeys);
+            Calculate(songsKeys, loopSongs, loopsKeys, out var loopsDelta);
+            Calculate(loopsKeys, songLoops, songsKeys, out var songsDelta);
 
             var calculation = (DateTime.Now - started).TotalSeconds;
-            started = DateTime.Now;
 
-            var songsDelta = CalculateDelta(previousSongsKeys, songsKeys);
-            var loopsDelta = CalculateDelta(previousLoopsKeys, loopsKeys);
-
-            var deltas = (DateTime.Now - started).TotalSeconds;
-
-            if (songsDelta.max < 0.01 && loopsDelta.max < 0.01)
+            if (loopsDelta < 0.01 && songsDelta < 0.01)
             {
                 successfulInARow++;
             }
@@ -57,14 +49,11 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
             if (successfulInARow > 5) break;
 
-            logger.LogInformation($"iteration {++iteration}: songs {songsDelta}, loops {loopsDelta}, calc {calculation:F} s, deltas {deltas:F} s");
-
-            (loopsKeys, previousLoopsKeys) = (previousLoopsKeys, loopsKeys);
-            (songsKeys, previousSongsKeys) = (previousSongsKeys, songsKeys);
+            logger.LogInformation($"iteration {++iteration}: songs {songsDelta}, loops {loopsDelta}, calc {calculation:F} s");
         }
 
         var stableSongsKeys = songsKeys.ToDictionary(x => x.Key, x => (probabilities: CreateNewProbabilities(false), false));
-        Calculate(loopsKeys, songLoops, stableSongsKeys);
+        Calculate(loopsKeys, songLoops, stableSongsKeys, out _);
 
         return (
             songsKeys.ToDictionary(x => x.Key, x => x.Value.stable
@@ -89,11 +78,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                         g.Select(x => (x.normalizationRoot, GetWeight(x.occurrences, x.successions))).ToList()))
                     .ToList()))
             .ToList();
-    }
-
-    private static Dictionary<string, (float[], bool stable)> Clone(Dictionary<string, (float[] probabilities, bool stable)> keys)
-    {
-        return keys.ToDictionary(x => x.Key, x => (x.Value.probabilities.ToArray(), x.Value.stable));
     }
 
     public async Task<List<(string normalized, string externalId, byte loopRoot, ChordType mode, int weight)>> GetKnownSongsLoopsKeys(
@@ -258,8 +242,11 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
     private void Calculate(
         IReadOnlyDictionary<string, (float[] probabilities, bool stable)> innerKeys,
         List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight)> data)> innerData)> nestedGroups, 
-        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> outputOuterKeys)
+        IReadOnlyDictionary<string, (float[] probabilities, bool stable)> outputOuterKeys,
+        out float maxDelta)
     {
+        var deltas = new ConcurrentBag<float>();
+
         Parallel.ForEach(nestedGroups, x =>
         {
             if (outputOuterKeys[x.outerKey].stable) return;
@@ -287,7 +274,10 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             {
                 for (var i = 0; i < ProbabilitiesLength; i++)
                 {
-                    probabilities[i] = 1f / ProbabilitiesLength;
+                    var oldValue = probabilities[i];
+                    var newValue = 1f / ProbabilitiesLength;
+                    probabilities[i] = newValue;
+                    deltas.Add(Math.Abs(oldValue - newValue));
                 }
             }
             else
@@ -295,19 +285,15 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 probabilities.Initialize();
                 for (var i = 0; i < ProbabilitiesLength; i++)
                 {
-                    probabilities[i] = values[i] / sum;
+                    var oldValue = probabilities[i];
+                    var newValue = values[i] / sum;
+                    probabilities[i] = newValue;
+                    deltas.Add(Math.Abs(oldValue - newValue));
                 }
             }
         });
-    }
 
-    private (float average, float max, float sum) CalculateDelta(IReadOnlyDictionary<string, (float[] probabilities, bool stable)> previousValues, IReadOnlyDictionary<string, (float[] probabilities, bool stable)> values)
-    {
-        var all = previousValues
-            .SelectMany(p => p.Value.probabilities.Zip(values[p.Key].probabilities).Select(p => Math.Abs(p.First - p.Second)))
-            .ToList();
-
-        return (all.Average(), all.Max(), all.Sum());
+        maxDelta = deltas.Max();
     }
 
     private static int GetWeight(short occurrences, short successions) => occurrences + successions * 2;
