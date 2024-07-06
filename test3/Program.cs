@@ -1,4 +1,4 @@
-public interface ISource
+﻿public interface ISource
 {
     string Id { get; set; }
     double[] TonalityProbabilities { get; set; }
