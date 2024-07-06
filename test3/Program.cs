@@ -169,25 +169,40 @@ public class MusicAnalyzer
     private double CalculateEntropy(string id, bool isSong)
     {
         IEnumerable<LoopLink> relevantLinks = isSong ? LoopLinks.Where(l => l.SongId == id) : LoopLinks.Where(l => l.LoopId == id);
-        var shiftCounts = relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
+
+        var shiftCounts = relevantLinks.SelectMany(l => GetRelativeShiftProbabilities(l, isSong).Select(p => (l, p)))
+            .GroupBy(x => x.p.shift)
+            .ToDictionary(x => x.Key, x => x.Sum(x => x.p.probability * x.l.Count));
+
+        //relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
         double totalLinks = relevantLinks.Sum(l => l.Count);
-        double entropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
+        double entropy = shiftCounts.Values.Where(x => x > 0).Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
         return Math.Exp(-entropy);
     }
 
-    private int GetRelativeShift(LoopLink loopLink, bool isSong)
+    private List<(double probability, int shift)> GetRelativeShiftProbabilities(LoopLink loopLink, bool isSong)
     {
         var shift = loopLink.Shift;
 
         if (isSong)
         {
-            int loopTonality = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities);
-            return (loopTonality - shift + Constants.TonalityCount) % Constants.TonalityCount;
+            var probabilities = Loops[loopLink.LoopId].TonalityProbabilities;
+            var result = probabilities.Select((x, i) => (i, weight: x))
+                .Select(x => (x.weight,
+                    shift: (x.i - shift + Constants.TonalityCount) % Constants.TonalityCount))
+                .ToList();
+
+            return result;
         }
         else
         {
-            int songTonality = GetPredictedTonality(Songs[loopLink.SongId].TonalityProbabilities);
-            return (songTonality + shift) % Constants.TonalityCount;
+            var probabilities = Songs[loopLink.SongId].TonalityProbabilities;
+            var result = probabilities.Select((x, i) => (i, weight: x))
+                .Select(x => (x.weight,
+                    shift: (x.i + shift) % Constants.TonalityCount))
+                .ToList();
+            
+            return result;
         }
     }
 
