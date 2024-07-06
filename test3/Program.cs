@@ -182,12 +182,12 @@ public class MusicAnalyzer
         // shift == loopTonality - songTonality
         if (isSong)
         {
-            int loopTonality = Loops[loopLink.LoopId].TonalityProbabilities.ToList().IndexOf(Loops[loopLink.LoopId].TonalityProbabilities.Max());
+            int loopTonality = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities);
             return (loopTonality - shift + Constants.TonalityCount) % Constants.TonalityCount;
         }
         else
         {
-            int songTonality = Songs[loopLink.SongId].TonalityProbabilities.ToList().IndexOf(Songs[loopLink.SongId].TonalityProbabilities.Max());
+            int songTonality = GetPredictedTonality(Songs[loopLink.SongId].TonalityProbabilities);
             return (songTonality + shift) % Constants.TonalityCount;
         }
     }
@@ -212,6 +212,17 @@ public class MusicAnalyzer
             probabilities[i] /= sum;
         }
     }
+
+    public int GetPredictedTonality(double[] probabilities)
+    {
+        double maxProbability = probabilities.Max();
+        var maxIndices = probabilities.Select((value, index) => new { value, index })
+                                      .Where(x => x.value == maxProbability)
+                                      .Select(x => x.index)
+                                      .ToArray();
+        Random random = new Random();
+        return maxIndices[random.Next(maxIndices.Length)];
+}
 }
 
 public class TestDataGeneratorParameters
@@ -405,7 +416,7 @@ public static class Program
         foreach (var song in incorrectTonalitySongs)
         {
             double[] calculatedProbabilities = analyzer.CalculateProbabilities(song.Id, true);
-            int predictedTonality = GetPredictedTonality(calculatedProbabilities);
+            int predictedTonality = analyzer.GetPredictedTonality(calculatedProbabilities);
             if (!song.SecretTonalities.Contains(predictedTonality))
             {
                 incorrectDetectionCount++;
@@ -416,21 +427,10 @@ public static class Program
 
         // Output accuracy of detected tonalities for songs and loops
         Console.WriteLine("\nAccuracy of Detected Tonalities:");
-        int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
-        int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
+        int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
+        int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
 
         Console.WriteLine($"Correctly Detected Song Tonalities: {correctSongDetections} / {songs.Count} ({(double)correctSongDetections / songs.Count:P2})");
         Console.WriteLine($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {loops.Count} ({(double)correctLoopDetections / loops.Count:P2})");
-    }
-
-    private static int GetPredictedTonality(double[] probabilities)
-    {
-        double maxProbability = probabilities.Max();
-        var maxIndices = probabilities.Select((value, index) => new { value, index })
-                                      .Where(x => x.value == maxProbability)
-                                      .Select(x => x.index)
-                                      .ToArray();
-        Random random = new Random();
-        return maxIndices[random.Next(maxIndices.Length)];
     }
 }
