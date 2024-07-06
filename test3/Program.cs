@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 public interface ISource
 {
     string Id { get; set; }
@@ -101,12 +95,14 @@ public class MusicAnalyzer
     public void UpdateProbabilities()
     {
         const double tolerance = 0.01;
+        const int stabilityCheckWindow = 5; // Number of iterations to check for stability
+        const double stabilityThreshold = 1e-6; // Threshold for considering changes as stable
+        List<double> recentMaxChanges = new List<double>();
         bool hasConverged = false;
         int iterationCount = 0;
 
         while (!hasConverged)
         {
-            hasConverged = true;
             iterationCount++;
             double maxChange = 0.0;
 
@@ -137,11 +133,32 @@ public class MusicAnalyzer
                 loop.Score = CalculateEntropy(loop.Id, false);
             });
 
-            if (maxChange > tolerance)
-                hasConverged = false;
+            recentMaxChanges.Add(maxChange);
+            if (recentMaxChanges.Count > stabilityCheckWindow)
+            {
+                recentMaxChanges.RemoveAt(0);
+            }
+
+            if (recentMaxChanges.Count == stabilityCheckWindow)
+            {
+                double minChange = recentMaxChanges.Min();
+                double maxInWindow = recentMaxChanges.Max();
+
+                if (maxInWindow - minChange < stabilityThreshold)
+                {
+                    throw new Exception("Algorithm is oscillating without converging.");
+                }
+            }
+
+            if (maxChange < tolerance)
+            {
+                hasConverged = true;
+            }
 
             Console.WriteLine($"Iteration {iterationCount}, Max Change: {maxChange:F6}");
         }
+
+        Console.WriteLine("Converged after " + iterationCount + " iterations.");
     }
 
     public double[] CalculateProbabilities(string id, bool isSong)
