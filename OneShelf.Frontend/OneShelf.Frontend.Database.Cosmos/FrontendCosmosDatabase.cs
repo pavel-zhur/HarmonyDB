@@ -23,8 +23,8 @@ public class FrontendCosmosDatabase : CosmosDatabase
     {
         if (_pdfsContainer != null) return;
 
-        using var _ = await _lock.LockAsync();
-        var databaseResponse = await _client.CreateDatabaseIfNotExistsAsync(_options.DatabaseName, 1000);
+        using var _ = await Lock.LockAsync();
+        var databaseResponse = await Client.CreateDatabaseIfNotExistsAsync(Options.DatabaseName, 1000);
             
         _pdfsContainer = await databaseResponse.Database.CreateContainerIfNotExistsAsync(new(nameof(Pdf), "/id")
         {

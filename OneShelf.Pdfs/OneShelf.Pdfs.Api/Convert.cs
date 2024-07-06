@@ -154,7 +154,7 @@ public class Convert
 
     private static void SetExecutablePermission(string tempBlinkDir)
     {
-        FileAccessPermissions ExecutableFilePermissions = FileAccessPermissions.UserRead | FileAccessPermissions.UserWrite | FileAccessPermissions.UserExecute |
+        FileAccessPermissions executableFilePermissions = FileAccessPermissions.UserRead | FileAccessPermissions.UserWrite | FileAccessPermissions.UserExecute |
                                                           FileAccessPermissions.GroupRead | FileAccessPermissions.GroupExecute | FileAccessPermissions.OtherRead | FileAccessPermissions.OtherExecute;
 
         var executableFiles = new string[] { "chrome", "chrome_sandbox" };
@@ -165,7 +165,7 @@ public class Convert
 
             if (File.Exists(execPath))
             {
-                var code = Chmod(execPath, ExecutableFilePermissions);
+                var code = Chmod(execPath, executableFilePermissions);
                 if (code != 0)
                 {
                     throw new("Chmod operation failed");

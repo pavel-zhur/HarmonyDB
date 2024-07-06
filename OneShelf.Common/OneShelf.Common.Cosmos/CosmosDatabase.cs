@@ -10,17 +10,17 @@ namespace OneShelf.Common.Cosmos;
 
 public abstract class CosmosDatabase : IDisposable
 {
-    protected readonly CosmosDatabaseOptions _options;
-    protected readonly CosmosClient _client;
-    protected readonly AsyncLock _lock = new();
-    protected readonly ILogger<CosmosDatabase> _logger;
+    protected readonly CosmosDatabaseOptions Options;
+    protected readonly CosmosClient Client;
+    protected readonly AsyncLock Lock = new();
+    protected readonly ILogger<CosmosDatabase> Logger;
 
     protected CosmosDatabase(CosmosDatabaseOptions options, ILogger<CosmosDatabase> logger)
     {
-        _options = options;
-        _logger = logger;
+        Options = options;
+        Logger = logger;
 
-        _client = new(options.EndPointUri, options.PrimaryKey, new()
+        Client = new(options.EndPointUri, options.PrimaryKey, new()
         {
             SerializerOptions = new()
             {
@@ -32,7 +32,7 @@ public abstract class CosmosDatabase : IDisposable
 
     public const string IllegalIdCharacters = "/\\#?";
     
-    public void Dispose() => _client.Dispose();
+    public void Dispose() => Client.Dispose();
 
     protected void ValidateBeforeSaving(IValidatableObject validatableObject)
     {
@@ -76,7 +76,7 @@ public abstract class CosmosDatabase : IDisposable
 
         if (failures > 0)
         {
-            _logger.LogWarning("Upsert cosmos: {threads} threads, {count} items, {failures} failures, {type} type.", threads, items.Count, failures, typeof(T).FullName);
+            Logger.LogWarning("Upsert cosmos: {threads} threads, {count} items, {failures} failures, {type} type.", threads, items.Count, failures, typeof(T).FullName);
         }
     }
     
@@ -108,7 +108,7 @@ public abstract class CosmosDatabase : IDisposable
 
         if (failures > 0)
         {
-            _logger.LogWarning("With retry cosmos: {failures} failures, {type} type.", failures, typeof(T).FullName);
+            Logger.LogWarning("With retry cosmos: {failures} failures, {type} type.", failures, typeof(T).FullName);
         }
 
         return result;
