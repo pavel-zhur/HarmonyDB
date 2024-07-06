@@ -91,7 +91,7 @@ public class MusicAnalyzer
                 loop.TonalityProbabilities[i] = 1.0 / Constants.TonalityCount;
         }
 
-        // Подсчет количества различных песен для каждого цикла
+        // Calculate the number of distinct songs for each loop
         foreach (var loop in Loops.Values)
         {
             loop.SongCount = LoopLinks.Where(l => l.LoopId == loop.Id).Select(l => l.SongId).Distinct().Count();
@@ -179,7 +179,6 @@ public class MusicAnalyzer
     {
         var shift = loopLink.Shift;
 
-        // shift == loopTonality - songTonality
         if (isSong)
         {
             int loopTonality = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities);
@@ -213,7 +212,7 @@ public class MusicAnalyzer
         }
     }
 
-    public int GetPredictedTonality(double[] probabilities)
+    public static int GetPredictedTonality(double[] probabilities)
     {
         double maxProbability = probabilities.Max();
         var maxIndices = probabilities.Select((value, index) => new { value, index })
@@ -222,7 +221,7 @@ public class MusicAnalyzer
                                       .ToArray();
         Random random = new Random();
         return maxIndices[random.Next(maxIndices.Length)];
-}
+    }
 }
 
 public class TestDataGeneratorParameters
@@ -377,7 +376,7 @@ public static class Program
         var analyzer = new MusicAnalyzer(songs.ToDictionary(kv => kv.Key, kv => (ISong)kv.Value), loops.ToDictionary(kv => kv.Key, kv => (ILoop)kv.Value), loopLinks);
         analyzer.UpdateProbabilities();
 
-        // Output score summaries for good and bad entities
+        // Approximate range and average score for good and bad objects
         var allGoodSongs = songs.Values.Where(s => s.SecretTonalities.Length == 1);
         var allBadSongs = songs.Values.Where(s => s.SecretTonalities.Length > 1);
         var incorrectTonalitySongs = songs.Values.Where(s => s.IsKnownTonalityIncorrect);
@@ -410,13 +409,13 @@ public static class Program
         PrintStatistics(allGoodLoops.Select(l => l.Score), "Good Loops");
         PrintStatistics(allBadLoops.Select(l => l.Score), "Bad Loops");
 
-        // Output bad songs with incorrect known tonality and their predicted tonalities
+        // Output bad songs with known tonality, where predicted tonality does not match the known tonality
         Console.WriteLine("\nBad Songs with Incorrectly Known Tonality:");
         int incorrectDetectionCount = 0;
         foreach (var song in incorrectTonalitySongs)
         {
             double[] calculatedProbabilities = analyzer.CalculateProbabilities(song.Id, true);
-            int predictedTonality = analyzer.GetPredictedTonality(calculatedProbabilities);
+            int predictedTonality = MusicAnalyzer.GetPredictedTonality(calculatedProbabilities);
             if (!song.SecretTonalities.Contains(predictedTonality))
             {
                 incorrectDetectionCount++;
@@ -425,10 +424,10 @@ public static class Program
         }
         Console.WriteLine($"Incorrectly Detected Songs with Incorrectly Known Tonality: {incorrectDetectionCount} / {incorrectTonalitySongs.Count()} ({(double)incorrectDetectionCount / incorrectTonalitySongs.Count():P2})");
 
-        // Output accuracy of detected tonalities for songs and loops
+        // Output the accuracy of detected tonalities for songs and loops
         Console.WriteLine("\nAccuracy of Detected Tonalities:");
-        int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
-        int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
+        int correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
+        int correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
 
         Console.WriteLine($"Correctly Detected Song Tonalities: {correctSongDetections} / {songs.Count} ({(double)correctSongDetections / songs.Count:P2})");
         Console.WriteLine($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {loops.Count} ({(double)correctLoopDetections / loops.Count:P2})");
