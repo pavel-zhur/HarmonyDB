@@ -13,16 +13,16 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
     public const int ProbabilitiesLength = Note.Modulus * 2;
 
     public async Task<(Dictionary<string, (IReadOnlyList<float> probabilities, bool despiteStable)> songsKeys, Dictionary<string, float[]> loopsKeys)> Balance(
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> all,
+        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> all,
         Dictionary<string, (float[] probabilities, bool stable, ScoreHolder score)> songsKeys,
         Dictionary<string, (float[] probabilities, bool stable, ScoreHolder score)> loopsKeys)
     {
-        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight, int inverseCount)> data)> songs)> loopSongs = ExtractNestedGroups(
+        List<(string normalized, List<(string externalId, List<(byte normalizationRoot, int weight, int inverseCount, int loopLength)> data)> songs)> loopSongs = ExtractNestedGroups(
             all,
             x => x.normalized,
             x => x.externalId);
 
-        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight, int inverseCount)> data)> loops)> songLoops = ExtractNestedGroups(
+        List<(string externalId, List<(string normalized, List<(byte normalizationRoot, int weight, int inverseCount, int loopLength)> data)> loops)> songLoops = ExtractNestedGroups(
             all,
             x => x.externalId,
             x => x.normalized,
@@ -63,8 +63,8 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
             loopsKeys.ToDictionary(x => x.Key, x => x.Value.probabilities));
     }
 
-    private static List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight, int inverseCount)> data)> loops)> ExtractNestedGroups(
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> all,
+    private static List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight, int inverseCount, int loopLength)> data)> loops)> ExtractNestedGroups(
+        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> all,
         Func<(string normalized, string externalId), string> outer,
         Func<(string normalized, string externalId), string> inner,
         Dictionary<string, int>? inverseCounters = null)
@@ -77,7 +77,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                     .GroupBy(x => inner((x.normalized, x.externalId)))
                     .Select(g => (
                         g.Key,
-                        g.Select(x => (x.normalizationRoot, GetWeight(x.occurrences, x.successions), inverseCounters?[inner((x.normalized, x.externalId))] ?? 1)).ToList()))
+                        g.Select(x => (x.normalizationRoot, GetWeight(x.occurrences, x.successions), inverseCounters?[inner((x.normalized, x.externalId))] ?? 1, x.loopLength)).ToList()))
                     .ToList()))
             .ToList();
     }
@@ -134,19 +134,19 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         return result;
     }
 
-    public async Task<List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)>> GetAllSongsLoops(
+    public async Task<List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)>> GetAllSongsLoops(
         IReadOnlyDictionary<string, CompactChordsProgression> progressions)
     {
         var cc = 0;
         var cf = 0;
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> result = new();
+        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> result = new();
 
         await Parallel.ForEachAsync(progressions, (x, __) =>
         {
             var (externalId, compactChordsProgression) = x;
             try
             {
-                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions)>();
+                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions, int loopLength)>();
                 foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
                 {
                     var loops = indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
@@ -155,16 +155,17 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                     {
                         var key = (loop.Normalized, loop.NormalizationRoot);
                         var counters = loopResults.GetValueOrDefault(key);
-                        loopResults[key] = ((short occurrences, short successions))(
+                        loopResults[key] = ((short occurrences, short successions, int loopLength))(
                             counters.occurrences + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength,
-                            counters.successions + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength - 1);
+                            counters.successions + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength - 1,
+                            loop.LoopLength);
                     }
 
                     if (cc++ % 1000 == 0) logger.LogInformation($"{cc} s, {cf} f");
                 }
 
                 var items = loopResults
-                    .Select(p => (p.Key.normalized, externalId, p.Key.normalizationRoot, p.Value.occurrences, p.Value.successions))
+                    .Select(p => (p.Key.normalized, externalId, p.Key.normalizationRoot, p.Value.occurrences, p.Value.successions, p.Value.loopLength))
                     .ToList();
 
                 lock (result)
@@ -243,7 +244,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
     private void Calculate(
         IReadOnlyDictionary<string, (float[] probabilities, bool stable, ScoreHolder score)> innerKeys,
-        List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight, int inverseCounter)> data)> innerData)> nestedGroups, 
+        List<(string outerKey, List<(string innerKey, List<(byte normalizationRoot, int weight, int inverseCounter, int loopLength)> data)> innerData)> nestedGroups, 
         IReadOnlyDictionary<string, (float[] probabilities, bool stable, ScoreHolder score)> outputOuterKeys,
         out float maxDelta)
     {
@@ -251,6 +252,27 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
 
         Parallel.ForEach(nestedGroups, x =>
         {
+            var score = outputOuterKeys[x.outerKey].score;
+
+            var accumulated = new float[ProbabilitiesLength / 2];
+            foreach (var (innerKeyId, relation) in x.innerData)
+            {
+                var innerKey = innerKeys[innerKeyId];
+                var mostProbableInnerProbabilityIndex = innerKey.probabilities.WithIndices().MaxBy(x => x.x).i;
+                var (innerRoot, songMode) = FromIndex(mostProbableInnerProbabilityIndex);
+                foreach (var (normalizationRoot, weight, inverseCounter, loopLength) in relation)
+                {
+                    var outerRoot = Note.Normalize(normalizationRoot - innerRoot);
+                    accumulated[outerRoot] += (float)(weight * (1 + Math.Log(inverseCounter)) 
+                                                             //* (loopLength == 2 ? 0.1 : 1) // doesn't help
+                                                             );
+                }
+            }
+
+            var totalAccumulated = accumulated.Sum();
+            var entropy = accumulated.Select(count => count / totalAccumulated * Math.Log(count / totalAccumulated)).Sum() * -1;
+            score.Score = double.IsNaN(entropy) ? 1 : (float)Math.Exp(-entropy);
+
             if (outputOuterKeys[x.outerKey].stable) return;
 
             var values = new float[ProbabilitiesLength];
@@ -261,10 +283,10 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
                 {
                     var (innerRoot, songMode) = FromIndex(i);
                     var probability = innerKey.probabilities[i];
-                    foreach (var (normalizationRoot, weight, inverseCounter) in relation)
+                    foreach (var (normalizationRoot, weight, inverseCounter, loopLength) in relation)
                     {
                         var outerRoot = Note.Normalize(normalizationRoot - innerRoot);
-                        values[ToIndex(outerRoot, songMode)] += (float)(probability * weight * Math.Log(inverseCounter) * innerKey.score.Score);
+                        values[ToIndex(outerRoot, songMode)] += (float)(probability * weight * (1 + Math.Log(inverseCounter)) * innerKey.score.Score);
                     }
                 }
             }
@@ -298,7 +320,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         maxDelta = deltas.Max();
     }
 
-    private static int GetWeight(short occurrences, short successions) => occurrences + successions * 2;
+    private static int GetWeight(short occurrences, short successions) => occurrences + successions * 4;
 
     public class ScoreHolder
     {

@@ -122,7 +122,7 @@ public class TonalitiesIndex
     public static byte[] Serialize(
         (Dictionary<string, (IReadOnlyList<float> probabilities, bool despiteStable)> songsKeys,
             Dictionary<string, float[]> loopsKeys) result,
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> all)
+        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> all)
     {
         var (songsKeys, loopsKeys) = result;
 
@@ -157,7 +157,7 @@ public class TonalitiesIndex
         }
 
         writer.Write(all.Count);
-        foreach (var (normalized, externalId, normalizationRoot, occurrences, successions) in all)
+        foreach (var (normalized, externalId, normalizationRoot, occurrences, successions, _) in all)
         {
             writer.Write(normalizedValues[normalized]);
             writer.Write(externalIds[externalId]);
