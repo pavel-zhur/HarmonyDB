@@ -22,6 +22,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
 	  <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.Representations.OneShelf\HarmonyDB.Common.Representations.OneShelf.csproj" />
+	  <ProjectReference Include="..\HarmonyDB.Index.Analysis.Em\HarmonyDB.Index.Analysis.Em.csproj" />
 	</ItemGroup>
 
 
