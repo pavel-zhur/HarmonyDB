@@ -86,5 +86,13 @@
 
         Console.WriteLine($"Correctly Detected Song Tonalities: {correctSongDetections} / {songs.Count} ({(double)correctSongDetections / songs.Count:P2})");
         Console.WriteLine($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {loops.Count} ({(double)correctLoopDetections / loops.Count:P2})");
+
+        int correctSongDetectionsOfPair = songs.Values.Count(s => s.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true)))
+            || s.SecretTonalities.Contains(Constants.GetParallelTonality(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true)))));
+        int correctLoopDetectionsOfPair = loops.Values.Count(l => l.SecretTonalities.Contains(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false)))
+            || l.SecretTonalities.Contains(Constants.GetParallelTonality(MusicAnalyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false)))));
+
+        Console.WriteLine($"Correctly Detected Song Tonalities Pair: {correctSongDetectionsOfPair} / {songs.Count} ({(double)correctSongDetectionsOfPair / songs.Count:P2})");
+        Console.WriteLine($"Correctly Detected Loop Tonalities Pair: {correctLoopDetectionsOfPair} / {loops.Count} ({(double)correctLoopDetectionsOfPair / loops.Count:P2})");
     }
 }

@@ -117,21 +117,15 @@
 
         foreach (var link in relevantLinks)
         {
-            int adjustedTonality = (link.Shift + Constants.TonalityCount) % Constants.TonalityCount;
             double[] sourceProbabilities = isSong ? Loops[link.LoopId].TonalityProbabilities : Songs[link.SongId].TonalityProbabilities;
             double sourceScore = isSong ? Loops[link.LoopId].Score * Loops[link.LoopId].SongCount : Songs[link.SongId].Score;
 
             for (int i = 0; i < Constants.TonalityCount; i++)
             {
-                int targetTonality = isSong ? (i - adjustedTonality + Constants.TonalityCount) % Constants.TonalityCount : (adjustedTonality + i) % Constants.TonalityCount;
+                int targetTonality = isSong
+                    ? Constants.ToTonality((i.FromTonality().shift - link.Shift + Constants.TonalityCountSmall) % Constants.TonalityCountSmall, i.FromTonality().isMajor) 
+                    : Constants.ToTonality((link.Shift + i.FromTonality().shift) % Constants.TonalityCountSmall, i.FromTonality().isMajor);
                 newProbabilities[targetTonality] += sourceProbabilities[i] * sourceScore * link.Count;
-
-                // Also update the parallel tonality
-                if (Constants.GetParallelTonality(targetTonality) != targetTonality)
-                {
-                    int parallelTonality = Constants.GetParallelTonality(targetTonality);
-                    newProbabilities[parallelTonality] += (sourceProbabilities[i] * sourceScore * link.Count) * 0.5; // Give it half the weight
-                }
             }
         }
 
@@ -146,22 +140,7 @@
         double totalLinks = relevantLinks.Sum(l => l.Count);
         double entropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
 
-        // Reduce the contribution of changes within parallel tonalities
-        double adjustedEntropy = 0;
-        foreach (var shiftCount in shiftCounts)
-        {
-            if (Constants.GetParallelTonality(shiftCount.Key) != shiftCount.Key)
-            {
-                adjustedEntropy += (shiftCount.Value / totalLinks) * Math.Log(shiftCount.Value / totalLinks) * 0.5; // Give it half the weight
-            }
-            else
-            {
-                adjustedEntropy += (shiftCount.Value / totalLinks) * Math.Log(shiftCount.Value / totalLinks);
-            }
-        }
-        adjustedEntropy = adjustedEntropy * -1;
-
-        return Math.Exp(-adjustedEntropy);
+        return Math.Exp(-entropy);
     }
 
     private int GetRelativeShift(LoopLink loopLink, bool isSong)
@@ -171,12 +150,12 @@
         if (isSong)
         {
             int loopTonality = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities);
-            return (loopTonality - shift + Constants.TonalityCount) % Constants.TonalityCount;
+            return (loopTonality.FromTonality().shift - shift + Constants.TonalityCountSmall) % Constants.TonalityCountSmall;
         }
         else
         {
             int songTonality = GetPredictedTonality(Songs[loopLink.SongId].TonalityProbabilities);
-            return (songTonality + shift) % Constants.TonalityCount;
+            return (songTonality.FromTonality().shift + shift) % Constants.TonalityCountSmall;
         }
     }
 

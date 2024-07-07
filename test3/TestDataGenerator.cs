@@ -71,7 +71,7 @@
                     songTonality = Constants.GetParallelTonality(songTonality);
                 }
 
-                int shift = (loopTonality - songTonality + Constants.TonalityCount) % Constants.TonalityCount;
+                int shift = (loopTonality.FromTonality().shift - songTonality.FromTonality().shift + Constants.TonalityCountSmall) % Constants.TonalityCountSmall;
 
                 loopLinks.Add(new LoopLink
                 {
