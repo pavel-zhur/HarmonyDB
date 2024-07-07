@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Em;
+﻿namespace HarmonyDB.Index.Analysis.Em.Services;
 
 public class TestDataGenerator
 {

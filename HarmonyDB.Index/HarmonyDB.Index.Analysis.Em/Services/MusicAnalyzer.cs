@@ -1,13 +1,18 @@
-﻿namespace HarmonyDB.Index.Analysis.Em;
+﻿using Microsoft.Extensions.Logging;
 
-public class MusicAnalyzer
+namespace HarmonyDB.Index.Analysis.Em.Services;
+
+public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 {
+    private bool isInitialized;
     private Dictionary<string, ISong> Songs;
     private Dictionary<string, ILoop> Loops;
     private List<LoopLink> LoopLinks;
-
-    public MusicAnalyzer(Dictionary<string, ISong> songs, Dictionary<string, ILoop> loops, List<LoopLink> loopLinks)
+    
+    public void Initialize(Dictionary<string, ISong> songs, Dictionary<string, ILoop> loops, List<LoopLink> loopLinks)
     {
+        if (isInitialized) throw new InvalidOperationException("Already initialized");
+
         Songs = songs;
         Loops = loops;
         LoopLinks = loopLinks;
@@ -24,7 +29,7 @@ public class MusicAnalyzer
                 {
                     for (int j = 0; j < Constants.ScaleCount; j++)
                     {
-                        song.TonalityProbabilities[i, j] = (i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2) ? 1.0 : 0.0;
+                        song.TonalityProbabilities[i, j] = i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2 ? 1.0 : 0.0;
                     }
                 }
             }
@@ -121,10 +126,10 @@ public class MusicAnalyzer
                 hasConverged = true;
             }
 
-            Console.WriteLine($"Iteration {iterationCount}, Max Change: {maxChange:F6}");
+            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}");
         }
 
-        Console.WriteLine("Converged after " + iterationCount + " iterations.");
+        logger.LogInformation("Converged after " + iterationCount + " iterations.");
     }
 
     public double[,] CalculateProbabilities(string id, bool isSong)
@@ -158,7 +163,7 @@ public class MusicAnalyzer
         var shiftCounts = relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
         double totalLinks = relevantLinks.Sum(l => l.Count);
 
-        double tonicEntropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
+        double tonicEntropy = shiftCounts.Values.Select(count => count / totalLinks * Math.Log(count / totalLinks)).Sum() * -1;
 
         double[,] scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
@@ -176,7 +181,7 @@ public class MusicAnalyzer
         }
 
         double totalScaleLinks = scaleProbabilities.Cast<double>().Sum();
-        double scaleEntropy = scaleProbabilities.Cast<double>().Where(p => p > 0).Select(p => (p / totalScaleLinks) * Math.Log(p / totalScaleLinks)).Sum() * -1;
+        double scaleEntropy = scaleProbabilities.Cast<double>().Where(p => p > 0).Select(p => p / totalScaleLinks * Math.Log(p / totalScaleLinks)).Sum() * -1;
 
         return (Math.Exp(-tonicEntropy), Math.Exp(-scaleEntropy));
     }
@@ -231,7 +236,7 @@ public class MusicAnalyzer
         }
     }
 
-    public static (int, Scale) GetPredictedTonality(double[,] probabilities)
+    public (int, Scale) GetPredictedTonality(double[,] probabilities)
     {
         double maxProbability = double.MinValue;
         var maxIndices = new List<(int, Scale)>();
