@@ -1,4 +1,6 @@
-﻿public static class Program
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public static class Program
 {
     public static void Main(string[] args)
     {

@@ -1,4 +1,6 @@
-﻿public class MusicAnalyzer
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public class MusicAnalyzer
 {
     private Dictionary<string, ISong> Songs;
     private Dictionary<string, ILoop> Loops;

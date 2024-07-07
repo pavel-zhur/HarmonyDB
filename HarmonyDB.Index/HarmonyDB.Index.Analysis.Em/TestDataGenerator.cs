@@ -1,4 +1,6 @@
-﻿public class TestDataGenerator
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public class TestDataGenerator
 {
     private Random random = new Random();
 

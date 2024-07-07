@@ -1,4 +1,6 @@
-﻿public static class Constants
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public static class Constants
 {
     public const int TonicCount = 12; // Number of different tonics
     public const int ScaleCount = 2;  // Major and Minor

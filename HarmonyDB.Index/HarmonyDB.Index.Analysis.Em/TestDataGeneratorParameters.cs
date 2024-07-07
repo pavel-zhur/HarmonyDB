@@ -1,4 +1,6 @@
-﻿public class TestDataGeneratorParameters
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public class TestDataGeneratorParameters
 {
     public int TotalSongs { get; set; } = 1000;
     public int TotalLoops { get; set; } = 1500;

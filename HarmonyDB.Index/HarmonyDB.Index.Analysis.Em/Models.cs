@@ -1,4 +1,6 @@
-﻿public interface ISource
+﻿namespace HarmonyDB.Index.Analysis.Em;
+
+public interface ISource
 {
     string Id { get; set; }
     double[,] TonalityProbabilities { get; set; } // [TonicCount, ScaleCount]
