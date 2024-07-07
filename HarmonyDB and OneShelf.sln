@@ -173,7 +173,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Playground.Web", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Common.FullTextSearch", "HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj", "{21D494EB-BDD0-49B0-A79D-57AE6A529F4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Index.LongBalancer", "HarmonyDB.Index\HarmonyDB.Index.LongBalancer\HarmonyDB.Index.LongBalancer.csproj", "{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.LongBalancer", "HarmonyDB.Index\HarmonyDB.Index.LongBalancer\HarmonyDB.Index.LongBalancer.csproj", "{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Index.Analysis.Em", "HarmonyDB.Index\HarmonyDB.Index.Analysis.Em\HarmonyDB.Index.Analysis.Em.csproj", "{33A0E860-62DF-41C6-8E25-442FA2BC625F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -433,6 +435,10 @@ Global
 		{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33A0E860-62DF-41C6-8E25-442FA2BC625F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33A0E860-62DF-41C6-8E25-442FA2BC625F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33A0E860-62DF-41C6-8E25-442FA2BC625F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33A0E860-62DF-41C6-8E25-442FA2BC625F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -502,6 +508,7 @@ Global
 		{C63D176C-03AB-4403-BE88-E8FE4EFE736D} = {47FED0C3-B336-4FC6-86FE-51A78872C2DE}
 		{21D494EB-BDD0-49B0-A79D-57AE6A529F4D} = {2950865E-9D1A-406E-B0C6-4C249E2E4D61}
 		{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2} = {7548FF8E-E1B9-4939-96E9-03DBD5236709}
+		{33A0E860-62DF-41C6-8E25-442FA2BC625F} = {7548FF8E-E1B9-4939-96E9-03DBD5236709}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}
