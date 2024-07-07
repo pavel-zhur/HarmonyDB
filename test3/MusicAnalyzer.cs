@@ -18,20 +18,35 @@
         {
             if (song.IsTonalityKnown)
             {
-                for (int i = 0; i < Constants.TonalityCount; i++)
-                    song.TonalityProbabilities[i] = (i == song.KnownTonality) ? 1.0 : 0.0;
+                for (int i = 0; i < Constants.TonicCount; i++)
+                {
+                    for (int j = 0; j < Constants.ScaleCount; j++)
+                    {
+                        song.TonalityProbabilities[i, j] = (i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2) ? 1.0 : 0.0;
+                    }
+                }
             }
             else
             {
-                for (int i = 0; i < Constants.TonalityCount; i++)
-                    song.TonalityProbabilities[i] = 1.0 / Constants.TonalityCount;
+                for (int i = 0; i < Constants.TonicCount; i++)
+                {
+                    for (int j = 0; j < Constants.ScaleCount; j++)
+                    {
+                        song.TonalityProbabilities[i, j] = 1.0 / (Constants.TonicCount * Constants.ScaleCount);
+                    }
+                }
             }
         }
 
         foreach (var loop in Loops.Values)
         {
-            for (int i = 0; i < Constants.TonalityCount; i++)
-                loop.TonalityProbabilities[i] = 1.0 / Constants.TonalityCount;
+            for (int i = 0; i < Constants.TonicCount; i++)
+            {
+                for (int j = 0; j < Constants.ScaleCount; j++)
+                {
+                    loop.TonalityProbabilities[i, j] = 1.0 / (Constants.TonicCount * Constants.ScaleCount);
+                }
+            }
         }
 
         // Calculate the number of distinct songs for each loop
@@ -110,22 +125,24 @@
         Console.WriteLine("Converged after " + iterationCount + " iterations.");
     }
 
-    public double[] CalculateProbabilities(string id, bool isSong)
+    public double[,] CalculateProbabilities(string id, bool isSong)
     {
-        double[] newProbabilities = new double[Constants.TonalityCount];
+        double[,] newProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
         IEnumerable<LoopLink> relevantLinks = isSong ? LoopLinks.Where(l => l.SongId == id) : LoopLinks.Where(l => l.LoopId == id);
 
         foreach (var link in relevantLinks)
         {
-            double[] sourceProbabilities = isSong ? Loops[link.LoopId].TonalityProbabilities : Songs[link.SongId].TonalityProbabilities;
-            double sourceScore = isSong ? Loops[link.LoopId].Score * Loops[link.LoopId].SongCount : Songs[link.SongId].Score;
+            int adjustedTonic = (link.Shift + Constants.TonicCount) % Constants.TonicCount;
+            double[,] sourceProbabilities = isSong ? Loops[link.LoopId].TonalityProbabilities : Songs[link.SongId].TonalityProbabilities;
+            (double TonicScore, double ScaleScore) sourceScore = isSong ? Loops[link.LoopId].Score : Songs[link.SongId].Score;
 
-            for (int i = 0; i < Constants.TonalityCount; i++)
+            for (int i = 0; i < Constants.TonicCount; i++)
             {
-                int targetTonality = isSong
-                    ? Constants.ToTonality((i.FromTonality().shift - link.Shift + Constants.TonalityCountSmall) % Constants.TonalityCountSmall, i.FromTonality().isMajor) 
-                    : Constants.ToTonality((link.Shift + i.FromTonality().shift) % Constants.TonalityCountSmall, i.FromTonality().isMajor);
-                newProbabilities[targetTonality] += sourceProbabilities[i] * sourceScore * link.Count;
+                for (int j = 0; j < Constants.ScaleCount; j++)
+                {
+                    int targetTonic = isSong ? (i - adjustedTonic + Constants.TonicCount) % Constants.TonicCount : (adjustedTonic + i) % Constants.TonicCount;
+                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * sourceScore.TonicScore * link.Count;
+                }
             }
         }
 
@@ -133,14 +150,33 @@
         return newProbabilities;
     }
 
-    private double CalculateEntropy(string id, bool isSong)
+    private (double TonicScore, double ScaleScore) CalculateEntropy(string id, bool isSong)
     {
         IEnumerable<LoopLink> relevantLinks = isSong ? LoopLinks.Where(l => l.SongId == id) : LoopLinks.Where(l => l.LoopId == id);
         var shiftCounts = relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
         double totalLinks = relevantLinks.Sum(l => l.Count);
-        double entropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
 
-        return Math.Exp(-entropy);
+        double tonicEntropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
+
+        double[,] scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
+        foreach (var link in relevantLinks)
+        {
+            int adjustedTonic = (link.Shift + Constants.TonicCount) % Constants.TonicCount;
+            double[,] sourceProbabilities = isSong ? Loops[link.LoopId].TonalityProbabilities : Songs[link.SongId].TonalityProbabilities;
+            for (int i = 0; i < Constants.TonicCount; i++)
+            {
+                for (int j = 0; j < Constants.ScaleCount; j++)
+                {
+                    int targetTonic = isSong ? (i - adjustedTonic + Constants.TonicCount) % Constants.TonicCount : (adjustedTonic + i) % Constants.TonicCount;
+                    scaleProbabilities[targetTonic, j] += sourceProbabilities[i, j];
+                }
+            }
+        }
+
+        double totalScaleLinks = scaleProbabilities.Cast<double>().Sum();
+        double scaleEntropy = scaleProbabilities.Cast<double>().Where(p => p > 0).Select(p => (p / totalScaleLinks) * Math.Log(p / totalScaleLinks)).Sum() * -1;
+
+        return (Math.Exp(-tonicEntropy), Math.Exp(-scaleEntropy));
     }
 
     private int GetRelativeShift(LoopLink loopLink, bool isSong)
@@ -149,45 +185,71 @@
 
         if (isSong)
         {
-            int loopTonality = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities);
-            return (loopTonality.FromTonality().shift - shift + Constants.TonalityCountSmall) % Constants.TonalityCountSmall;
+            int loopTonic = GetPredictedTonality(Loops[loopLink.LoopId].TonalityProbabilities).Item1;
+            return (loopTonic - shift + Constants.TonicCount) % Constants.TonicCount;
         }
         else
         {
-            int songTonality = GetPredictedTonality(Songs[loopLink.SongId].TonalityProbabilities);
-            return (songTonality.FromTonality().shift + shift) % Constants.TonalityCountSmall;
+            int songTonic = GetPredictedTonality(Songs[loopLink.SongId].TonalityProbabilities).Item1;
+            return (songTonic + shift) % Constants.TonicCount;
         }
     }
 
-    private double CalculateMaxChange(double[] oldProbabilities, double[] newProbabilities)
+    private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)
     {
         double maxChange = 0.0;
-        for (int i = 0; i < Constants.TonalityCount; i++)
+        for (int i = 0; i < Constants.TonicCount; i++)
         {
-            maxChange = Math.Max(maxChange, Math.Abs(oldProbabilities[i] - newProbabilities[i]));
+            for (int j = 0; j < Constants.ScaleCount; j++)
+            {
+                maxChange = Math.Max(maxChange, Math.Abs(oldProbabilities[i, j] - newProbabilities[i, j]));
+            }
         }
         return maxChange;
     }
 
-    private void NormalizeProbabilities(double[] probabilities)
+    private void NormalizeProbabilities(double[,] probabilities)
     {
-        double sum = probabilities.Sum();
+        double sum = 0;
+        for (int i = 0; i < Constants.TonicCount; i++)
+        {
+            for (int j = 0; j < Constants.ScaleCount; j++)
+            {
+                sum += probabilities[i, j];
+            }
+        }
         if (sum == 0) return;
 
-        for (int i = 0; i < Constants.TonalityCount; i++)
+        for (int i = 0; i < Constants.TonicCount; i++)
         {
-            probabilities[i] /= sum;
+            for (int j = 0; j < Constants.ScaleCount; j++)
+            {
+                probabilities[i, j] /= sum;
+            }
         }
     }
 
-    public static int GetPredictedTonality(double[] probabilities)
+    public static (int, Scale) GetPredictedTonality(double[,] probabilities)
     {
-        double maxProbability = probabilities.Max();
-        var maxIndices = probabilities.Select((value, index) => new { value, index })
-                                      .Where(x => x.value == maxProbability)
-                                      .Select(x => x.index)
-                                      .ToArray();
+        double maxProbability = double.MinValue;
+        var maxIndices = new List<(int, Scale)>();
+        for (int i = 0; i < Constants.TonicCount; i++)
+        {
+            for (int j = 0; j < Constants.ScaleCount; j++)
+            {
+                if (probabilities[i, j] > maxProbability)
+                {
+                    maxProbability = probabilities[i, j];
+                    maxIndices.Clear();
+                    maxIndices.Add((i, (Scale)j));
+                }
+                else if (probabilities[i, j] == maxProbability)
+                {
+                    maxIndices.Add((i, (Scale)j));
+                }
+            }
+        }
         Random random = new Random();
-        return maxIndices[random.Next(maxIndices.Length)];
+        return maxIndices[random.Next(maxIndices.Count)];
     }
 }
