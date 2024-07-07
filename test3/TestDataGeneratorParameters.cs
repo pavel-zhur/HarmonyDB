@@ -8,6 +8,7 @@
     public double ModulationProbability { get; set; } = 0.10;
     public double BadCycleProbability { get; set; } = 0.10;
     public double IncorrectKnownTonalityProbability { get; set; } = 0.05;
+    public double MutationProbability { get; set; } = 0.18;
     public int MinLoopAppearances { get; set; } = 1;
     public int MaxLoopAppearances { get; set; } = 4;
 }

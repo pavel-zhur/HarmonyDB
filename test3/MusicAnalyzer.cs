@@ -125,6 +125,13 @@
             {
                 int targetTonality = isSong ? (i - adjustedTonality + Constants.TonalityCount) % Constants.TonalityCount : (adjustedTonality + i) % Constants.TonalityCount;
                 newProbabilities[targetTonality] += sourceProbabilities[i] * sourceScore * link.Count;
+
+                // Also update the parallel tonality
+                if (Constants.GetParallelTonality(targetTonality) != targetTonality)
+                {
+                    int parallelTonality = Constants.GetParallelTonality(targetTonality);
+                    newProbabilities[parallelTonality] += (sourceProbabilities[i] * sourceScore * link.Count) * 0.5; // Give it half the weight
+                }
             }
         }
 
@@ -138,7 +145,23 @@
         var shiftCounts = relevantLinks.GroupBy(l => GetRelativeShift(l, isSong)).ToDictionary(g => g.Key, g => g.Sum(l => l.Count));
         double totalLinks = relevantLinks.Sum(l => l.Count);
         double entropy = shiftCounts.Values.Select(count => (count / totalLinks) * Math.Log(count / totalLinks)).Sum() * -1;
-        return Math.Exp(-entropy);
+
+        // Reduce the contribution of changes within parallel tonalities
+        double adjustedEntropy = 0;
+        foreach (var shiftCount in shiftCounts)
+        {
+            if (Constants.GetParallelTonality(shiftCount.Key) != shiftCount.Key)
+            {
+                adjustedEntropy += (shiftCount.Value / totalLinks) * Math.Log(shiftCount.Value / totalLinks) * 0.5; // Give it half the weight
+            }
+            else
+            {
+                adjustedEntropy += (shiftCount.Value / totalLinks) * Math.Log(shiftCount.Value / totalLinks);
+            }
+        }
+        adjustedEntropy = adjustedEntropy * -1;
+
+        return Math.Exp(-adjustedEntropy);
     }
 
     private int GetRelativeShift(LoopLink loopLink, bool isSong)
@@ -182,9 +205,9 @@
     {
         double maxProbability = probabilities.Max();
         var maxIndices = probabilities.Select((value, index) => new { value, index })
-            .Where(x => x.value == maxProbability)
-            .Select(x => x.index)
-            .ToArray();
+                                      .Where(x => x.value == maxProbability)
+                                      .Select(x => x.index)
+                                      .ToArray();
         Random random = new Random();
         return maxIndices[random.Next(maxIndices.Length)];
     }

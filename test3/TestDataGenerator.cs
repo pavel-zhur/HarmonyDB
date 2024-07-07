@@ -14,6 +14,7 @@
             string loopId = $"loop{i + 1}";
             bool isBadLoop = random.NextDouble() < parameters.BadCycleProbability;
             int[] loopTonalities = isBadLoop ? GenerateRandomTonalities(2, 3) : new[] { random.Next(Constants.TonalityCount) };
+
             loops[loopId] = new Loop
             {
                 Id = loopId,
@@ -27,6 +28,7 @@
             string songId = $"song{i + 1}";
             bool hasModulation = random.NextDouble() < parameters.ModulationProbability;
             int[] songTonalities = hasModulation ? GenerateRandomTonalities(2, 3) : new[] { random.Next(Constants.TonalityCount) };
+
             bool isKnownTonality = random.NextDouble() < parameters.KnownTonalityProbability;
             bool isKnownTonalityIncorrect = isKnownTonality && random.NextDouble() < parameters.IncorrectKnownTonalityProbability;
 
@@ -56,6 +58,19 @@
                 var loop = loops[loopId];
                 int loopTonality = GetRandomTonality(loop.SecretTonalities);
                 int songTonality = songTonalities[random.Next(songTonalities.Length)];
+
+                // Apply mutation to parallel tonality
+                if (random.NextDouble() < parameters.MutationProbability)
+                {
+                    loopTonality = Constants.GetParallelTonality(loopTonality);
+                }
+
+                // Apply mutation to song tonality
+                if (random.NextDouble() < parameters.MutationProbability)
+                {
+                    songTonality = Constants.GetParallelTonality(songTonality);
+                }
+
                 int shift = (loopTonality - songTonality + Constants.TonalityCount) % Constants.TonalityCount;
 
                 loopLinks.Add(new LoopLink
