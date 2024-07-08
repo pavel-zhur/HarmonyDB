@@ -6,5 +6,5 @@ namespace HarmonyDB.Index.Analysis.Em;
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddIndexAnalysisEm(this IServiceCollection services) => services
-        .AddScoped<MusicAnalyzer>();
+        .AddSingleton<MusicAnalyzer>();
 }

@@ -1,44 +1,43 @@
-﻿using HarmonyDB.Index.Analysis.Em;
-using HarmonyDB.Index.Analysis.Em.Services;
+﻿using HarmonyDB.Index.Analysis.Em.Services;
 using Microsoft.Extensions.Logging;
 
 namespace HarmonyDB.Index.Analysis.Tests.Em;
 
 public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
 {
-    public void TraceInput(Dictionary<string, Song> songs, Dictionary<string, Loop> loops, List<LoopLink> loopLinks)
+    public void TraceInput(TestEmModel emModel)
     {
         // Output initial data
-        output.LogInformation($"Generated {songs.Count} songs and {loops.Count} loops.");
+        output.LogInformation($"Generated {emModel.Songs.Count} songs and {emModel.Loops.Count} loops.");
         output.LogInformation("First 10 songs:");
-        foreach (var song in songs.Take(10))
+        foreach (var song in emModel.Songs.Take(10))
         {
             var s = song.Value;
             output.LogInformation($"Song {song.Key}: Known Tonality = {s.KnownTonality}, Is Tonality Known = {s.IsTonalityKnown}, Secret Tonalities = {string.Join(",", s.SecretTonalities)}, Is Known Tonality Incorrect = {s.IsKnownTonalityIncorrect}");
         }
 
         output.LogInformation("First 10 loops:");
-        foreach (var loop in loops.Take(10))
+        foreach (var loop in emModel.Loops.Take(10))
         {
             var l = loop.Value;
             output.LogInformation($"Loop {loop.Key}: Secret Tonalities = {string.Join(",", l.SecretTonalities)}");
         }
 
         output.LogInformation("First 10 loop links:");
-        foreach (var link in loopLinks.Take(10))
+        foreach (var link in emModel.LoopLinks.Take(10))
         {
             output.LogInformation($"Link: Song {link.SongId}, Loop {link.LoopId}, Shift = {link.Shift}, Count = {link.Count}");
         }
     }
 
-    public void TraceOutput(Dictionary<string, Song> songs, Dictionary<string, Loop> loops)
+    public void TraceOutput(TestEmModel emModel)
     {
         // Approximate range and average score for good and bad objects
-        var allGoodSongs = songs.Values.Where(s => s.SecretTonalities.Length == 1);
-        var allBadSongs = songs.Values.Where(s => s.SecretTonalities.Length > 1);
-        var incorrectTonalitySongs = songs.Values.Where(s => s.IsKnownTonalityIncorrect);
-        var allGoodLoops = loops.Values.Where(l => l.SecretTonalities.Length == 1);
-        var allBadLoops = loops.Values.Where(l => l.SecretTonalities.Length > 1);
+        var allGoodSongs = emModel.Songs.Values.Where(s => s.SecretTonalities.Length == 1);
+        var allBadSongs = emModel.Songs.Values.Where(s => s.SecretTonalities.Length > 1);
+        var incorrectTonalitySongs = emModel.Songs.Values.Where(s => s.IsKnownTonalityIncorrect);
+        var allGoodLoops = emModel.Loops.Values.Where(l => l.SecretTonalities.Length == 1);
+        var allBadLoops = emModel.Loops.Values.Where(l => l.SecretTonalities.Length > 1);
 
         // Helper function to calculate percentiles
         double Percentile(IEnumerable<double> sequence, double excelPercentile)
@@ -75,7 +74,7 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
         var incorrectDetectionCount = 0;
         foreach (var song in incorrectTonalitySongs)
         {
-            var calculatedProbabilities = analyzer.CalculateProbabilities(song.Id, true);
+            var calculatedProbabilities = analyzer.CalculateProbabilities(emModel, song.Id, true);
             var predictedTonality = analyzer.GetPredictedTonality(calculatedProbabilities);
             if (!song.SecretTonalities.Contains(predictedTonality))
             {
@@ -87,18 +86,18 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
 
         // Output the accuracy of detected tonalities for songs and loops
         output.LogInformation("\nAccuracy of Detected Tonalities:");
-        var correctSongDetections = songs.Values.Count(s => s.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true))));
-        var correctLoopDetections = loops.Values.Count(l => l.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false))));
+        var correctSongDetections = emModel.Songs.Values.Count(s => s.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(emModel, s.Id, true))));
+        var correctLoopDetections = emModel.Loops.Values.Count(l => l.SecretTonalities.Contains(analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(emModel, l.Id, false))));
 
-        output.LogInformation($"Correctly Detected Song Tonalities: {correctSongDetections} / {songs.Count} ({(double)correctSongDetections / songs.Count:P2})");
-        output.LogInformation($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {loops.Count} ({(double)correctLoopDetections / loops.Count:P2})");
+        output.LogInformation($"Correctly Detected Song Tonalities: {correctSongDetections} / {emModel.Songs.Count} ({(double)correctSongDetections / emModel.Songs.Count:P2})");
+        output.LogInformation($"Correctly Detected Loop Tonalities: {correctLoopDetections} / {emModel.Loops.Count} ({(double)correctLoopDetections / emModel.Loops.Count:P2})");
 
         // Output the accuracy of detected tonics for songs and loops
         output.LogInformation("\nAccuracy of Detected Tonics:");
-        var correctSongTonicDetections = songs.Values.Count(s => s.SecretTonalities.Any(t => t.Item1 == analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(s.Id, true)).Item1));
-        var correctLoopTonicDetections = loops.Values.Count(l => l.SecretTonalities.Any(t => t.Item1 == analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(l.Id, false)).Item1));
+        var correctSongTonicDetections = emModel.Songs.Values.Count(s => s.SecretTonalities.Any(t => t.Item1 == analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(emModel, s.Id, true)).Item1));
+        var correctLoopTonicDetections = emModel.Loops.Values.Count(l => l.SecretTonalities.Any(t => t.Item1 == analyzer.GetPredictedTonality(analyzer.CalculateProbabilities(emModel, l.Id, false)).Item1));
 
-        output.LogInformation($"Correctly Detected Song Tonics: {correctSongTonicDetections} / {songs.Count} ({(double)correctSongTonicDetections / songs.Count:P2})");
-        output.LogInformation($"Correctly Detected Loop Tonics: {correctLoopTonicDetections} / {loops.Count} ({(double)correctLoopTonicDetections / loops.Count:P2})");
+        output.LogInformation($"Correctly Detected Song Tonics: {correctSongTonicDetections} / {emModel.Songs.Count} ({(double)correctSongTonicDetections / emModel.Songs.Count:P2})");
+        output.LogInformation($"Correctly Detected Loop Tonics: {correctLoopTonicDetections} / {emModel.Loops.Count} ({(double)correctLoopTonicDetections / emModel.Loops.Count:P2})");
     }
 }

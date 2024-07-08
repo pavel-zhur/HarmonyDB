@@ -17,7 +17,7 @@ public class Startup
                 services
                     .AddIndexAnalysis()
                     .AddIndexAnalysisEm()
-                    .AddScoped<Output>()
+                    .AddSingleton<Output>()
                     .AddLogging(b => b.AddXunitOutput());
             });
     }

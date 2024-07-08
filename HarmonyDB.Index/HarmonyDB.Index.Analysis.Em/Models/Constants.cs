@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Em;
+﻿namespace HarmonyDB.Index.Analysis.Em.Models;
 
 public static class Constants
 {
