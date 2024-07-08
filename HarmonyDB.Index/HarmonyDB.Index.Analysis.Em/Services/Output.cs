@@ -8,21 +8,21 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
     {
         // Output initial data
         output.LogInformation($"Generated {songs.Count} songs and {loops.Count} loops.");
-        output.LogInformation($"First 10 songs:");
+        output.LogInformation("First 10 songs:");
         foreach (var song in songs.Take(10))
         {
             var s = song.Value;
             output.LogInformation($"Song {song.Key}: Known Tonality = {s.KnownTonality}, Is Tonality Known = {s.IsTonalityKnown}, Secret Tonalities = {string.Join(",", s.SecretTonalities)}, Is Known Tonality Incorrect = {s.IsKnownTonalityIncorrect}");
         }
 
-        output.LogInformation($"First 10 loops:");
+        output.LogInformation("First 10 loops:");
         foreach (var loop in loops.Take(10))
         {
             var l = loop.Value;
             output.LogInformation($"Loop {loop.Key}: Secret Tonalities = {string.Join(",", l.SecretTonalities)}");
         }
 
-        output.LogInformation($"First 10 loop links:");
+        output.LogInformation("First 10 loop links:");
         foreach (var link in loopLinks.Take(10))
         {
             output.LogInformation($"Link: Song {link.SongId}, Loop {link.LoopId}, Shift = {link.Shift}, Count = {link.Count}");

@@ -26,7 +26,7 @@ public class Nothing : Command
     {
         var query = Io.FreeChoice("Скажите что-нибудь:");
 
-        Io.WriteLine($"Вы сказали: ".Bold() + query);
+        Io.WriteLine("Вы сказали: ".Bold() + query);
         Io.WriteLine();
     }
 }
