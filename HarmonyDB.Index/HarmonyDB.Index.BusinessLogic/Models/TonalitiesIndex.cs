@@ -120,7 +120,8 @@ public class TonalitiesIndex
     }
 
     public static byte[] Serialize(
-        (Dictionary<string, (IReadOnlyList<float> probabilities, bool despiteStable)> songsKeys,
+        (
+            Dictionary<string, (IReadOnlyList<float> probabilities, bool despiteStable)> songsKeys,
             Dictionary<string, float[]> loopsKeys) result,
         List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> all)
     {
