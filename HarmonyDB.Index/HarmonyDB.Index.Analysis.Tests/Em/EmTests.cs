@@ -1,6 +1,4 @@
-﻿using HarmonyDB.Index.Analysis.Em;
-using HarmonyDB.Index.Analysis.Em.Models;
-using HarmonyDB.Index.Analysis.Em.Services;
+﻿using HarmonyDB.Index.Analysis.Em.Services;
 
 namespace HarmonyDB.Index.Analysis.Tests.Em;
 
