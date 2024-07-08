@@ -1,4 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Em;
+using HarmonyDB.Index.Analysis.Em.Services;
+using HarmonyDB.Index.Analysis.Tests.Em;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit.DependencyInjection.Logging;
@@ -15,6 +17,7 @@ public class Startup
                 services
                     .AddIndexAnalysis()
                     .AddIndexAnalysisEm()
+                    .AddScoped<Output>()
                     .AddLogging(b => b.AddXunitOutput());
             });
     }

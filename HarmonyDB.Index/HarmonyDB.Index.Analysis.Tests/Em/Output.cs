@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using HarmonyDB.Index.Analysis.Em;
+using HarmonyDB.Index.Analysis.Em.Services;
+using Microsoft.Extensions.Logging;
 
-namespace HarmonyDB.Index.Analysis.Em.Services;
+namespace HarmonyDB.Index.Analysis.Tests.Em;
 
 public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
 {
