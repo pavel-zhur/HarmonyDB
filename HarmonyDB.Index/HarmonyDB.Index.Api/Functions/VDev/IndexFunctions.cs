@@ -165,7 +165,6 @@ public class IndexFunctions
         {
             Loops = tonalitiesIndex.Loops.Count,
             Songs = tonalitiesIndex.Songs.Count,
-            Links = tonalitiesIndex.LoopLinks.Count,
         });
     }
 

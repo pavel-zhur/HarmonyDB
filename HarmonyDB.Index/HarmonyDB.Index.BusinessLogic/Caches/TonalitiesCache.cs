@@ -38,7 +38,7 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
 
     protected override async Task<EmModel> ToPresentationModel(byte[] fileModel)
     {
-        return EmModel.Deserialize(fileModel, (await _structuresCache.Get()).Links);
+        return EmModel.Deserialize(fileModel);
     }
 
     public async Task Rebuild(int? limitUnknown = null)
@@ -61,12 +61,12 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
             all = all.Where(x => songsKeys.ContainsKey(x.ExternalId) || limit.Contains(x.ExternalId)).ToList();
         }
 
-        var result = _tonalitiesBalancer.GetEmModel(all, songsKeys);
+        var (emModel, loopLinks) = _tonalitiesBalancer.GetEmModel(all, songsKeys);
 
-        var emContext = _musicAnalyzer.CreateContext(result);
-        _musicAnalyzer.UpdateProbabilities(result, emContext);
+        var emContext = _musicAnalyzer.CreateContext(loopLinks);
+        _musicAnalyzer.UpdateProbabilities(emModel, emContext);
 
-        await StreamCompressSerialize(result.Serialize());
+        await StreamCompressSerialize(emModel.Serialize());
     }
 
     private Dictionary<string, (byte songRoot, Scale mode)> GetSongsKeys(IndexHeaders indexHeaders) =>

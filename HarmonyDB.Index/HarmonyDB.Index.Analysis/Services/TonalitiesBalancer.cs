@@ -47,7 +47,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
         return (note.Value, scale);
     }
 
-    public EmModel GetEmModel(
+    public (EmModel emModel, IReadOnlyList<LoopLink> loopLinks) GetEmModel(
         IReadOnlyList<StructureLink> all, 
         Dictionary<string, (byte songRoot, Scale scale)> songsKeys)
     {
@@ -82,6 +82,6 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
             })
             .ToList();
 
-        return new(songs.Values, loops.Values, links);
+        return (new(songs.Values, loops.Values), links);
     }
 }

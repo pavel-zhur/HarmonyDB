@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Tests.Em;
 
 public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
 {
-    public void TraceInput(TestEmModel emModel)
+    public void TraceInput(TestEmModel emModel, List<TestLoopLink> links)
     {
         // Output initial data
         output.LogInformation($"Generated {emModel.Songs.Count} songs and {emModel.Loops.Count} loops.");
@@ -23,7 +23,7 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
         }
 
         output.LogInformation("First 10 loop links:");
-        foreach (var link in emModel.LoopLinks.Take(10))
+        foreach (var link in links.Take(10))
         {
             output.LogInformation($"Link: Song {link.SongId}, Loop {link.LoopId}, Shift = {link.Shift}, Weight = {link.Weight}");
         }

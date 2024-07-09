@@ -5,13 +5,13 @@ namespace HarmonyDB.Index.Analysis.Em.Services;
 
 public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 {
-    public EmContext CreateContext(IEmModel input)
+    public EmContext CreateContext(IReadOnlyList<ILoopLink> loopLinks)
     {
-        var loopLinksByLoopId = input.LoopLinks.ToLookup(x => x.LoopId);
+        var loopLinksByLoopId = loopLinks.ToLookup(x => x.LoopId);
         return new()
         {
             LoopLinksByLoopId = loopLinksByLoopId,
-            LoopLinksBySongId = input.LoopLinks.ToLookup(x => x.SongId),
+            LoopLinksBySongId = loopLinks.ToLookup(x => x.SongId),
             SongCounts = loopLinksByLoopId.ToDictionary(x => x.Key, x => x.Select(x => x.SongId).Distinct().Count()),
         };
     }

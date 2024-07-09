@@ -9,33 +9,21 @@ public record EmModel : IEmModel
     private readonly Dictionary<string, Loop> _loops;
 
     public EmModel(IEnumerable<Song> songs,
-        IEnumerable<Loop> loops,
-        IReadOnlyList<LoopLink> loopLinks)
+        IEnumerable<Loop> loops)
     {
         _songs = songs.ToDictionary(x => x.Id);
         _loops = loops.ToDictionary(x => x.Id);
-        LoopLinks = loopLinks;
-        LoopLinksBySongId = loopLinks.ToLookup(x => x.SongId);
-        LoopLinksByLoopId = loopLinks.ToLookup(x => x.LoopId);
     }
 
     public IReadOnlyDictionary<string, Song> Songs => _songs;
 
     public IReadOnlyDictionary<string, Loop> Loops => _loops;
 
-    public IReadOnlyList<LoopLink> LoopLinks { get; }
-
     IReadOnlyCollection<ISong> IEmModel.Songs => _songs.Values;
     
     IReadOnlyCollection<ILoop> IEmModel.Loops => _loops.Values;
 
-    IReadOnlyList<ILoopLink> IEmModel.LoopLinks => LoopLinks;
-
-    public ILookup<string, LoopLink> LoopLinksBySongId { get; }
-
-    public ILookup<string, LoopLink> LoopLinksByLoopId { get; }
-
-    public static EmModel Deserialize(byte[] serialized, IReadOnlyList<StructureLink> links)
+    public static EmModel Deserialize(byte[] serialized)
     {
         using var stream = new MemoryStream(serialized);
         using var reader = new BinaryReader(stream);
@@ -79,22 +67,7 @@ public record EmModel : IEmModel
             })
             .ToList();
 
-        var songIds = songs.ToDictionary(x => x.Id);
-        var loopIds = loops.ToDictionary(x => x.Id);
-
-        var all = links
-            .Where(x => songIds.ContainsKey(x.ExternalId) && loopIds.ContainsKey(x.Normalized))
-            .Select(x => new LoopLink
-            {
-                Song = songIds[x.ExternalId],
-                Loop = loopIds[x.Normalized],
-                Occurrences = x.Occurrences,
-                Successions = x.Successions,
-                Shift = x.NormalizationRoot,
-            })
-            .ToList();
-
-        return new(songs, loops, all);
+        return new(songs, loops);
     }
 
     public byte[] Serialize()

@@ -8,7 +8,7 @@ public class TestDataGenerator
 {
     private readonly Random _random = new();
 
-    public TestEmModel GenerateTestData(
+    public (TestEmModel emModel, List<TestLoopLink> links) GenerateTestData(
         TestDataGeneratorParameters parameters)
     {
         var songs = new Dictionary<string, TestSong>();
@@ -100,7 +100,7 @@ public class TestDataGenerator
             }
         }
 
-        return new(songs.Values, loops.Values, loopLinks);
+        return (new(songs.Values, loops.Values), loopLinks);
     }
 
     private (byte tonic, Scale scale)[] GenerateRandomTonalities(int min, int max)
