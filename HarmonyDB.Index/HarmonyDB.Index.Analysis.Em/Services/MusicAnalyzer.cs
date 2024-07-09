@@ -145,7 +145,6 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         foreach (var link in relevantLinks)
         {
-            var adjustedTonic = (link.Shift + Constants.TonicCount) % Constants.TonicCount;
             var sourceProbabilities = isSong ? link.Loop.TonalityProbabilities : link.Song.TonalityProbabilities;
             var sourceScore = isSong ? link.Loop.Score : link.Song.Score;
 
@@ -155,7 +154,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             {
                 for (var j = 0; j < Constants.ScaleCount; j++)
                 {
-                    var targetTonic = isSong ? (i - adjustedTonic + Constants.TonicCount) % Constants.TonicCount : (adjustedTonic + i) % Constants.TonicCount;
+                    var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
                     newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + Math.Log(songCount));
                 }
             }
@@ -180,13 +179,12 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         var scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
         {
-            var adjustedTonic = (link.Shift + Constants.TonicCount) % Constants.TonicCount;
             var sourceProbabilities = isSong ? link.Loop.TonalityProbabilities : link.Song.TonalityProbabilities;
             for (var i = 0; i < Constants.TonicCount; i++)
             {
                 for (var j = 0; j < Constants.ScaleCount; j++)
                 {
-                    var targetTonic = isSong ? (i - adjustedTonic + Constants.TonicCount) % Constants.TonicCount : (adjustedTonic + i) % Constants.TonicCount;
+                    var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
                     scaleProbabilities[targetTonic, j] += sourceProbabilities[i, j];
                 }
             }
@@ -200,18 +198,11 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
     private int GetRelativeShift(ILoopLink loopLink, bool isSong)
     {
-        var shift = loopLink.Shift;
+        var probabilities = GetPredictedTonality(isSong 
+            ? loopLink.Loop.TonalityProbabilities 
+            : loopLink.Song.TonalityProbabilities);
 
-        if (isSong)
-        {
-            var loopTonic = GetPredictedTonality(loopLink.Loop.TonalityProbabilities).Item1;
-            return (loopTonic - shift + Constants.TonicCount) % Constants.TonicCount;
-        }
-        else
-        {
-            var songTonic = GetPredictedTonality(loopLink.Song.TonalityProbabilities).Item1;
-            return (songTonic + shift) % Constants.TonicCount;
-        }
+        return (loopLink.Shift - probabilities.Tonic + Constants.TonicCount) % Constants.TonicCount;
     }
 
     private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)

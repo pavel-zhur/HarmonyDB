@@ -91,7 +91,7 @@ public class TestDataGenerator
                     var loop = loops[loopId];
                     var loopTonality = loop.SecretTonalities.First(t => t.Item2 == requiredScale);
 
-                    var shift = (loopTonality.Item1 - songTonality.Item1 + Constants.TonicCount) % Constants.TonicCount;
+                    var shift = (loopTonality.Item1 + songTonality.Item1) % Constants.TonicCount;
 
                     loopLinks.Add(new()
                     {
