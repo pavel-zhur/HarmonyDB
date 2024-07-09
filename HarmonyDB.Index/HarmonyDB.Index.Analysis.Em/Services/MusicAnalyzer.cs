@@ -175,9 +175,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             .Select(g => g.Sum(l => l.Weight))
             .ToList();
 
-        double totalLinks = relevantLinks.Sum(l => l.Weight);
+        double totalLinks = shiftCounts.Sum();
 
-        var tonicEntropy = shiftCounts.Select(count => count / totalLinks * Math.Log(count / totalLinks)).Sum() * -1;
+        var tonicEntropy = shiftCounts.Select(x => x / totalLinks * Math.Log(x / totalLinks)).Sum() * -1;
 
         var scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
