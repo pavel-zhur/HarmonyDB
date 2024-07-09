@@ -39,7 +39,7 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
         var allBadLoops = emModel.Loops.Where(l => l.SecretTonalities.Length > 1);
 
         // Helper function to calculate percentiles
-        double Percentile(IEnumerable<double> sequence, double excelPercentile)
+        double Percentile(IEnumerable<float> sequence, double excelPercentile)
         {
             var elements = sequence.OrderBy(x => x).ToArray();
             var realIndex = excelPercentile * (elements.Length - 1);
@@ -52,7 +52,7 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
                 return elements[index];
         }
 
-        void PrintStatistics(IEnumerable<double> scores, string label)
+        void PrintStatistics(IEnumerable<float> scores, string label)
         {
             var scoresArray = scores.ToArray();
             output.LogInformation($"{label}: Min Score = {scoresArray.Min():F4}, Max Score = {scoresArray.Max():F4}, Average Score = {scoresArray.Average():F4}, Median = {Percentile(scoresArray, 0.5):F4}, 90th Percentile = {Percentile(scoresArray, 0.9):F4}");

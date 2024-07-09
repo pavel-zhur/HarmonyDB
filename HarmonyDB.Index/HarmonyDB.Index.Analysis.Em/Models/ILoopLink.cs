@@ -6,6 +6,6 @@ public interface ILoopLink
     ISong Song { get; }
     string SongId { get; }
     string LoopId { get; }
-    int Shift { get; }
-    int Weight { get; }
+    byte Shift { get; }
+    float Weight { get; }
 }

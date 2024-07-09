@@ -49,7 +49,7 @@ public record EmModel : IEmModel
                 var loop = new Loop
                 {
                     Id = id,
-                    Length = sequence.Length,
+                    Length = (byte)sequence.Length,
                 };
 
                 DeserializeSource(reader, loop);
@@ -162,13 +162,13 @@ public record EmModel : IEmModel
 
     private static void DeserializeSource(BinaryReader reader, ISource source)
     {
-        source.Score = (reader.ReadDouble(), reader.ReadDouble());
+        source.Score = (reader.ReadSingle(), reader.ReadSingle());
 
         for (var i = 0; i < Constants.TonicCount; i++)
         {
             for (var j = 0; j < Constants.ScaleCount; j++)
             {
-                source.TonalityProbabilities[i, j] = reader.ReadDouble();
+                source.TonalityProbabilities[i, j] = reader.ReadSingle();
             }
         }
     }

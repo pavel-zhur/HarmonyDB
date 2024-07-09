@@ -95,7 +95,7 @@ public class TestDataGenerator
                     {
                         Song = song,
                         Loop = loop,
-                        Shift = shift,
+                        Shift = (byte)shift,
                         Weight = _random.Next(parameters.MinLoopAppearances,
                             parameters.MaxLoopAppearances + 1) // Random count of appearances of the loop in the song
                     });

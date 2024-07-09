@@ -3,6 +3,6 @@
 public interface ISource
 {
     string Id { get; }
-    double[,] TonalityProbabilities { get; set; } // [TonicCount, ScaleCount]
-    (double TonicScore, double ScaleScore) Score { get; set; }
+    float[,] TonalityProbabilities { get; set; } // [TonicCount, ScaleCount]
+    (float TonicScore, float ScaleScore) Score { get; set; }
 }

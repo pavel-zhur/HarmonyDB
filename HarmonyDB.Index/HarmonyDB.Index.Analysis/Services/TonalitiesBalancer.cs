@@ -58,7 +58,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
                 x => new Loop
                 {
                     Id = x.Key,
-                    Length = Models.Loop.Deserialize(x.Key).Length,
+                    Length = (byte)Models.Loop.Deserialize(x.Key).Length,
                 });
 
         var songs = all

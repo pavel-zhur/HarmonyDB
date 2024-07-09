@@ -8,8 +8,8 @@ public record TestLoopLink : ILoopLink
     public required TestSong Song { get; init; }
     public string SongId => Song.Id;
     public string LoopId => Loop.Id;
-    public required int Shift { get; init; }
-    public required int Weight { get; init; }
+    public required byte Shift { get; init; }
+    public required float Weight { get; init; }
     ISong ILoopLink.Song => Song;
     ILoop ILoopLink.Loop => Loop;
 }

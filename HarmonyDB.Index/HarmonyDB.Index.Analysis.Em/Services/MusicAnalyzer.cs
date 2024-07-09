@@ -110,7 +110,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 {
                     for (var j = 0; j < Constants.ScaleCount; j++)
                     {
-                        song.TonalityProbabilities[i, j] = i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2 ? 1.0 : 0.0;
+                        song.TonalityProbabilities[i, j] = i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2 ? 1.0f : 0.0f;
                     }
                 }
             }
@@ -120,12 +120,12 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 {
                     for (var j = 0; j < Constants.ScaleCount; j++)
                     {
-                        song.TonalityProbabilities[i, j] = 1.0 / (Constants.TonicCount * Constants.ScaleCount);
+                        song.TonalityProbabilities[i, j] = 1.0f / (Constants.TonicCount * Constants.ScaleCount);
                     }
                 }
             }
 
-            song.Score = (1.0, 1.0);
+            song.Score = (1.0f, 1.0f);
         }
 
         foreach (var loop in emModel.Loops)
@@ -134,17 +134,17 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             {
                 for (var j = 0; j < Constants.ScaleCount; j++)
                 {
-                    loop.TonalityProbabilities[i, j] = 1.0 / (Constants.TonicCount * Constants.ScaleCount);
+                    loop.TonalityProbabilities[i, j] = 1.0f / (Constants.TonicCount * Constants.ScaleCount);
                 }
             }
 
-            loop.Score = (1.0, 1.0);
+            loop.Score = (1.0f, 1.0f);
         }
     }
 
-    public double[,] CalculateProbabilities(EmContext emContext, string id, bool isSong)
+    public float[,] CalculateProbabilities(EmContext emContext, string id, bool isSong)
     {
-        var newProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
+        var newProbabilities = new float[Constants.TonicCount, Constants.ScaleCount];
         var relevantLinks = isSong ? emContext.LoopLinksBySongId[id] : emContext.LoopLinksByLoopId[id];
 
         foreach (var link in relevantLinks)
@@ -159,7 +159,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 for (var j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
-                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + Math.Log(songCount));
+                    newProbabilities[targetTonic, j] += (sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + (float)Math.Log(songCount)));
                 }
             }
         }
@@ -168,11 +168,11 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         return newProbabilities;
     }
 
-    private (double TonicScore, double ScaleScore) CalculateEntropy(EmContext emContext, string id, bool isSong)
+    private (float TonicScore, float ScaleScore) CalculateEntropy(EmContext emContext, string id, bool isSong)
     {
         var relevantLinks = isSong ? emContext.LoopLinksBySongId[id] : emContext.LoopLinksByLoopId[id];
 
-        var shiftCounts = new double[Constants.TonicCount];
+        var shiftCounts = new float[Constants.TonicCount];
         foreach (var relevantLink in relevantLinks)
         {
             AddShiftProbabilities(shiftCounts, relevantLink, isSong);
@@ -180,9 +180,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         var totalLinks = shiftCounts.Sum();
 
-        var tonicEntropy = shiftCounts.Where(x => x > 0).Select(x => x / totalLinks * Math.Log(x / totalLinks)).Sum() * -1;
+        var tonicEntropy = shiftCounts.Where(x => x > 0).Select(x => x / totalLinks * (float)Math.Log(x / totalLinks)).Sum() * -1;
 
-        var scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
+        var scaleProbabilities = new float[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
         {
             var sourceProbabilities = isSong ? link.Loop.TonalityProbabilities : link.Song.TonalityProbabilities;
@@ -196,13 +196,13 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             }
         }
 
-        var totalScaleLinks = scaleProbabilities.Cast<double>().Sum();
-        var scaleEntropy = scaleProbabilities.Cast<double>().Where(p => p > 0).Select(p => p / totalScaleLinks * Math.Log(p / totalScaleLinks)).Sum() * -1;
+        var totalScaleLinks = scaleProbabilities.Cast<float>().Sum();
+        var scaleEntropy = scaleProbabilities.Cast<float>().Where(p => p > 0).Select(p => p / totalScaleLinks * Math.Log(p / totalScaleLinks)).Sum() * -1;
 
-        return (Math.Exp(-tonicEntropy), Math.Exp(-scaleEntropy));
+        return ((float)Math.Exp(-tonicEntropy), (float)Math.Exp(-scaleEntropy));
     }
 
-    private void AddShiftProbabilities(double[] shiftsCounts, ILoopLink loopLink, bool isSong)
+    private void AddShiftProbabilities(float[] shiftsCounts, ILoopLink loopLink, bool isSong)
     {
         var probabilities = isSong
             ? loopLink.Loop.TonalityProbabilities
@@ -216,9 +216,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         }
     }
 
-    private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)
+    private float CalculateMaxChange(float[,] oldProbabilities, float[,] newProbabilities)
     {
-        var maxChange = 0.0;
+        var maxChange = 0.0f;
         for (var i = 0; i < Constants.TonicCount; i++)
         {
             for (var j = 0; j < Constants.ScaleCount; j++)
@@ -229,9 +229,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         return maxChange;
     }
 
-    private void NormalizeProbabilities(double[,] probabilities)
+    private void NormalizeProbabilities(float[,] probabilities)
     {
-        double sum = 0;
+        float sum = 0;
         for (var i = 0; i < Constants.TonicCount; i++)
         {
             for (var j = 0; j < Constants.ScaleCount; j++)
@@ -250,9 +250,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         }
     }
 
-    public (int Tonic, Scale Scale) GetPredictedTonality(double[,] probabilities)
+    public (int Tonic, Scale Scale) GetPredictedTonality(float[,] probabilities)
     {
-        var maxProbability = double.MinValue;
+        var maxProbability = float.MinValue;
         var maxIndices = new List<(int, Scale)>();
         for (var i = 0; i < Constants.TonicCount; i++)
         {
@@ -271,7 +271,6 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             }
         }
 
-        // todo: there's a possible issue with this logic
         var random = new Random();
         return maxIndices[random.Next(maxIndices.Count)];
     }
