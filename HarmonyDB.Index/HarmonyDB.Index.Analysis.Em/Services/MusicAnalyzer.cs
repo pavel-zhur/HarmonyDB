@@ -156,7 +156,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 for (var j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = isSong ? (i - adjustedTonic + Constants.TonicCount) % Constants.TonicCount : (adjustedTonic + i) % Constants.TonicCount;
-                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight;
+                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + Math.Log(songCount));
                 }
             }
         }
