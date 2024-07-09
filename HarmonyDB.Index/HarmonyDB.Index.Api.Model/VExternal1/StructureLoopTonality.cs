@@ -8,7 +8,6 @@ public record StructureLoopTonality(
     int TotalOccurrences,
     int TotalSuccessions,
     int TotalSongs,
-    string Title,
     float[] Probabilities,
     float ScaleScore,
     float TonicScore)
@@ -16,5 +15,4 @@ public record StructureLoopTonality(
         Length, 
         TotalOccurrences,
         TotalSuccessions,
-        TotalSongs,
-        Title);
+        TotalSongs);

@@ -2,17 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public record StructureLoopsRequest : PagedRequestBase
+public record StructureSongsRequest : PagedRequestBase
 {
-    public int MinLength { get; init; } = 3;
+    public int MinRating { get; init; } = 70;
 
-    public int? MaxLength { get; init; }
-
-    public int MinTotalSongs { get; init; } = 1;
+    public int MinTotalLoops { get; init; } = 1;
     
-    public int MinTotalSuccessions { get; init; } = 1;
-    
-    public int MinTotalOccurrences { get; init; } = 1;
+    public int? MaxTotalLoops { get; init; }
 
     public float MinTonalityConfidence { get; init; }
     
@@ -30,8 +26,12 @@ public record StructureLoopsRequest : PagedRequestBase
 
     public StructureRequestDetectedScaleFilter DetectedScaleFilter { get; init; } = StructureRequestDetectedScaleFilter.Any;
 
-    public int LoopsPerPage { get; init; } = 100;
+    public StructureSongsRequestCorrectDetectionFilter CorrectDetectionFilter { get; init; } = StructureSongsRequestCorrectDetectionFilter.Any;
+
+    public StructureSongsRequestKnownTonalityFilter KnownTonalityFilter { get; init; } = StructureSongsRequestKnownTonalityFilter.Any;
+    
+    public int SongsPerPage { get; init; } = 100;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public StructureLoopsRequestOrdering Ordering { get; init; } = StructureLoopsRequestOrdering.TonalityConfidenceDesc;
+    public StructureSongsRequestOrdering Ordering { get; init; } = StructureSongsRequestOrdering.TonalityConfidenceDesc;
 }

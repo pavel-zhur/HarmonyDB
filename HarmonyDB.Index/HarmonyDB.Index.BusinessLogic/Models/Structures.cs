@@ -14,8 +14,6 @@ public class Structures
     {
         Links = links;
 
-        string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
-
         Loops = links.GroupBy(x => x.Normalized).Select(g =>
         {
             var sequence = Analysis.Models.Loop.Deserialize(g.Key);
@@ -25,22 +23,20 @@ public class Structures
                 sequence.Length,
                 g.Sum(x => x.Occurrences),
                 g.Sum(x => x.Successions),
-                g.Count(),
-                string.Join(" ", ToChord(note, sequence.Span[0].FromType)
-                    .Once()
-                    .Concat(
-                        MemoryMarshal.ToEnumerable(sequence)
-                            .Select(m =>
-                            {
-                                note = Note.Normalize(note + m.RootDelta);
-                                return ToChord(note, m.ToType);
-                            }))));
+                g.Select(x => x.ExternalId).Distinct().Count());
         }).ToDictionary(x => x.Normalized);
+
+        Songs = links
+            .GroupBy(x => x.ExternalId)
+            .Select(x => new StructureSong(x.Key, x.Select(x => x.Normalized).Distinct().Count()))
+            .ToDictionary(x => x.ExternalId);
     }
 
     public IReadOnlyList<StructureLink> Links { get; }
 
     public IReadOnlyDictionary<string, StructureLoop> Loops { get; }
+
+    public IReadOnlyDictionary<string, StructureSong> Songs { get; }
 
     public static byte[] Serialize(IReadOnlyList<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> compactLinks)
     {

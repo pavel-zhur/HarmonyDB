@@ -12,4 +12,5 @@ public static class IndexApiUrls
     public const string VExternal1Loops = nameof(VExternal1Loops);
 
     public const string VExternal1StructureLoops = nameof(VExternal1StructureLoops);
+    public const string VExternal1StructureSongs = nameof(VExternal1StructureSongs);
 }

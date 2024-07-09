@@ -54,7 +54,6 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
                 x.stats.TotalOccurrences,
                 x.stats.TotalSuccessions,
                 x.stats.TotalSongs,
-                x.stats.Title,
                 x.tone.TonalityProbabilities.ToLinear(),
                 x.tone.Score.ScaleScore,
                 x.tone.Score.TonicScore))
@@ -102,16 +101,16 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
         .Where(x => x.ScaleScore >= request.MinScaleScore)
         .Where(x => request.DetectedScaleFilter switch
         {
-            StructureLoopsRequestDetectedScaleFilter.Any => true,
-            StructureLoopsRequestDetectedScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
-            StructureLoopsRequestDetectedScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestDetectedScaleFilter.Any => true,
+            StructureRequestDetectedScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestDetectedScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
             _ => throw new ArgumentOutOfRangeException(),
         })
         .Where(x => request.SecondFilter switch
         {
-            StructureLoopsRequestSecondFilter.Any => true,
-            StructureLoopsRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
-            StructureLoopsRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() != x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+            StructureRequestSecondFilter.Any => true,
+            StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+            StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() != x.Probabilities.GetPredictedTonality().GetMajorTonic(),
             _ => throw new ArgumentOutOfRangeException(),
         })
         .ToList();

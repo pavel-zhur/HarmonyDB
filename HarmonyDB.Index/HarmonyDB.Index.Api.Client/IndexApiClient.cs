@@ -36,4 +36,7 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
 
     public async Task<StructureLoopsResponse> StructureLoops(StructureLoopsRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<StructureLoopsRequest, StructureLoopsResponse>(IndexApiUrls.VExternal1StructureLoops, request, apiTraceBag: apiTraceBag);
+
+    public async Task<StructureSongsResponse> StructureSongs(StructureSongsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<StructureSongsRequest, StructureSongsResponse>(IndexApiUrls.VExternal1StructureSongs, request, apiTraceBag: apiTraceBag);
 }
