@@ -1,7 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.BusinessLogic.Models;
-using HarmonyDB.Index.BusinessLogic.Services;
-using HarmonyDB.Index.BusinessLogic.Services.Caches;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

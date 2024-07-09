@@ -2,7 +2,7 @@
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Models;
-using HarmonyDB.Index.BusinessLogic.Services.Caches;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;

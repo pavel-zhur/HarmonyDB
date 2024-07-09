@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nito.AsyncEx;
 
-namespace HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
+namespace HarmonyDB.Index.BusinessLogic.Caches.Bases;
 
 public abstract class FileCacheBase<TFileModel, TPresentationModel>
     where TPresentationModel : class

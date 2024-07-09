@@ -2,14 +2,13 @@
 using HarmonyDB.Index.Analysis.Em.Services;
 using HarmonyDB.Index.Analysis.Models.Em;
 using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.BusinessLogic.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
-using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
-using HarmonyDB.Index.BusinessLogic.Services.Caches;
 
-namespace HarmonyDB.Index.BusinessLogic.Services;
+namespace HarmonyDB.Index.BusinessLogic.Caches;
 
 public class TonalitiesCache : BytesFileCacheBase<EmModel>
 {

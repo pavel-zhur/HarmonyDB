@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 
-namespace HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
+namespace HarmonyDB.Index.BusinessLogic.Caches.Bases;
 
 public abstract class MemoryCacheBase<TInputModel, TPresentationModel>
 {

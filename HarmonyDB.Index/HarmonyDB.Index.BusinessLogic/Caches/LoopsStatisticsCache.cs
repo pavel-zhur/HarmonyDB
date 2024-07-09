@@ -1,19 +1,19 @@
-﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
-using HarmonyDB.Index.Analysis.Models;
-using HarmonyDB.Index.Analysis.Services;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.BusinessLogic.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
-using OneShelf.Common;
 using Microsoft.Extensions.Options;
-using HarmonyDB.Index.BusinessLogic.Services.Caches.Bases;
+using OneShelf.Common;
 
-namespace HarmonyDB.Index.BusinessLogic.Services.Caches;
+namespace HarmonyDB.Index.BusinessLogic.Caches;
 
 public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, CompactLoopStatistics>, IReadOnlyList<LoopStatistics>>
 {

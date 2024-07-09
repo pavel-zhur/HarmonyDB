@@ -4,7 +4,7 @@ using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
-using HarmonyDB.Index.BusinessLogic.Services.Caches;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
