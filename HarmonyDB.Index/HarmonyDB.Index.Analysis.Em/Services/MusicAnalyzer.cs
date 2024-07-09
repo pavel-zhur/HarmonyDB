@@ -32,7 +32,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
             iterationCount++;
             var maxChange = 0.0;
 
-            Parallel.ForEach(emModel.Songs.Values, song =>
+            Parallel.ForEach(emModel.Songs, song =>
             {
                 if (!song.IsTonalityKnown)
                 {
@@ -47,9 +47,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 song.Score = CalculateEntropy(emContext, song.Id, true);
             });
 
-            Parallel.ForEach(emModel.Loops.Values, loop =>
+            Parallel.ForEach(emModel.Loops, loop =>
             {
-                var newProbabilities = CalculateProbabilities(emModel, loop.Id, false);
+                var newProbabilities = CalculateProbabilities(emContext, loop.Id, false);
                 var change = CalculateMaxChange(loop.TonalityProbabilities, newProbabilities);
                 lock (loop)
                 {
