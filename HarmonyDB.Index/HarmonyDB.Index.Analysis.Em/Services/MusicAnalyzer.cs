@@ -40,8 +40,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 lock (maxChangeLockObject)
                 {
                     maxChange = Math.Max(maxChange, change);
-                    loop.TonalityProbabilities = newProbabilities;
                 }
+
+                loop.TonalityProbabilities = newProbabilities;
                 loop.Score = CalculateEntropy(emContext, loop.Id, false);
             });
 
@@ -54,9 +55,11 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                     lock (maxChangeLockObject)
                     {
                         maxChange = Math.Max(maxChange, change);
-                        song.TonalityProbabilities = newProbabilities;
                     }
+
+                    song.TonalityProbabilities = newProbabilities;
                 }
+
                 song.Score = CalculateEntropy(emContext, song.Id, true);
             });
 
