@@ -1,5 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Em;
 using HarmonyDB.Index.Analysis.Em.Models;
+using HarmonyDB.Index.Analysis.Models.Em;
 
 namespace HarmonyDB.Index.Analysis.Tests.Em;
 
@@ -10,9 +11,9 @@ public class TestDataGenerator
     public TestEmModel GenerateTestData(
         TestDataGeneratorParameters parameters)
     {
-        var songs = new Dictionary<string, Song>();
-        var loops = new Dictionary<string, Loop>();
-        var loopLinks = new List<LoopLink>();
+        var songs = new Dictionary<string, TestSong>();
+        var loops = new Dictionary<string, TestLoop>();
+        var loopLinks = new List<TestLoopLink>();
 
         // Generate Loops
         for (var i = 0; i < parameters.TotalLoops; i++)
@@ -61,7 +62,7 @@ public class TestDataGenerator
                 knownTonality = (knownTonality.Item1, Constants.GetParallelScale(knownTonality.Item2));
             }
 
-            var song = new Song
+            var song = new TestSong
             {
                 Id = songId,
                 IsTonalityKnown = isKnownTonality,
@@ -97,14 +98,14 @@ public class TestDataGenerator
                         Song = song,
                         Loop = loop,
                         Shift = shift,
-                        Count = _random.Next(parameters.MinLoopAppearances,
+                        Weight = _random.Next(parameters.MinLoopAppearances,
                             parameters.MaxLoopAppearances + 1) // Random count of appearances of the loop in the song
                     });
                 }
             }
         }
 
-        return new(songs, loops, loopLinks);
+        return new(songs.Values, loops.Values, loopLinks);
     }
 
     private (int, Scale)[] GenerateRandomTonalities(int min, int max)

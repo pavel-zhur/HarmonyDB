@@ -2,5 +2,4 @@
 
 public interface ILoop : ISource
 {
-    int SongCount { get; set; }
 }

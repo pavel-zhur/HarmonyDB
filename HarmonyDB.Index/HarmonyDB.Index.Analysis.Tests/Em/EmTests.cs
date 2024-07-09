@@ -9,12 +9,13 @@ public class EmTests(MusicAnalyzer analyzer, Output output)
     {
         var generatorParameters = new TestDataGeneratorParameters();
         var generator = new TestDataGenerator();
-        var model = generator.GenerateTestData(generatorParameters);
+        var emModel = generator.GenerateTestData(generatorParameters);
 
-        output.TraceInput(model);
+        output.TraceInput(emModel);
 
-        analyzer.UpdateProbabilities(model);
+        var emContext = analyzer.CreateContext(emModel);
+        analyzer.UpdateProbabilities(emModel, emContext);
 
-        output.TraceOutput(model);
+        output.TraceOutput(emModel, emContext);
     }
 }

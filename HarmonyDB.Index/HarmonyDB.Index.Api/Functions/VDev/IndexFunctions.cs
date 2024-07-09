@@ -156,9 +156,9 @@ public class IndexFunctions
         var tonalitiesIndex = await _tonalitiesIndexCache.Get();
         return new OkObjectResult(new
         {
-            Loops = tonalitiesIndex.LoopsKeys.Count,
-            Songs = tonalitiesIndex.SongsKeys.Count,
-            Links = tonalitiesIndex.LinksByLoop.Sum(x => x.Count()),
+            Loops = tonalitiesIndex.Loops.Count,
+            Songs = tonalitiesIndex.Songs.Count,
+            Links = tonalitiesIndex.LoopLinks.Count,
         });
     }
 

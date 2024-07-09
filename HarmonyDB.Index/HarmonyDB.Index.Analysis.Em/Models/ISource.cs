@@ -2,7 +2,7 @@
 
 public interface ISource
 {
-    string Id { get; set; }
+    string Id { get; }
     double[,] TonalityProbabilities { get; set; } // [TonicCount, ScaleCount]
     (double TonicScore, double ScaleScore) Score { get; set; }
 }
