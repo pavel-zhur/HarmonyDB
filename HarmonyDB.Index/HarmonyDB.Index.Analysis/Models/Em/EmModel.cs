@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Em.Models;
+using HarmonyDB.Index.Analysis.Models.Index;
 
 namespace HarmonyDB.Index.Analysis.Models.Em;
 
@@ -34,7 +35,7 @@ public record EmModel : IEmModel
 
     public ILookup<string, LoopLink> LoopLinksByLoopId { get; }
 
-    public static EmModel Deserialize(byte[] serialized, IReadOnlyList<Link> links)
+    public static EmModel Deserialize(byte[] serialized, IReadOnlyList<StructureLink> links)
     {
         using var stream = new MemoryStream(serialized);
         using var reader = new BinaryReader(stream);

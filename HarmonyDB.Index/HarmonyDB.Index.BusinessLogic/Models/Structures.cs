@@ -5,13 +5,12 @@ using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
-using Loop = HarmonyDB.Index.Analysis.Models.Index.Loop;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
 public class Structures
 {
-    private Structures(List<Link> links)
+    private Structures(List<StructureLink> links)
     {
         Links = links;
 
@@ -21,7 +20,7 @@ public class Structures
         {
             var sequence = Analysis.Models.Loop.Deserialize(g.Key);
             var note = (byte)0;
-            return new Loop(
+            return new StructureLoop(
                 g.Key,
                 sequence.Length,
                 g.Sum(x => x.Occurrences),
@@ -39,9 +38,9 @@ public class Structures
         }).ToDictionary(x => x.Normalized);
     }
 
-    public IReadOnlyList<Link> Links { get; }
+    public IReadOnlyList<StructureLink> Links { get; }
 
-    public IReadOnlyDictionary<string, Loop> Loops { get; }
+    public IReadOnlyDictionary<string, StructureLoop> Loops { get; }
 
     public static byte[] Serialize(IReadOnlyList<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> compactLinks)
     {
@@ -96,7 +95,7 @@ public class Structures
         }
 
         var linksCount = binaryReader.ReadInt32();
-        var links = new List<Link>(linksCount);
+        var links = new List<StructureLink>(linksCount);
         for (var i = 0; i < linksCount; i++)
         {
             var normalizedIndex = binaryReader.ReadInt32();
@@ -105,7 +104,7 @@ public class Structures
             var occurrences = binaryReader.ReadInt16();
             var successions = binaryReader.ReadInt16();
 
-            var link = new Link(
+            var link = new StructureLink(
                 normalized[normalizedIndex],
                 externalIds[externalIdIndex],
                 normalizationRoot,

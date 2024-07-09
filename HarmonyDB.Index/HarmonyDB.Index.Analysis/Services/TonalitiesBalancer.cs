@@ -48,7 +48,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
     }
 
     public EmModel GetEmModel(
-        IReadOnlyList<Link> all, 
+        IReadOnlyList<StructureLink> all, 
         Dictionary<string, (byte songRoot, Scale scale)> songsKeys)
     {
         var loops = all
