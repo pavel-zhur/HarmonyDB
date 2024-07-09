@@ -171,11 +171,12 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
     {
         var relevantLinks = isSong ? emContext.LoopLinksBySongId[id] : emContext.LoopLinksByLoopId[id];
         var shiftCounts = relevantLinks
-            .GroupBy(l => GetRelativeShift(l, isSong))
-            .Select(g => g.Sum(l => l.Weight))
+            .SelectMany(l => GetRelativeShiftsProbabilities(l, isSong).Select(s => (l, weight: s.probability, s.relativeShift)))
+            .GroupBy(ls => ls.relativeShift)
+            .Select(g => g.Sum(ls => ls.weight * ls.l.Weight))
             .ToList();
 
-        double totalLinks = shiftCounts.Sum();
+        var totalLinks = shiftCounts.Sum();
 
         var tonicEntropy = shiftCounts.Select(x => x / totalLinks * Math.Log(x / totalLinks)).Sum() * -1;
 
@@ -199,15 +200,18 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         return (Math.Exp(-tonicEntropy), Math.Exp(-scaleEntropy));
     }
 
-    private int GetRelativeShift(ILoopLink loopLink, bool isSong)
+    private List<(int relativeShift, double probability)> GetRelativeShiftsProbabilities(ILoopLink loopLink, bool isSong)
     {
-        var predictedTonality = GetPredictedTonality(isSong 
+        var probabilities = isSong 
             ? loopLink.Loop.TonalityProbabilities 
-            : loopLink.Song.TonalityProbabilities);
+            : loopLink.Song.TonalityProbabilities;
 
-        var targetTonic = Constants.GetMajorTonic(predictedTonality);
-
-        return (loopLink.Shift - targetTonic + Constants.TonicCount) % Constants.TonicCount;
+        return Constants.Indices
+            .Select(i => (probability: probabilities[i.tonic, i.scale], majorTonic: Constants.GetMajorTonic(((int tonic, Scale scale))i)))
+            .GroupBy(x => x.majorTonic)
+            .Select(g => (relativeShift: (loopLink.Shift - g.Key + Constants.TonicCount) % Constants.TonicCount, weight: g.Sum(x => x.probability)))
+            .Where(x => x.weight > 0)
+            .ToList();
     }
 
     private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)
@@ -264,6 +268,8 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 }
             }
         }
+
+        // todo: there's a possible issue with this logic
         var random = new Random();
         return maxIndices[random.Next(maxIndices.Count)];
     }
