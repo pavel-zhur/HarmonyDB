@@ -1,64 +1,13 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Index.Analysis.Models.CompactV1;
 using Microsoft.Extensions.Logging;
 using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models.Em;
+using HarmonyDB.Index.Analysis.Models.Index;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtractor indexExtractor)
+public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
 {
-    public async Task<List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)>> GetAllSongsLoops(
-        IReadOnlyDictionary<string, CompactChordsProgression> progressions)
-    {
-        var cc = 0;
-        var cf = 0;
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> result = new();
-
-        await Parallel.ForEachAsync(progressions, (x, __) =>
-        {
-            var (externalId, compactChordsProgression) = x;
-            try
-            {
-                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions, int loopLength)>();
-                foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
-                {
-                    var loops = indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
-
-                    foreach (var loop in loops)
-                    {
-                        var key = (loop.Normalized, loop.NormalizationRoot);
-                        var counters = loopResults.GetValueOrDefault(key);
-                        loopResults[key] = ((short occurrences, short successions, int loopLength))(
-                            counters.occurrences + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength,
-                            counters.successions + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength - 1,
-                            loop.LoopLength);
-                    }
-
-                    if (cc++ % 1000 == 0) logger.LogInformation($"{cc} s, {cf} f");
-                }
-
-                var items = loopResults
-                    .Select(p => (p.Key.normalized, externalId, p.Key.normalizationRoot, p.Value.occurrences, p.Value.successions, p.Value.loopLength))
-                    .ToList();
-
-                lock (result)
-                {
-                    result.AddRange(items);
-                }
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "Error adding the loop.");
-                Interlocked.Increment(ref cf);
-            }
-
-            return ValueTask.CompletedTask;
-        });
-
-        return result;
-    }
-
     public (byte songRoot, Scale scale)? TryParseBestTonality(string tonality)
     {
         if (!Note.CharactersToNotes.TryGetValue(tonality[0], out var note))
@@ -99,21 +48,21 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
     }
 
     public EmModel GetEmModel(
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions, int loopLength)> all, 
+        IReadOnlyList<Link> all, 
         Dictionary<string, (byte songRoot, Scale scale)> songsKeys)
     {
         var loops = all
-            .GroupBy(x => x.normalized)
+            .GroupBy(x => x.Normalized)
             .ToDictionary(
                 x => x.Key,
                 x => new Loop
                 {
                     Id = x.Key,
-                    Length = x.First().loopLength,
+                    Length = Models.Loop.Deserialize(x.Key).Length,
                 });
 
         var songs = all
-            .GroupBy(x => x.externalId)
+            .GroupBy(x => x.ExternalId)
             .ToDictionary(
                 x => x.Key,
                 x => new Song
@@ -126,11 +75,11 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger, IndexExtract
         var links = all
             .Select(x => new LoopLink
             {
-                Loop = loops[x.normalized],
-                Song = songs[x.externalId],
-                Shift = x.normalizationRoot,
-                Occurrences = x.occurrences,
-                Successions = x.successions,
+                Loop = loops[x.Normalized],
+                Song = songs[x.ExternalId],
+                Shift = x.NormalizationRoot,
+                Occurrences = x.Occurrences,
+                Successions = x.Successions,
             })
             .ToList();
 

@@ -12,21 +12,26 @@ namespace HarmonyDB.Index.BusinessLogic.Caches;
 
 public class TonalitiesCache : BytesFileCacheBase<EmModel>
 {
-    private readonly ProgressionsCache _progressionsCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly ILogger<TonalitiesCache> _logger;
     private readonly TonalitiesBalancer _tonalitiesBalancer;
     private readonly MusicAnalyzer _musicAnalyzer;
+    private readonly StructuresCache _structuresCache;
 
-    public TonalitiesCache(ILogger<TonalitiesCache> logger,
-        ProgressionsCache progressionsCache, IOptions<FileCacheBaseOptions> options, IndexHeadersCache indexHeadersCache, TonalitiesBalancer tonalitiesBalancer, MusicAnalyzer musicAnalyzer)
+    public TonalitiesCache(
+        ILogger<TonalitiesCache> logger,
+        IOptions<FileCacheBaseOptions> options, 
+        IndexHeadersCache indexHeadersCache, 
+        TonalitiesBalancer tonalitiesBalancer,
+        MusicAnalyzer musicAnalyzer,
+        StructuresCache structuresCache)
         : base(logger, options)
     {
         _logger = logger;
-        _progressionsCache = progressionsCache;
         _indexHeadersCache = indexHeadersCache;
         _tonalitiesBalancer = tonalitiesBalancer;
         _musicAnalyzer = musicAnalyzer;
+        _structuresCache = structuresCache;
     }
 
     protected override string Key => "Tonalities";
@@ -38,23 +43,22 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
 
     public async Task Rebuild(int? limitUnknown = null)
     {
-        var progressions = await _progressionsCache.Get();
         var indexHeaders = await _indexHeadersCache.Get();
 
         var songsKeys = GetSongsKeys(indexHeaders);
-        var all = await _tonalitiesBalancer.GetAllSongsLoops(progressions);
 
+        var all = (await _structuresCache.Get()).Links;
         if (limitUnknown.HasValue)
         {
             var limit = all
-                .Select(x => x.externalId)
+                .Select(x => x.ExternalId)
                 .Distinct()
                 .Where(x => !songsKeys.ContainsKey(x))
                 .OrderBy(_ => Random.Shared.NextDouble())
                 .Take(limitUnknown.Value)
                 .ToHashSet();
 
-            all = all.Where(x => songsKeys.ContainsKey(x.externalId) || limit.Contains(x.externalId)).ToList();
+            all = all.Where(x => songsKeys.ContainsKey(x.ExternalId) || limit.Contains(x.ExternalId)).ToList();
         }
 
         var result = _tonalitiesBalancer.GetEmModel(all, songsKeys);

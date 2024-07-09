@@ -26,8 +26,9 @@ public class IndexFunctions
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly FullTextSearchCache _fullTextSearchCache;
+    private readonly StructuresCache _structuresCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache, StructuresCache structuresCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -38,6 +39,7 @@ public class IndexFunctions
         _progressionsSearch = progressionsSearch;
         _fullTextSearchCache = fullTextSearchCache;
         _tonalitiesCache = tonalitiesCache;
+        _structuresCache = structuresCache;
 
         securityContext.InitService();
     }
@@ -149,6 +151,12 @@ public class IndexFunctions
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
     }
 
+    [Function(nameof(VDevGetStructuresCacheLinksCount))]
+    public async Task<IActionResult> VDevGetStructuresCacheLinksCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+    }
+
     [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount))]
     public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
@@ -172,6 +180,13 @@ public class IndexFunctions
     {
         await _loopsStatisticsCache.Rebuild();
         return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
+    }
+
+    [Function(nameof(VDevRebuildStructuresCache))]
+    public async Task<IActionResult> VDevRebuildStructuresCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _structuresCache.Rebuild();
+        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
     }
 
     [Function(nameof(VDevFindAndCount))]
