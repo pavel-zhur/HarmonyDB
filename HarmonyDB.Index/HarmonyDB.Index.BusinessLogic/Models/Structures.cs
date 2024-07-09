@@ -1,5 +1,11 @@
-﻿using HarmonyDB.Index.Analysis.Models.Index;
+﻿using System.Runtime.InteropServices;
+using HarmonyDB.Common;
+using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
+using Loop = HarmonyDB.Index.Analysis.Models.Index.Loop;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
@@ -8,9 +14,34 @@ public class Structures
     private Structures(List<Link> links)
     {
         Links = links;
+
+        string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
+
+        Loops = links.GroupBy(x => x.Normalized).Select(g =>
+        {
+            var sequence = Analysis.Models.Loop.Deserialize(g.Key);
+            var note = (byte)0;
+            return new Loop(
+                g.Key,
+                sequence.Length,
+                g.Sum(x => x.Occurrences),
+                g.Sum(x => x.Successions),
+                g.Count(),
+                string.Join(" ", ToChord(note, sequence.Span[0].FromType)
+                    .Once()
+                    .Concat(
+                        MemoryMarshal.ToEnumerable(sequence)
+                            .Select(m =>
+                            {
+                                note = Note.Normalize(note + m.RootDelta);
+                                return ToChord(note, m.ToType);
+                            }))));
+        }).ToDictionary(x => x.Normalized);
     }
 
     public IReadOnlyList<Link> Links { get; }
+
+    public IReadOnlyDictionary<string, Loop> Loops { get; }
 
     public static byte[] Serialize(IReadOnlyList<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> compactLinks)
     {
