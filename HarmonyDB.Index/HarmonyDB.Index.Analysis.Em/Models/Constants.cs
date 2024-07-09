@@ -13,8 +13,13 @@ public static class Constants
             .Range(0, TonicCount)
             .SelectMany(i => Enumerable.Range(0, ScaleCount).Select(j => (i, j)));
 
-    public static Scale GetParallelScale(Scale scale)
+    public static int GetMajorTonic((int tonic, Scale scale) scale)
     {
-        return scale == Scale.Major ? Scale.Minor : Scale.Major;
+        return scale.scale == Scale.Major ? scale.tonic : GetParallelScale(scale).tonic;
+    }
+
+    public static (int tonic, Scale scale) GetParallelScale((int tonic, Scale scale) scale)
+    {
+        return scale.scale == Scale.Major ? ((scale.tonic - 3 + TonicCount) % TonicCount, Scale.Minor) : ((scale.tonic + 3) % TonicCount, Scale.Major);
     }
 }

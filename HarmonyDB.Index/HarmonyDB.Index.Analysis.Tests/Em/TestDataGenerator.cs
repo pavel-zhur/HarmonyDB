@@ -38,7 +38,7 @@ public class TestDataGenerator
             var hasModulation = _random.NextDouble() < parameters.ModulationProbability;
             var songTonalities = hasModulation
                 ? GenerateRandomTonalities(2, 3)
-                : new[] { (_random.Next(Constants.TonicCount), (Scale)_random.Next(Constants.ScaleCount)) };
+                : new[] { (tonic: _random.Next(Constants.TonicCount), scale: (Scale)_random.Next(Constants.ScaleCount)) };
 
             var isKnownTonality = _random.NextDouble() < parameters.KnownTonalityProbability;
             var isKnownTonalityIncorrect =
@@ -56,17 +56,13 @@ public class TestDataGenerator
                     (Scale)_random.Next(Constants.ScaleCount));
             }
 
-            // Apply mutation to known tonality scale
-            if (isKnownTonality && _random.NextDouble() < parameters.SongKnownTonalityScaleMutationProbability)
-            {
-                knownTonality = (knownTonality.Item1, Constants.GetParallelScale(knownTonality.Item2));
-            }
-
             var song = new TestSong
             {
                 Id = songId,
                 IsTonalityKnown = isKnownTonality,
-                KnownTonality = knownTonality,
+                KnownTonality = isKnownTonality && !isKnownTonalityIncorrect && _random.NextDouble() < parameters.SongKnownTonalityScaleMutationProbability
+                    ? Constants.GetParallelScale(knownTonality) // Apply mutation to known tonality scale
+                    : knownTonality,
                 SecretTonalities = songTonalities,
                 IsKnownTonalityIncorrect = isKnownTonalityIncorrect
             };
@@ -79,7 +75,7 @@ public class TestDataGenerator
             {
                 var isLinkMutation = _random.NextDouble() < parameters.LoopLinkScaleMutationProbability;
                 var requiredScale =
-                    isLinkMutation ? Constants.GetParallelScale(songTonality.Item2) : songTonality.Item2;
+                    isLinkMutation ? Constants.GetParallelScale(songTonality).scale : songTonality.Item2;
 
                 var songLoops =
                     GetRandomLoops(
@@ -91,7 +87,9 @@ public class TestDataGenerator
                     var loop = loops[loopId];
                     var loopTonality = loop.SecretTonalities.First(t => t.Item2 == requiredScale);
 
-                    var shift = (loopTonality.Item1 + songTonality.Item1) % Constants.TonicCount;
+                    var shift = loopTonality.Scale == songTonality.scale 
+                        ? (loopTonality.Tonic + songTonality.tonic) % Constants.TonicCount
+                        : (loopTonality.Tonic + Constants.GetParallelScale(songTonality).tonic) % Constants.TonicCount;
 
                     loopLinks.Add(new()
                     {
@@ -108,7 +106,7 @@ public class TestDataGenerator
         return new(songs.Values, loops.Values, loopLinks);
     }
 
-    private (int, Scale)[] GenerateRandomTonalities(int min, int max)
+    private (int tonic, Scale scale)[] GenerateRandomTonalities(int min, int max)
     {
         var count = _random.Next(min, max + 1);
         var tonalities = new HashSet<(int, Scale)>();

@@ -201,11 +201,13 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
     private int GetRelativeShift(ILoopLink loopLink, bool isSong)
     {
-        var probabilities = GetPredictedTonality(isSong 
+        var predictedTonality = GetPredictedTonality(isSong 
             ? loopLink.Loop.TonalityProbabilities 
             : loopLink.Song.TonalityProbabilities);
 
-        return (loopLink.Shift - probabilities.Tonic + Constants.TonicCount) % Constants.TonicCount;
+        var targetTonic = Constants.GetMajorTonic(predictedTonality);
+
+        return (loopLink.Shift - targetTonic + Constants.TonicCount) % Constants.TonicCount;
     }
 
     private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)
