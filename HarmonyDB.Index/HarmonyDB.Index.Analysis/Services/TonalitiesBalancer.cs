@@ -68,8 +68,7 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
                 x => new Song
                 {
                     Id = x.Key,
-                    IsTonalityKnown = songsKeys.ContainsKey(x.Key),
-                    KnownTonality = songsKeys.GetValueOrDefault(x.Key),
+                    KnownTonality = songsKeys.TryGetValue(x.Key, out var known) ? known : null,
                 });
 
         var links = all

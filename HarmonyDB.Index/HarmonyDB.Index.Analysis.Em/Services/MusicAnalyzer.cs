@@ -49,7 +49,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
             Parallel.ForEach(emModel.Songs, song =>
             {
-                if (!song.IsTonalityKnown)
+                if (!song.KnownTonality.HasValue)
                 {
                     var newProbabilities = CalculateProbabilities(emContext, song.Id, true);
                     var change = CalculateMaxChange(song.TonalityProbabilities, newProbabilities);
@@ -86,14 +86,14 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 hasConverged = true;
             }
 
-            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0} seconds");
+            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0} milliseconds");
         }
 
         logger.LogInformation("Converged after " + iterationCount + " iterations.");
 
         Parallel.ForEach(emModel.Songs, song =>
         {
-            if (song.IsTonalityKnown)
+            if (song.KnownTonality.HasValue)
             {
                 song.TonalityProbabilities = CalculateProbabilities(emContext, song.Id, true);
             }
@@ -104,21 +104,21 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
     {
         foreach (var song in emModel.Songs)
         {
-            if (song.IsTonalityKnown)
+            if (song.KnownTonality.HasValue)
             {
-                for (var i = 0; i < Constants.TonicCount; i++)
+                for (byte i = 0; i < Constants.TonicCount; i++)
                 {
-                    for (var j = 0; j < Constants.ScaleCount; j++)
+                    for (byte j = 0; j < Constants.ScaleCount; j++)
                     {
-                        song.TonalityProbabilities[i, j] = i == song.KnownTonality.Item1 && j == (int)song.KnownTonality.Item2 ? 1.0f : 0.0f;
+                        song.TonalityProbabilities[i, j] = i == song.KnownTonality.Value.Tonic && j == (byte)song.KnownTonality.Value.Scale ? 1.0f : 0.0f;
                     }
                 }
             }
             else
             {
-                for (var i = 0; i < Constants.TonicCount; i++)
+                for (byte i = 0; i < Constants.TonicCount; i++)
                 {
-                    for (var j = 0; j < Constants.ScaleCount; j++)
+                    for (byte j = 0; j < Constants.ScaleCount; j++)
                     {
                         song.TonalityProbabilities[i, j] = 1.0f / (Constants.TonicCount * Constants.ScaleCount);
                     }
@@ -130,9 +130,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         foreach (var loop in emModel.Loops)
         {
-            for (var i = 0; i < Constants.TonicCount; i++)
+            for (byte i = 0; i < Constants.TonicCount; i++)
             {
-                for (var j = 0; j < Constants.ScaleCount; j++)
+                for (byte j = 0; j < Constants.ScaleCount; j++)
                 {
                     loop.TonalityProbabilities[i, j] = 1.0f / (Constants.TonicCount * Constants.ScaleCount);
                 }
@@ -154,9 +154,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
             var songCount = emContext.SongCounts[link.Loop.Id];
 
-            for (var i = 0; i < Constants.TonicCount; i++)
+            for (byte i = 0; i < Constants.TonicCount; i++)
             {
-                for (var j = 0; j < Constants.ScaleCount; j++)
+                for (byte j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
                     newProbabilities[targetTonic, j] += (sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + (float)Math.Log(songCount)));
@@ -186,9 +186,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         foreach (var link in relevantLinks)
         {
             var sourceProbabilities = isSong ? link.Loop.TonalityProbabilities : link.Song.TonalityProbabilities;
-            for (var i = 0; i < Constants.TonicCount; i++)
+            for (byte i = 0; i < Constants.TonicCount; i++)
             {
-                for (var j = 0; j < Constants.ScaleCount; j++)
+                for (byte j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
                     scaleProbabilities[targetTonic, j] += sourceProbabilities[i, j];
@@ -219,9 +219,9 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
     private float CalculateMaxChange(float[,] oldProbabilities, float[,] newProbabilities)
     {
         var maxChange = 0.0f;
-        for (var i = 0; i < Constants.TonicCount; i++)
+        for (byte i = 0; i < Constants.TonicCount; i++)
         {
-            for (var j = 0; j < Constants.ScaleCount; j++)
+            for (byte j = 0; j < Constants.ScaleCount; j++)
             {
                 maxChange = Math.Max(maxChange, Math.Abs(oldProbabilities[i, j] - newProbabilities[i, j]));
             }
@@ -232,31 +232,31 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
     private void NormalizeProbabilities(float[,] probabilities)
     {
         float sum = 0;
-        for (var i = 0; i < Constants.TonicCount; i++)
+        for (byte i = 0; i < Constants.TonicCount; i++)
         {
-            for (var j = 0; j < Constants.ScaleCount; j++)
+            for (byte j = 0; j < Constants.ScaleCount; j++)
             {
                 sum += probabilities[i, j];
             }
         }
         if (sum == 0) return;
 
-        for (var i = 0; i < Constants.TonicCount; i++)
+        for (byte i = 0; i < Constants.TonicCount; i++)
         {
-            for (var j = 0; j < Constants.ScaleCount; j++)
+            for (byte j = 0; j < Constants.ScaleCount; j++)
             {
                 probabilities[i, j] /= sum;
             }
         }
     }
 
-    public (int Tonic, Scale Scale) GetPredictedTonality(float[,] probabilities)
+    public (byte Tonic, Scale Scale) GetPredictedTonality(float[,] probabilities)
     {
         var maxProbability = float.MinValue;
-        var maxIndices = new List<(int, Scale)>();
-        for (var i = 0; i < Constants.TonicCount; i++)
+        var maxIndices = new List<(byte, Scale)>();
+        for (byte i = 0; i < Constants.TonicCount; i++)
         {
-            for (var j = 0; j < Constants.ScaleCount; j++)
+            for (byte j = 0; j < Constants.ScaleCount; j++)
             {
                 if (probabilities[i, j] > maxProbability)
                 {

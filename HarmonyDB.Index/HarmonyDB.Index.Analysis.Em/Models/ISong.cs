@@ -2,6 +2,5 @@
 
 public interface ISong : ISource
 {
-    bool IsTonalityKnown { get; }
-    (int Tonic, Scale Scale) KnownTonality { get; }
+    (byte Tonic, Scale Scale)? KnownTonality { get; }
 }

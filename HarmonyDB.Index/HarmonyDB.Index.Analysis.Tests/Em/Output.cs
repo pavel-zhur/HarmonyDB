@@ -13,7 +13,7 @@ public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
         output.LogInformation("First 10 songs:");
         foreach (var song in emModel.Songs.Take(10))
         {
-            output.LogInformation($"Song {song.Id}: Known Tonality = {song.KnownTonality}, Is Tonality Known = {song.IsTonalityKnown}, Secret Tonalities = {string.Join(",", song.SecretTonalities)}, Is Known Tonality Incorrect = {song.IsKnownTonalityIncorrect}");
+            output.LogInformation($"Song {song.Id}: Known Tonality = {song.KnownTonality}, Secret Tonalities = {string.Join(",", song.SecretTonalities)}, Is Known Tonality Incorrect = {song.IsKnownTonalityIncorrect}");
         }
 
         output.LogInformation("First 10 loops:");

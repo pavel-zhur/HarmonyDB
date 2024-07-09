@@ -22,7 +22,7 @@ public class TestDataGenerator
             var isBadLoop = _random.NextDouble() < parameters.BadCycleProbability;
             var loopTonalities = isBadLoop
                 ? GenerateRandomTonalities(2, 3)
-                : new[] { (_random.Next(Constants.TonicCount), (Scale)_random.Next(Constants.ScaleCount)) };
+                : new[] { ((byte)_random.Next(Constants.TonicCount), (Scale)_random.Next(Constants.ScaleCount)) };
 
             loops[loopId] = new()
             {
@@ -38,19 +38,15 @@ public class TestDataGenerator
             var hasModulation = _random.NextDouble() < parameters.ModulationProbability;
             var songTonalities = hasModulation
                 ? GenerateRandomTonalities(2, 3)
-                : new[] { (tonic: _random.Next(Constants.TonicCount), scale: (Scale)_random.Next(Constants.ScaleCount)) };
+                : [(tonic: (byte)_random.Next(Constants.TonicCount), scale: (Scale)_random.Next(Constants.ScaleCount))];
 
-            var isKnownTonality = _random.NextDouble() < parameters.KnownTonalityProbability;
-            var isKnownTonalityIncorrect =
-                isKnownTonality && _random.NextDouble() < parameters.IncorrectKnownTonalityProbability;
-
-            var knownTonality =
-                isKnownTonality ? songTonalities[_random.Next(songTonalities.Length)] : (-1, Scale.Major);
+            var knownTonality = _random.NextDouble() < parameters.KnownTonalityProbability ? songTonalities[_random.Next(songTonalities.Length)] : ((byte tonic, Scale scale)?)null;
+            var isKnownTonalityIncorrect = knownTonality.HasValue && _random.NextDouble() < parameters.IncorrectKnownTonalityProbability;
 
             // If known tonality is incorrect, assign it a different tonality
             if (isKnownTonalityIncorrect)
             {
-                var possibleTonalities = Enumerable.Range(0, Constants.TonicCount)
+                var possibleTonalities = Enumerable.Range(0, Constants.TonicCount).Select(x => (byte)x)
                     .Except(songTonalities.Select(t => t.Item1)).ToArray();
                 knownTonality = (possibleTonalities[_random.Next(possibleTonalities.Length)],
                     (Scale)_random.Next(Constants.ScaleCount));
@@ -59,10 +55,11 @@ public class TestDataGenerator
             var song = new TestSong
             {
                 Id = songId,
-                IsTonalityKnown = isKnownTonality,
-                KnownTonality = isKnownTonality && !isKnownTonalityIncorrect && _random.NextDouble() < parameters.SongKnownTonalityScaleMutationProbability
-                    ? Constants.GetParallelScale(knownTonality) // Apply mutation to known tonality scale
-                    : knownTonality,
+                KnownTonality = !knownTonality.HasValue
+                    ? null
+                    : !isKnownTonalityIncorrect && _random.NextDouble() < parameters.SongKnownTonalityScaleMutationProbability
+                        ? Constants.GetParallelScale(knownTonality.Value) // Apply mutation to known tonality scale
+                        : knownTonality,
                 SecretTonalities = songTonalities,
                 IsKnownTonalityIncorrect = isKnownTonalityIncorrect
             };
@@ -106,13 +103,13 @@ public class TestDataGenerator
         return new(songs.Values, loops.Values, loopLinks);
     }
 
-    private (int tonic, Scale scale)[] GenerateRandomTonalities(int min, int max)
+    private (byte tonic, Scale scale)[] GenerateRandomTonalities(int min, int max)
     {
         var count = _random.Next(min, max + 1);
-        var tonalities = new HashSet<(int, Scale)>();
+        var tonalities = new HashSet<(byte, Scale)>();
         while (tonalities.Count < count)
         {
-            tonalities.Add((_random.Next(Constants.TonicCount), (Scale)_random.Next(Constants.ScaleCount)));
+            tonalities.Add(((byte)_random.Next(Constants.TonicCount), (Scale)_random.Next(Constants.ScaleCount)));
         }
 
         return tonalities.ToArray();

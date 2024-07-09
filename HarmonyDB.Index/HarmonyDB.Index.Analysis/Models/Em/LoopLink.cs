@@ -9,7 +9,7 @@ public record LoopLink : ILoopLink
     public string SongId => Song.Id;
     public string LoopId => Loop.Id;
     public required byte Shift { get; init; }
-    public float Weight => (Occurrences + Successions * 4) * (Loop.Length == 2 ? 1 : 5) * (Song.IsTonalityKnown ? 5 : 1);
+    public float Weight => (Occurrences + Successions * 4) * (Loop.Length == 2 ? 1 : 5) * (Song.KnownTonality.HasValue ? 5 : 1);
     ISong ILoopLink.Song => Song;
     ILoop ILoopLink.Loop => Loop;
 

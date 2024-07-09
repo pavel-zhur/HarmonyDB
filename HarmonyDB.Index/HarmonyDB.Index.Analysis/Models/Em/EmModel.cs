@@ -64,24 +64,13 @@ public record EmModel : IEmModel
             {
                 var id = reader.ReadString();
                 var scale = reader.ReadByte();
-                
-                (int Tonic, Scale scale) knownTonality;
-                bool isTonalityKnown;
-                if (scale == 2)
-                {
-                    isTonalityKnown = false;
-                    knownTonality = default;
-                }
-                else
-                {
-                    isTonalityKnown = true;
-                    knownTonality = (reader.ReadInt32(), (Scale)scale);
-                }
+
+                var knownTonalityByte = reader.ReadByte();
+                (byte Tonic, Scale scale)? knownTonality = knownTonalityByte == 255 ? null : ((byte)(knownTonalityByte / 2), (Scale)(knownTonalityByte % 2));
 
                 var song = new Song
                 {
                     Id = id,
-                    IsTonalityKnown = isTonalityKnown,
                     KnownTonality = knownTonality,
                 };
 
@@ -130,15 +119,9 @@ public record EmModel : IEmModel
         {
             songIds[key] = songIds.Count;
             writer.Write(key);
-            if (song.IsTonalityKnown)
-            {
-                writer.Write((byte)song.KnownTonality.Scale);
-                writer.Write(song.KnownTonality.Tonic);
-            }
-            else
-            {
-                writer.Write((byte)2);
-            }
+            writer.Write(song.KnownTonality.HasValue
+                ? (byte)(song.KnownTonality.Value.Tonic * 2 + (int)song.KnownTonality.Value.Scale)
+                : (byte)255);
 
             SerializeSource(writer, song);
         }

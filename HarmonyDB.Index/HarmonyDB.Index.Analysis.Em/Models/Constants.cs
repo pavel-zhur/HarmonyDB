@@ -5,22 +5,24 @@ public static class Constants
     public const int TonicCount = 12; // Number of different tonics
     public const int ScaleCount = 2;  // Major and Minor
 
-    public static IReadOnlyList<(int tonic, int scale)> Indices { get; }
+    public static IReadOnlyList<(byte tonic, byte scale)> Indices { get; }
         = Enumerable
             .Range(0, TonicCount)
-            .SelectMany(i => Enumerable.Range(0, ScaleCount).Select(j => (i, j)))
+            .SelectMany(i => Enumerable.Range(0, ScaleCount).Select(j => ((byte)i, (byte)j)))
             .ToList();
 
-    public static IReadOnlyList<(int tonic, Scale scale)> Pairs { get; }
-        = Indices.Select(x => (x.tonic, (Scale)x.scale)).ToList();
+    public static IReadOnlyList<(byte tonic, Scale scale)> Pairs { get; }
+        = Indices.Select(x => ((byte)x.tonic, (Scale)x.scale)).ToList();
 
     public static int GetMajorTonic((int tonic, Scale scale) scale)
     {
         return scale.scale == Scale.Major ? scale.tonic : GetParallelScale(scale).tonic;
     }
 
-    public static (int tonic, Scale scale) GetParallelScale((int tonic, Scale scale) scale)
+    public static (byte tonic, Scale scale) GetParallelScale((int tonic, Scale scale) scale)
     {
-        return scale.scale == Scale.Major ? ((scale.tonic - 3 + TonicCount) % TonicCount, Scale.Minor) : ((scale.tonic + 3) % TonicCount, Scale.Major);
+        return scale.scale == Scale.Major 
+            ? ((byte)((scale.tonic - 3 + TonicCount) % TonicCount), Scale.Minor) 
+            : ((byte)((scale.tonic + 3) % TonicCount), Scale.Major);
     }
 }
