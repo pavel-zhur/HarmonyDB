@@ -9,7 +9,7 @@ public record StructureLoopTonality(
     int TotalSuccessions,
     int TotalSongs,
     string Title,
-    IReadOnlyList<IReadOnlyList<float>> Probabilities,
+    float[] Probabilities,
     float ScaleScore,
     float TonicScore)
     : StructureLoop(Normalized,

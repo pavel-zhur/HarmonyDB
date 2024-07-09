@@ -1,6 +1,6 @@
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public record StructureLoopsResponse : PagedRequestBase
+public record StructureLoopsResponse : PagedResponseBase
 {
     public required List<StructureLoopTonality> Loops { get; init; }
 }

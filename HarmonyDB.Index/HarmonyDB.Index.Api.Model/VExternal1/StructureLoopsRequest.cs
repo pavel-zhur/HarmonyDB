@@ -14,7 +14,13 @@ public record StructureLoopsRequest : PagedRequestBase
     
     public int MinTotalOccurrences { get; init; } = 1;
 
-    public float MinConfidence { get; init; }
+    public float MinTonalityConfidence { get; init; }
+    
+    public float MinTonicConfidence { get; init; }
+
+    public float MaxTonalityConfidence { get; init; } = 1;
+    
+    public float MaxTonicConfidence { get; init; } = 1;
 
     public float MinTonicScore { get; init; }
     
@@ -27,5 +33,5 @@ public record StructureLoopsRequest : PagedRequestBase
     public int LoopsPerPage { get; init; } = 100;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public StructureLoopsRequestOrdering Ordering { get; init; } = StructureLoopsRequestOrdering.ConfidenceDesc;
+    public StructureLoopsRequestOrdering Ordering { get; init; } = StructureLoopsRequestOrdering.TonalityConfidenceDesc;
 }
