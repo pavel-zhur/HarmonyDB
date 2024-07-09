@@ -170,15 +170,16 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
     private (double TonicScore, double ScaleScore) CalculateEntropy(EmContext emContext, string id, bool isSong)
     {
         var relevantLinks = isSong ? emContext.LoopLinksBySongId[id] : emContext.LoopLinksByLoopId[id];
-        var shiftCounts = relevantLinks
-            .SelectMany(l => GetRelativeShiftsProbabilities(l, isSong).Select(s => (l, weight: s.probability, s.relativeShift)))
-            .GroupBy(ls => ls.relativeShift)
-            .Select(g => g.Sum(ls => ls.weight * ls.l.Weight))
-            .ToList();
+
+        var shiftCounts = new double[Constants.TonicCount];
+        foreach (var relevantLink in relevantLinks)
+        {
+            AddShiftProbabilities(shiftCounts, relevantLink, isSong);
+        }
 
         var totalLinks = shiftCounts.Sum();
 
-        var tonicEntropy = shiftCounts.Select(x => x / totalLinks * Math.Log(x / totalLinks)).Sum() * -1;
+        var tonicEntropy = shiftCounts.Where(x => x > 0).Select(x => x / totalLinks * Math.Log(x / totalLinks)).Sum() * -1;
 
         var scaleProbabilities = new double[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
@@ -200,18 +201,18 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         return (Math.Exp(-tonicEntropy), Math.Exp(-scaleEntropy));
     }
 
-    private List<(int relativeShift, double probability)> GetRelativeShiftsProbabilities(ILoopLink loopLink, bool isSong)
+    private void AddShiftProbabilities(double[] shiftsCounts, ILoopLink loopLink, bool isSong)
     {
-        var probabilities = isSong 
-            ? loopLink.Loop.TonalityProbabilities 
+        var probabilities = isSong
+            ? loopLink.Loop.TonalityProbabilities
             : loopLink.Song.TonalityProbabilities;
 
-        return Constants.Indices
-            .Select(i => (probability: probabilities[i.tonic, i.scale], majorTonic: Constants.GetMajorTonic(((int tonic, Scale scale))i)))
-            .GroupBy(x => x.majorTonic)
-            .Select(g => (relativeShift: (loopLink.Shift - g.Key + Constants.TonicCount) % Constants.TonicCount, weight: g.Sum(x => x.probability)))
-            .Where(x => x.weight > 0)
-            .ToList();
+        foreach (var (tonic, scale) in Constants.Indices)
+        {
+            var majorTonic = Constants.GetMajorTonic((tonic, (Scale)scale));
+            var relativeShift = (loopLink.Shift - majorTonic + Constants.TonicCount) % Constants.TonicCount;
+            shiftsCounts[relativeShift] += probabilities[tonic, scale] * loopLink.Weight;
+        }
     }
 
     private double CalculateMaxChange(double[,] oldProbabilities, double[,] newProbabilities)
