@@ -11,15 +11,15 @@ using HarmonyDB.Index.BusinessLogic.Services.Caches;
 
 namespace HarmonyDB.Index.BusinessLogic.Services;
 
-public class TonalitiesIndexCache : BytesFileCacheBase<EmModel>
+public class TonalitiesCache : BytesFileCacheBase<EmModel>
 {
     private readonly ProgressionsCache _progressionsCache;
     private readonly IndexHeadersCache _indexHeadersCache;
-    private readonly ILogger<TonalitiesIndexCache> _logger;
+    private readonly ILogger<TonalitiesCache> _logger;
     private readonly TonalitiesBalancer _tonalitiesBalancer;
     private readonly MusicAnalyzer _musicAnalyzer;
 
-    public TonalitiesIndexCache(ILogger<TonalitiesIndexCache> logger,
+    public TonalitiesCache(ILogger<TonalitiesCache> logger,
         ProgressionsCache progressionsCache, IOptions<FileCacheBaseOptions> options, IndexHeadersCache indexHeadersCache, TonalitiesBalancer tonalitiesBalancer, MusicAnalyzer musicAnalyzer)
         : base(logger, options)
     {
@@ -30,7 +30,7 @@ public class TonalitiesIndexCache : BytesFileCacheBase<EmModel>
         _musicAnalyzer = musicAnalyzer;
     }
 
-    protected override string Key => "TonalitiesIndex";
+    protected override string Key => "Tonalities";
 
     protected override EmModel ToPresentationModel(byte[] fileModel)
     {

@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
         => serviceCollection
             .AddSingleton<ProgressionsCache>()
             .AddSingleton<LoopsStatisticsCache>()
-            .AddSingleton<TonalitiesIndexCache>()
+            .AddSingleton<TonalitiesCache>()
             .AddSingleton<IndexHeadersCache>()
             .AddSingleton<FullTextSearchCache>()
             .AddIndexAnalysis()

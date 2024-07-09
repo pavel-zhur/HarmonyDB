@@ -22,13 +22,13 @@ public class IndexFunctions
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
     private readonly LoopsStatisticsCache _loopsStatisticsCache;
-    private readonly TonalitiesIndexCache _tonalitiesIndexCache;
+    private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly FullTextSearchCache _fullTextSearchCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesIndexCache tonalitiesIndexCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
@@ -38,7 +38,7 @@ public class IndexFunctions
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
         _fullTextSearchCache = fullTextSearchCache;
-        _tonalitiesIndexCache = tonalitiesIndexCache;
+        _tonalitiesCache = tonalitiesCache;
 
         securityContext.InitService();
     }
@@ -153,7 +153,7 @@ public class IndexFunctions
     [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount))]
     public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        var tonalitiesIndex = await _tonalitiesIndexCache.Get();
+        var tonalitiesIndex = await _tonalitiesCache.Get();
         return new OkObjectResult(new
         {
             Loops = tonalitiesIndex.Loops.Count,
