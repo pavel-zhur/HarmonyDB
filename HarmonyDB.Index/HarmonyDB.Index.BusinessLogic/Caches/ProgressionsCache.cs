@@ -20,6 +20,7 @@ public class ProgressionsCache : FileCacheBase<IReadOnlyDictionary<string, byte[
         await StreamCompressSerialize(model);
     }
 
-    protected override IReadOnlyDictionary<string, CompactChordsProgression> ToPresentationModel(IReadOnlyDictionary<string, byte[]> fileModel)
+    protected override async Task<IReadOnlyDictionary<string, CompactChordsProgression>> ToPresentationModel(
+        IReadOnlyDictionary<string, byte[]> fileModel)
         => fileModel.ToDictionary(x => x.Key, x => CompactChordsProgression.Deserialize(new(x.Value)));
 }

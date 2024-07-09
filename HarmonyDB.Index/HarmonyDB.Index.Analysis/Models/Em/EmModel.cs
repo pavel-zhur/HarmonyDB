@@ -34,12 +34,12 @@ public record EmModel : IEmModel
 
     public ILookup<string, LoopLink> LoopLinksByLoopId { get; }
 
-    public static EmModel Deserialize(byte[] serialized)
+    public static EmModel Deserialize(byte[] serialized, IReadOnlyList<Link> links)
     {
         using var stream = new MemoryStream(serialized);
         using var reader = new BinaryReader(stream);
 
-        var loopsKeysPartial = Enumerable
+        var loops = Enumerable
             .Range(0, reader.ReadInt32())
             .Select(i =>
             {
@@ -57,7 +57,7 @@ public record EmModel : IEmModel
             })
             .ToList();
 
-        var songsKeysPartial = Enumerable
+        var songs = Enumerable
             .Range(0, reader.ReadInt32())
             .Select(i =>
             {
@@ -90,21 +90,22 @@ public record EmModel : IEmModel
             })
             .ToList();
 
-        var count = reader.ReadInt32();
-        var all = new List<LoopLink>();
-        for (var i = 0; i < count; i++)
-        {
-            all.Add(new()
-            {
-                Loop = loopsKeysPartial[reader.ReadInt32()],
-                Song = songsKeysPartial[reader.ReadInt32()],
-                Shift = reader.ReadInt32(),
-                Occurrences = reader.ReadInt16(),
-                Successions = reader.ReadInt16(),
-            });
-        }
+        var songIds = songs.ToDictionary(x => x.Id);
+        var loopIds = loops.ToDictionary(x => x.Id);
 
-        return new(songsKeysPartial, loopsKeysPartial, all);
+        var all = links
+            .Where(x => songIds.ContainsKey(x.ExternalId) && loopIds.ContainsKey(x.Normalized))
+            .Select(x => new LoopLink
+            {
+                Song = songIds[x.ExternalId],
+                Loop = loopIds[x.Normalized],
+                Occurrences = x.Occurrences,
+                Successions = x.Successions,
+                Shift = x.NormalizationRoot,
+            })
+            .ToList();
+
+        return new(songs, loops, all);
     }
 
     public byte[] Serialize()
@@ -139,16 +140,6 @@ public record EmModel : IEmModel
             }
 
             SerializeSource(writer, song);
-        }
-
-        writer.Write(LoopLinks.Count);
-        foreach (var loopLink in LoopLinks)
-        {
-            writer.Write(loopIds[loopLink.LoopId]);
-            writer.Write(songIds[loopLink.SongId]);
-            writer.Write(loopLink.Shift);
-            writer.Write(loopLink.Occurrences);
-            writer.Write(loopLink.Successions);
         }
 
         writer.Flush();

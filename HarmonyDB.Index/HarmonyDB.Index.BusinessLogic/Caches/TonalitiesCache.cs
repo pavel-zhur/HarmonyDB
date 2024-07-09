@@ -36,9 +36,9 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
 
     protected override string Key => "Tonalities";
 
-    protected override EmModel ToPresentationModel(byte[] fileModel)
+    protected override async Task<EmModel> ToPresentationModel(byte[] fileModel)
     {
-        return EmModel.Deserialize(fileModel);
+        return EmModel.Deserialize(fileModel, (await _structuresCache.Get()).Links);
     }
 
     public async Task Rebuild(int? limitUnknown = null)

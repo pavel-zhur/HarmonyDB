@@ -19,6 +19,6 @@ public class IndexHeadersCache : BytesFileCacheBase<IndexHeaders>
         await StreamCompressSerialize(model);
     }
 
-    protected override IndexHeaders ToPresentationModel(byte[] fileModel)
+    protected override async Task<IndexHeaders> ToPresentationModel(byte[] fileModel)
         => IndexHeaders.Deserialize(fileModel);
 }

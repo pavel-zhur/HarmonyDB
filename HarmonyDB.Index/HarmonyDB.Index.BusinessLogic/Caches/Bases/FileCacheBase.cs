@@ -35,7 +35,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
     private string FilePath => Path.Combine(_options.DiskPath ?? throw new("The file path is required in the options."), FileName);
 
-    protected abstract TPresentationModel ToPresentationModel(TFileModel fileModel);
+    protected abstract Task<TPresentationModel> ToPresentationModel(TFileModel fileModel);
 
     public async Task Copy(Func<TFileModel, TFileModel>? updateFunc = null)
     {
@@ -162,7 +162,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
             _cache = new()
             {
-                Data = ToPresentationModel(fileModel),
+                Data = await ToPresentationModel(fileModel),
             };
 
             Logger.LogInformation("Building the presentation model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);

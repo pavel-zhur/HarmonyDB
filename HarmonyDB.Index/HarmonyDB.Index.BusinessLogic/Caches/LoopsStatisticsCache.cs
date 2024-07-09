@@ -30,7 +30,8 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
 
     protected override string Key => "LoopStatistics";
 
-    protected override List<LoopStatistics> ToPresentationModel(IReadOnlyDictionary<string, CompactLoopStatistics> fileModel)
+    protected override async Task<IReadOnlyList<LoopStatistics>> ToPresentationModel(
+        IReadOnlyDictionary<string, CompactLoopStatistics> fileModel)
     {
         string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
 

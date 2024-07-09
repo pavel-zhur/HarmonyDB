@@ -22,7 +22,7 @@ public class StructuresCache : BytesFileCacheBase<Structures>
 
     protected override string Key => "Structures";
 
-    protected override Structures ToPresentationModel(byte[] fileModel) => Structures.Deserialize(fileModel);
+    protected override async Task<Structures> ToPresentationModel(byte[] fileModel) => Structures.Deserialize(fileModel);
 
     public async Task Rebuild()
     {
