@@ -33,4 +33,7 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
 
     public async Task<LoopsResponse> Loops(LoopsRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<LoopsRequest, LoopsResponse>(IndexApiUrls.VExternal1Loops, request, apiTraceBag: apiTraceBag);
+
+    public async Task<StructureLoopsResponse> StructureLoops(StructureLoopsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<StructureLoopsRequest, StructureLoopsResponse>(IndexApiUrls.VExternal1StructureLoops, request, apiTraceBag: apiTraceBag);
 }
