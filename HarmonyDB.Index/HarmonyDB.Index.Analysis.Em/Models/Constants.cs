@@ -5,13 +5,14 @@ public static class Constants
     public const int TonicCount = 12; // Number of different tonics
     public const int ScaleCount = 2;  // Major and Minor
 
-    public static IEnumerable<(int tonic, Scale scale)> Pairs
-        => Indices.Select(x => (x.tonic, (Scale)x.scale));
-
-    public static IEnumerable<(int tonic, int scale)> Indices
-        => Enumerable
+    public static IReadOnlyList<(int tonic, int scale)> Indices { get; }
+        = Enumerable
             .Range(0, TonicCount)
-            .SelectMany(i => Enumerable.Range(0, ScaleCount).Select(j => (i, j)));
+            .SelectMany(i => Enumerable.Range(0, ScaleCount).Select(j => (i, j)))
+            .ToList();
+
+    public static IReadOnlyList<(int tonic, Scale scale)> Pairs { get; }
+        = Indices.Select(x => (x.tonic, (Scale)x.scale)).ToList();
 
     public static int GetMajorTonic((int tonic, Scale scale) scale)
     {

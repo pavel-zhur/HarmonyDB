@@ -86,7 +86,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 hasConverged = true;
             }
 
-            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0}");
+            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0} seconds");
         }
 
         logger.LogInformation("Converged after " + iterationCount + " iterations.");
