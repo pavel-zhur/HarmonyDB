@@ -134,10 +134,4 @@ public class TestDataGenerator
 
         return selectedLoops;
     }
-
-    private (int, Scale) GetRandomTonality((int, Scale)[] tonalities)
-    {
-        var index = _random.Next(tonalities.Length);
-        return tonalities[index];
-    }
 }
