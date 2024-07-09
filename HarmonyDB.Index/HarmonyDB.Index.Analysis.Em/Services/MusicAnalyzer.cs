@@ -86,6 +86,14 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         }
 
         logger.LogInformation("Converged after " + iterationCount + " iterations.");
+
+        Parallel.ForEach(emModel.Songs, song =>
+        {
+            if (song.IsTonalityKnown)
+            {
+                song.TonalityProbabilities = CalculateProbabilities(emContext, song.Id, true);
+            }
+        });
     }
 
     private void InitializeProbabilities(IEmModel emModel)
