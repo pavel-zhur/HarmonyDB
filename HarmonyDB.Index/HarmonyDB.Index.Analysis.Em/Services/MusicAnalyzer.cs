@@ -29,6 +29,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         while (!hasConverged)
         {
+            var started = DateTime.Now;
             iterationCount++;
             var maxChange = 0.0;
             var maxChangeLockObject = new object();
@@ -85,7 +86,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 hasConverged = true;
             }
 
-            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}");
+            logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0}");
         }
 
         logger.LogInformation("Converged after " + iterationCount + " iterations.");
