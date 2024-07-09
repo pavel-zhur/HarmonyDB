@@ -3,15 +3,26 @@ using Microsoft.Extensions.Logging;
 using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models.Em;
 using HarmonyDB.Index.Analysis.Models.Index;
+using System.Collections.Concurrent;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
 public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
 {
+    private readonly ConcurrentDictionary<string, (byte songRoot, Scale scale)?> _cache = new();
+
     public (byte songRoot, Scale scale)? TryParseBestTonality(string tonality)
     {
+        if (_cache.TryGetValue(tonality, out var cachedResult))
+        {
+            return cachedResult;
+        }
+
         if (!Note.CharactersToNotes.TryGetValue(tonality[0], out var note))
+        {
+            _cache[tonality] = null;
             return null;
+        }
 
         tonality = tonality.Substring(1);
         Scale scale;
@@ -41,10 +52,13 @@ public class TonalitiesBalancer(ILogger<TonalitiesBalancer> logger)
                 scale = Scale.Minor;
                 break;
             default:
+                _cache[tonality] = null;
                 return null;
         }
 
-        return (note.Value, scale);
+        var result = (note.Value, scale);
+        _cache[tonality] = result;
+        return result;
     }
 
     public (EmModel emModel, IReadOnlyList<LoopLink> loopLinks) GetEmModel(
