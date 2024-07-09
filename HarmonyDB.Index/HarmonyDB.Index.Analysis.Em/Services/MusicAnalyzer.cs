@@ -31,12 +31,13 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         {
             iterationCount++;
             var maxChange = 0.0;
+            var maxChangeLockObject = new object();
 
             Parallel.ForEach(emModel.Loops, loop =>
             {
                 var newProbabilities = CalculateProbabilities(emContext, loop.Id, false);
                 var change = CalculateMaxChange(loop.TonalityProbabilities, newProbabilities);
-                lock (loop)
+                lock (maxChangeLockObject)
                 {
                     maxChange = Math.Max(maxChange, change);
                     loop.TonalityProbabilities = newProbabilities;
@@ -50,7 +51,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 {
                     var newProbabilities = CalculateProbabilities(emContext, song.Id, true);
                     var change = CalculateMaxChange(song.TonalityProbabilities, newProbabilities);
-                    lock (song)
+                    lock (maxChangeLockObject)
                     {
                         maxChange = Math.Max(maxChange, change);
                         song.TonalityProbabilities = newProbabilities;
