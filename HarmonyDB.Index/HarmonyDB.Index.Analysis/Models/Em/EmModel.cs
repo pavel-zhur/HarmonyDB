@@ -63,7 +63,6 @@ public record EmModel : IEmModel
             .Select(i =>
             {
                 var id = reader.ReadString();
-                var scale = reader.ReadByte();
 
                 var knownTonalityByte = reader.ReadByte();
                 (byte Tonic, Scale scale)? knownTonality = knownTonalityByte == 255 ? null : ((byte)(knownTonalityByte / 2), (Scale)(knownTonalityByte % 2));
