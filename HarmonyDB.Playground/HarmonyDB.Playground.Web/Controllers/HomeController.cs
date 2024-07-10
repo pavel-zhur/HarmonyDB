@@ -13,6 +13,7 @@ using OneShelf.Common;
 using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
 using Microsoft.AspNetCore.Localization;
+using HarmonyDB.Index.Api.Model.VExternal1;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -198,6 +199,31 @@ namespace HarmonyDB.Playground.Web.Controllers
                 loopsModel.JustForm = false;
 
                 return View(loopsModel);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> StructureLoops(StructureLoopsModel model)
+        {
+            try
+            {
+                if (!model.JustForm)
+                {
+                    if (model.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.StructureLoops(model, ViewBag.Trace);
+                }
+
+                model.JustForm = false;
+
+                return View(model);
             }
             catch (ConcurrencyException)
             {

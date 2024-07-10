@@ -63,11 +63,10 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 x.tone.TonalityProbabilities.ToLinear(),
                 x.tone.Score.ScaleScore,
                 x.tone.Score.TonicScore,
-                x.header.BestTonality
-                    ?.Tonality
-                    .TryParseBestTonality()
-                    ?.SelectSingle(y => new StructureSongKnownTonality(y.root, y.isMinor, x.header.BestTonality.IsReliable)),
-                x.header.Rating))
+                x.header with
+                {
+                    Source = _downstreamApiClient.GetSourceTitle(x.header.Source),
+                }))
             .ToList();
 
         var songs = (request.Ordering switch
@@ -82,8 +81,8 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             StructureSongsRequestOrdering.TonalityConfidenceAsc => results.OrderBy(x => x.Probabilities.TonalityConfidence()),
             StructureSongsRequestOrdering.TonicConfidenceDesc => results.OrderByDescending(x => x.Probabilities.TonicConfidence()),
             StructureSongsRequestOrdering.TonicConfidenceAsc => results.OrderBy(x => x.Probabilities.TonicConfidence()),
-            StructureSongsRequestOrdering.RatingAsc => results.OrderBy(x => x.Rating),
-            StructureSongsRequestOrdering.RatingDesc => results.OrderByDescending(x => x.Rating),
+            StructureSongsRequestOrdering.RatingAsc => results.OrderBy(x => x.IndexHeader.Rating),
+            StructureSongsRequestOrdering.RatingDesc => results.OrderByDescending(x => x.IndexHeader.Rating),
             _ => throw new ArgumentOutOfRangeException()
         })
         .Where(x => x.TotalLoops >= request.MinTotalLoops)
@@ -94,7 +93,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
         .Where(x => x.Probabilities.TonicConfidence() <= request.MaxTonicConfidence)
         .Where(x => x.TonicScore >= request.MinTonicScore)
         .Where(x => x.ScaleScore >= request.MinScaleScore)
-        .Where(x => x.Rating >= request.MinRating)
+        .Where(x => x.IndexHeader.Rating >= request.MinRating)
         .Where(x => request.DetectedScaleFilter switch
         {
             StructureRequestDetectedScaleFilter.Any => true,
@@ -113,25 +112,27 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
         {
             StructureSongsRequestCorrectDetectionFilter.Any => true,
             StructureSongsRequestCorrectDetectionFilter.Exact 
-                => x.KnownTonality != null 
-                    && x.KnownTonality.SelectSingle(x => (x.Root, x.IsMinor)) == x.Probabilities.GetPredictedTonality(),
+                => x.IndexHeader.BestTonality != null 
+                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality() == x.Probabilities.GetPredictedTonality(),
             StructureSongsRequestCorrectDetectionFilter.ExactScaleAgnostic
-                => x.KnownTonality != null 
-                    && x.KnownTonality.SelectSingle(x => (x.Root, x.IsMinor)).GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+                => x.IndexHeader.BestTonality != null 
+                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality()?.GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
             StructureSongsRequestCorrectDetectionFilter.No 
-                => x.KnownTonality != null
-                    && x.KnownTonality.SelectSingle(x => (x.Root, x.IsMinor)) != x.Probabilities.GetPredictedTonality(),
+                => x.IndexHeader.BestTonality != null
+                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality() != x.Probabilities.GetPredictedTonality()
+                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality().HasValue,
             StructureSongsRequestCorrectDetectionFilter.IncorrectScale
-                => x.KnownTonality != null
-                    && (known: x.KnownTonality.SelectSingle(x => (x.Root, x.IsMinor)), predicted: x.Probabilities.GetPredictedTonality())
-                        .SelectSingle(x => x.known != x.predicted && x.known.GetMajorTonic() == x.predicted.GetMajorTonic()),
+                => x.IndexHeader.BestTonality != null
+                    && (known: x.IndexHeader.BestTonality.Tonality.TryParseBestTonality(), predicted: x.Probabilities.GetPredictedTonality())
+                        .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic() == x.predicted.GetMajorTonic()),
             _ => throw new ArgumentOutOfRangeException(),
         })
         .Where(x => request.KnownTonalityFilter switch
         {
             StructureSongsRequestKnownTonalityFilter.Any => true,
-            StructureSongsRequestKnownTonalityFilter.Yes => x.KnownTonality != null,
-            StructureSongsRequestKnownTonalityFilter.No => x.KnownTonality == null,
+            StructureSongsRequestKnownTonalityFilter.Some => x.IndexHeader.BestTonality != null,
+            StructureSongsRequestKnownTonalityFilter.No => x.IndexHeader.BestTonality == null,
+            StructureSongsRequestKnownTonalityFilter.Reliable => x.IndexHeader.BestTonality?.IsReliable == true,
             _ => throw new ArgumentOutOfRangeException(),
         })
         .ToList();

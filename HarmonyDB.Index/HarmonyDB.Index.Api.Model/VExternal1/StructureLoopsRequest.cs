@@ -10,9 +10,9 @@ public record StructureLoopsRequest : PagedRequestBase
 
     public int MinTotalSongs { get; init; } = 1;
     
-    public int MinTotalSuccessions { get; init; } = 1;
-    
     public int MinTotalOccurrences { get; init; } = 1;
+    
+    public int MinTotalSuccessions { get; init; } = 1;
 
     public float MinTonalityConfidence { get; init; }
     
@@ -33,5 +33,5 @@ public record StructureLoopsRequest : PagedRequestBase
     public int LoopsPerPage { get; init; } = 100;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public StructureLoopsRequestOrdering Ordering { get; init; } = StructureLoopsRequestOrdering.TonalityConfidenceDesc;
+    public StructureLoopsRequestOrdering Ordering { get; init; } = StructureLoopsRequestOrdering.SuccessionsDesc;
 }

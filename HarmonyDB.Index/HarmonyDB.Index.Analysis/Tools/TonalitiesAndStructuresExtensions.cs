@@ -77,9 +77,8 @@ public static class TonalitiesAndStructuresExtensions
         => probabilities.Max();
 
     public static float TonicConfidence(this float[] probabilities)
-        => probabilities
-            .Take(Note.Modulus)
-            .Select((x, i) => x + probabilities[i.FromIndex().GetParallelScale().ToIndex()])
+        => Enumerable.Range(0, Note.Modulus)
+            .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true).ToIndex()])
             .Max();
 
     public static string GetTitle(this string normalizedLoop)

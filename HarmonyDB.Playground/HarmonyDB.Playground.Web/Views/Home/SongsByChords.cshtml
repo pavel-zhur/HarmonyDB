@@ -83,7 +83,7 @@
                 <td class="pt-1 ps-2">@song.Header.Source</td>
                 <td class="pt-1 ps-2">@song.Header.BestTonality?.Tonality</td>
                 <td class="pt-1 ps-2">@((int)(song.Header.Rating ?? 0))%</td>
-                <td class="pt-1 ps-2">@((int)(song.Coverage * 100))%</td>
+                <td class="pt-1 ps-2">@song.Coverage.ToString("P0")</td>
             </tr>
         }
     </table>

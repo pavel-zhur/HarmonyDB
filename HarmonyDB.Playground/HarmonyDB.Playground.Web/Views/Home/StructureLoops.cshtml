@@ -1,0 +1,123 @@
+﻿@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@model StructureLoopsModel
+
+@{
+    StructureLoopsResponse? response = ViewBag.Response;
+
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Popular Loops"].Value}";
+    Layout = "_Layout";
+}
+
+<div>
+    <h3 class="d-inline-block">@ViewLocalizer["See the most popular chord progressions"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", "Home", Model with
+    {
+        JustForm = true,
+    }, new { target = "_blank" })
+</div>
+
+@using (Html.BeginForm("StructureLoops", "Home", Model, FormMethod.Get))
+{
+    <p>
+        @ViewLocalizer["Ordering"]:
+        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<StructureLoopsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Min length"]: @Html.TextBoxFor(x => x.MinLength)
+    </p>
+    <p>
+        @ViewLocalizer["Max length"]: @Html.TextBoxFor(x => x.MaxLength)
+    </p>
+    <p>
+        @ViewLocalizer["Min total songs"]: @Html.TextBoxFor(x => x.MinTotalSongs)
+    </p>
+    <p>
+        @ViewLocalizer["Min total occurrences"]: @Html.TextBoxFor(x => x.MinTotalOccurrences)
+    </p>
+    <p>
+        @ViewLocalizer["Min total successions"]: @Html.TextBoxFor(x => x.MinTotalSuccessions)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonality confidence"]: @Html.TextBoxFor(x => x.MinTonalityConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonic confidence"]: @Html.TextBoxFor(x => x.MinTonicConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Max tonality confidence"]: @Html.TextBoxFor(x => x.MaxTonalityConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Max tonic confidence"]: @Html.TextBoxFor(x => x.MaxTonicConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonic score"]: @Html.TextBoxFor(x => x.MinTonicScore)
+    </p>
+    <p>
+        @ViewLocalizer["Min scale score"]: @Html.TextBoxFor(x => x.MinScaleScore)
+    </p>
+    <p>
+        @ViewLocalizer["Second filter"]:
+        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<StructureRequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Detected scale filter"]:
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestDetectedScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)
+    </p>
+    <p>
+        <label>
+            @Html.CheckBoxFor(x => x.IncludeTrace)
+            @ViewLocalizer["Include the Index API trace for developers"]
+        </label>
+    </p>
+    <input type="submit" value="@ViewLocalizer["List"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
+}
+
+@if (response != null)
+{
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", "Home", Model, new { target = "_blank" })
+    </div>
+
+    @await Html.PartialAsync("Paging", Model)
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["Progression"]</td>
+                <td class="ps-2">@ViewLocalizer["Length"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Songs"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Occurrences"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Successions"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonality Confidence"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonic Confidence"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
+                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+            </tr>
+        </thead>
+        @foreach (var loop in response.Loops)
+        {
+            <tr>
+                <td>@Html.ActionLink(loop.Normalized.GetTitle(), "Loop", new StructureLoopModel { Normalized = loop.Normalized })</td>
+                <td>@loop.Length</td>
+                <td>@loop.TotalSongs.ToString("N0")</td>
+                <td>@loop.TotalOccurrences.ToString("N0")</td>
+                <td>@loop.TotalSuccessions.ToString("N0")</td>
+                <td class="ps-2">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+                <td class="ps-2">@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td class="ps-2">@loop.ScaleScore</td>
+                <td class="ps-2">@loop.TonicScore</td>
+            </tr>
+        }
+    </table>
+
+    @await Html.PartialAsync("Paging", Model)
+}
+
+@await Html.PartialAsync("Trace")
