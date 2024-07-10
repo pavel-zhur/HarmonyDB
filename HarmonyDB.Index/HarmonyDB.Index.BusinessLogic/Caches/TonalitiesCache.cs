@@ -121,7 +121,7 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                 Loop = loops[x.Normalized],
                 Song = songs[x.ExternalId],
                 Shift = x.NormalizationRoot,
-                Weight = x.Weight(structures.Loops[x.Normalized], songsKeys.ContainsKey(x.ExternalId))
+                Weight = x.GetWeight(structures.Loops[x.Normalized], songsKeys.ContainsKey(x.ExternalId))
             })
             .ToList();
 
