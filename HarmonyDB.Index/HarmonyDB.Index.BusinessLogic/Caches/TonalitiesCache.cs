@@ -45,7 +45,8 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
 
         var songsKeys = GetSongsKeys(indexHeaders);
 
-        var all = (await _structuresCache.Get()).Links;
+        var structures = await _structuresCache.Get();
+        var all = structures.Links;
         if (limitUnknown.HasValue)
         {
             var limit = all
@@ -54,12 +55,13 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                 .Where(x => !songsKeys.ContainsKey(x))
                 .OrderBy(_ => Random.Shared.NextDouble())
                 .Take(limitUnknown.Value)
+                .Concat(songsKeys.Keys)
                 .ToHashSet();
 
-            all = all.Where(x => songsKeys.ContainsKey(x.ExternalId) || limit.Contains(x.ExternalId)).ToList();
+            structures = structures.Reduce(l => limit.Contains(l.ExternalId));
         }
 
-        var (emModel, loopLinks) = GetEmModel(all, songsKeys);
+        var (emModel, loopLinks) = GetEmModel(structures, songsKeys);
 
         var emContext = _musicAnalyzer.CreateContext(loopLinks);
         _musicAnalyzer.UpdateProbabilities(emModel, emContext);
@@ -89,11 +91,11 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
             .ToDictionary(x => x!.Value.externalId, x => x!.Value.parsed);
 
     private (EmModel emModel, IReadOnlyList<LoopLink> loopLinks) GetEmModel(
-        IReadOnlyList<StructureLink> all,
+        Structures structures,
         Dictionary<string, (byte songRoot, Scale scale)> songsKeys)
     {
-        var loops = all
-            .GroupBy(x => x.Normalized)
+        var loops = structures
+            .Loops
             .ToDictionary(
                 x => x.Key,
                 x => new Loop
@@ -102,8 +104,8 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                     Length = (byte)Analysis.Models.Loop.Deserialize(x.Key).Length,
                 });
 
-        var songs = all
-            .GroupBy(x => x.ExternalId)
+        var songs = structures
+            .Songs
             .ToDictionary(
                 x => x.Key,
                 x => new Song
@@ -112,14 +114,14 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                     KnownTonality = songsKeys.TryGetValue(x.Key, out var known) ? known : null,
                 });
 
-        var links = all
+        var links = structures
+            .Links
             .Select(x => new LoopLink
             {
                 Loop = loops[x.Normalized],
                 Song = songs[x.ExternalId],
                 Shift = x.NormalizationRoot,
-                Occurrences = x.Occurrences,
-                Successions = x.Successions,
+                Weight = x.Weight(structures.Loops[x.Normalized], songsKeys.ContainsKey(x.ExternalId))
             })
             .ToList();
 

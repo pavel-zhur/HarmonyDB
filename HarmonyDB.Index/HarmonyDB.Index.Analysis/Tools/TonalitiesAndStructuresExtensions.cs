@@ -2,8 +2,8 @@
 using System.Runtime.InteropServices;
 using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tools;
@@ -146,5 +146,10 @@ public static class TonalitiesAndStructuresExtensions
         var result = (note.Value, isMinor);
         Cache[tonality] = result;
         return result;
+    }
+
+    public static float Weight(this StructureLink structureLink, StructureLoop loop, bool isSongKnownTonality)
+    {
+        return (structureLink.Occurrences + structureLink.Successions * 4) * (loop.Length == 2 ? 1 : 5) * (isSongKnownTonality ? 5 : 1);
     }
 }

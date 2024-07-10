@@ -1,35 +1,37 @@
-﻿using System.Runtime.InteropServices;
-using HarmonyDB.Common;
-using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Index.Analysis.Models;
+﻿using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.Index;
-using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
 public class Structures
 {
-    private Structures(List<StructureLink> links)
+    private Structures(IReadOnlyList<StructureLink> links, IReadOnlyDictionary<string, StructureLoop> loops, IReadOnlyDictionary<string, StructureSong> songs)
     {
         Links = links;
+        Loops = loops;
+        Songs = songs;
+    }
 
-        Loops = links.GroupBy(x => x.Normalized).Select(g =>
-        {
-            var sequence = Analysis.Models.Loop.Deserialize(g.Key);
-            var note = (byte)0;
-            return new StructureLoop(
-                g.Key,
-                sequence.Length,
-                g.Sum(x => x.Occurrences),
-                g.Sum(x => x.Successions),
-                g.Select(x => x.ExternalId).Distinct().Count());
-        }).ToDictionary(x => x.Normalized);
-
-        Songs = links
-            .GroupBy(x => x.ExternalId)
-            .Select(x => new StructureSong(x.Key, x.Select(x => x.Normalized).Distinct().Count()))
-            .ToDictionary(x => x.ExternalId);
+    private Structures(List<StructureLink> links)
+        : this(
+            links,
+            links.GroupBy(x => x.Normalized).Select(g =>
+            {
+                var sequence = Loop.Deserialize(g.Key);
+                var note = (byte)0;
+                return new StructureLoop(
+                    g.Key,
+                    sequence.Length,
+                    g.Sum(x => x.Occurrences),
+                    g.Sum(x => x.Successions),
+                    g.Select(x => x.ExternalId).Distinct().Count());
+            }).ToDictionary(x => x.Normalized),
+            links
+                .GroupBy(x => x.ExternalId)
+                .Select(x => new StructureSong(x.Key, x.Select(x => x.Normalized).Distinct().Count()))
+                .ToDictionary(x => x.ExternalId))
+    {
     }
 
     public IReadOnlyList<StructureLink> Links { get; }
@@ -37,6 +39,17 @@ public class Structures
     public IReadOnlyDictionary<string, StructureLoop> Loops { get; }
 
     public IReadOnlyDictionary<string, StructureSong> Songs { get; }
+
+    public Structures Reduce(Func<StructureLink, bool> takeOnly)
+    {
+        var links = Links.Where(takeOnly).ToList();
+        var loopIds = links.Select(x => x.Normalized).ToHashSet();
+        var songIds = links.Select(x => x.ExternalId).ToHashSet();
+        return new(
+            links,
+            Loops.Where(p => loopIds.Contains(p.Key)).ToDictionary(x => x.Key, x => x.Value),
+            Songs.Where(p => songIds.Contains(p.Key)).ToDictionary(x => x.Key, x => x.Value));
+    }
 
     public static byte[] Serialize(IReadOnlyList<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> compactLinks)
     {
