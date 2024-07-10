@@ -98,7 +98,8 @@
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
                 <td class="ps-2">@ViewLocalizer["Source"]</td>
-                <td class="ps-2">@ViewLocalizer["Metadata Tonality"]</td>
+                <td class="ps-2">@ViewLocalizer["Known Tonality"]</td>
+                <td class="ps-2">@ViewLocalizer["Known Tonality Reliable"]</td>
                 <td class="ps-2">@ViewLocalizer["Rating"]</td>
                 <td class="ps-2">@ViewLocalizer["Total Loops"]</td>
                 <td class="ps-2">@ViewLocalizer["Tonality Confidence"]</td>
@@ -117,7 +118,8 @@
                         })
                 </td>
                 <td class="pt-1 ps-2">@song.IndexHeader.Source</td>
-                <td class="ps-2">@song.IndexHeader.BestTonality?.Tonality</td>
+                <td class="ps-2">@song.KnownTonalityIndex?.ToSongTonalityTitle()</td>
+                <td class="ps-2">@song.IndexHeader.BestTonality?.IsReliable</td>
                 <td class="ps-2">@((int)(song.IndexHeader.Rating ?? 0))%</td>
                 <td class="ps-2">@song.TotalLoops.ToString("N0")</td>
                 <td class="ps-2">@song.Probabilities.TonalityConfidence().ToString("P0")</td>

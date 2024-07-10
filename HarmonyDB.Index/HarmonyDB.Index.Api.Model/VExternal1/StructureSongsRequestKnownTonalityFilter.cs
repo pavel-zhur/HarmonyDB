@@ -6,4 +6,5 @@ public enum StructureSongsRequestKnownTonalityFilter
     Reliable,
     Some,
     No,
+    Unreliable,
 }

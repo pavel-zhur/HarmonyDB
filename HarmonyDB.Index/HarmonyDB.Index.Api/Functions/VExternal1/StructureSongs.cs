@@ -64,7 +64,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 x.tone.Score.TonicScore,
                 x.tone.Score.ScaleScore,
                 x.header,
-                x.tone.KnownTonality?.FromEm().ToIndex()))
+                x.header.BestTonality?.Tonality.TryParseBestTonality()?.ToIndex()))
             .ToList();
 
         var songs = (request.Ordering switch
@@ -137,6 +137,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             StructureSongsRequestKnownTonalityFilter.Some => x.IndexHeader.BestTonality != null,
             StructureSongsRequestKnownTonalityFilter.No => x.IndexHeader.BestTonality == null,
             StructureSongsRequestKnownTonalityFilter.Reliable => x.IndexHeader.BestTonality?.IsReliable == true,
+            StructureSongsRequestKnownTonalityFilter.Unreliable => x.IndexHeader.BestTonality?.IsReliable == false,
             _ => throw new ArgumentOutOfRangeException(),
         })
         .ToList();
