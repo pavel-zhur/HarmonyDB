@@ -48,13 +48,19 @@ public static class TonalitiesAndStructuresExtensions
     }
 
     public static (byte root, bool isMinor) GetSecondPredictedTonality(this float[] probabilities)
+        => probabilities.GetSecondPredictedTonality(out _);
+
+    public static (byte root, bool isMinor) GetSecondPredictedTonality(this float[] probabilities, out float confidence)
     {
-        return probabilities
+        var result = probabilities
             .Select((probability, index) => (probability, index))
             .OrderByDescending(x => x.probability)
             .Skip(1)
-            .Select(x => FromIndex(x.index))
+            .Select(x => (x.probability, tonality: FromIndex(x.index)))
             .First();
+
+        confidence = result.probability;
+        return result.tonality;
     }
 
     public static byte GetMajorTonic(this (byte root, bool isMinor) scale)
@@ -156,4 +162,12 @@ public static class TonalitiesAndStructuresExtensions
 
     public static (byte root, bool isMinor) FromEm(this (byte tonic, Scale scale) tonality)
         => (tonality.tonic, tonality.scale == Scale.Minor);
+
+    public static string ToSongTonalityTitle(this int tonalityIndex)
+        => tonalityIndex
+            .FromIndex()
+            .ToSongTonalityTitle();
+
+    public static string ToSongTonalityTitle(this (byte root, bool isMinor) tonality)
+        => $"{new Note(tonality.root).Representation(new())}{(tonality.isMinor ? "m" : string.Empty)}";
 }
