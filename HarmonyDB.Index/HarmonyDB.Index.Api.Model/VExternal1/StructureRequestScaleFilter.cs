@@ -1,6 +1,6 @@
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public enum StructureRequestDetectedScaleFilter
+public enum StructureRequestScaleFilter
 {
     Any,
     Major,

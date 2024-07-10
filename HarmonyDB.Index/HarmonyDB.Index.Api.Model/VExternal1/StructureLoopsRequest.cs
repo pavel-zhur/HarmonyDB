@@ -28,7 +28,7 @@ public record StructureLoopsRequest : PagedRequestBase
 
     public StructureRequestSecondFilter SecondFilter { get; init; } = StructureRequestSecondFilter.Any;
 
-    public StructureRequestDetectedScaleFilter DetectedScaleFilter { get; init; } = StructureRequestDetectedScaleFilter.Any;
+    public StructureRequestScaleFilter DetectedScaleFilter { get; init; } = StructureRequestScaleFilter.Any;
 
     public int LoopsPerPage { get; init; } = 100;
 

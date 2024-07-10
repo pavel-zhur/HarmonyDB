@@ -64,7 +64,7 @@
     </p>
     <p>
         @ViewLocalizer["Detected scale filter"]:
-        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestDetectedScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)

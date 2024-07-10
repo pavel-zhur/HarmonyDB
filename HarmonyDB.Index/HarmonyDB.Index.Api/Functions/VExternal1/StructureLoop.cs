@@ -100,7 +100,8 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                             x.x.tone.TonalityProbabilities.ToLinear(),
                             x.x.tone.Score.TonicScore,
                             x.x.tone.Score.ScaleScore,
-                            x.outputHeader))
+                            x.outputHeader,
+                            x.x.tone.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())))
                         .ToList()))
                 .ToList(),
         };

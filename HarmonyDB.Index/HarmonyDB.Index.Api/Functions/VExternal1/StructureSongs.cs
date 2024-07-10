@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Tools;
+﻿using HarmonyDB.Index.Analysis.Em.Models;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -62,7 +63,8 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 x.tone.TonalityProbabilities.ToLinear(),
                 x.tone.Score.TonicScore,
                 x.tone.Score.ScaleScore,
-                x.header))
+                x.header,
+                x.tone.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())))
             .ToList();
 
         var songs = (request.Ordering switch
@@ -92,9 +94,16 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
         .Where(x => x.IndexHeader.Rating >= request.MinRating)
         .Where(x => request.DetectedScaleFilter switch
         {
-            StructureRequestDetectedScaleFilter.Any => true,
-            StructureRequestDetectedScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
-            StructureRequestDetectedScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestScaleFilter.Any => true,
+            StructureRequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+            _ => throw new ArgumentOutOfRangeException(),
+        })
+        .Where(x => request.KnownScaleFilter switch
+        {
+            StructureRequestScaleFilter.Any => true,
+            StructureRequestScaleFilter.Major => x.KnownTonalityIndex?.FromIndex().isMinor == false,
+            StructureRequestScaleFilter.Minor => x.KnownTonalityIndex?.FromIndex().isMinor == true,
             _ => throw new ArgumentOutOfRangeException(),
         })
         .Where(x => request.SecondFilter switch
@@ -108,19 +117,18 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
         {
             StructureSongsRequestCorrectDetectionFilter.Any => true,
             StructureSongsRequestCorrectDetectionFilter.Exact 
-                => x.IndexHeader.BestTonality != null 
-                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality() == x.Probabilities.GetPredictedTonality(),
-            StructureSongsRequestCorrectDetectionFilter.ExactScaleAgnostic
-                => x.IndexHeader.BestTonality != null 
-                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality()?.GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+                => x.KnownTonalityIndex?.FromIndex() == x.Probabilities.GetPredictedTonality(),
+            StructureSongsRequestCorrectDetectionFilter.ExactScaleAgnostic 
+                => x.KnownTonalityIndex?.FromIndex().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
             StructureSongsRequestCorrectDetectionFilter.No 
-                => x.IndexHeader.BestTonality != null
-                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality() != x.Probabilities.GetPredictedTonality()
-                    && x.IndexHeader.BestTonality.Tonality.TryParseBestTonality().HasValue,
+                => x.KnownTonalityIndex != null
+                   && x.KnownTonalityIndex != x.Probabilities.GetPredictedTonality().ToIndex(),
             StructureSongsRequestCorrectDetectionFilter.IncorrectScale
-                => x.IndexHeader.BestTonality != null
-                    && (known: x.IndexHeader.BestTonality.Tonality.TryParseBestTonality(), predicted: x.Probabilities.GetPredictedTonality())
+                => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
                         .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic() == x.predicted.GetMajorTonic()),
+            StructureSongsRequestCorrectDetectionFilter.NoAndNotParallel
+                => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
+                        .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic() != x.predicted.GetMajorTonic()),
             _ => throw new ArgumentOutOfRangeException(),
         })
         .Where(x => request.KnownTonalityFilter switch

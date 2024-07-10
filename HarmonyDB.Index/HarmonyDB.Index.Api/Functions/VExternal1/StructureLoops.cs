@@ -101,9 +101,9 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
         .Where(x => x.ScaleScore >= request.MinScaleScore)
         .Where(x => request.DetectedScaleFilter switch
         {
-            StructureRequestDetectedScaleFilter.Any => true,
-            StructureRequestDetectedScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
-            StructureRequestDetectedScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestScaleFilter.Any => true,
+            StructureRequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
+            StructureRequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
             _ => throw new ArgumentOutOfRangeException(),
         })
         .Where(x => request.SecondFilter switch

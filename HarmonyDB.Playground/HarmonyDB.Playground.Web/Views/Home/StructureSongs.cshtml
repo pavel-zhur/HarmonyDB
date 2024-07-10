@@ -58,7 +58,7 @@
     </p>
     <p>
         @ViewLocalizer["Detected scale filter"]:
-        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestDetectedScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Correct detection filter"]:
@@ -67,6 +67,10 @@
     <p>
         @ViewLocalizer["Known tonality filter"]:
         @Html.DropDownListFor(x => x.KnownTonalityFilter, Enum.GetValues<StructureSongsRequestKnownTonalityFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Known scale filter"]:
+        @Html.DropDownListFor(x => x.KnownScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)

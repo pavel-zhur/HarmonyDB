@@ -7,4 +7,5 @@ public enum StructureSongsRequestCorrectDetectionFilter
     ExactScaleAgnostic,
     No,
     IncorrectScale,
+    NoAndNotParallel,
 }

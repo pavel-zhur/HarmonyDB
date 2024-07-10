@@ -13,6 +13,7 @@ public record StructureSongTonality(
     float[] Probabilities,
     float TonicScore,
     float ScaleScore,
-    IndexHeader IndexHeader)
+    IndexHeader IndexHeader,
+    int? KnownTonalityIndex)
 
     : StructureSong(ExternalId, TotalLoops);

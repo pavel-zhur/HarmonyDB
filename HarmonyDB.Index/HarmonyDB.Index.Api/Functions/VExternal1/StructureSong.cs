@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Tools;
+﻿using HarmonyDB.Index.Analysis.Em.Models;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneShelf.Common;
 using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 
@@ -64,7 +66,8 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
                 songTonality.TonalityProbabilities.ToLinear(),
                 songTonality.Score.TonicScore,
                 songTonality.Score.ScaleScore,
-                header),
+                header,
+                songTonality.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())),
 
             Links = structures.LinksBySongId[request.ExternalId].ToList(),
 

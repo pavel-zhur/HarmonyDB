@@ -24,7 +24,9 @@ public record StructureSongsRequest : PagedRequestBase
 
     public StructureRequestSecondFilter SecondFilter { get; init; } = StructureRequestSecondFilter.Any;
 
-    public StructureRequestDetectedScaleFilter DetectedScaleFilter { get; init; } = StructureRequestDetectedScaleFilter.Any;
+    public StructureRequestScaleFilter DetectedScaleFilter { get; init; } = StructureRequestScaleFilter.Any;
+
+    public StructureRequestScaleFilter KnownScaleFilter { get; init; } = StructureRequestScaleFilter.Any;
 
     public StructureSongsRequestCorrectDetectionFilter CorrectDetectionFilter { get; init; } = StructureSongsRequestCorrectDetectionFilter.Any;
 
