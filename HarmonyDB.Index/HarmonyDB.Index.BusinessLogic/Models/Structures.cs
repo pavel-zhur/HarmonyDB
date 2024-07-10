@@ -11,6 +11,8 @@ public class Structures
         Links = links;
         Loops = loops;
         Songs = songs;
+        LinksBySongId = links.ToLookup(x => x.ExternalId);
+        LinksByLoopId = links.ToLookup(x => x.Normalized);
     }
 
     private Structures(List<StructureLink> links)
@@ -39,6 +41,10 @@ public class Structures
     public IReadOnlyDictionary<string, StructureLoop> Loops { get; }
 
     public IReadOnlyDictionary<string, StructureSong> Songs { get; }
+
+    public ILookup<string, StructureLink> LinksBySongId { get; }
+    
+    public ILookup<string, StructureLink> LinksByLoopId { get; }
 
     public Structures Reduce(Func<StructureLink, bool> takeOnly)
     {

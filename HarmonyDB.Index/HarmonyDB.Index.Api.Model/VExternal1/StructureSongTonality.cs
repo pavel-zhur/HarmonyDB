@@ -11,8 +11,8 @@ public record StructureSongTonality(
 
     // new
     float[] Probabilities,
-    float ScaleScore,
     float TonicScore,
+    float ScaleScore,
     IndexHeader IndexHeader)
 
     : StructureSong(ExternalId, TotalLoops);

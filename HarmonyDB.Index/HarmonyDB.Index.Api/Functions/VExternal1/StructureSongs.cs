@@ -3,8 +3,8 @@ using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Models;
+using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Caches;
-using HarmonyDB.Index.DownstreamApi.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -23,16 +23,16 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
     private readonly StructuresCache _structuresCache;
     private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
-    private readonly DownstreamApiClient _downstreamApiClient;
+    private readonly CommonExecutions _commonExecutions;
 
-    public StructureSongs(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, DownstreamApiClient downstreamApiClient)
+    public StructureSongs(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _indexApiClient = indexApiClient;
         _structuresCache = structuresCache;
         _tonalitiesCache = tonalitiesCache;
         _indexHeadersCache = indexHeadersCache;
-        _downstreamApiClient = downstreamApiClient;
+        _commonExecutions = commonExecutions;
         _options = options.Value;
     }
 
@@ -53,20 +53,16 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
 
         var results = tonalities.Songs
             .Join(structures.Songs, x => x.Key, x => x.Key, (x, y) => (tone: x.Value, stats: y.Value))
-            .Join(headers.Headers
-                    .Where(x => !string.IsNullOrWhiteSpace(_downstreamApiClient.GetSourceTitle(x.Value.Source))).DefaultIfEmpty(),
+            .Join(headers.Headers.Select(x => _commonExecutions.PrepareForOutput(x.Value)!).Where(x => x != null!),
                 x => x.stats.ExternalId, 
-                x => x.Key, (x, y) => (x.tone, x.stats, header: y.Value))
+                x => x.ExternalId, (x, y) => (x.tone, x.stats, header: y))
             .Select(x => new StructureSongTonality(
                 x.stats.ExternalId,
                 x.stats.TotalLoops,
                 x.tone.TonalityProbabilities.ToLinear(),
-                x.tone.Score.ScaleScore,
                 x.tone.Score.TonicScore,
-                x.header with
-                {
-                    Source = _downstreamApiClient.GetSourceTitle(x.header.Source),
-                }))
+                x.tone.Score.ScaleScore,
+                x.header))
             .ToList();
 
         var songs = (request.Ordering switch
