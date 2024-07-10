@@ -56,29 +56,30 @@ public static class TonalitiesAndStructuresExtensions
             .First();
     }
 
-    public static byte GetMajorTonic(this (byte root, bool isMinor) scale)
+    public static byte GetMajorTonic(this (byte root, bool isMinor) scale, bool isSong)
     {
-        return scale.isMinor ? scale.GetParallelScale().root : scale.root;
+        return scale.isMinor ? scale.GetParallelScale(isSong).root : scale.root;
     }
 
-    public static (byte root, bool isMinor) GetParallelScale(this (byte root, bool isMinor) scale)
+    public static (byte root, bool isMinor) GetParallelScale(this (byte root, bool isMinor) scale, bool isSong)
     {
+        // todo: write unit test
         return scale.isMinor
-            ? (Note.Normalize(scale.root + 3), false)
-            : (Note.Normalize(scale.root - 3), true);
+            ? (Note.Normalize(scale.root + (isSong ? 3 : -3)), false)
+            : (Note.Normalize(scale.root + (isSong ? -3 : 3)), true);
     }
     public static byte GetMajorTonic(byte root, bool isMinor)
         => (root, isMinor).GetMajorTonic();
 
-    public static (byte root, bool isMinor) GetParallelScale(byte root, bool isMinor)
-        => (root, isMinor).GetParallelScale();
+    public static (byte root, bool isMinor) GetParallelScale(byte root, bool isMinor, bool isSong)
+        => (root, isMinor).GetParallelScale(isSong);
 
     public static float TonalityConfidence(this float[] probabilities)
         => probabilities.Max();
 
-    public static float TonicConfidence(this float[] probabilities)
+    public static float TonicConfidence(this float[] probabilities, bool isSong)
         => Enumerable.Range(0, Note.Modulus)
-            .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true).ToIndex()])
+            .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true, isSong).ToIndex()])
             .Max();
 
     public static string GetTitle(this string normalizedLoop)

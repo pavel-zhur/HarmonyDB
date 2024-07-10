@@ -14,15 +14,16 @@ public static class Constants
     public static IReadOnlyList<(byte tonic, Scale scale)> Pairs { get; }
         = Indices.Select(x => ((byte)x.tonic, (Scale)x.scale)).ToList();
 
-    public static int GetMajorTonic((byte tonic, Scale scale) scale)
+    public static int GetMajorTonic((byte tonic, Scale scale) scale, bool isSong)
     {
-        return scale.scale == Scale.Major ? scale.tonic : GetParallelScale(scale).tonic;
+        return scale.scale == Scale.Major ? scale.tonic : GetParallelScale(scale, isSong).tonic;
     }
 
-    public static (byte tonic, Scale scale) GetParallelScale((byte tonic, Scale scale) scale)
+    public static (byte tonic, Scale scale) GetParallelScale((byte tonic, Scale scale) scale, bool isSong)
     {
-        return scale.scale == Scale.Major 
-            ? ((byte)((scale.tonic - 3 + TonicCount) % TonicCount), Scale.Minor) 
-            : ((byte)((scale.tonic + 3) % TonicCount), Scale.Major);
+        // todo: write unit tests
+        return scale.scale == Scale.Major
+            ? ((byte)((scale.tonic + (isSong ? -3 : 3) + TonicCount) % TonicCount), Scale.Minor) 
+            : ((byte)((scale.tonic + (isSong ? 3 : -3) + TonicCount) % TonicCount), Scale.Major);
     }
 }
