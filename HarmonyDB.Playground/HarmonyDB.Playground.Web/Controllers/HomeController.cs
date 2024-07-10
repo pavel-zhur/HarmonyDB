@@ -230,5 +230,30 @@ namespace HarmonyDB.Playground.Web.Controllers
                 return View("Concurrency");
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> StructureSongs(StructureSongsModel model)
+        {
+            try
+            {
+                if (!model.JustForm)
+                {
+                    if (model.IncludeTrace)
+                    {
+                        ViewBag.Trace = new ApiTraceBag();
+                    }
+
+                    ViewBag.Response = await _indexApiClient.StructureSongs(model, ViewBag.Trace);
+                }
+
+                model.JustForm = false;
+
+                return View(model);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
+        }
     }
 }

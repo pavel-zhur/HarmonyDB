@@ -104,15 +104,15 @@
         @foreach (var loop in response.Loops)
         {
             <tr>
-                <td>@Html.ActionLink(loop.Normalized.GetTitle(), "Loop", new StructureLoopModel { Normalized = loop.Normalized })</td>
+                <td>@Html.ActionLink(loop.Normalized.GetTitle(), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
                 <td>@loop.TotalOccurrences.ToString("N0")</td>
                 <td>@loop.TotalSuccessions.ToString("N0")</td>
                 <td class="ps-2">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
                 <td class="ps-2">@loop.Probabilities.TonicConfidence().ToString("P0")</td>
-                <td class="ps-2">@loop.ScaleScore</td>
-                <td class="ps-2">@loop.TonicScore</td>
+                <td class="ps-2">@loop.ScaleScore.ToString("P0")</td>
+                <td class="ps-2">@loop.TonicScore.ToString("P0")</td>
             </tr>
         }
     </table>
