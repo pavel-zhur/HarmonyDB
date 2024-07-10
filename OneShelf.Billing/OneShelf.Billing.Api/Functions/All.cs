@@ -48,18 +48,19 @@ namespace OneShelf.Billing.Api.Functions
                             "dall-e-3" => x.Count * .04f,
                             "dall-e-2" => x.Count * .018f,
                             "gpt-4-1106-preview" or "gpt-4-0125-preview" => .01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000,
+                            "gpt-4o" => (.01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000) * 0.5f,
                             _ => null,
                         },
                         Category = x.UseCase switch
                         {
                             "own chatter" => x.Model switch
                             {
-                                "gpt-4-1106-preview" => "chat text",
+                                "gpt-4-1106-preview" or "gpt-4-0125-preview" or "gpt-4o" => "chat text",
                                 _ => "chat images",
                             },
                             _ => x.Model switch
                             {
-                                "gpt-4-1106-preview" => "song text",
+                                "gpt-4-1106-preview" or "gpt-4-0125-preview" or "gpt-4o" => "song text",
                                 _ => "song images",
                             },
                         }
