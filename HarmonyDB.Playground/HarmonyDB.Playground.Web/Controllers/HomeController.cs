@@ -255,5 +255,15 @@ namespace HarmonyDB.Playground.Web.Controllers
                 return View("Concurrency");
             }
         }
+
+        public IActionResult StructureLoop(StructureLoopModel structureLoopModel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IActionResult StructureSong(StructureSongModel structureSongModel)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
