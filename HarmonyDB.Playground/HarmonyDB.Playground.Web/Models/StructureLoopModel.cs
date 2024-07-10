@@ -1,8 +1,8 @@
+using HarmonyDB.Index.Api.Model.VExternal1;
+
 namespace HarmonyDB.Playground.Web.Models;
 
-public record StructureLoopModel
+public record StructureLoopModel : StructureLoopRequest
 {
-    public required string Normalized { get; init; }
-
     public bool IncludeTrace { get; init; }
 }

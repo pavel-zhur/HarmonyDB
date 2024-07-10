@@ -1,8 +1,8 @@
+using HarmonyDB.Index.Api.Model.VExternal1;
+
 namespace HarmonyDB.Playground.Web.Models;
 
-public record StructureSongModel
+public record StructureSongModel : StructureSongRequest
 {
-    public required string ExternalId { get; init; }
-
     public bool IncludeTrace { get; init; }
 }

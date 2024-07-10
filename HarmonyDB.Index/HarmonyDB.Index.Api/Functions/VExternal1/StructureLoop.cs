@@ -70,6 +70,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
 
             LinkStatistics = structures.LinksByLoopId[request.Normalized]
                 .Where(x => tonalities.Songs.ContainsKey(x.ExternalId))
+                .Where(x => headers.Headers.ContainsKey(x.ExternalId))
                 .Select(link => (
                     link,
                     tone: tonalities.Songs[link.ExternalId],

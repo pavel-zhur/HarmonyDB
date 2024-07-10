@@ -1,0 +1,102 @@
+﻿@using HarmonyDB.Index.Api.Model.VExternal1
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@model StructureLoopModel
+
+@{
+    StructureLoopResponse? response = ViewBag.Response;
+
+    ViewBag.Title = response == null ? ViewLocalizer["Structure Loop"].Value : $"{response.Loop.Normalized} - {ViewLocalizer["Structure Loop"].Value}";
+    Layout = "_Layout";
+}
+
+<div>
+    <h3 class="d-inline-block">@ViewLocalizer["Structure Loop Details"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoop", "Home", Model, new { target = "_blank" })
+</div>
+
+<ul>
+    <li>
+        @if (Model.IncludeTrace)
+        {
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "StructureLoop", Model with { IncludeTrace = false })
+        }
+        else
+        {
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "StructureLoop", Model with { IncludeTrace = true })
+        }
+    </li>
+</ul>
+
+@if (response != null)
+{
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Loop Information"]</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["Normalized"]</td>
+                <td class="ps-2">@ViewLocalizer["Length"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Occurrences"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Successions"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Songs"]</td>
+                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="ps-2">@response.Loop.Normalized</td>
+                <td class="ps-2">@response.Loop.Length</td>
+                <td class="ps-2">@response.Loop.TotalOccurrences</td>
+                <td class="ps-2">@response.Loop.TotalSuccessions</td>
+                <td class="ps-2">@response.Loop.TotalSongs</td>
+                <td class="ps-2">@response.Loop.ScaleScore</td>
+                <td class="ps-2">@response.Loop.TonicScore</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Link Statistics"]</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["Known Tonality Index"]</td>
+                <td class="ps-2">@ViewLocalizer["Predicted Tonality Index"]</td>
+                <td class="ps-2">@ViewLocalizer["Normalization Root"]</td>
+                <td class="ps-2">@ViewLocalizer["Count"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Weight"]</td>
+                <td class="ps-2">@ViewLocalizer["Occurrences"]</td>
+                <td class="ps-2">@ViewLocalizer["Successions"]</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var link in response.LinkStatistics)
+            {
+                <tr>
+                    <td class="ps-2">@link.KnownTonalityIndex</td>
+                    <td class="ps-2">@link.PredictedTonalityIndex</td>
+                    <td class="ps-2">@link.NormalizationRoot</td>
+                    <td class="ps-2">@link.Count</td>
+                    <td class="ps-2">@link.TotalWeight</td>
+                    <td class="ps-2">@link.Occurrences</td>
+                    <td class="ps-2">@link.Successions</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>@ViewLocalizer["No data available."]</p>
+}
+
+@if (Model.IncludeTrace)
+{
+    @await Html.PartialAsync("Trace")
+}

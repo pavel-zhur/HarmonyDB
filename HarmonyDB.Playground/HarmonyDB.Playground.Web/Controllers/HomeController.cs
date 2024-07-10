@@ -256,14 +256,42 @@ namespace HarmonyDB.Playground.Web.Controllers
             }
         }
 
-        public IActionResult StructureLoop(StructureLoopModel structureLoopModel)
+        public async Task<IActionResult> StructureLoop(StructureLoopModel model)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (model.IncludeTrace)
+                {
+                    ViewBag.Trace = new ApiTraceBag();
+                }
+
+                ViewBag.Response = await _indexApiClient.StructureLoop(model, ViewBag.Trace);
+
+                return View(model);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
         }
 
-        public IActionResult StructureSong(StructureSongModel structureSongModel)
+        public async Task<IActionResult> StructureSong(StructureSongModel model)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (model.IncludeTrace)
+                {
+                    ViewBag.Trace = new ApiTraceBag();
+                }
+
+                ViewBag.Response = await _indexApiClient.StructureSong(model, ViewBag.Trace);
+            
+                return View(model);
+            }
+            catch (ConcurrencyException)
+            {
+                return View("Concurrency");
+            }
         }
     }
 }
