@@ -1,5 +1,4 @@
-﻿using HarmonyDB.Index.Analysis.Em.Models;
-using HarmonyDB.Index.Analysis.Tools;
+﻿using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -77,7 +76,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                     stats: structures.Songs[link.ExternalId],
                     header: headers.Headers[link.ExternalId]))
                 .GroupBy(x => (
-                    known: x.tone.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex()),
+                    known: x.tone.KnownTonality?.FromEm().ToIndex(),
                     predicted: x.tone.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
                     x.link.NormalizationRoot))
                 .Select(g => new StructureLinkStatistics(
@@ -101,7 +100,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                             x.x.tone.Score.TonicScore,
                             x.x.tone.Score.ScaleScore,
                             x.outputHeader,
-                            x.x.tone.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())))
+                            x.x.tone.KnownTonality?.FromEm().ToIndex()))
                         .ToList()))
                 .ToList(),
         };

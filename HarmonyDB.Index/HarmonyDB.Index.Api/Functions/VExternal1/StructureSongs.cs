@@ -64,7 +64,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 x.tone.Score.TonicScore,
                 x.tone.Score.ScaleScore,
                 x.header,
-                x.tone.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())))
+                x.tone.KnownTonality?.FromEm().ToIndex()))
             .ToList();
 
         var songs = (request.Ordering switch

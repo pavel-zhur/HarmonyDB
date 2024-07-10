@@ -67,7 +67,7 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
                 songTonality.Score.TonicScore,
                 songTonality.Score.ScaleScore,
                 header,
-                songTonality.KnownTonality?.SelectSingle(x => (x.Tonic, x.Scale == Scale.Minor).ToIndex())),
+                songTonality.KnownTonality?.FromEm().ToIndex()),
 
             Links = structures.LinksBySongId[request.ExternalId].ToList(),
 

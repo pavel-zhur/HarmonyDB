@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
@@ -152,4 +153,7 @@ public static class TonalitiesAndStructuresExtensions
     {
         return (structureLink.Occurrences + structureLink.Successions * 4) * (loop.Length == 2 ? 1 : 5) * (isSongKnownTonality ? 5 : 1);
     }
+
+    public static (byte root, bool isMinor) FromEm(this (byte tonic, Scale scale) tonality)
+        => (tonality.tonic, tonality.scale == Scale.Minor);
 }
