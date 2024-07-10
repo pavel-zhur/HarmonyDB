@@ -1,0 +1,124 @@
+﻿@using HarmonyDB.Index.Api.Model.VExternal1
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@model StructureSongModel
+
+@{
+    StructureSongResponse? response = ViewBag.Response;
+
+    ViewBag.Title = response == null ? ViewLocalizer["Structure Song"].Value : $"{response.Song.ExternalId} - {ViewLocalizer["Structure Song"].Value}";
+    Layout = "_Layout";
+}
+
+<div>
+    <h3 class="d-inline-block">@ViewLocalizer["Structure Song Details"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSong", "Home", Model, new { target = "_blank" })
+</div>
+
+<ul>
+    <li>
+        @if (Model.IncludeTrace)
+        {
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "StructureSong", Model with { IncludeTrace = false })
+        }
+        else
+        {
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "StructureSong", Model with { IncludeTrace = true })
+        }
+    </li>
+</ul>
+
+@if (response != null)
+{
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Song Information"]</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["External ID"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Loops"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
+                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="ps-2">@response.Song.ExternalId</td>
+                <td class="ps-2">@response.Song.TotalLoops</td>
+                <td class="ps-2">@response.Song.TonicScore</td>
+                <td class="ps-2">@response.Song.ScaleScore</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Loops"]</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["Normalized"]</td>
+                <td class="ps-2">@ViewLocalizer["Length"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Occurrences"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Successions"]</td>
+                <td class="ps-2">@ViewLocalizer["Total Songs"]</td>
+                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var loop in response.Loops)
+            {
+                <tr>
+                    <td class="ps-2">@loop.Normalized</td>
+                    <td class="ps-2">@loop.Length</td>
+                    <td class="ps-2">@loop.TotalOccurrences</td>
+                    <td class="ps-2">@loop.TotalSuccessions</td>
+                    <td class="ps-2">@loop.TotalSongs</td>
+                    <td class="ps-2">@loop.ScaleScore</td>
+                    <td class="ps-2">@loop.TonicScore</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Links"]</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr class="fw-bold">
+                <td class="ps-2">@ViewLocalizer["Normalized"]</td>
+                <td class="ps-2">@ViewLocalizer["External ID"]</td>
+                <td class="ps-2">@ViewLocalizer["Normalization Root"]</td>
+                <td class="ps-2">@ViewLocalizer["Occurrences"]</td>
+                <td class="ps-2">@ViewLocalizer["Successions"]</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var link in response.Links)
+            {
+                <tr>
+                    <td class="ps-2">@link.Normalized</td>
+                    <td class="ps-2">@link.ExternalId</td>
+                    <td class="ps-2">@link.NormalizationRoot</td>
+                    <td class="ps-2">@link.Occurrences</td>
+                    <td class="ps-2">@link.Successions</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>@ViewLocalizer["No data available."]</p>
+}
+
+@if (Model.IncludeTrace)
+{
+    @await Html.PartialAsync("Trace")
+}
