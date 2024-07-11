@@ -1,3 +1,13 @@
 namespace HarmonyDB.Index.Api.Model.VExternal1;
 
-public record StructureLinkStatistics(int? KnownTonalityIndex, int PredictedTonalityIndex, byte NormalizationRoot, int Count, float TotalWeight, int Occurrences, int Successions, List<StructureSongTonality> Examples);
+public record StructureLinkStatistics(
+    int DerivedTonalityIndex,
+    bool DerivedFromKnown,
+    int Count, 
+    float TotalWeight,
+    int Occurrences, 
+    int Successions, 
+    float AverageTonicScore,
+    float AverageScaleScore,
+    float AverageConfidence,
+    List<StructureSongTonality> Examples);

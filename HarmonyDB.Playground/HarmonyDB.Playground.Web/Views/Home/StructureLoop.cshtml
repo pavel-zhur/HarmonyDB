@@ -132,36 +132,96 @@
     </table>
 
     <div class="mt-4">
-        <h3 class="d-inline-block">@ViewLocalizer["Link Statistics"]</h3>
+        <h3 class="d-inline-block" id="statistics">@ViewLocalizer["Link Statistics"]</h3>
     </div>
+
+    <p>
+        @ViewLocalizer["The following table is not the primary source for loop tonality data; it highlights the most significant aspects. Each song in the 'Derived From = Predicted' group has 23 other probable tonalities with probabilities greater than 0. Refer to the 'Average Confidence' column for more details. These probabilities affect the results in a dispersed manner. Therefore, this table focuses on the key subset for each group. Displaying the aggregated source numbers would be mathematically accurate but less convenient for analysis."]
+    </p>
 
     <table class="table table-bordered table-sm">
         <thead>
-            <tr class="fw-bold">
-                <td>@ViewLocalizer["Known Tonality Index"]</td>
-                <td>@ViewLocalizer["Predicted Tonality Index"]</td>
-                <td>@ViewLocalizer["Normalization Root"]</td>
-                <td>@ViewLocalizer["Count"]</td>
-                <td>@ViewLocalizer["Total Weight"]</td>
-                <td>@ViewLocalizer["Occurrences"]</td>
-                <td>@ViewLocalizer["Successions"]</td>
-            </tr>
+        <tr class="fw-bold">
+            <td>@ViewLocalizer["Derived Tonality Index"]</td>
+            <td>@ViewLocalizer["Derived From"]</td>
+            <td>@ViewLocalizer["Songs Count"]</td>
+            <td>@ViewLocalizer["Total Weight"]</td>
+            <td>@ViewLocalizer["Occurrences"]</td>
+            <td>@ViewLocalizer["Successions"]</td>
+            <td>@ViewLocalizer["Average Confidence"]</td>
+            <td>@ViewLocalizer["Average Tonic Score"]</td>
+            <td>@ViewLocalizer["Average Scale Score"]</td>
+            <td>@ViewLocalizer["Examples"]</td>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var link in response.LinkStatistics)
-            {
-                <tr>
-                    <td>@link.KnownTonalityIndex</td>
-                    <td>@link.PredictedTonalityIndex</td>
-                    <td>@link.NormalizationRoot</td>
-                    <td>@link.Count</td>
-                    <td>@link.TotalWeight</td>
-                    <td>@link.Occurrences</td>
-                    <td>@link.Successions</td>
-                </tr>
-            }
+        @foreach (var (link, i) in response.LinkStatistics.OrderByDescending(x => x.TotalWeight).WithIndices())
+        {
+            <tr>
+                <td>@link.DerivedTonalityIndex.ToLoopTonalityTitle()</td>
+                <td>@(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"])</td>
+                <td>@link.Count.ToString("N0")</td>
+                <td>@link.TotalWeight.ToString("N0")</td>
+                <td>@link.Occurrences.ToString("N0")</td>
+                <td>@link.Successions.ToString("N0")</td>
+                <td>@link.AverageConfidence.ToString("P0")</td>
+                <td>@link.AverageTonicScore.ToString("P0")</td>
+                <td>@link.AverageScaleScore.ToString("P0")</td>
+                <td>
+                    @if (link.Examples.Any())
+                    {
+                        <a href="#examples-@i" class="btn btn-xs btn-outline-secondary ms-2">↓ @ViewLocalizer["Show"]</a>
+                    }
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
+
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Song Examples"]</h3>
+    </div>
+
+    @foreach (var (link, i) in response.LinkStatistics.OrderByDescending(x => x.TotalWeight).WithIndices().Where(x => x.x.Examples.Any()))
+    {
+        <div class="mt-4 mb-2">
+            <h5 class="d-inline-block" id="examples-@i">@link.DerivedTonalityIndex.ToLoopTonalityTitle() @(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"]) Examples</h5>
+            <a href="#statistics" class="btn btn-xs btn-outline-secondary ms-2 mb-1">↑ @ViewLocalizer["Back to Statistics"]</a>
+        </div>
+
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr class="fw-bold">
+                    <td>@ViewLocalizer["Song"]</td>
+                    <td>@ViewLocalizer["Source"]</td>
+                    <td>@ViewLocalizer["Rating"]</td>
+                    <td>@ViewLocalizer["Total Loops"]</td>
+                    <td>@ViewLocalizer["Tonality Confidence"]</td>
+                    <td>@ViewLocalizer["Tonic Confidence"]</td>
+                    <td>@ViewLocalizer["Tonic Score"]</td>
+                    <td>@ViewLocalizer["Scale Score"]</td>
+                </tr>
+            </thead>
+            @foreach (var song in link.Examples)
+            {
+                <tr>
+                    <td>
+                        @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", "Home", new StructureSongModel
+                            {
+                                ExternalId = song.IndexHeader.ExternalId
+                            })
+                    </td>
+                    <td>@song.IndexHeader.Source</td>
+                    <td>@((int)(song.IndexHeader.Rating ?? 0))%</td>
+                    <td>@song.TotalLoops.ToString("N0")</td>
+                    <td>@song.Probabilities.TonalityConfidence().ToString("P0")</td>
+                    <td>@song.Probabilities.TonicConfidence().ToString("P0")</td>
+                    <td>@song.ScaleScore.ToString("P0")</td>
+                    <td>@song.TonicScore.ToString("P0")</td>
+                </tr>
+            }
+        </table>
+    }
 }
 else
 {

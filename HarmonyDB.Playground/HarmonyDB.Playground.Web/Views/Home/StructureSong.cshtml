@@ -165,6 +165,7 @@
                 <td>@ViewLocalizer["Successions"]</td>
                 <td>@ViewLocalizer["Length"]</td>
                 <td>@ViewLocalizer["Total Songs"]</td>
+                <td>@ViewLocalizer["1 + Ln(Total Songs)"]</td>
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 <td>@ViewLocalizer["Total Successions"]</td>
                 <td>@ViewLocalizer["Detected Tonality"]</td>
@@ -200,6 +201,7 @@
 
                         <td>@loop.Length</td>
                         <td>@loop.TotalSongs.ToString("N0")</td>
+                        <td>@((1 + Math.Log(loop.TotalSongs)).ToString("N2"))</td>
                         <td>@loop.TotalOccurrences.ToString("N0")</td>
                         <td>@loop.TotalSuccessions.ToString("N0")</td>
                         <td class="text-nowrap">

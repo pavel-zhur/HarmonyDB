@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Tools;
+﻿using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -70,23 +71,40 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
             LinkStatistics = structures.LinksByLoopId[request.Normalized]
                 .Where(x => tonalities.Songs.ContainsKey(x.ExternalId))
                 .Where(x => headers.Headers.ContainsKey(x.ExternalId))
-                .Select(link => (
-                    link,
-                    tone: tonalities.Songs[link.ExternalId],
-                    stats: structures.Songs[link.ExternalId],
-                    header: headers.Headers[link.ExternalId]))
-                .GroupBy(x => (
-                    known: x.tone.KnownTonality?.FromEm().ToIndex(),
-                    predicted: x.tone.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
-                    x.link.NormalizationRoot))
+                .Select(link =>
+                {
+                    var tone = tonalities.Songs[link.ExternalId];
+                    var stats = structures.Songs[link.ExternalId];
+                    var header = headers.Headers[link.ExternalId];
+                    var known = tone.KnownTonality?.FromEm().ToIndex();
+                    var predicted = tone.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex();
+                    var normalizationRoot = link.NormalizationRoot;
+                    return (
+                        link,
+                        tone,
+                        stats,
+                        header,
+                        known,
+                        predicted,
+                        normalizationRoot);
+                })
+                .GroupBy(x =>
+                {
+                    var knownOrPredicted = x.known?.FromIndex() ?? x.predicted.FromIndex();
+                    return (
+                        derivedTonalityIndex: (Note.Normalize(x.normalizationRoot - knownOrPredicted.root), knownOrPredicted.isMinor).ToIndex(),
+                        derivedFromKnown: x.known.HasValue);
+                })
                 .Select(g => new StructureLinkStatistics(
-                    g.Key.known,
-                    g.Key.predicted,
-                    g.Key.NormalizationRoot,
+                    g.Key.derivedTonalityIndex,
+                    g.Key.derivedFromKnown,
                     g.Count(),
-                    g.Sum(l => l.link.GetWeight(structures.Loops[l.link.Normalized], g.Key.known.HasValue)),
+                    g.Sum(l => l.link.GetWeight(stats, l.known.HasValue)),
                     g.Sum(x => x.link.Occurrences),
                     g.Sum(x => x.link.Successions),
+                    g.Average(x => tonalities.Songs[x.link.ExternalId].Score.TonicScore),
+                    g.Average(x => tonalities.Songs[x.link.ExternalId].Score.ScaleScore),
+                    g.Key.derivedFromKnown ? 1 : g.Average(x => tonalities.Songs[x.link.ExternalId].TonalityProbabilities.ToLinear().TonalityConfidence()),
                     g
                         .OrderByDescending(x => x.header.Rating)
                         .ThenBy(_ => Random.Shared.NextDouble())
