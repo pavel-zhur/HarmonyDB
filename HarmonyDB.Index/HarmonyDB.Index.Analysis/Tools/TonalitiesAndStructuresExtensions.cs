@@ -71,13 +71,12 @@ public static class TonalitiesAndStructuresExtensions
 
     public static (byte root, bool isMinor) GetParallelScale(this (byte root, bool isMinor) scale, bool isSong)
     {
-        // todo: write unit test
         return scale.isMinor
             ? (Note.Normalize(scale.root + (isSong ? 3 : -3)), false)
             : (Note.Normalize(scale.root + (isSong ? -3 : 3)), true);
     }
-    public static byte GetMajorTonic(byte root, bool isMinor)
-        => (root, isMinor).GetMajorTonic();
+    public static byte GetMajorTonic(byte root, bool isMinor, bool isSong)
+        => (root, isMinor).GetMajorTonic(isSong);
 
     public static (byte root, bool isMinor) GetParallelScale(byte root, bool isMinor, bool isSong)
         => (root, isMinor).GetParallelScale(isSong);

@@ -89,68 +89,13 @@
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
     </div>
 
-    <table class="table table-bordered table-sm">
-        <thead>
-            <tr>
-                <th>Percentile</th>
-                @for (var i = 0; i <= 100; i += 10)
-                {
-                    <th>@i%</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>@ViewLocalizer["Total Songs"]</td>
-                @foreach (var value in response.Distributions.TotalSongs)
-                {
-                    <td>@value.ToString("N0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Total Occurrences"]</td>
-                @foreach (var value in response.Distributions.TotalOccurrences)
-                {
-                    <td>@value.ToString("N0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Total Successions"]</td>
-                @foreach (var value in response.Distributions.TotalSuccessions)
-                {
-                    <td>@value.ToString("N0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Tonality Confidence"]</td>
-                @foreach (var value in response.Distributions.TonalityConfidence)
-                {
-                    <td>@value.ToString("P0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Tonic Confidence"]</td>
-                @foreach (var value in response.Distributions.TonicConfidence)
-                {
-                    <td>@value.ToString("P0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Tonic Score"]</td>
-                @foreach (var value in response.Distributions.TonicScore)
-                {
-                    <td>@value.ToString("P0")</td>
-                }
-            </tr>
-            <tr>
-                <td>@ViewLocalizer["Scale Score"]</td>
-                @foreach (var value in response.Distributions.ScaleScore)
-                {
-                    <td>@value.ToString("P0")</td>
-                }
-            </tr>
-        </tbody>
-    </table>
+    @await Html.PartialAsync("Structure/LoopsPercentiles", response.Distributions)
+
+    <div class="mt-1">
+        <h5 class="d-inline-block">@ViewLocalizer["Weighted Distributions by Occurrences"]</h5>
+    </div>
+
+    @await Html.PartialAsync("Structure/LoopsPercentiles", response.WeightedDistributionsByOccurrences)
 
     @await Html.PartialAsync("Paging", Model)
 
@@ -181,7 +126,7 @@
                 @{
                     var predicted = loop.Probabilities.GetPredictedTonality();
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-                    var parallelToPredicted = predicted.GetParallelScale();
+                    var parallelToPredicted = predicted.GetParallelScale(false);
                 }
                 <td>
                     <b>@predicted.ToLoopTonalityTitle()</b>
@@ -207,7 +152,7 @@
                         <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
                     }
                 </td>
-                <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td>@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
                 <td>@loop.ScaleScore.ToString("P0")</td>
                 <td>@loop.TonicScore.ToString("P0")</td>
             </tr>

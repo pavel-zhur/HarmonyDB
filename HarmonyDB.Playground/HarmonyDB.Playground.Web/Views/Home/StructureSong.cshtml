@@ -83,7 +83,7 @@
                 @{
                     var predicted = song.Probabilities.GetPredictedTonality();
                     var secondPredicted = song.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-                    var parallelToPredicted = predicted.GetParallelScale();
+                    var parallelToPredicted = predicted.GetParallelScale(true);
                 }
                 <td>
                     <b>@predicted.ToSongTonalityTitle()</b>
@@ -118,7 +118,7 @@
             </tr>
             <tr>
                 <td class="fw-bold">@ViewLocalizer["Tonic Confidence"]</td>
-                <td colspan="2">@song.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td colspan="2">@song.Probabilities.TonicConfidence(true).ToString("P0")</td>
             </tr>
             <tr>
                 <td class="fw-bold">@ViewLocalizer["Tonic Score"]</td>
@@ -212,7 +212,7 @@
                     {
                         var loopPredicted = loop.Probabilities.GetPredictedTonality();
                         var loopSecondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var loopSecondConfidence);
-                        var loopParallelToPredicted = loopPredicted.GetParallelScale();
+                        var loopParallelToPredicted = loopPredicted.GetParallelScale(false);
 
                         <td>@loop.Length</td>
                         <td>@loop.TotalSongs.ToString("N0")</td>
@@ -243,7 +243,7 @@
                                 <span>@loop.Probabilities[loopParallelToPredicted.ToIndex()].ToString("P0")</span>
                             }
                         </td>
-                        <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                        <td>@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
                         <td>@loop.TonicScore.ToString("P0")</td>
                         <td>@loop.ScaleScore.ToString("P0")</td>
                     }

@@ -5,4 +5,6 @@ public record StructureLoopsResponse : PagedResponseBase
     public required List<StructureLoopTonality> Loops { get; init; }
 
     public required StructureLoopsResponseDistributions Distributions { get; init; }
+
+    public required StructureLoopsResponseDistributions WeightedDistributionsByOccurrences { get; init; }
 }

@@ -68,8 +68,8 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
             .Where(x => x.TotalSuccessions >= request.MinTotalSuccessions)
             .Where(x => x.Probabilities.TonalityConfidence() >= request.MinTonalityConfidence)
             .Where(x => x.Probabilities.TonalityConfidence() <= request.MaxTonalityConfidence)
-            .Where(x => x.Probabilities.TonicConfidence() >= request.MinTonicConfidence)
-            .Where(x => x.Probabilities.TonicConfidence() <= request.MaxTonicConfidence)
+            .Where(x => x.Probabilities.TonicConfidence(false) >= request.MinTonicConfidence)
+            .Where(x => x.Probabilities.TonicConfidence(false) <= request.MaxTonicConfidence)
             .Where(x => x.TonicScore >= request.MinTonicScore)
             .Where(x => x.ScaleScore >= request.MinScaleScore)
             .Where(x => request.DetectedScaleFilter switch
@@ -82,8 +82,8 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
             .Where(x => request.SecondFilter switch
             {
                 StructureRequestSecondFilter.Any => true,
-                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
-                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() != x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) == x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
+                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) != x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();
@@ -109,12 +109,12 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
             StructureLoopsRequestOrdering.TonicScoreAsc => loops.OrderBy(x => x.TonicScore),
             StructureLoopsRequestOrdering.LengthAscTonalityConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
             StructureLoopsRequestOrdering.LengthDescTonalityConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.LengthAscTonicConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence()),
-            StructureLoopsRequestOrdering.LengthDescTonicConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence()),
+            StructureLoopsRequestOrdering.LengthAscTonicConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
+            StructureLoopsRequestOrdering.LengthDescTonicConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
             StructureLoopsRequestOrdering.TonalityConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonalityConfidence()),
             StructureLoopsRequestOrdering.TonalityConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.TonicConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonicConfidence()),
-            StructureLoopsRequestOrdering.TonicConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonicConfidence()),
+            StructureLoopsRequestOrdering.TonicConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonicConfidence(false)),
+            StructureLoopsRequestOrdering.TonicConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonicConfidence(false)),
             _ => throw new ArgumentOutOfRangeException()
         })
         .ToList();
@@ -131,9 +131,19 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
                 TotalOccurrences = loops.GetPercentiles(x => x.TotalOccurrences),
                 TotalSuccessions = loops.GetPercentiles(x => x.TotalSuccessions),
                 TonalityConfidence = loops.GetPercentiles(x => x.Probabilities.TonalityConfidence()),
-                TonicConfidence = loops.GetPercentiles(x => x.Probabilities.TonicConfidence()),
+                TonicConfidence = loops.GetPercentiles(x => x.Probabilities.TonicConfidence(false)),
                 TonicScore = loops.GetPercentiles(x => x.TonicScore),
                 ScaleScore = loops.GetPercentiles(x => x.ScaleScore),
+            },
+            WeightedDistributionsByOccurrences = new()
+            {
+                TotalSongs = loops.GetWeightedPercentiles(x => (x.TotalSongs, x.TotalOccurrences)),
+                TotalOccurrences = loops.GetWeightedPercentiles(x => (x.TotalOccurrences, x.TotalOccurrences)),
+                TotalSuccessions = loops.GetWeightedPercentiles(x => (x.TotalSuccessions, x.TotalOccurrences)),
+                TonalityConfidence = loops.GetWeightedPercentiles(x => (x.Probabilities.TonalityConfidence(), x.TotalOccurrences)),
+                TonicConfidence = loops.GetWeightedPercentiles(x => (x.Probabilities.TonicConfidence(false), x.TotalOccurrences)),
+                TonicScore = loops.GetWeightedPercentiles(x => (x.TonicScore, x.TotalOccurrences)),
+                ScaleScore = loops.GetWeightedPercentiles(x => (x.ScaleScore, x.TotalOccurrences)),
             },
         };
     }

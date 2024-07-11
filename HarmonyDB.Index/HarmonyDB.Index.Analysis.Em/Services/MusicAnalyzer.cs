@@ -210,7 +210,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         foreach (var (tonic, scale) in Constants.Indices)
         {
-            var majorTonic = Constants.GetMajorTonic((tonic, (Scale)scale));
+            var majorTonic = Constants.GetMajorTonic((tonic, (Scale)scale), !isSong);
             var relativeShift = (loopLink.Shift - majorTonic + Constants.TonicCount) % Constants.TonicCount;
             shiftsCounts[relativeShift] += probabilities[tonic, scale] * loopLink.Weight;
         }

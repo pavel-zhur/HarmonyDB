@@ -73,8 +73,8 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             .Where(x => x.TotalLoops <= (request.MaxTotalLoops ?? int.MaxValue))
             .Where(x => x.Probabilities.TonalityConfidence() >= request.MinTonalityConfidence)
             .Where(x => x.Probabilities.TonalityConfidence() <= request.MaxTonalityConfidence)
-            .Where(x => x.Probabilities.TonicConfidence() >= request.MinTonicConfidence)
-            .Where(x => x.Probabilities.TonicConfidence() <= request.MaxTonicConfidence)
+            .Where(x => x.Probabilities.TonicConfidence(true) >= request.MinTonicConfidence)
+            .Where(x => x.Probabilities.TonicConfidence(true) <= request.MaxTonicConfidence)
             .Where(x => x.TonicScore >= request.MinTonicScore)
             .Where(x => x.ScaleScore >= request.MinScaleScore)
             .Where(x => x.IndexHeader.Rating >= request.MinRating)
@@ -95,8 +95,8 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             .Where(x => request.SecondFilter switch
             {
                 StructureRequestSecondFilter.Any => true,
-                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
-                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic() != x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
+                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) != x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.CorrectDetectionFilter switch
@@ -105,16 +105,16 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 StructureSongsRequestCorrectDetectionFilter.Exact 
                     => x.KnownTonalityIndex?.FromIndex() == x.Probabilities.GetPredictedTonality(),
                 StructureSongsRequestCorrectDetectionFilter.ExactScaleAgnostic 
-                    => x.KnownTonalityIndex?.FromIndex().GetMajorTonic() == x.Probabilities.GetPredictedTonality().GetMajorTonic(),
+                    => x.KnownTonalityIndex?.FromIndex().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
                 StructureSongsRequestCorrectDetectionFilter.No 
                     => x.KnownTonalityIndex != null
                        && x.KnownTonalityIndex != x.Probabilities.GetPredictedTonality().ToIndex(),
                 StructureSongsRequestCorrectDetectionFilter.IncorrectScale
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
-                            .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic() == x.predicted.GetMajorTonic()),
+                            .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) == x.predicted.GetMajorTonic(true)),
                 StructureSongsRequestCorrectDetectionFilter.NoAndNotParallel
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
-                            .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic() != x.predicted.GetMajorTonic()),
+                            .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) != x.predicted.GetMajorTonic(true)),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.KnownTonalityFilter switch
@@ -141,9 +141,9 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             StructureSongsRequestOrdering.TonalityConfidenceAsc => songs.OrderBy(x =>
                 x.Probabilities.TonalityConfidence()),
             StructureSongsRequestOrdering.TonicConfidenceDesc => songs.OrderByDescending(x =>
-                x.Probabilities.TonicConfidence()),
+                x.Probabilities.TonicConfidence(true)),
             StructureSongsRequestOrdering.TonicConfidenceAsc => songs.OrderBy(x =>
-                x.Probabilities.TonicConfidence()),
+                x.Probabilities.TonicConfidence(true)),
             StructureSongsRequestOrdering.RatingAsc => songs.OrderBy(x => x.IndexHeader.Rating),
             StructureSongsRequestOrdering.RatingDesc => songs.OrderByDescending(x => x.IndexHeader.Rating),
             _ => throw new ArgumentOutOfRangeException()
@@ -159,7 +159,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             {
                 Rating = songs.GetPercentiles(x => x.IndexHeader.Rating),
                 TonalityConfidence = songs.GetPercentiles(x => x.Probabilities.TonalityConfidence()),
-                TonicConfidence = songs.GetPercentiles(x => x.Probabilities.TonicConfidence()),
+                TonicConfidence = songs.GetPercentiles(x => x.Probabilities.TonicConfidence(true)),
                 TonicScore = songs.GetPercentiles(x => x.TonicScore),
                 ScaleScore = songs.GetPercentiles(x => x.ScaleScore),
             },
