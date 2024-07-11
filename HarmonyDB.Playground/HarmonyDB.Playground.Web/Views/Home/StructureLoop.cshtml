@@ -1,5 +1,7 @@
-﻿@using HarmonyDB.Index.Api.Model.VExternal1
+﻿@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1
 @using Microsoft.AspNetCore.Mvc.Localization
+@using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
 @model StructureLoopModel
 
@@ -30,31 +32,72 @@
 
 @if (response != null)
 {
+    var loop = response.Loop;
+    var predicted = loop.Probabilities.GetPredictedTonality();
+    var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
+    var parallelToPredicted = predicted.GetParallelScale();
+
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Loop Information"]</h3>
     </div>
 
-    <table>
-        <thead>
-            <tr class="fw-bold">
-                <td class="ps-2">@ViewLocalizer["Normalized"]</td>
-                <td class="ps-2">@ViewLocalizer["Length"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Occurrences"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Successions"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Songs"]</td>
-                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
-            </tr>
-        </thead>
+    <table class="table table-bordered table-sm w-auto">
         <tbody>
             <tr>
-                <td class="ps-2">@response.Loop.Normalized</td>
-                <td class="ps-2">@response.Loop.Length</td>
-                <td class="ps-2">@response.Loop.TotalOccurrences</td>
-                <td class="ps-2">@response.Loop.TotalSuccessions</td>
-                <td class="ps-2">@response.Loop.TotalSongs</td>
-                <td class="ps-2">@response.Loop.ScaleScore</td>
-                <td class="ps-2">@response.Loop.TonicScore</td>
+                <td><b>@ViewLocalizer["Progression"]</b></td>
+                <td>@loop.Normalized.GetTitle(loopify: false)</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Length"]</b></td>
+                <td>@loop.Length</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Total Songs"]</b></td>
+                <td>@loop.TotalSongs.ToString("N0")</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Total Occurrences"]</b></td>
+                <td>@loop.TotalOccurrences.ToString("N0")</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Total Successions"]</b></td>
+                <td>@loop.TotalSuccessions.ToString("N0")</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Detected Tonality"]</b></td>
+                <td>
+                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
+                    <b>@predicted.ToLoopTonalityTitle()</b>
+                </td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Second Detected Tonality"]</b></td>
+                <td>
+                    <span>@secondConfidence.ToString("P0")</span>
+                    <b>@secondPredicted.ToLoopTonalityTitle()</b>
+                </td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</b></td>
+                <td>
+                    @if (secondPredicted != parallelToPredicted)
+                    {
+                        <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
+                        <b>@parallelToPredicted.ToLoopTonalityTitle()</b>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Tonic Confidence"]</b></td>
+                <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Tonic Score"]</b></td>
+                <td>@loop.TonicScore.ToString("P0")</td>
+            </tr>
+            <tr>
+                <td><b>@ViewLocalizer["Scale Score"]</b></td>
+                <td>@loop.ScaleScore.ToString("P0")</td>
             </tr>
         </tbody>
     </table>
@@ -63,29 +106,29 @@
         <h3 class="d-inline-block">@ViewLocalizer["Link Statistics"]</h3>
     </div>
 
-    <table>
+    <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
-                <td class="ps-2">@ViewLocalizer["Known Tonality Index"]</td>
-                <td class="ps-2">@ViewLocalizer["Predicted Tonality Index"]</td>
-                <td class="ps-2">@ViewLocalizer["Normalization Root"]</td>
-                <td class="ps-2">@ViewLocalizer["Count"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Weight"]</td>
-                <td class="ps-2">@ViewLocalizer["Occurrences"]</td>
-                <td class="ps-2">@ViewLocalizer["Successions"]</td>
+                <td>@ViewLocalizer["Known Tonality Index"]</td>
+                <td>@ViewLocalizer["Predicted Tonality Index"]</td>
+                <td>@ViewLocalizer["Normalization Root"]</td>
+                <td>@ViewLocalizer["Count"]</td>
+                <td>@ViewLocalizer["Total Weight"]</td>
+                <td>@ViewLocalizer["Occurrences"]</td>
+                <td>@ViewLocalizer["Successions"]</td>
             </tr>
         </thead>
         <tbody>
             @foreach (var link in response.LinkStatistics)
             {
                 <tr>
-                    <td class="ps-2">@link.KnownTonalityIndex</td>
-                    <td class="ps-2">@link.PredictedTonalityIndex</td>
-                    <td class="ps-2">@link.NormalizationRoot</td>
-                    <td class="ps-2">@link.Count</td>
-                    <td class="ps-2">@link.TotalWeight</td>
-                    <td class="ps-2">@link.Occurrences</td>
-                    <td class="ps-2">@link.Successions</td>
+                    <td>@link.KnownTonalityIndex</td>
+                    <td>@link.PredictedTonalityIndex</td>
+                    <td>@link.NormalizationRoot</td>
+                    <td>@link.Count</td>
+                    <td>@link.TotalWeight</td>
+                    <td>@link.Occurrences</td>
+                    <td>@link.Successions</td>
                 </tr>
             }
         </tbody>

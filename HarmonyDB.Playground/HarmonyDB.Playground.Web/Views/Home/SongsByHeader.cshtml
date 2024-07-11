@@ -48,19 +48,19 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table>
+    <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
-                <td class="ps-2">@ViewLocalizer["Source"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Rating"]</td>
+                <td>@ViewLocalizer["Source"]</td>
+                <td>@ViewLocalizer["Tonality"]</td>
+                <td>@ViewLocalizer["Rating"]</td>
             </tr>
         </thead>
         @foreach (var song in response.Songs)
         {
             <tr>
-                <td class="pt-1">
+                <td>
                     @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, string.Join(", ", song.Artists ?? Enumerable.Empty<string>())))
                     {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
                     <span> – </span>
@@ -69,9 +69,9 @@
                         {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
                     </a>
                 </td>
-                <td class="pt-1 ps-2">@song.Source</td>
-                <td class="pt-1 ps-2">@song.BestTonality?.Tonality</td>
-                <td class="pt-1 ps-2">@((int)(song.Rating ?? 0))%</td>
+                <td>@song.Source</td>
+                <td>@song.BestTonality?.Tonality</td>
+                <td>@((int)(song.Rating ?? 0))%</td>
             </tr>
         }
     </table>

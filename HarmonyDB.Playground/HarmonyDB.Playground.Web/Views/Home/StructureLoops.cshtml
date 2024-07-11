@@ -89,7 +89,7 @@
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
     </div>
 
-    <table class="table table-bordered">
+    <table class="table table-bordered table-sm">
         <thead>
             <tr>
                 <th>Percentile</th>
@@ -154,20 +154,20 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table>
+    <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
-                <td class="ps-2">@ViewLocalizer["Progression"]</td>
-                <td class="ps-2">@ViewLocalizer["Length"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Songs"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Occurrences"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Successions"]</td>
-                <td class="ps-2">@ViewLocalizer["Detected Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Second Detected Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonic Confidence"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
-                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+                <td>@ViewLocalizer["Progression"]</td>
+                <td>@ViewLocalizer["Length"]</td>
+                <td>@ViewLocalizer["Total Songs"]</td>
+                <td>@ViewLocalizer["Total Occurrences"]</td>
+                <td>@ViewLocalizer["Total Successions"]</td>
+                <td>@ViewLocalizer["Detected Tonality"]</td>
+                <td>@ViewLocalizer["Second Detected Tonality"]</td>
+                <td>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
+                <td>@ViewLocalizer["Tonic Confidence"]</td>
+                <td>@ViewLocalizer["Tonic Score"]</td>
+                <td>@ViewLocalizer["Scale Score"]</td>
             </tr>
         </thead>
         @foreach (var loop in response.Loops)
@@ -183,24 +183,24 @@
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale();
                 }
-                <td class="ps-2">
+                <td class="text-nowrap">
                     <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
                     <b>@predicted.ToLoopTonalityTitle()</b>
                 </td>
-                <td class="ps-2">
+                <td class="text-nowrap">
                     <span>@secondConfidence.ToString("P0")</span>
                     <b>@secondPredicted.ToLoopTonalityTitle()</b>
                 </td>
-                <td class="ps-2">
+                <td class="text-nowrap">
                     @if (secondPredicted != parallelToPredicted)
                     {
                         <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
                         <b>@parallelToPredicted.ToLoopTonalityTitle()</b>
                     }
                 </td>
-                <td class="ps-2">@loop.Probabilities.TonicConfidence().ToString("P0")</td>
-                <td class="ps-2">@loop.ScaleScore.ToString("P0")</td>
-                <td class="ps-2">@loop.TonicScore.ToString("P0")</td>
+                <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td>@loop.ScaleScore.ToString("P0")</td>
+                <td>@loop.TonicScore.ToString("P0")</td>
             </tr>
         }
     </table>

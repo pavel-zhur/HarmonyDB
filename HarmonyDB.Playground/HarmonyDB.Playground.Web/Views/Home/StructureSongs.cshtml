@@ -95,7 +95,7 @@
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
     </div>
 
-    <table class="table table-bordered">
+    <table class="table table-bordered table-sm">
         <thead>
         <tr>
             <th>Percentile</th>
@@ -146,21 +146,21 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table>
+    <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
-                <td class="ps-2">@ViewLocalizer["Source"]</td>
-                <td class="ps-2">@ViewLocalizer["Known Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Known Tonality Reliable"]</td>
-                <td class="ps-2">@ViewLocalizer["Rating"]</td>
-                <td class="ps-2">@ViewLocalizer["Total Loops"]</td>
-                <td class="ps-2">@ViewLocalizer["Detected Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Second Detected Tonality"]</td>
-                <td class="ps-2">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonic Confidence"]</td>
-                <td class="ps-2">@ViewLocalizer["Tonic Score"]</td>
-                <td class="ps-2">@ViewLocalizer["Scale Score"]</td>
+                <td>@ViewLocalizer["Source"]</td>
+                <td>@ViewLocalizer["Known Tonality"]</td>
+                <td>@ViewLocalizer["Known Tonality Reliable"]</td>
+                <td>@ViewLocalizer["Rating"]</td>
+                <td>@ViewLocalizer["Total Loops"]</td>
+                <td>@ViewLocalizer["Detected Tonality"]</td>
+                <td>@ViewLocalizer["Second Detected Tonality"]</td>
+                <td>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
+                <td>@ViewLocalizer["Tonic Confidence"]</td>
+                <td>@ViewLocalizer["Tonic Score"]</td>
+                <td>@ViewLocalizer["Scale Score"]</td>
             </tr>
         </thead>
         @foreach (var song in response.Songs)
@@ -172,36 +172,36 @@
                             ExternalId = song.IndexHeader.ExternalId
                         })
                 </td>
-                <td class="pt-1 ps-2">@song.IndexHeader.Source</td>
-                <td class="ps-2">
+                <td>@song.IndexHeader.Source</td>
+                <td>
                     <b>@song.KnownTonalityIndex?.ToSongTonalityTitle()</b>
                 </td>
-                <td class="ps-2">@song.IndexHeader.BestTonality?.IsReliable</td>
-                <td class="ps-2">@((int)(song.IndexHeader.Rating ?? 0))%</td>
-                <td class="ps-2">@song.TotalLoops.ToString("N0")</td>
+                <td>@song.IndexHeader.BestTonality?.IsReliable</td>
+                <td>@((int)(song.IndexHeader.Rating ?? 0))%</td>
+                <td>@song.TotalLoops.ToString("N0")</td>
                 @{
                     var predicted = song.Probabilities.GetPredictedTonality();
                     var secondPredicted = song.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale();
                 }
-                <td class="ps-2">
+                <td class="text-nowrap">
                     <span>@song.Probabilities.TonalityConfidence().ToString("P0")</span>
                     <b>@predicted.ToSongTonalityTitle()</b>
                 </td>
-                <td class="ps-2">
+                <td class="text-nowrap">
                     <span>@secondConfidence.ToString("P0")</span>
                     <b>@secondPredicted.ToSongTonalityTitle()</b>
                 </td>
-                <td class="ps-2">
+                <td class="text-nowrap">
                     @if (secondPredicted != parallelToPredicted)
                     {
                         <span>@song.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
                         <b>@parallelToPredicted.ToSongTonalityTitle()</b>
                     }
                 </td>
-                <td class="ps-2">@song.Probabilities.TonicConfidence().ToString("P0")</td>
-                <td class="ps-2">@song.ScaleScore.ToString("P0")</td>
-                <td class="ps-2">@song.TonicScore.ToString("P0")</td>
+                <td>@song.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td>@song.ScaleScore.ToString("P0")</td>
+                <td>@song.TonicScore.ToString("P0")</td>
             </tr>
         }
     </table>
