@@ -170,4 +170,12 @@ public static class TonalitiesAndStructuresExtensions
 
     public static string ToSongTonalityTitle(this (byte root, bool isMinor) tonality)
         => $"{new Note(tonality.root).Representation(new())}{(tonality.isMinor ? "m" : string.Empty)}";
+
+    public static string ToLoopTonalityTitle(this int tonalityIndex)
+        => tonalityIndex
+            .FromIndex()
+            .ToLoopTonalityTitle();
+
+    public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality)
+        => $"{(tonality.isMinor ? "m" : "M")}{(tonality.root > 7 ? $"–{-(tonality.root - 12)}" : $"+{tonality.root}")}";
 }
