@@ -104,21 +104,21 @@
                 <td>@ViewLocalizer["Total Songs"]</td>
                 @foreach (var value in response.Distributions.TotalSongs)
                 {
-                    <td>@value</td>
+                    <td>@value.ToString("N0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 @foreach (var value in response.Distributions.TotalOccurrences)
                 {
-                    <td>@value</td>
+                    <td>@value.ToString("N0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Total Successions"]</td>
                 @foreach (var value in response.Distributions.TotalSuccessions)
                 {
-                    <td>@value</td>
+                    <td>@value.ToString("N0")</td>
                 }
             </tr>
             <tr>
