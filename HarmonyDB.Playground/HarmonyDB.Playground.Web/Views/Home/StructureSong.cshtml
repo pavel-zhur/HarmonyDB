@@ -1,4 +1,5 @@
-﻿@using HarmonyDB.Index.Analysis.Tools
+﻿@using HarmonyDB.Common.Representations.OneShelf
+@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
@@ -108,6 +109,34 @@
                 <td class="fw-bold">@ViewLocalizer["Scale Score"]</td>
                 <td>@song.ScaleScore.ToString("P0")</td>
             </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Detected Tonality Probabilities"]</h3>
+    </div>
+
+    <table class="table table-bordered table-sm table-fixed">
+        <thead>
+            <tr class="fw-bold">
+                @for (byte note = 0; note < Note.Modulus; note++)
+                {
+                    <td>@(new Note(note).Representation(new()))</td>
+                }
+                <td></td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var isMinor in new[] { false, true, })
+            {
+                <tr>
+                    @for (byte note = 0; note < Note.Modulus; note++)
+                    {
+                        <td>@song.Probabilities[(note, isMinor).ToIndex()].ToString("P0")</td>
+                    }
+                    <td class="fw-bold">@(isMinor ? ViewLocalizer["minor"] : ViewLocalizer["major"])</td>
+                </tr>
+            }
         </tbody>
     </table>
 

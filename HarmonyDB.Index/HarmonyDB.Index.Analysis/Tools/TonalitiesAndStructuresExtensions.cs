@@ -181,5 +181,15 @@ public static class TonalitiesAndStructuresExtensions
             .ToLoopTonalityTitle();
 
     public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality)
-        => $"{(tonality.isMinor ? "m" : "M")}{(tonality.root > 7 ? $"–{-(tonality.root - 12)}" : $"+{tonality.root}")}";
+        => $"{(tonality.isMinor ? "m" : "M")}{tonality.root.ToLoopTonalityShiftTitle()}";
+
+    public static string ToLoopTonalityShiftTitle(this byte root)
+        => root >= LoopTonalityShiftsFirstNegativeRoot ? $"–{-(root - 12)}" : $"+{root}";
+
+    public const byte LoopTonalityShiftsFirstNegativeRoot = 8;
+
+    public static IReadOnlyList<byte> LoopTonalityShiftsDisplayOrder => Enumerable
+        .Range(LoopTonalityShiftsFirstNegativeRoot, Note.Modulus)
+        .Select(Note.Normalize)
+        .ToList();
 }

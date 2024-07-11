@@ -46,3 +46,7 @@ ul.sparse li {
 .search-highlighted {
     background-color: chartreuse;
 }
+
+.table-fixed {
+    table-layout: fixed;
+}
