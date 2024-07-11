@@ -4,6 +4,7 @@ using HarmonyDB.Common;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
 
@@ -88,22 +89,25 @@ public static class TonalitiesAndStructuresExtensions
             .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true).ToIndex()])
             .Max();
 
-    public static string GetTitle(this string normalizedLoop)
-    {
-        string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
+    public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true) => Loop.Deserialize(normalized).GetTitle(beginningNote, loopify);
 
-        var sequence = Loop.Deserialize(normalizedLoop);
-        byte note = 0;
-        return string.Join(" ", ToChord(note, sequence.Span[0].FromType)
+    public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, byte beginningNote = 0, bool loopify = true)
+    {
+        return string.Join(" ", ToChord(beginningNote, sequence.Span[0].FromType)
             .Once()
             .Concat(
                 MemoryMarshal.ToEnumerable(sequence)
+                    .SelectSingle(x => loopify ? x : x.SkipLast(1))
                     .Select(m =>
                     {
-                        note = Note.Normalize(note + m.RootDelta);
-                        return ToChord(note, m.ToType);
+                        beginningNote = Note.Normalize(beginningNote + m.RootDelta);
+                        return ToChord(beginningNote, m.ToType);
                     })));
     }
+
+    public static string ToChord(this (byte note, ChordType chordType) chord) => ToChord(chord.note, chord.chordType);
+
+    public static string ToChord(byte note, ChordType chordType) => $"{new Note(note).Representation(new())}{chordType.ChordTypeToString()}";
 
     public static (byte root, bool isMinor)? TryParseBestTonality(this string tonality)
     {

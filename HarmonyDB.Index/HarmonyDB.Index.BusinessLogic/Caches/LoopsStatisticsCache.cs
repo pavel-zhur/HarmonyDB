@@ -33,8 +33,6 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
     protected override async Task<IReadOnlyList<LoopStatistics>> ToPresentationModel(
         IReadOnlyDictionary<string, CompactLoopStatistics> fileModel)
     {
-        string ToChord(byte note, ChordType chordType) => $"{new Note(note, NoteAlteration.Sharp).Representation(new())}{chordType.ChordTypeToString()}";
-
         Logger.LogInformation("{count} unique songs participating in the loops statistics.", fileModel.Values.SelectMany(x => x.ExternalIds).Distinct().Count());
 
         return fileModel
@@ -45,16 +43,7 @@ public class LoopsStatisticsCache : FileCacheBase<IReadOnlyDictionary<string, Co
                 var note = (byte)rootsStatistics.WithIndices().MaxBy(x => x.x).i;
                 return new LoopStatistics
                 {
-                    Progression = string.Join(" ", ToChord(note, sequence.Span[0].FromType)
-                        .Once()
-                        .Concat(
-                            MemoryMarshal.ToEnumerable(sequence)
-                            //.Take(sequence.Length - 1)
-                            .Select(m =>
-                            {
-                                note = Note.Normalize(note + m.RootDelta);
-                                return ToChord(note, m.ToType);
-                            }))),
+                    Progression = sequence.GetTitle(note),
                     Length = sequence.Length,
                     TotalOccurrences = l.Value.TotalOccurrences,
                     TotalSuccessions = l.Value.TotalSuccessions,

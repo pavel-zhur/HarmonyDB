@@ -173,7 +173,7 @@
         @foreach (var loop in response.Loops)
         {
             <tr>
-                <td>@Html.ActionLink(loop.Normalized.GetTitle(), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
+                <td>@Html.ActionLink(loop.Normalized.GetTitle(loopify: false), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
                 <td>@loop.TotalOccurrences.ToString("N0")</td>
