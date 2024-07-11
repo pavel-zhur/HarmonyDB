@@ -24,10 +24,11 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         const int stabilityCheckWindow = 5; // Number of iterations to check for stability
         const double stabilityThreshold = 1e-6; // Threshold for considering changes as stable
         var recentMaxChanges = new List<double>();
-        var hasConverged = false;
+        var hasConverged = 0;
+        const int convergedCriterium = 10;
         var iterationCount = 0;
 
-        while (!hasConverged)
+        while (hasConverged < convergedCriterium)
         {
             var started = DateTime.Now;
             iterationCount++;
@@ -83,7 +84,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
             if (maxChange < tolerance)
             {
-                hasConverged = true;
+                hasConverged++;
             }
 
             logger.LogInformation($"Iteration {iterationCount}, Max Change: {maxChange:F6}, took {(DateTime.Now - started).TotalMilliseconds:N0} milliseconds");
@@ -159,7 +160,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 for (byte j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
-                    newProbabilities[targetTonic, j] += (sourceProbabilities[i, j] * sourceScore.TonicScore * link.Weight * (1 + (float)Math.Log(songCount)));
+                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * (float)Math.Exp(sourceScore.ScaleScore) * (float)Math.Exp(sourceScore.TonicScore) * link.Weight;
                 }
             }
         }
@@ -212,7 +213,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         {
             var majorTonic = Constants.GetMajorTonic((tonic, (Scale)scale), !isSong);
             var relativeShift = (loopLink.Shift - majorTonic + Constants.TonicCount) % Constants.TonicCount;
-            shiftsCounts[relativeShift] += probabilities[tonic, scale] * loopLink.Weight;
+            shiftsCounts[relativeShift] += probabilities[tonic, scale];
         }
     }
 

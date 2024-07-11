@@ -161,7 +161,9 @@ public static class TonalitiesAndStructuresExtensions
 
     public static float GetWeight(this StructureLink structureLink, StructureLoop loop, bool isSongKnownTonality)
     {
-        return (structureLink.Occurrences + structureLink.Successions * 4) * (loop.Length == 2 ? 1 : 5) * (isSongKnownTonality ? 5 : 1);
+        return (structureLink.Occurrences + structureLink.Successions * 4)
+               * (loop.Length == 2 ? 1 : 5)
+               * (isSongKnownTonality ? 10 : 1);
     }
 
     public static (byte root, bool isMinor) FromEm(this (byte tonic, Scale scale) tonality)
