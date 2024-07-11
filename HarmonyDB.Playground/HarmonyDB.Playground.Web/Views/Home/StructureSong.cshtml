@@ -2,6 +2,7 @@
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using Microsoft.AspNetCore.Mvc.Localization
+@using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
 @model StructureSongModel
 
@@ -33,6 +34,15 @@
 @if (response != null)
 {
     var song = response.Song;
+    var loops = response.Loops.ToDictionary(x => x.Normalized);
+    var links = response.Links
+        .Select(l => (link: l, loop: loops[l.Normalized]))
+        .GroupBy(x => x.loop.Normalized)
+        .OrderByDescending(x => x.Sum(x => x.link.Occurrences))
+        .SelectMany(g => g
+            .OrderBy(x => x.link.NormalizationRoot)
+            .WithIsFirst())
+        .ToList();
 
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Song Information"]</h3>
@@ -147,54 +157,83 @@
     <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
-                <td>@ViewLocalizer["Normalized"]</td>
-                <td>@ViewLocalizer["Length"]</td>
-                <td>@ViewLocalizer["Total Occurrences"]</td>
-                <td>@ViewLocalizer["Total Successions"]</td>
-                <td>@ViewLocalizer["Total Songs"]</td>
-                <td>@ViewLocalizer["Scale Score"]</td>
-                <td>@ViewLocalizer["Tonic Score"]</td>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var loop in response.Loops)
-            {
-                <tr>
-                    <td>@loop.Normalized</td>
-                    <td>@loop.Length</td>
-                    <td>@loop.TotalOccurrences</td>
-                    <td>@loop.TotalSuccessions</td>
-                    <td>@loop.TotalSongs</td>
-                    <td>@loop.ScaleScore</td>
-                    <td>@loop.TonicScore</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <div class="mt-4">
-        <h3 class="d-inline-block">@ViewLocalizer["Links"]</h3>
-    </div>
-
-    <table class="table table-bordered table-sm">
-        <thead>
-            <tr class="fw-bold">
-                <td>@ViewLocalizer["Normalized"]</td>
-                <td>@ViewLocalizer["External ID"]</td>
+                <td>@ViewLocalizer["Title"]</td>
+                <td>@ViewLocalizer["Modulation"]</td>
                 <td>@ViewLocalizer["Normalization Root"]</td>
+                <td>@ViewLocalizer["Weight"]</td>
                 <td>@ViewLocalizer["Occurrences"]</td>
                 <td>@ViewLocalizer["Successions"]</td>
+                <td>@ViewLocalizer["Length"]</td>
+                <td>@ViewLocalizer["Total Songs"]</td>
+                <td>@ViewLocalizer["Total Occurrences"]</td>
+                <td>@ViewLocalizer["Total Successions"]</td>
+                <td>@ViewLocalizer["Detected Tonality"]</td>
+                <td>@ViewLocalizer["Second Detected Tonality"]</td>
+                <td>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
+                <td>@ViewLocalizer["Tonic Confidence"]</td>
+                <td>@ViewLocalizer["Tonic Score"]</td>
+                <td>@ViewLocalizer["Scale Score"]</td>
             </tr>
         </thead>
         <tbody>
-            @foreach (var link in response.Links)
+            @foreach (var ((link, loop), isFirst) in links)
             {
                 <tr>
-                    <td>@link.Normalized</td>
-                    <td>@link.ExternalId</td>
+                    <td class="text-nowrap">
+                        @Html.ActionLink(loop.Normalized.GetTitle(loopify: false), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
+                    </td>
+                    <td>
+                        @if (!isFirst)
+                        {
+                            <span>֎</span>
+                        }
+                    </td>
                     <td>@link.NormalizationRoot</td>
+                    <td>@link.GetWeight(loop, song.IndexHeader.BestTonality?.IsReliable == true)</td>
                     <td>@link.Occurrences</td>
                     <td>@link.Successions</td>
+                    @if (isFirst)
+                    {
+                        var loopPredicted = loop.Probabilities.GetPredictedTonality();
+                        var loopSecondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var loopSecondConfidence);
+                        var loopParallelToPredicted = loopPredicted.GetParallelScale();
+
+                        <td>@loop.Length</td>
+                        <td>@loop.TotalSongs.ToString("N0")</td>
+                        <td>@loop.TotalOccurrences.ToString("N0")</td>
+                        <td>@loop.TotalSuccessions.ToString("N0")</td>
+                        <td class="text-nowrap">
+                            <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
+                            <b>@loopPredicted.ToLoopTonalityTitle()</b>
+                        </td>
+                        <td class="text-nowrap">
+                            <span>@loopSecondConfidence.ToString("P0")</span>
+                            <b>@loopSecondPredicted.ToLoopTonalityTitle()</b>
+                        </td>
+                        <td class="text-nowrap">
+                            @if (loopSecondPredicted != loopParallelToPredicted)
+                            {
+                                <span>@loop.Probabilities[loopParallelToPredicted.ToIndex()].ToString("P0")</span>
+                                <b>@loopParallelToPredicted.ToLoopTonalityTitle()</b>
+                            }
+                        </td>
+                        <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                        <td>@loop.TonicScore.ToString("P0")</td>
+                        <td>@loop.ScaleScore.ToString("P0")</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    }
                 </tr>
             }
         </tbody>
