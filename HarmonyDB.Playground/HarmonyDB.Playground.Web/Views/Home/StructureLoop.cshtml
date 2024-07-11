@@ -46,36 +46,40 @@
         <tbody>
             <tr>
                 <td><b>@ViewLocalizer["Progression"]</b></td>
-                <td>@loop.Normalized.GetTitle(loopify: false)</td>
+                <td colspan="2">@loop.Normalized.GetTitle(loopify: false)</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Length"]</b></td>
-                <td>@loop.Length</td>
+                <td colspan="2">@loop.Length</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Total Songs"]</b></td>
-                <td>@loop.TotalSongs.ToString("N0")</td>
+                <td colspan="2">@loop.TotalSongs.ToString("N0")</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Total Occurrences"]</b></td>
-                <td>@loop.TotalOccurrences.ToString("N0")</td>
+                <td colspan="2">@loop.TotalOccurrences.ToString("N0")</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Total Successions"]</b></td>
-                <td>@loop.TotalSuccessions.ToString("N0")</td>
+                <td colspan="2">@loop.TotalSuccessions.ToString("N0")</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Detected Tonality"]</b></td>
                 <td>
-                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
                     <b>@predicted.ToLoopTonalityTitle()</b>
+                </td>
+                <td>
+                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
                 </td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Second Detected Tonality"]</b></td>
                 <td>
-                    <span>@secondConfidence.ToString("P0")</span>
                     <b>@secondPredicted.ToLoopTonalityTitle()</b>
+                </td>
+                <td>
+                    <span>@secondConfidence.ToString("P0")</span>
                 </td>
             </tr>
             <tr>
@@ -83,22 +87,27 @@
                 <td>
                     @if (secondPredicted != parallelToPredicted)
                     {
-                        <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
                         <b>@parallelToPredicted.ToLoopTonalityTitle()</b>
+                    }
+                </td>
+                <td>
+                    @if (secondPredicted != parallelToPredicted)
+                    {
+                        <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
                     }
                 </td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Tonic Confidence"]</b></td>
-                <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
+                <td colspan="2">@loop.Probabilities.TonicConfidence().ToString("P0")</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Tonic Score"]</b></td>
-                <td>@loop.TonicScore.ToString("P0")</td>
+                <td colspan="2">@loop.TonicScore.ToString("P0")</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Scale Score"]</b></td>
-                <td>@loop.ScaleScore.ToString("P0")</td>
+                <td colspan="2">@loop.ScaleScore.ToString("P0")</td>
             </tr>
         </tbody>
     </table>
@@ -107,25 +116,30 @@
         <h3 class="d-inline-block">@ViewLocalizer["Detected Tonality Probabilities"]</h3>
     </div>
 
-    <table class="table table-bordered table-sm table-fixed">
+    <table class="table table-bordered table-sm table-fixed w-auto">
         <thead>
-        <tr class="fw-bold">
-            @foreach (var note in TonalitiesAndStructuresExtensions.LoopTonalityShiftsDisplayOrder)
-            {
-                <td>@note.ToLoopTonalityShiftTitle()</td>
-            }
-            <td></td>
-        </tr>
+            <tr class="fw-bold">
+                <td colspan="2">@ViewLocalizer["Major"]</td>
+                <td colspan="2">@ViewLocalizer["Minor"]</td>
+                <td>@ViewLocalizer["Scale Agnostic"]</td>
+            </tr>
         </thead>
         <tbody>
-        @foreach (var isMinor in new[] { false, true, })
+        @foreach (var note in TonalitiesAndStructuresExtensions.LoopTonalityShiftsDisplayOrder)
         {
             <tr>
-                @foreach (var note in TonalitiesAndStructuresExtensions.LoopTonalityShiftsDisplayOrder)
-                {
-                    <td>@loop.Probabilities[(note, isMinor).ToIndex()].ToString("P0")</td>
+                @{
+                    float sum = 0;
+                    foreach (var isMinor in new[] { false, true, })
+                    {
+                        var adjustedNote = Note.Normalize(note + (isMinor ? 3 : 0));
+                        var probability = loop.Probabilities[(adjustedNote, isMinor).ToIndex()];
+                        sum += probability;
+                        <td class="fw-bold">@((adjustedNote, isMinor).ToLoopTonalityTitle())</td>
+                        <td>@probability.ToString("P0")</td>
+                    }
+                    <td>@sum.ToString("P0")</td>
                 }
-                <td class="fw-bold">@(isMinor ? ViewLocalizer["minor"] : ViewLocalizer["major"])</td>
             </tr>
         }
         </tbody>

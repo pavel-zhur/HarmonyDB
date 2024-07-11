@@ -162,9 +162,9 @@
                 <td>@ViewLocalizer["Total Songs"]</td>
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 <td>@ViewLocalizer["Total Successions"]</td>
-                <td>@ViewLocalizer["Detected Tonality"]</td>
-                <td>@ViewLocalizer["Second Detected Tonality"]</td>
-                <td>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
+                <td colspan="2">@ViewLocalizer["Detected Tonality"]</td>
+                <td colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
+                <td colspan="2">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
                 <td>@ViewLocalizer["Tonic Confidence"]</td>
                 <td>@ViewLocalizer["Tonic Score"]</td>
                 <td>@ViewLocalizer["Scale Score"]</td>
@@ -183,19 +183,28 @@
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale();
                 }
-                <td class="text-nowrap">
-                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
+                <td>
                     <b>@predicted.ToLoopTonalityTitle()</b>
                 </td>
-                <td class="text-nowrap">
-                    <span>@secondConfidence.ToString("P0")</span>
+                <td>
+                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
+                </td>
+                <td>
                     <b>@secondPredicted.ToLoopTonalityTitle()</b>
                 </td>
-                <td class="text-nowrap">
+                <td>
+                    <span>@secondConfidence.ToString("P0")</span>
+                </td>
+                <td>
+                    @if (secondPredicted != parallelToPredicted)
+                    {
+                        <b>@parallelToPredicted.ToLoopTonalityTitle()</b>
+                    }
+                </td>
+                <td>
                     @if (secondPredicted != parallelToPredicted)
                     {
                         <span>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
-                        <b>@parallelToPredicted.ToLoopTonalityTitle()</b>
                     }
                 </td>
                 <td>@loop.Probabilities.TonicConfidence().ToString("P0")</td>
