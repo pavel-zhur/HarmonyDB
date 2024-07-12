@@ -54,7 +54,7 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
         var headers = await _indexHeadersCache.Get();
 
         var structureSong = structures.Songs[request.ExternalId];
-        var songTonality = tonalities.Songs[request.ExternalId];
+        var songTonality = tonalities.Songs.TryGetValue(request.ExternalId, out var value) ? value : throw new ServiceCacheItemNotFoundException();
         var header = headers.Headers[request.ExternalId];
         header = _commonExecutions.PrepareForOutput(header) ?? throw new("The song header is not available.");
 

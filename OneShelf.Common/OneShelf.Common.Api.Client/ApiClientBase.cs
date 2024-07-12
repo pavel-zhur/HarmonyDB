@@ -51,6 +51,11 @@ public class ApiClientBase<TClient>
             throw new ConcurrencyException();
         }
 
+        if (httpResponseMessage.StatusCode == CacheItemNotFoundException.StatusCode)
+        {
+            throw new CacheItemNotFoundException();
+        }
+
         httpResponseMessage.EnsureSuccessStatusCode();
         var response = await httpResponseMessage.Content.ReadFromJsonAsync<TResponse>(_jsonSerializerOptions, cancellationToken) ?? throw new("Empty response.");
 
@@ -80,6 +85,11 @@ public class ApiClientBase<TClient>
             throw new ConcurrencyException();
         }
 
+        if (response.StatusCode == CacheItemNotFoundException.StatusCode)
+        {
+            throw new CacheItemNotFoundException();
+        }
+
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync();
     }
@@ -99,6 +109,11 @@ public class ApiClientBase<TClient>
         if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
         {
             throw new ConcurrencyException();
+        }
+
+        if (httpResponseMessage.StatusCode == CacheItemNotFoundException.StatusCode)
+        {
+            throw new CacheItemNotFoundException();
         }
 
         httpResponseMessage.EnsureSuccessStatusCode();
@@ -126,6 +141,11 @@ public class ApiClientBase<TClient>
         if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
         {
             throw new ConcurrencyException();
+        }
+
+        if (httpResponseMessage.StatusCode == CacheItemNotFoundException.StatusCode)
+        {
+            throw new CacheItemNotFoundException();
         }
 
         httpResponseMessage.EnsureSuccessStatusCode();
@@ -156,6 +176,11 @@ public class ApiClientBase<TClient>
         if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
         {
             throw new ConcurrencyException();
+        }
+
+        if (httpResponseMessage.StatusCode == CacheItemNotFoundException.StatusCode)
+        {
+            throw new CacheItemNotFoundException();
         }
 
         httpResponseMessage.EnsureSuccessStatusCode();

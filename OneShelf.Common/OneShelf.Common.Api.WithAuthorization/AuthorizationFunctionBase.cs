@@ -55,6 +55,11 @@ public abstract class AuthorizationFunctionBase<TRequest>
             Logger.LogError(e, "Too many requests.");
             return new StatusCodeResult(429);
         }
+        catch (ServiceCacheItemNotFoundException e)
+        {
+            Logger.LogWarning(e, "Cache item not found.");
+            return new StatusCodeResult((int)ServiceCacheItemNotFoundException.StatusCode);
+        }
         catch (Exception e)
         {
             Logger.LogError(e, "Error executing the function.");

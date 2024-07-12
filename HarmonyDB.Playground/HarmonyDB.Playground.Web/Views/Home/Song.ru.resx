@@ -132,6 +132,9 @@
   <data name="Detected Loops" xml:space="preserve">
     <value>Найденные циклы</value>
   </data>
+  <data name="Detected tonality" xml:space="preserve">
+    <value>Определенная тональность</value>
+  </data>
   <data name="Exclude the Index API trace for developers" xml:space="preserve">
     <value>Скрыть запросы к Index API для разработчиков</value>
   </data>
@@ -141,8 +144,8 @@
   <data name="Flats" xml:space="preserve">
     <value>Бемоли</value>
   </data>
-  <data name="Go to tonality analysis" xml:space="preserve">
-    <value>Перейти на анализ тональности</value>
+  <data name="go to analysis" xml:space="preserve">
+    <value>перейти на анализ</value>
   </data>
   <data name="Hide detected loops" xml:space="preserve">
     <value>Скрыть найденные циклы</value>

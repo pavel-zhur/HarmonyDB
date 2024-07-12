@@ -74,6 +74,18 @@ namespace HarmonyDB.Playground.Web.Controllers
             Chords chords = (await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), songModel.ExternalId, ViewBag.Trace)).Song;
             ViewBag.Chords = chords;
 
+            try
+            {
+                ViewBag.Tonality = await _indexApiClient.StructureSong(new StructureSongRequest
+                {
+                    ExternalId = songModel.ExternalId,
+                }, ViewBag.Trace);
+            }
+            catch (CacheItemNotFoundException e)
+            {
+                _logger.LogWarning(e, "The song tonality is not available.");
+            }
+
             var representationSettings = new RepresentationSettings(
                 transpose: songModel.Transpose, 
                 alteration: songModel.Alteration);

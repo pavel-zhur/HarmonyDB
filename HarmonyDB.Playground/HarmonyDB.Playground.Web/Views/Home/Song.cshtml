@@ -4,6 +4,8 @@
 @using HarmonyDB.Common.Transposition
 @using HarmonyDB.Index.Analysis.Models
 @using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
 @using Microsoft.AspNetCore.Mvc.Localization
@@ -17,6 +19,8 @@
 
     ViewBag.Title = title;
     Layout = "_Layout";
+
+    StructureSongResponse? tonality = ViewBag.Tonality;
 }
 
 <script src="~/js/Player.js"></script>
@@ -51,7 +55,18 @@
     </li>
     
     <li>
-        @Html.ActionLink(ViewLocalizer["Go to tonality analysis"].Value, "StructureSong", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, })
+        <span>@ViewLocalizer["Detected tonality"]: </span>
+        @if (tonality != null)
+        {
+            <b>@tonality.Song.Probabilities.GetPredictedTonality().ToSongTonalityTitle()</b>
+            <span>
+                (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "StructureSong", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
+            </span>
+        }
+        else
+        {
+            <span style="color: darkgray">@ViewLocalizer["unknown"]</span>
+        }
     </li>
 
     <li>
