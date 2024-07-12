@@ -16,7 +16,7 @@ public static class DistributionsExtensions
         return percentiles;
     }
 
-    public static TValue[] GetWeightedPercentiles<T, TValue>(this IEnumerable<T> values, Func<T, (TValue value, int weight)> selector)
+    public static TValue[] GetWeightedPercentiles<T, TValue>(this IEnumerable<T> values, Func<T, (TValue value, float weight)> selector)
     {
         var weightedValues = values.Select(selector)
                                    .OrderBy(x => x.value)
@@ -24,7 +24,7 @@ public static class DistributionsExtensions
 
         var totalWeight = weightedValues.Sum(x => x.weight);
         var percentiles = new TValue[11];
-        var cumulativeWeight = 0;
+        var cumulativeWeight = 0f;
         var percentileIndex = 0;
 
         foreach (var (value, weight) in weightedValues)
