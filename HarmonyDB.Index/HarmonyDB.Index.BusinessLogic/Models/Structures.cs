@@ -117,8 +117,8 @@ public class Structures
             var normalizedIndex = binaryReader.ReadInt32();
             var externalIdIndex = binaryReader.ReadInt32();
             var normalizationRoot = binaryReader.ReadByte();
-            var occurrences = binaryReader.ReadInt16();
-            var successions = binaryReader.ReadInt16();
+            var occurrences = binaryReader.ReadSingle();
+            var successions = binaryReader.ReadSingle();
             var coverage = binaryReader.ReadSingle();
 
             var link = new StructureLink(

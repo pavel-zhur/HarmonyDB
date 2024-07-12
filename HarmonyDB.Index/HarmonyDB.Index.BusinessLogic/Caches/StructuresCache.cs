@@ -38,7 +38,7 @@ public class StructuresCache : BytesFileCacheBase<Structures>
             var (externalId, compactChordsProgression) = x;
             try
             {
-                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions, short length)>();
+                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (float occurrences, float successions, short length)>();
                 foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
                 {
                     var loops = _indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
@@ -49,8 +49,8 @@ public class StructuresCache : BytesFileCacheBase<Structures>
                         var counters = loopResults.GetValueOrDefault(key);
                         var length = loop.EndIndex - loop.StartIndex + 1;
                         loopResults[key] = ((short occurrences, short successions, short length))(
-                            counters.occurrences + length / loop.LoopLength,
-                            counters.successions + length / loop.LoopLength - 1,
+                            counters.occurrences + (float)length / loop.LoopLength,
+                            counters.successions + (float)length / loop.LoopLength - 1,
                             counters.length + length);
                     }
 

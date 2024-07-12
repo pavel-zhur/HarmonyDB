@@ -7,8 +7,8 @@ public record StructureLoopTonality(
     // base
     string Normalized,
     int Length,
-    int TotalOccurrences,
-    int TotalSuccessions,
+    float TotalOccurrences,
+    float TotalSuccessions,
     int TotalSongs,
 
     // new
