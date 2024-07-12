@@ -6,7 +6,7 @@ public record StructureLoopModel : StructureLoopRequest, ILoopModel
 {
     public bool IncludeTrace { get; init; }
 
-    public StructureLoopViewMode ViewMode { get; init; } = StructureLoopViewMode.Tonality;
+    public StructureLoopViewMode ViewMode { get; init; } = StructureLoopViewMode.Interpreted;
 
     public ILoopModel With(StructureLoopViewMode viewMode) => this with { ViewMode = viewMode, };
 }

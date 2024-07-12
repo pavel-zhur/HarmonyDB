@@ -5,23 +5,23 @@
 <p>
     <span>@ViewLocalizer["View mode"]: </span>
     
-    @if (Model.ViewMode == StructureLoopViewMode.Original)
+    @if (Model.ViewMode == StructureLoopViewMode.Normalized)
     {
-        <span>@ViewLocalizer[StructureLoopViewMode.Original.ToString()]</span>
+        <span>@ViewLocalizer[StructureLoopViewMode.Normalized.ToString()]</span>
     }
     else
     {
-        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Original.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Original))
+        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Normalized.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Normalized))
     }
 
     <span>| </span>
 
-    @if (Model.ViewMode == StructureLoopViewMode.Tonality)
+    @if (Model.ViewMode == StructureLoopViewMode.Interpreted)
     {
-        <span>@ViewLocalizer[StructureLoopViewMode.Tonality.ToString()]</span>
+        <span>@ViewLocalizer[StructureLoopViewMode.Interpreted.ToString()]</span>
     }
     else
     {
-        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Tonality.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Tonality))
+        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Interpreted.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Interpreted))
     }
 </p>

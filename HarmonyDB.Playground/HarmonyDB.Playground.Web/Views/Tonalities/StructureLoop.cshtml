@@ -37,7 +37,7 @@
     var predicted = loop.Probabilities.GetPredictedTonality();
     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
     var parallelToPredicted = predicted.GetParallelScale(false);
-    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Tonality ? predicted.OnceAsNullable() : null;
+    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Interpreted ? predicted.OnceAsNullable() : null;
 
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Loop Information"]</h3>

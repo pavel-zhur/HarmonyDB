@@ -91,7 +91,7 @@
         @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", Model, new { target = "_blank" })
     </div>
 
-    <div class="mt-1">
+    <div class="mt-4">
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
     </div>
 
@@ -143,6 +143,10 @@
         </tr>
         </tbody>
     </table>
+
+    <div class="mt-4">
+        <h5 class="d-inline-block">@ViewLocalizer["Songs"]</h5>
+    </div>
 
     @await Html.PartialAsync("Paging", Model)
 

@@ -86,17 +86,21 @@
         @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", Model, new { target = "_blank" })
     </div>
 
-    <div class="mt-1">
+    <div class="mt-4">
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
     </div>
 
     @await Html.PartialAsync("Structure/LoopsPercentiles", response.Distributions)
 
-    <div class="mt-1">
+    <div class="mt-4">
         <h5 class="d-inline-block">@ViewLocalizer["Weighted Distributions by Occurrences"]</h5>
     </div>
 
     @await Html.PartialAsync("Structure/LoopsPercentiles", response.WeightedDistributionsByOccurrences)
+
+    <div class="mt-4">
+        <h5 class="d-inline-block">@ViewLocalizer["Loops"]</h5>
+    </div>
 
     @await Html.PartialAsync("Structure/StructureLoopViewModeSwitch", Model)
 
@@ -125,7 +129,7 @@
                     var predicted = loop.Probabilities.GetPredictedTonality();
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale(false);
-                    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Tonality ? predicted.OnceAsNullable() : null;
+                    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Interpreted ? predicted.OnceAsNullable() : null;
                 }
 
                 <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>

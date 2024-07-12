@@ -8,7 +8,7 @@ public record StructureLoopsModel : StructureLoopsRequest, ILoopModel
 
     public bool JustForm { get; set; }
 
-    public StructureLoopViewMode ViewMode { get; init; } = StructureLoopViewMode.Tonality;
+    public StructureLoopViewMode ViewMode { get; init; } = StructureLoopViewMode.Interpreted;
 
     public ILoopModel With(StructureLoopViewMode viewMode) => this with { ViewMode = viewMode, };
 }
