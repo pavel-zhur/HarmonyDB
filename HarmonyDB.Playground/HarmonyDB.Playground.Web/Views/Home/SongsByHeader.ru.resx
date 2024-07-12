@@ -123,6 +123,9 @@
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
+  <data name="Metadata Tonality" xml:space="preserve">
+    <value>Тональность из метаданных</value>
+  </data>
   <data name="Min rating (whole, 0–100)" xml:space="preserve">
     <value>Минимальный рейтинг песни (число между 0–100)</value>
   </data>
@@ -131,6 +134,9 @@
   </data>
   <data name="Permalink" xml:space="preserve">
     <value>Постоянная ссылка</value>
+  </data>
+  <data name="Predicted Tonality" xml:space="preserve">
+    <value>Определенная тональность</value>
   </data>
   <data name="Querying (takes 5–60 seconds)…" xml:space="preserve">
     <value>Идёт запрос (занимает 5–60 секунд)…</value>

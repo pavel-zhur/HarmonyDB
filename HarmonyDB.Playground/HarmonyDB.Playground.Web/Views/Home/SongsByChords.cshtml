@@ -1,4 +1,5 @@
 ﻿@using System.Text.Json
+@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using OneShelf.Common.Api.Client
 @using Microsoft.AspNetCore.Mvc.Localization
@@ -69,7 +70,8 @@
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Song"]</td>
                 <td>@ViewLocalizer["Source"]</td>
-                <td>@ViewLocalizer["Tonality"]</td>
+                <td>@ViewLocalizer["Metadata Tonality"]</td>
+                <td>@ViewLocalizer["Predicted Tonality"]</td>
                 <td>@ViewLocalizer["Rating"]</td>
                 <td>@ViewLocalizer["Coverage"]</td>
             </tr>
@@ -81,7 +83,8 @@
                     @string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.Header.Title, "Song", "Home", new SongModel { ExternalId = song.Header.ExternalId, Highlight = Model.Query })
                 </td>
                 <td>@song.Header.Source</td>
-                <td>@song.Header.BestTonality?.Tonality</td>
+                <td>@song.Header.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
+                <td>@song.PredictedTonalityIndex?.ToSongTonalityTitle()</td>
                 <td>@((int)(song.Header.Rating ?? 0))%</td>
                 <td>@song.Coverage.ToString("P0")</td>
             </tr>

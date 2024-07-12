@@ -132,6 +132,9 @@
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
+  <data name="Metadata Tonality" xml:space="preserve">
+    <value>Тональность из метаданных</value>
+  </data>
   <data name="Min coverage (real, 0–1)" xml:space="preserve">
     <value>Минимальное покрытие (число между 0–1)</value>
   </data>
@@ -143,6 +146,9 @@
   </data>
   <data name="Permalink" xml:space="preserve">
     <value>Постоянная ссылка</value>
+  </data>
+  <data name="Predicted Tonality" xml:space="preserve">
+    <value>Определенная тональность</value>
   </data>
   <data name="Progression" xml:space="preserve">
     <value>Последовательность аккордов</value>
@@ -173,8 +179,5 @@
   </data>
   <data name="Source" xml:space="preserve">
     <value>Коллекция</value>
-  </data>
-  <data name="Tonality" xml:space="preserve">
-    <value>Тональность</value>
   </data>
 </root>

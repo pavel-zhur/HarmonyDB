@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -20,19 +21,19 @@ namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
 public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHeaderResponse>
 {
-    private readonly DownstreamApiClient _downstreamApiClient;
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
     private readonly FullTextSearchCache _fullTextSearchCache;
     private readonly CommonExecutions _commonExecutions;
+    private readonly TonalitiesCache _tonalitiesCache;
 
-    public SongsByHeader(ILoggerFactory loggerFactory, SecurityContext securityContext, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, FullTextSearchCache fullTextSearchCache, CommonExecutions commonExecutions)
+    public SongsByHeader(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, FullTextSearchCache fullTextSearchCache, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
-        _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
         _fullTextSearchCache = fullTextSearchCache;
         _commonExecutions = commonExecutions;
+        _tonalitiesCache = tonalitiesCache;
         _options = options.Value;
     }
 
@@ -56,9 +57,15 @@ public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHe
             .Where(x => x.Rating >= request.MinRating)
             .ToList();
 
+        var tonalitiesCache = await _tonalitiesCache.Get();
+
         return new()
         {
-            Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).ToList(),
+            Songs = results
+                .Skip((request.PageNumber - 1) * request.SongsPerPage)
+                .Take(request.SongsPerPage)
+                .Select(x => new SongsByHeaderResponseSong(x, tonalitiesCache.Songs.GetValueOrDefault(x.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex()))
+                .ToList(),
             Total = results.Count,
             TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,

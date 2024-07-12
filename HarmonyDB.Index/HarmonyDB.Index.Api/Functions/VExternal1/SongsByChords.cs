@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
@@ -28,8 +29,9 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
     private readonly CommonExecutions _commonExecutions;
+    private readonly TonalitiesCache _tonalitiesCache;
 
-    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions)
+    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _progressionsCache = progressionsCache;
@@ -39,6 +41,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
         _commonExecutions = commonExecutions;
+        _tonalitiesCache = tonalitiesCache;
         _options = options.Value;
     }
 
@@ -84,12 +87,15 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
             })
             .ToList();
 
+        var tonalitiesCache = await _tonalitiesCache.Get();
+
         return new()
         {
             Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SongsByChordsResponseSong
             {
                 Header = x.h,
                 Coverage = x.coverage,
+                PredictedTonalityIndex = tonalitiesCache.Songs.GetValueOrDefault(x.h.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
             }).ToList(),
             Total = results.Count,
             TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),
