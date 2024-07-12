@@ -52,11 +52,14 @@
     <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
-                <td>@ViewLocalizer["Song"]</td>
-                <td>@ViewLocalizer["Source"]</td>
-                <td>@ViewLocalizer["Metadata Tonality"]</td>
-                <td>@ViewLocalizer["Predicted Tonality"]</td>
-                <td>@ViewLocalizer["Rating"]</td>
+                <td rowspan="2">@ViewLocalizer["Song"]</td>
+                <td rowspan="2">@ViewLocalizer["Source"]</td>
+                <td colspan="2">@ViewLocalizer["Tonality"]</td>
+                <td rowspan="2">@ViewLocalizer["Rating"]</td>
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Metadata"]</td>
+                <td>@ViewLocalizer["Predicted"]</td>
             </tr>
         </thead>
         @foreach (var (song, predictedTonalityIndex) in response.Songs)
