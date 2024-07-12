@@ -11,29 +11,53 @@ public class Structures
         Links = links;
         Loops = loops;
         Songs = songs;
+        var started = DateTime.Now;
         LinksBySongId = links.ToLookup(x => x.ExternalId);
+
+        Console.WriteLine($"c3 {(DateTime.Now - started).TotalSeconds} seconds");
+        started = DateTime.Now;
         LinksByLoopId = links.ToLookup(x => x.Normalized);
+
+        Console.WriteLine($"c4 {(DateTime.Now - started).TotalSeconds} seconds");
     }
 
     private Structures(List<StructureLink> links)
         : this(
             links,
-            links.GroupBy(x => x.Normalized).Select(g =>
-            {
-                var sequence = Loop.Deserialize(g.Key);
-                var note = (byte)0;
-                return new StructureLoop(
-                    g.Key,
-                    sequence.Length,
-                    g.Sum(x => x.Occurrences),
-                    g.Sum(x => x.Successions),
-                    g.Select(x => x.ExternalId).Distinct().Count());
-            }).ToDictionary(x => x.Normalized),
-            links
-                .GroupBy(x => x.ExternalId)
-                .Select(x => new StructureSong(x.Key, x.Select(x => x.Normalized).Distinct().Count()))
-                .ToDictionary(x => x.ExternalId))
+            C1(links),
+            C2(links))
     {
+    }
+
+    private static Dictionary<string, StructureSong> C2(List<StructureLink> links)
+    {
+        var started = DateTime.Now;
+        var structureSongs = links
+            .GroupBy(x => x.ExternalId)
+            .Select(x => new StructureSong(x.Key, x.Select(x => x.Normalized).Distinct().Count()))
+            .ToDictionary(x => x.ExternalId);
+
+        Console.WriteLine($"C2 {(DateTime.Now - started).TotalSeconds} seconds");
+        return structureSongs;
+    }
+
+    private static Dictionary<string, StructureLoop> C1(List<StructureLink> links)
+    {
+        var started = DateTime.Now;
+        var structureLoops = links.GroupBy(x => x.Normalized).Select(g =>
+        {
+            var sequence = Loop.Deserialize(g.Key);
+            var note = (byte)0;
+            return new StructureLoop(
+                g.Key,
+                sequence.Length,
+                g.Sum(x => x.Occurrences),
+                g.Sum(x => x.Successions),
+                g.Select(x => x.ExternalId).Distinct().Count());
+        }).ToDictionary(x => x.Normalized);
+
+        Console.WriteLine($"c1 {(DateTime.Now - started).TotalSeconds} seconds");
+        return structureLoops;
     }
 
     public IReadOnlyList<StructureLink> Links { get; }
@@ -92,6 +116,7 @@ public class Structures
 
     public static Structures Deserialize(byte[] data)
     {
+        var started = DateTime.Now;
         using var memoryStream = new MemoryStream(data);
         using var binaryReader = new BinaryReader(memoryStream);
 
@@ -102,12 +127,18 @@ public class Structures
             normalized.Add(binaryReader.ReadString());
         }
 
+        Console.WriteLine($"deserialization {(DateTime.Now - started).TotalSeconds} seconds");
+        started = DateTime.Now;
+
         var externalIdsCount = binaryReader.ReadInt32();
         var externalIds = new List<string>(externalIdsCount);
         for (var i = 0; i < externalIdsCount; i++)
         {
             externalIds.Add(binaryReader.ReadString());
         }
+
+        Console.WriteLine($"deserialization2 {(DateTime.Now - started).TotalSeconds} seconds");
+        started = DateTime.Now;
 
         var linksCount = binaryReader.ReadInt32();
         var links = new List<StructureLink>(linksCount);
@@ -128,6 +159,8 @@ public class Structures
 
             links.Add(link);
         }
+
+        Console.WriteLine($"deserialization3 {(DateTime.Now - started).TotalSeconds} seconds");
 
         return new(links);
     }
