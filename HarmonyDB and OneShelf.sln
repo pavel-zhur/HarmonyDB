@@ -175,7 +175,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Common.FullTextSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.LongBalancer", "HarmonyDB.Index\HarmonyDB.Index.LongBalancer\HarmonyDB.Index.LongBalancer.csproj", "{59DD2309-74F4-4DBC-B98C-BB4E93AB08C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Index.Analysis.Em", "HarmonyDB.Index\HarmonyDB.Index.Analysis.Em\HarmonyDB.Index.Analysis.Em.csproj", "{33A0E860-62DF-41C6-8E25-442FA2BC625F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Index.Analysis.Em", "HarmonyDB.Index\HarmonyDB.Index.Analysis.Em\HarmonyDB.Index.Analysis.Em.csproj", "{33A0E860-62DF-41C6-8E25-442FA2BC625F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
