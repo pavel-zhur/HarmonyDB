@@ -129,4 +129,7 @@
   <data name="Songs by Title" xml:space="preserve">
     <value>Песни по названию</value>
   </data>
+  <data name="Tonalities" xml:space="preserve">
+    <value>Тональности</value>
+  </data>
 </root>

@@ -15,7 +15,7 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["Structure Loop Details"]</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoop", "Home", Model, new { target = "_blank" })
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoop", Model, new { target = "_blank" })
 </div>
 
 <ul>
@@ -220,7 +220,7 @@
             {
                 <tr>
                     <td>
-                        @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", "Home", new StructureSongModel
+                        @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", new StructureSongModel
                             {
                                 ExternalId = song.IndexHeader.ExternalId
                             })

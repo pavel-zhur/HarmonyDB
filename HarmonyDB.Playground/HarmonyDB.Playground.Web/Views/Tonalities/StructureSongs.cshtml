@@ -13,13 +13,13 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["See the songs tonality analysis"]</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", "Home", Model with
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", Model with
     {
         JustForm = true,
     }, new { target = "_blank" })
 </div>
 
-@using (Html.BeginForm("StructureSongs", "Home", Model, FormMethod.Get))
+@using (Html.BeginForm("StructureSongs", "Tonalities", Model, FormMethod.Get))
 {
     <p>
         @ViewLocalizer["Ordering"]:
@@ -88,7 +88,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
-        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", "Home", Model, new { target = "_blank" })
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", Model, new { target = "_blank" })
     </div>
 
     <div class="mt-1">
@@ -167,7 +167,7 @@
         {
             <tr>
                 <td>
-                    @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", "Home", new StructureSongModel
+                    @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", new StructureSongModel
                         {
                             ExternalId = song.IndexHeader.ExternalId
                         })

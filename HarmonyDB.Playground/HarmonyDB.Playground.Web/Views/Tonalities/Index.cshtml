@@ -1,0 +1,48 @@
+﻿@{
+    ViewBag.Title = "Tonalities Analysis";
+    Layout = "_Layout";
+}
+
+<h1 class="display-4">Tonalities Analysis</h1>
+
+<p>
+    The Tonalities section of Harmony DB Playground is a sophisticated area designed for the exploration and analysis of musical tonalities. Leveraging advanced algorithms and a comprehensive database, this section provides insights into the harmonic structures of songs and loops, offering a deeper understanding of music theory and composition.
+</p>
+
+<p>
+    At the heart of this section is the <strong>Music Analyzer</strong>, a powerful tool that processes songs and loops to predict their tonalities. It uses Expectation-Maximization (EM) models to analyze the harmonic content and extract meaningful patterns, such as the predominant tonality, tonic and scale confidence scores, and more.
+</p>
+
+<p>
+    The process of determining tonalities involves several sophisticated steps. Initially, the Music Analyzer extracts the audio features from a song or loop, focusing on harmonic elements such as chords and melody lines. These features are then analyzed using statistical models, specifically designed to recognize patterns that correspond to known tonalities.
+</p>
+
+<p>
+    One of the key components in this analysis is the use of <strong>Expectation-Maximization (EM) models</strong>. These models are adept at handling the complexities of musical data, allowing for the identification of the most probable tonality even in the presence of ambiguous or conflicting information. By iteratively refining predictions, the EM models can accurately determine the underlying tonal structure of a piece of music.
+</p>
+
+<p>
+    Furthermore, the analysis is enriched by incorporating <strong>tonality confidence scores</strong>. These scores provide a quantitative measure of the model's certainty in its tonality prediction, offering insights into the clarity and strength of a song's or loop's tonal characteristics.
+</p>
+
+<p>
+    The Tonalities section also leverages a vast database of known tonalities and their characteristics, which serves as a reference for comparing and validating the analysis results. This comprehensive approach ensures that the tonality predictions are not only accurate but also meaningful within the broader context of music theory.
+</p>
+
+<h2 class="mt-5">Exploration Paths</h2>
+<p>Discover the various analyses available in this section:</p>
+
+<h3 class="mt-3">
+    @Html.ActionLink("\u2713 Structure Songs Analysis \u2192", "StructureSongs", "Tonalities")
+</h3>
+<p>Explore the harmonic analysis of multiple songs. This feature allows you to understand the overall tonal landscape of songs within the database, providing insights into common tonalities and their characteristics.</p>
+
+<h3 class="mt-3">
+    @Html.ActionLink("\u2713 Structure Loops Analysis \u2192", "StructureLoops", "Tonalities")
+</h3>
+<p>Delve into the analysis of chord loops. By examining the tonalities of popular chord progressions, this analysis reveals the underlying harmonic patterns that define music genres and styles.</p>
+
+<p>
+    The Tonalities section is not just a tool for analysis but a gateway to understanding the complex interplay of harmony in music. By providing detailed insights into the tonal structures of songs and loops, it serves as an invaluable resource for music theorists, composers, and enthusiasts alike, fostering a deeper appreciation for the art and science of music.
+</p>
+

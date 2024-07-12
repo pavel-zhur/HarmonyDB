@@ -13,13 +13,13 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["See the most popular chord progressions"]</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", "Home", Model with
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", Model with
     {
         JustForm = true,
     }, new { target = "_blank" })
 </div>
 
-@using (Html.BeginForm("StructureLoops", "Home", Model, FormMethod.Get))
+@using (Html.BeginForm("StructureLoops", "Tonalities", Model, FormMethod.Get))
 {
     <p>
         @ViewLocalizer["Ordering"]:
@@ -82,7 +82,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
-        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", "Home", Model, new { target = "_blank" })
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", Model, new { target = "_blank" })
     </div>
 
     <div class="mt-1">
