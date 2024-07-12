@@ -49,6 +49,10 @@
             <b>@chords.BestTonality</b>
         }
     </li>
+    
+    <li>
+        @Html.ActionLink(ViewLocalizer["Go to tonality analysis"].Value, "StructureSong", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, })
+    </li>
 
     <li>
         <span>@ViewLocalizer["Transpose"]: </span>

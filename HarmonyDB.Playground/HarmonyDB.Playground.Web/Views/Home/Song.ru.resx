@@ -141,6 +141,9 @@
   <data name="Flats" xml:space="preserve">
     <value>Бемоли</value>
   </data>
+  <data name="Go to tonality analysis" xml:space="preserve">
+    <value>Перейти на анализ тональности</value>
+  </data>
   <data name="Hide detected loops" xml:space="preserve">
     <value>Скрыть найденные циклы</value>
   </data>
