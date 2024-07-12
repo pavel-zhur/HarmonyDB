@@ -10,4 +10,4 @@ public record StructureLinkStatistics(
     float AverageTonicScore,
     float AverageScaleScore,
     float AverageConfidence,
-    List<StructureSongTonality> Examples);
+    List<StructureLinkExample> Examples);

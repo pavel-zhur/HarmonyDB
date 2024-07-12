@@ -111,14 +111,16 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                         .Select(x => (x, outputHeader: _commonExecutions.PrepareForOutput(x.header)))
                         .Where(x => x.outputHeader != null)
                         .Take(10)
-                        .Select(x => new StructureSongTonality(
-                            x.outputHeader!.ExternalId,
-                            x.x.stats.TotalLoops,
-                            x.x.tone.TonalityProbabilities.ToLinear(),
-                            x.x.tone.Score.TonicScore,
-                            x.x.tone.Score.ScaleScore,
-                            x.outputHeader,
-                            x.x.tone.KnownTonality?.FromEm().ToIndex()))
+                        .Select(x => new StructureLinkExample(
+                            new(
+                                x.outputHeader!.ExternalId,
+                                x.x.stats.TotalLoops,
+                                x.x.tone.TonalityProbabilities.ToLinear(),
+                                x.x.tone.Score.TonicScore,
+                                x.x.tone.Score.ScaleScore,
+                                x.outputHeader,
+                                x.x.tone.KnownTonality?.FromEm().ToIndex()),
+                            x.x.link))
                         .ToList()))
                 .ToList(),
         };

@@ -158,14 +158,14 @@
         <tr class="fw-bold">
             <td>@ViewLocalizer["Derived Tonality"]</td>
             <td>@ViewLocalizer["Derived From"]</td>
-            <td>@ViewLocalizer["Songs Count"]</td>
+            <td>@ViewLocalizer["Total Songs"]</td>
             <td>@ViewLocalizer["Total Weight"]</td>
-            <td>@ViewLocalizer["Occurrences"]</td>
-            <td>@ViewLocalizer["Successions"]</td>
+            <td>@ViewLocalizer["Total Occurrences"]</td>
+            <td>@ViewLocalizer["Total Successions"]</td>
             <td>@ViewLocalizer["Average Confidence"]</td>
             <td>@ViewLocalizer["Average Tonic Score"]</td>
             <td>@ViewLocalizer["Average Scale Score"]</td>
-            <td>@ViewLocalizer["Examples"]</td>
+            <td>@ViewLocalizer["Random Examples"]</td>
         </tr>
         </thead>
         <tbody>
@@ -208,6 +208,8 @@
                 <tr class="fw-bold">
                     <td>@ViewLocalizer["Song"]</td>
                     <td>@ViewLocalizer["Source"]</td>
+                    <td>@ViewLocalizer["Occurrences"]</td>
+                    <td>@ViewLocalizer["Successions"]</td>
                     <td>@ViewLocalizer["Rating"]</td>
                     <td>@ViewLocalizer["Total Loops"]</td>
                     <td>@ViewLocalizer["Tonality Confidence"]</td>
@@ -216,22 +218,24 @@
                     <td>@ViewLocalizer["Scale Score"]</td>
                 </tr>
             </thead>
-            @foreach (var song in link.Examples)
+            @foreach (var example in link.Examples)
             {
                 <tr>
                     <td>
-                        @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", new StructureSongModel
+                        @string.Join(", ", example.Song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(example.Song.IndexHeader.Title, "StructureSong", new StructureSongModel
                             {
-                                ExternalId = song.IndexHeader.ExternalId
+                                ExternalId = example.Song.IndexHeader.ExternalId
                             })
                     </td>
-                    <td>@song.IndexHeader.Source</td>
-                    <td>@((int)(song.IndexHeader.Rating ?? 0))%</td>
-                    <td>@song.TotalLoops.ToString("N0")</td>
-                    <td>@song.Probabilities.TonalityConfidence().ToString("P0")</td>
-                    <td>@song.Probabilities.TonicConfidence(true).ToString("P0")</td>
-                    <td>@song.ScaleScore.ToString("P0")</td>
-                    <td>@song.TonicScore.ToString("P0")</td>
+                    <td>@example.Song.IndexHeader.Source</td>
+                    <td>@example.Link.Occurrences</td>
+                    <td>@example.Link.Successions</td>
+                    <td>@((int)(example.Song.IndexHeader.Rating ?? 0))%</td>
+                    <td>@example.Song.TotalLoops.ToString("N0")</td>
+                    <td>@example.Song.Probabilities.TonalityConfidence().ToString("P0")</td>
+                    <td>@example.Song.Probabilities.TonicConfidence(true).ToString("P0")</td>
+                    <td>@example.Song.ScaleScore.ToString("P0")</td>
+                    <td>@example.Song.TonicScore.ToString("P0")</td>
                 </tr>
             }
         </table>
