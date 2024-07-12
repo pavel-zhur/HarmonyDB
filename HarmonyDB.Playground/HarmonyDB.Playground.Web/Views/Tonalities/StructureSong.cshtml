@@ -181,6 +181,7 @@
             <td>@ViewLocalizer["Weight"]</td>
             <td>@ViewLocalizer["Occurrences"]</td>
             <td>@ViewLocalizer["Successions"]</td>
+            <td>@ViewLocalizer["Coverage"]</td>
             <td>@ViewLocalizer["Length"]</td>
             <td>@ViewLocalizer["Total Songs"]</td>
             <td>@ViewLocalizer["1 + Ln(Total Songs)"]</td>
@@ -211,6 +212,7 @@
                 <td>@link.GetWeight(loop, song.IndexHeader.BestTonality?.IsReliable == true)</td>
                 <td>@link.Occurrences</td>
                 <td>@link.Successions</td>
+                <td>@link.Coverage.ToString("P0")</td>
                 @if (isFirst)
                 {
                     var loopPredicted = loop.Probabilities.GetPredictedTonality();
