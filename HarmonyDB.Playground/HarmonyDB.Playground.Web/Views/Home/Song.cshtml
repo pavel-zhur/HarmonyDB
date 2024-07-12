@@ -44,13 +44,13 @@
     
     <li>
         <span>@ViewLocalizer["Metadata tonality"]: </span>
-        @if (string.IsNullOrWhiteSpace(chords.BestTonality))
+        @if (chords.BestTonality?.TryParseBestTonality() == null)
         {
             <span style="color: darkgray">@ViewLocalizer["unknown"]</span>
         }
         else
         {
-            <b>@chords.BestTonality</b>
+            <b>@chords.BestTonality.TryParseBestTonality()!.Value.ToSongTonalityTitle()</b>
         }
     </li>
     
@@ -58,7 +58,10 @@
         <span>@ViewLocalizer["Detected tonality"]: </span>
         @if (tonality != null)
         {
-            <b>@tonality.Song.Probabilities.GetPredictedTonality().ToSongTonalityTitle()</b>
+            <b>@tonality.Song.Probabilities.GetPredictedTonality(out var confidence).ToSongTonalityTitle()</b>
+            <span> &ndash; @confidence.ToString("P0"), </span>
+            <b>@tonality.Song.Probabilities.GetSecondPredictedTonality(out confidence).ToSongTonalityTitle()</b>
+            <span> &ndash; @confidence.ToString("P0"), ...</span>
             <span>
                 (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "StructureSong", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
             </span>

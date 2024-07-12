@@ -40,12 +40,18 @@ public static class TonalitiesAndStructuresExtensions
     public static (byte root, bool isMinor) FromIndex(this int index) => ((byte)(index / 2), index % 2 == 1);
 
     public static (byte root, bool isMinor) GetPredictedTonality(this float[] probabilities)
+        => probabilities.GetPredictedTonality(out _);
+
+    public static (byte root, bool isMinor) GetPredictedTonality(this float[] probabilities, out float confidence)
     {
-        return probabilities
+        var predictedTonality = probabilities
             .Select((probability, index) => (probability, index))
             .OrderByDescending(x => x.probability)
-            .Select(x => FromIndex(x.index))
+            .Select(x => (x, tonality: FromIndex(x.index)))
             .First();
+
+        confidence = predictedTonality.x.probability;
+        return predictedTonality.tonality;
     }
 
     public static (byte root, bool isMinor) GetSecondPredictedTonality(this float[] probabilities)
