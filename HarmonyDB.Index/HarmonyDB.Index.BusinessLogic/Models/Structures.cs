@@ -57,13 +57,13 @@ public class Structures
             Songs.Where(p => songIds.Contains(p.Key)).ToDictionary(x => x.Key, x => x.Value));
     }
 
-    public static byte[] Serialize(IReadOnlyList<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> compactLinks)
+    public static byte[] Serialize(IReadOnlyList<StructureLink> compactLinks)
     {
         using var memoryStream = new MemoryStream();
         using var binaryWriter = new BinaryWriter(memoryStream);
 
-        var normalized = compactLinks.Select(x => x.normalized).Distinct().WithIndices().ToDictionary(x => x.x, x => x.i);
-        var externalIds = compactLinks.Select(x => x.externalId).Distinct().WithIndices().ToDictionary(x => x.x, x => x.i);
+        var normalized = compactLinks.Select(x => x.Normalized).Distinct().WithIndices().ToDictionary(x => x.x, x => x.i);
+        var externalIds = compactLinks.Select(x => x.ExternalId).Distinct().WithIndices().ToDictionary(x => x.x, x => x.i);
 
         binaryWriter.Write(normalized.Count);
         foreach (var pair in normalized.OrderBy(x => x.Value))
@@ -80,11 +80,12 @@ public class Structures
         binaryWriter.Write(compactLinks.Count);
         foreach (var link in compactLinks)
         {
-            binaryWriter.Write(normalized[link.normalized]);
-            binaryWriter.Write(externalIds[link.externalId]);
-            binaryWriter.Write(link.normalizationRoot);
-            binaryWriter.Write(link.occurrences);
-            binaryWriter.Write(link.successions);
+            binaryWriter.Write(normalized[link.Normalized]);
+            binaryWriter.Write(externalIds[link.ExternalId]);
+            binaryWriter.Write(link.NormalizationRoot);
+            binaryWriter.Write(link.Occurrences);
+            binaryWriter.Write(link.Successions);
+            binaryWriter.Write(link.Coverage);
         }
 
         return memoryStream.ToArray();
@@ -118,13 +119,15 @@ public class Structures
             var normalizationRoot = binaryReader.ReadByte();
             var occurrences = binaryReader.ReadInt16();
             var successions = binaryReader.ReadInt16();
+            var coverage = binaryReader.ReadSingle();
 
             var link = new StructureLink(
                 normalized[normalizedIndex],
                 externalIds[externalIdIndex],
                 normalizationRoot,
                 occurrences,
-                successions);
+                successions,
+                coverage);
 
             links.Add(link);
         }

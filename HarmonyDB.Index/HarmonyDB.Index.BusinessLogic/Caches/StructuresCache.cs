@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Services;
+﻿using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.BusinessLogic.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
@@ -30,14 +31,14 @@ public class StructuresCache : BytesFileCacheBase<Structures>
 
         var cc = 0;
         var cf = 0;
-        List<(string normalized, string externalId, byte normalizationRoot, short occurrences, short successions)> result = new();
+        List<StructureLink> result = new();
 
         await Parallel.ForEachAsync(progressions, (x, __) =>
         {
             var (externalId, compactChordsProgression) = x;
             try
             {
-                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions)>();
+                var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (short occurrences, short successions, short length)>();
                 foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
                 {
                     var loops = _indexExtractor.FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
@@ -46,16 +47,24 @@ public class StructuresCache : BytesFileCacheBase<Structures>
                     {
                         var key = (loop.Normalized, loop.NormalizationRoot);
                         var counters = loopResults.GetValueOrDefault(key);
-                        loopResults[key] = ((short occurrences, short successions))(
-                            counters.occurrences + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength,
-                            counters.successions + (loop.EndIndex - loop.StartIndex + 1) / loop.LoopLength - 1);
+                        var length = loop.EndIndex - loop.StartIndex + 1;
+                        loopResults[key] = ((short occurrences, short successions, short length))(
+                            counters.occurrences + length / loop.LoopLength,
+                            counters.successions + length / loop.LoopLength - 1,
+                            counters.length + length);
                     }
 
                     if (cc++ % 1000 == 0) Logger.LogInformation($"{cc} s, {cf} f");
                 }
 
                 var items = loopResults
-                    .Select(p => (p.Key.normalized, externalId, p.Key.normalizationRoot, p.Value.occurrences, p.Value.successions))
+                    .Select(p => new StructureLink(
+                        p.Key.normalized, 
+                        externalId, 
+                        p.Key.normalizationRoot, 
+                        p.Value.occurrences, 
+                        p.Value.successions,
+                        (float)p.Value.length / compactChordsProgression.ExtendedHarmonyMovementsSequences.Sum(s => s.Movements.Length)))
                     .ToList();
 
                 lock (result)
