@@ -1,0 +1,27 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@model ILoopModel
+
+<p>
+    <span>@ViewLocalizer["View mode"]: </span>
+    
+    @if (Model.ViewMode == StructureLoopViewMode.Original)
+    {
+        <span>@ViewLocalizer[StructureLoopViewMode.Original.ToString()]</span>
+    }
+    else
+    {
+        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Original.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Original))
+    }
+
+    <span>| </span>
+
+    @if (Model.ViewMode == StructureLoopViewMode.Tonality)
+    {
+        <span>@ViewLocalizer[StructureLoopViewMode.Tonality.ToString()]</span>
+    }
+    else
+    {
+        @Html.ActionLink($"{ViewLocalizer[StructureLoopViewMode.Tonality.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureLoopViewMode.Tonality))
+    }
+</p>

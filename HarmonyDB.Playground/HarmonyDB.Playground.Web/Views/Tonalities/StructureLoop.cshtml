@@ -37,16 +37,19 @@
     var predicted = loop.Probabilities.GetPredictedTonality();
     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
     var parallelToPredicted = predicted.GetParallelScale(false);
+    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Tonality ? predicted.OnceAsNullable() : null;
 
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Loop Information"]</h3>
     </div>
 
+    @await Html.PartialAsync("Structure/StructureLoopViewModeSwitch", Model)
+
     <table class="table table-bordered table-sm w-auto">
         <tbody>
             <tr>
                 <td><b>@ViewLocalizer["Progression"]</b></td>
-                <td colspan="2">@loop.Normalized.GetTitle(predicted)</td>
+                <td colspan="2">@loop.Normalized.GetTitle(predictedViewMode)</td>
             </tr>
             <tr>
                 <td><b>@ViewLocalizer["Length"]</b></td>
@@ -67,7 +70,7 @@
             <tr>
                 <td><b>@ViewLocalizer["Detected Tonality"]</b></td>
                 <td>
-                    <b>@predicted.ToLoopTonalityTitle(predicted)</b>
+                    <b>@predicted.ToLoopTonalityTitle(predictedViewMode)</b>
                 </td>
                 <td>
                     <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
@@ -76,7 +79,7 @@
             <tr>
                 <td><b>@ViewLocalizer["Second Detected Tonality"]</b></td>
                 <td>
-                    <b>@secondPredicted.ToLoopTonalityTitle(predicted)</b>
+                    <b>@secondPredicted.ToLoopTonalityTitle(predictedViewMode)</b>
                 </td>
                 <td>
                     <span>@secondConfidence.ToString("P0")</span>
@@ -87,7 +90,7 @@
                 <td>
                     @if (secondPredicted != parallelToPredicted)
                     {
-                        <b>@parallelToPredicted.ToLoopTonalityTitle(predicted)</b>
+                        <b>@parallelToPredicted.ToLoopTonalityTitle(predictedViewMode)</b>
                     }
                 </td>
                 <td>
@@ -125,7 +128,7 @@
             </tr>
         </thead>
         <tbody>
-        @foreach (var note in TonalitiesAndStructuresExtensions.GetLoopTonalityShiftsDisplayOrder(predicted))
+            @foreach (var note in TonalitiesAndStructuresExtensions.GetLoopTonalityShiftsDisplayOrder(predictedViewMode))
         {
             <tr>
                 @{
@@ -135,7 +138,7 @@
                         var adjustedNote = Note.Normalize(note + (isMinor ? 3 : 0));
                         var probability = loop.Probabilities[(adjustedNote, isMinor).ToIndex()];
                         sum += probability;
-                            <td class="fw-bold">@((adjustedNote, isMinor).ToLoopTonalityTitle(predicted))</td>
+                            <td class="fw-bold">@((adjustedNote, isMinor).ToLoopTonalityTitle(predictedViewMode))</td>
                         <td>@probability.ToString("P0")</td>
                     }
                     <td>@sum.ToString("P0")</td>
@@ -172,7 +175,7 @@
         @foreach (var (link, i) in response.LinkStatistics.OrderByDescending(x => x.TotalWeight).WithIndices())
         {
             <tr>
-                    <td>@link.DerivedTonalityIndex.ToLoopTonalityTitle(predicted)</td>
+                <td>@link.DerivedTonalityIndex.ToLoopTonalityTitle(predictedViewMode)</td>
                 <td>@(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"])</td>
                 <td>@link.Count.ToString("N0")</td>
                 <td>@link.TotalWeight.ToString("N0")</td>
@@ -199,7 +202,7 @@
     @foreach (var (link, i) in response.LinkStatistics.OrderByDescending(x => x.TotalWeight).WithIndices().Where(x => x.x.Examples.Any()))
     {
         <div class="mt-4 mb-2">
-            <h5 class="d-inline-block" id="examples-@i">@link.DerivedTonalityIndex.ToLoopTonalityTitle(predicted) @(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"]) Examples</h5>
+            <h5 class="d-inline-block" id="examples-@i">@link.DerivedTonalityIndex.ToLoopTonalityTitle(predictedViewMode) @(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"]) Examples</h5>
             <a href="#statistics" class="btn btn-xs btn-outline-secondary ms-2 mb-1">↑ @ViewLocalizer["Back to Statistics"]</a>
         </div>
 
