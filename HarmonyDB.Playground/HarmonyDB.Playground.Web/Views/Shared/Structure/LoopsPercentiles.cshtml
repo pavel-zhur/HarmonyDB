@@ -24,14 +24,21 @@
             <td>@ViewLocalizer["Total Occurrences"]</td>
             @foreach (var value in Model.TotalOccurrences)
             {
-                <td>@value.ToString("N0")</td>
+                <td>@value.ToString("N2")</td>
             }
         </tr>
         <tr>
             <td>@ViewLocalizer["Total Successions"]</td>
             @foreach (var value in Model.TotalSuccessions)
             {
-                <td>@value.ToString("N0")</td>
+                <td>@value.ToString("N2")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Average Coverage"]</td>
+            @foreach (var value in Model.AverageCoverage)
+            {
+                <td>@value.ToString("P0")</td>
             }
         </tr>
         <tr>
