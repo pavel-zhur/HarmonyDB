@@ -52,6 +52,7 @@ public record Note
         { 'A', A },
         { 'B', B },
         { 'C', C },
+        { 'С', C }, // russian
         { 'D', D },
         { 'E', E },
         { 'F', F },
@@ -60,7 +61,7 @@ public record Note
     };
 
     private static IReadOnlyDictionary<byte, char> NotesToCharacters { get; } = CharactersToNotes
-        .Where(x => x.Key != 'H')
+        .Where(x => x.Key is not ('H' or 'С')) // russian 'С'
         .ToDictionary(x => x.Value.Value, x => x.Key);
 
     public static Note Max { get; } = new(11);
@@ -122,7 +123,6 @@ public record Note
         {
             var (note, major) = representationSettings.RelativeTo.Value;
             var scale = major ? Major : Minor;
-            var isSharps = CircleOfFifths.Single(x => (major ? x.major : x.minor).Value == note).isSharps;
             scale = scale.Select(n => new Note(n).Add(note).Add(-representationSettings.Transpose).Value).ToList();
             var found = scale.Select((x, i) => (x, i: i + 1)).SingleOrDefault(x => x.x == Value).i;
             if (found > 0) return found.ToString();
