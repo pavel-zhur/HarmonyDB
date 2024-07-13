@@ -55,17 +55,18 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
 
         var results = tonalities.Songs
             .Join(structures.Songs, x => x.Key, x => x.Key, (x, y) => (tone: x.Value, stats: y.Value))
-            .Join(headers.Headers.Select(x => _commonExecutions.PrepareForOutput(x.Value)!).Where(x => x != null!),
+            .Join(headers.Headers.Values,
                 x => x.stats.ExternalId, 
-                x => x.ExternalId, (x, y) => (x.tone, x.stats, header: y))
+                x => x.ExternalId, (x, y) => (x.tone, x.stats, header: _commonExecutions.PrepareForOutput(y)))
+            .Where(x => x.header != null)
             .Select(x => new StructureSongTonality(
                 x.stats.ExternalId,
                 x.stats.TotalLoops,
                 x.tone.TonalityProbabilities.ToLinear(),
                 x.tone.Score.TonicScore,
                 x.tone.Score.ScaleScore,
-                x.header,
-                x.header.BestTonality?.Tonality.TryParseBestTonality()?.ToIndex()))
+                x.header!,
+                x.header!.BestTonality?.Tonality.TryParseBestTonality()?.ToIndex()))
             .ToList();
 
         var songs = results
