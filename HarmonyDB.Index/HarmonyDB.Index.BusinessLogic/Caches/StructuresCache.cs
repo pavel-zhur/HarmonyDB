@@ -48,7 +48,7 @@ public class StructuresCache : BytesFileCacheBase<Structures>
                         var key = (loop.Normalized, loop.NormalizationRoot);
                         var counters = loopResults.GetValueOrDefault(key);
                         var length = loop.EndIndex - loop.StartIndex + 1;
-                        loopResults[key] = ((short occurrences, short successions, short length))(
+                        loopResults[key] = ((float occurrences, float successions, short length))(
                             counters.occurrences + (float)length / loop.LoopLength,
                             counters.successions + (float)length / loop.LoopLength - 1,
                             counters.length + length);
