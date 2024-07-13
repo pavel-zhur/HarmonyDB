@@ -84,6 +84,7 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
                         stats.Length,
                         stats.TotalOccurrences,
                         stats.TotalSuccessions,
+                        stats.AverageCoverage,
                         stats.TotalSongs,
                         tone.TonalityProbabilities.ToLinear(),
                         tone.Score.ScaleScore,

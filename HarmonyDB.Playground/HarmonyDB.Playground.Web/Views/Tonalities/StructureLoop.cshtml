@@ -61,11 +61,15 @@
         </tr>
         <tr>
             <td><b>@ViewLocalizer["Total Occurrences"]</b></td>
-            <td colspan="2">@loop.TotalOccurrences.ToString("N0")</td>
+            <td colspan="2">@loop.TotalOccurrences.ToString("N2")</td>
         </tr>
         <tr>
             <td><b>@ViewLocalizer["Total Successions"]</b></td>
-            <td colspan="2">@loop.TotalSuccessions.ToString("N0")</td>
+            <td colspan="2">@loop.TotalSuccessions.ToString("N2")</td>
+        </tr>
+        <tr>
+            <td><b>@ViewLocalizer["Average Coverage"]</b></td>
+            <td colspan="2">@loop.AverageCoverage.ToString("P0")</td>
         </tr>
         <tr>
             <td><b>@ViewLocalizer["Detected Tonality"]</b></td>
@@ -165,6 +169,7 @@
         <td>@ViewLocalizer["Total Weight"]</td>
         <td>@ViewLocalizer["Total Occurrences"]</td>
         <td>@ViewLocalizer["Total Successions"]</td>
+        <td>@ViewLocalizer["Average Coverage"]</td>
         <td>@ViewLocalizer["Average Confidence"]</td>
         <td>@ViewLocalizer["Average Tonic Score"]</td>
         <td>@ViewLocalizer["Average Scale Score"]</td>
@@ -179,8 +184,9 @@
             <td>@(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"])</td>
             <td>@link.Count.ToString("N0")</td>
             <td>@link.TotalWeight.ToString("N0")</td>
-            <td>@link.Occurrences.ToString("N0")</td>
-            <td>@link.Successions.ToString("N0")</td>
+            <td>@link.Occurrences.ToString("N2")</td>
+            <td>@link.Successions.ToString("N2")</td>
+            <td>@link.AverageCoverage.ToString("P0")</td>
             <td>@link.AverageConfidence.ToString("P0")</td>
             <td>@link.AverageTonicScore.ToString("P0")</td>
             <td>@link.AverageScaleScore.ToString("P0")</td>
@@ -232,8 +238,8 @@
                         })
                 </td>
                 <td>@example.Song.IndexHeader.Source</td>
-                <td>@example.Link.Occurrences</td>
-                <td>@example.Link.Successions</td>
+                <td>@example.Link.Occurrences.ToString("N2")</td>
+                <td>@example.Link.Successions.ToString("N2")</td>
                 <td>@example.Link.Coverage.ToString("P0")</td>
                 <td>@((int)(example.Song.IndexHeader.Rating ?? 0))%</td>
                 <td>@example.Song.TotalLoops.ToString("N0")</td>

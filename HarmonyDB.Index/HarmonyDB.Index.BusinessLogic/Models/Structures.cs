@@ -21,12 +21,12 @@ public class Structures
             links.GroupBy(x => x.Normalized).Select(g =>
             {
                 var sequence = Loop.Deserialize(g.Key);
-                var note = (byte)0;
                 return new StructureLoop(
                     g.Key,
                     sequence.Length,
                     g.Sum(x => x.Occurrences),
                     g.Sum(x => x.Successions),
+                    g.Average(x => x.Coverage),
                     g.Select(x => x.ExternalId).Distinct().Count());
             }).ToDictionary(x => x.Normalized),
             links

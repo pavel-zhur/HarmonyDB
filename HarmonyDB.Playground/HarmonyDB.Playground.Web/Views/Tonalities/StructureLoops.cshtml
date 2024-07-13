@@ -114,6 +114,7 @@
                 <td>@ViewLocalizer["Total Songs"]</td>
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 <td>@ViewLocalizer["Total Successions"]</td>
+                <td>@ViewLocalizer["Average Coverage"]</td>
                 <td colspan="2">@ViewLocalizer["Detected Tonality"]</td>
                 <td colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
                 <td colspan="2">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
@@ -135,8 +136,9 @@
                 <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
-                <td>@loop.TotalOccurrences.ToString("N0")</td>
-                <td>@loop.TotalSuccessions.ToString("N0")</td>
+                <td>@loop.TotalOccurrences.ToString("N2")</td>
+                <td>@loop.TotalSuccessions.ToString("N2")</td>
+                <td>@loop.AverageCoverage.ToString("P0")</td>
                 <td>
                     <b>@predicted.ToLoopTonalityTitle(predictedViewMode)</b>
                 </td>

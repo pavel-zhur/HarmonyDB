@@ -9,6 +9,7 @@ public record StructureLoopTonality(
     int Length,
     float TotalOccurrences,
     float TotalSuccessions,
+    float AverageCoverage,
     int TotalSongs,
 
     // new
@@ -21,4 +22,5 @@ public record StructureLoopTonality(
         Length, 
         TotalOccurrences,
         TotalSuccessions,
+        AverageCoverage,
         TotalSongs);

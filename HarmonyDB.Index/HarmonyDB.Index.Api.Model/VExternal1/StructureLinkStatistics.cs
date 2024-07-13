@@ -7,6 +7,7 @@ public record StructureLinkStatistics(
     float TotalWeight,
     float Occurrences,
     float Successions, 
+    float AverageCoverage,
     float AverageTonicScore,
     float AverageScaleScore,
     float AverageConfidence,

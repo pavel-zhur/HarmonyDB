@@ -187,6 +187,7 @@
             <td>@ViewLocalizer["1 + Ln(Total Songs)"]</td>
             <td>@ViewLocalizer["Total Occurrences"]</td>
             <td>@ViewLocalizer["Total Successions"]</td>
+            <td>@ViewLocalizer["Average Coverage"]</td>
             <td colspan="2">@ViewLocalizer["Detected Tonality"]</td>
             <td colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
             <td colspan="2">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
@@ -210,8 +211,8 @@
                 </td>
                 <td>@link.NormalizationRoot</td>
                 <td>@link.GetWeight(loop, song.IndexHeader.BestTonality?.IsReliable == true)</td>
-                <td>@link.Occurrences</td>
-                <td>@link.Successions</td>
+                <td>@link.Occurrences.ToString("N2")</td>
+                <td>@link.Successions.ToString("N2")</td>
                 <td>@link.Coverage.ToString("P0")</td>
                 @if (isFirst)
                 {
@@ -222,8 +223,9 @@
                     <td>@loop.Length</td>
                     <td>@loop.TotalSongs.ToString("N0")</td>
                     <td>@((1 + Math.Log(loop.TotalSongs)).ToString("N2"))</td>
-                    <td>@loop.TotalOccurrences.ToString("N0")</td>
-                    <td>@loop.TotalSuccessions.ToString("N0")</td>
+                    <td>@loop.TotalOccurrences.ToString("N2")</td>
+                    <td>@loop.TotalSuccessions.ToString("N2")</td>
+                    <td>@loop.AverageCoverage.ToString("P0")</td>
                     <td>
                         <b>@loopPredicted.ToLoopTonalityTitle()</b>
                     </td>
