@@ -160,7 +160,14 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
                 for (byte j = 0; j < Constants.ScaleCount; j++)
                 {
                     var targetTonic = (link.Shift - i + Constants.TonicCount) % Constants.TonicCount;
-                    newProbabilities[targetTonic, j] += sourceProbabilities[i, j] * (float)Math.Exp(sourceScore.ScaleScore) * (float)Math.Exp(sourceScore.TonicScore) * link.Weight;
+                    var newProbability = sourceProbabilities[i, j] * (float)Math.Exp(sourceScore.ScaleScore) * (float)Math.Exp(sourceScore.TonicScore) * link.Weight;
+
+                    if (float.IsNaN(newProbability))
+                    {
+                        throw new ArithmeticException("NaN probability.");
+                    }
+
+                    newProbabilities[targetTonic, j] += newProbability;
                 }
             }
         }
@@ -181,7 +188,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 
         var totalLinks = shiftCounts.Sum();
 
-        var tonicEntropy = shiftCounts.Where(x => x > 0).Select(x => x / totalLinks * (float)Math.Log(x / totalLinks)).Sum() * -1;
+        var tonicEntropy = shiftCounts.Where(x => x > 0).Select(x => x / totalLinks * (float)Math.Log(x / totalLinks)).Where(p => !double.IsNaN(p)).Sum() * -1;
 
         var scaleProbabilities = new float[Constants.TonicCount, Constants.ScaleCount];
         foreach (var link in relevantLinks)
@@ -198,9 +205,22 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         }
 
         var totalScaleLinks = scaleProbabilities.Cast<float>().Sum();
-        var scaleEntropy = scaleProbabilities.Cast<float>().Where(p => p > 0).Select(p => p / totalScaleLinks * Math.Log(p / totalScaleLinks)).Sum() * -1;
+        var scaleEntropy = scaleProbabilities.Cast<float>().Where(p => p > 0).Select(p => p / totalScaleLinks * Math.Log(p / totalScaleLinks)).Where(p => !double.IsNaN(p)).Sum() * -1;
 
-        return ((float)Math.Exp(-tonicEntropy), (float)Math.Exp(-scaleEntropy));
+        var tonicScore = (float)Math.Exp(-tonicEntropy);
+        var scaleScore = (float)Math.Exp(-scaleEntropy);
+
+        if (float.IsNaN(tonicScore))
+        {
+            throw new ArithmeticException("NaN tonic score.");
+        }
+
+        if (float.IsNaN(scaleScore))
+        {
+            throw new ArithmeticException("NaN scale score.");
+        }
+
+        return (tonicScore, scaleScore);
     }
 
     private void AddShiftProbabilities(float[] shiftsCounts, ILoopLink loopLink, bool isSong)
