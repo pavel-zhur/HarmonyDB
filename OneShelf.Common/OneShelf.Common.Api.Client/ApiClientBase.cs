@@ -41,7 +41,7 @@ public class ApiClientBase<TClient>
     {
         var started = DateTime.Now;
         using var client = _httpClientFactory.CreateClient();
-        using var httpResponseMessage = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url)), request, _jsonSerializerOptions, cancellationToken);
+        using var httpResponseMessage = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url, conditionalStreamId)), request, _jsonSerializerOptions, cancellationToken);
         if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken));
@@ -75,7 +75,7 @@ public class ApiClientBase<TClient>
     protected async Task<byte[]> PostWithCode<TRequest>(string url, TRequest request, string? conditionalStreamId = null)
     {
         using var client = _httpClientFactory.CreateClient();
-        using var response = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url)), request, _jsonSerializerOptions);
+        using var response = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url, conditionalStreamId)), request, _jsonSerializerOptions);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new UnauthorizedException(await response.Content.ReadAsStringAsync());
@@ -206,7 +206,7 @@ public class ApiClientBase<TClient>
         response.EnsureSuccessStatusCode();
     }
 
-    private string WithCode(string url, string? conditionalStreamId = null)
+    private string WithCode(string url, string? conditionalStreamId)
     {
         return $"{url}?code={Options.GetMasterCode(conditionalStreamId)}";
     }
