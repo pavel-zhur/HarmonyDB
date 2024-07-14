@@ -334,11 +334,11 @@ Incorrectly Detected Songs with Incorrectly Known Tonality: 3 / 6 **(50.00%)**
 
 ## Accuracy of Detected Tonalities:
 Correctly Detected Song Tonalities: 809 / 1000 **(80.90%)**  
-Correctly Detected Loop Tonalities: 1500 / 1500 (100.00%)  
+Correctly Detected Loop Tonalities: 1500 / 1500 **(100.00%)**  
 
 ## Accuracy of Detected Tonics:
-Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonics: 1500 / 1500 (100.00%)  
+Correctly Detected Song Tonics: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonics: 1500 / 1500 **(100.00%)**  
 
 ## Min,MaxLoopsPerSong = 4, 10, TotalSongs,Loops = 1000, 400  
 
@@ -366,11 +366,11 @@ Incorrectly Detected Songs with Incorrectly Known Tonality: 3 / 10 **(30.00%)**
 
 ## Accuracy of Detected Tonalities:
 Correctly Detected Song Tonalities: 825 / 1000 **(82.50%)**  
-Correctly Detected Loop Tonalities: 400 / 400 (100.00%)  
+Correctly Detected Loop Tonalities: 400 / 400 **(100.00%)**  
 
 ## Accuracy of Detected Tonics:
-Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonics: 400 / 400 (100.00%)  
+Correctly Detected Song Tonics: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonics: 400 / 400 **(100.00%)**  
 
 ## Both MutationProbabilities = 0%  
 
@@ -429,12 +429,12 @@ Bad Loops (Scale): Min Score = 0.0573, Max Score = 0.1668, Average Score = 0.073
 Incorrectly Detected Songs with Incorrectly Known Tonality: 0 / 7 (0.00%)  
 
 ## Accuracy of Detected Tonalities:
-Correctly Detected Song Tonalities: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonalities: 1500 / 1500 (100.00%)  
+Correctly Detected Song Tonalities: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonalities: 1500 / 1500 **(100.00%)**  
 
 ## Accuracy of Detected Tonics:
-Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonics: 1500 / 1500 (100.00%)  
+Correctly Detected Song Tonics: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonics: 1500 / 1500 **(100.00%)**  
 
 ## Min,MaxLoopsPerSong = 4, 10, TotalSongs,Loops = 1000, 400, Both MutationProbabilities = 0%  
 
@@ -458,9 +458,9 @@ Bad Loops (Scale): Min Score = 0.0602, Max Score = 0.1619, Average Score = 0.082
 Incorrectly Detected Songs with Incorrectly Known Tonality: 0 / 14 (0.00%)  
 
 ## Accuracy of Detected Tonalities:
-Correctly Detected Song Tonalities: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonalities: 400 / 400 (100.00%)  
+Correctly Detected Song Tonalities: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonalities: 400 / 400 **(100.00%)**  
 
 ## Accuracy of Detected Tonics:
-Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
-Correctly Detected Loop Tonics: 400 / 400 (100.00%)  
+Correctly Detected Song Tonics: 1000 / 1000 **(100.00%)**  
+Correctly Detected Loop Tonics: 400 / 400 **(100.00%)**  
