@@ -125,6 +125,20 @@ public class IndexFunctions
         return new OkResult();
     }
 
+    [Function(nameof(VDevStructuresCacheCopy))]
+    public async Task<IActionResult> VDevStructuresCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _structuresCache.Copy();
+        return new OkResult();
+    }
+
+    [Function(nameof(VDevTonalitiesCacheCopy))]
+    public async Task<IActionResult> VDevTonalitiesCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _tonalitiesCache.Copy();
+        return new OkResult();
+    }
+
     [Function(nameof(VDevLoopsStatisticsCacheCopy))]
     public async Task<IActionResult> VDevLoopsStatisticsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
