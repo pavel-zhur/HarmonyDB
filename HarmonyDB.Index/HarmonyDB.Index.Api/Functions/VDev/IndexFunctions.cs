@@ -188,6 +188,18 @@ public class IndexFunctions
         return new OkObjectResult((await _structuresCache.Get()).Links.Count);
     }
 
+    [Function(nameof(VDevRebuildTonalitiesCache))]
+    public async Task<IActionResult> VDevRebuildTonalitiesCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _tonalitiesCache.Rebuild();
+        var tonalitiesIndex = await _tonalitiesCache.Get();
+        return new OkObjectResult(new
+        {
+            Loops = tonalitiesIndex.Loops.Count,
+            Songs = tonalitiesIndex.Songs.Count,
+        });
+    }
+
     [Function(nameof(VDevFindAndCount))]
     public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
     {
