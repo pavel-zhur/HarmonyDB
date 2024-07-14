@@ -212,7 +212,6 @@ Correctly Detected Loop Tonalities: 1361 / 1500 **(90.73%)**
 Correctly Detected Song Tonics: 985 / 1000 **(98.50%)**  
 Correctly Detected Loop Tonics: 1372 / 1500 **(91.47%)**
 
-
 ## Min,MaxLoopsPerSong = 12, 27, Both MutationProbabilities = 0%
 Iteration 12, Max Change: 0.011939  
 Iteration 13, Max Change: 0.056266  
@@ -268,3 +267,200 @@ Correctly Detected Loop Tonalities: 400 / 400 **(100.00%)**
 ### Accuracy of Detected Tonics:
 Correctly Detected Song Tonics: 1000 / 1000 **(100.00%)**  
 Correctly Detected Loop Tonics: 400 / 400 **(100.00%)**
+
+# v3, calculations adjusted to maximize the number of correctly guessed detected tonalities  
+
+Good objects scores went down, but the overall correct tonality detection is maximized. The unit tests work well with `Math.Pow(..., 2)` instead of `Math.Exp`, but that negatively affects the overall correct detection.
+
+## Default parameters  
+
+Iteration 22, Max Change: 0.003664, took 9 milliseconds  
+Iteration 23, Max Change: 0.003129, took 8 milliseconds  
+Iteration 24, Max Change: 0.002671, took 11 milliseconds  
+Iteration 25, Max Change: 0.002277, took 10 milliseconds  
+Converged after 25 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.0992**, Max Score = 0.8076, Average Score = **0.1799**, Median = **0.1569**, 90th Percentile = 0.2614  
+Good Songs (Scale): Min Score = 0.0510, Max Score = 0.7490, Average Score = 0.1028, Median = 0.0854, 90th Percentile = 0.1544  
+Bad Songs (Tonic): Min Score = **0.0921**, Max Score = 0.2610, Average Score = **0.1253**, Median = **0.1154**, 90th Percentile = 0.1582  
+Bad Songs (Scale): Min Score = 0.0479, Max Score = 0.1354, Average Score = 0.0681, Median = 0.0609, 90th Percentile = 0.0949  
+Good Loops (Tonic): Min Score = **0.0896**, Max Score = 1.0000, Average Score = **0.2430**, Median = **0.1553**, 90th Percentile = 0.4549  
+Good Loops (Scale): Min Score = 0.0475, Max Score = 1.0000, Average Score = 0.1728, Median = 0.0847, 90th Percentile = 0.3152  
+Bad Loops (Tonic): Min Score = **0.1005**, Max Score = 1.0000, Average Score = **0.1815**, Median = **0.1369**, 90th Percentile = 0.2637  
+Bad Loops (Scale): Min Score = 0.0514, Max Score = 1.0000, Average Score = 0.1183, Median = 0.0758, 90th Percentile = 0.1482  
+
+## Bad Songs with Incorrectly Known Tonality:
+Song song11, Known Tonality: (0, Major), Predicted Tonality: (0, Major), Secret Tonalities: (10, Minor), Score: (0.17623667, 0.10482157)  
+Song song128, Known Tonality: (2, Minor), Predicted Tonality: (2, Minor), Secret Tonalities: (9, Major), Score: (0.2658993, 0.20398876)  
+Song song333, Known Tonality: (2, Major), Predicted Tonality: (10, Minor), Secret Tonalities: (1, Major), Score: (0.14103457, 0.077132024)  
+Song song441, Known Tonality: (2, Minor), Predicted Tonality: (2, Minor), Secret Tonalities: (9, Major), Score: (0.27448806, 0.19671115)  
+Song song499, Known Tonality: (3, Minor), Predicted Tonality: (3, Minor), Secret Tonalities: (4, Minor), Score: (0.24171829, 0.16077296)  
+Song song518, Known Tonality: (3, Major), Predicted Tonality: (3, Major), Secret Tonalities: (0, Major), Score: (0.18534563, 0.1135067)  
+Song song728, Known Tonality: (7, Minor), Predicted Tonality: (7, Minor), Secret Tonalities: (8, Minor), Score: (0.15760253, 0.09828267)  
+Incorrectly Detected Songs with Incorrectly Known Tonality: 7 / 8 **(87.50%)**  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 725 / 1000 **(72.50%)**  
+Correctly Detected Loop Tonalities: 1134 / 1500 **(75.60%)**  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 968 / 1000 **(96.80%)**  
+Correctly Detected Loop Tonics: 1324 / 1500 **(88.27%)**  
+
+## Min,MaxLoopsPerSong = 12, 27  
+
+Iteration 15, Max Change: 0.001754, took 12 milliseconds  
+Iteration 16, Max Change: 0.001325, took 12 milliseconds  
+Iteration 17, Max Change: 0.001001, took 12 milliseconds  
+Iteration 18, Max Change: 0.000757, took 10 milliseconds  
+Converged after 18 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.1129**, Max Score = 0.1961, Average Score = **0.1419**, Median = **0.1406**, 90th Percentile = 0.1627  
+Good Songs (Scale): Min Score = 0.0592, Max Score = 0.1053, Average Score = 0.0746, Median = 0.0743, 90th Percentile = 0.0849  
+Bad Songs (Tonic): Min Score = **0.0987**, Max Score = 0.1426, Average Score = **0.1103**, Median = **0.1083**, 90th Percentile = 0.1203  
+Bad Songs (Scale): Min Score = 0.0510, Max Score = 0.0718, Average Score = 0.0575, Median = 0.0571, 90th Percentile = 0.0624  
+Good Loops (Tonic): Min Score = **0.1036**, Max Score = 0.3046, Average Score = **0.1525**, Median = **0.1468**, 90th Percentile = 0.1914  
+Good Loops (Scale): Min Score = 0.0542, Max Score = 0.1716, Average Score = 0.0818, Median = 0.0787, 90th Percentile = 0.1030  
+Bad Loops (Tonic): Min Score = **0.0980**, Max Score = 0.2422, Average Score = **0.1327**, Median = **0.1270**, 90th Percentile = 0.1623  
+Bad Loops (Scale): Min Score = 0.0506, Max Score = 0.1257, Average Score = 0.0705, Median = 0.0675, 90th Percentile = 0.0868  
+
+## Bad Songs with Incorrectly Known Tonality:
+Song song70, Known Tonality: (5, Major), Predicted Tonality: (8, Minor), Secret Tonalities: (11, Major), Score: (0.12429657, 0.06857307)  
+Song song696, Known Tonality: (11, Major), Predicted Tonality: (9, Major), Secret Tonalities: (6, Minor), Score: (0.12660328, 0.06705871)  
+Song song862, Known Tonality: (2, Major), Predicted Tonality: (4, Minor), Secret Tonalities: (7, Major), Score: (0.12922117, 0.070549086)  
+Incorrectly Detected Songs with Incorrectly Known Tonality: 3 / 6 **(50.00%)**  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 809 / 1000 **(80.90%)**  
+Correctly Detected Loop Tonalities: 1500 / 1500 (100.00%)  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonics: 1500 / 1500 (100.00%)  
+
+## Min,MaxLoopsPerSong = 4, 10, TotalSongs,Loops = 1000, 400  
+
+Iteration 15, Max Change: 0.001601, took 5 milliseconds  
+Iteration 16, Max Change: 0.001194, took 5 milliseconds  
+Iteration 17, Max Change: 0.000892, took 6 milliseconds  
+Iteration 18, Max Change: 0.000667, took 5 milliseconds  
+Converged after 18 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.1018**, Max Score = 0.2574, Average Score = **0.1391**, Median = **0.1357**, 90th Percentile = 0.1630  
+Good Songs (Scale): Min Score = 0.0524, Max Score = 0.1481, Average Score = 0.0726, Median = 0.0705, 90th Percentile = 0.0865  
+Bad Songs (Tonic): Min Score = **0.0961**, Max Score = 0.1404, Average Score = **0.1097**, Median = **0.1075**, 90th Percentile = 0.1223  
+Bad Songs (Scale): Min Score = 0.0490, Max Score = 0.0715, Average Score = 0.0566, Median = 0.0553, 90th Percentile = 0.0631  
+Good Loops (Tonic): Min Score = **0.1040**, Max Score = 0.2972, Average Score = **0.1473**, Median = **0.1426**, 90th Percentile = 0.1812  
+Good Loops (Scale): Min Score = 0.0535, Max Score = 0.1652, Average Score = 0.0780, Median = 0.0746, 90th Percentile = 0.0964  
+Bad Loops (Tonic): Min Score = **0.1021**, Max Score = 0.2432, Average Score = **0.1381**, Median = **0.1295**, 90th Percentile = 0.1775  
+Bad Loops (Scale): Min Score = 0.0517, Max Score = 0.1507, Average Score = 0.0733, Median = 0.0675, 90th Percentile = 0.0965  
+
+## Bad Songs with Incorrectly Known Tonality:
+Song song377, Known Tonality: (10, Major), Predicted Tonality: (7, Major), Secret Tonalities: (4, Minor), Score: (0.13472666, 0.0721682)  
+Song song424, Known Tonality: (9, Major), Predicted Tonality: (4, Minor), Secret Tonalities: (7, Major), Score: (0.12215464, 0.0642695)  
+Song song648, Known Tonality: (8, Major), Predicted Tonality: (8, Minor), Secret Tonalities: (11, Major), Score: (0.11928957, 0.06148117)  
+Incorrectly Detected Songs with Incorrectly Known Tonality: 3 / 10 **(30.00%)**  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 825 / 1000 **(82.50%)**  
+Correctly Detected Loop Tonalities: 400 / 400 (100.00%)  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonics: 400 / 400 (100.00%)  
+
+## Both MutationProbabilities = 0%  
+
+Iteration 23, Max Change: 0.003733, took 9 milliseconds  
+Iteration 24, Max Change: 0.003173, took 6 milliseconds  
+Iteration 25, Max Change: 0.002698, took 9 milliseconds  
+Iteration 26, Max Change: 0.002294, took 8 milliseconds  
+Converged after 26 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.0833**, Max Score = 0.9927, Average Score = **0.1878**, Median = **0.1642**, 90th Percentile = 0.2853  
+Good Songs (Scale): Min Score = 0.0417, Max Score = 0.9919, Average Score = 0.1328, Median = 0.1083, 90th Percentile = 0.2210  
+Bad Songs (Tonic): Min Score = **0.0969**, Max Score = 0.2985, Average Score = **0.1318**, Median = **0.1255**, 90th Percentile = 0.1675  
+Bad Songs (Scale): Min Score = 0.0571, Max Score = 0.2445, Average Score = 0.0851, Median = 0.0761, 90th Percentile = 0.1144  
+Good Loops (Tonic): Min Score = **0.0833**, Max Score = 1.0000, Average Score = **0.2566**, Median = **0.1691**, 90th Percentile = 0.4936  
+Good Loops (Scale): Min Score = 0.0417, Max Score = 1.0000, Average Score = 0.2062, Median = 0.1135, 90th Percentile = 0.4390  
+Bad Loops (Tonic): Min Score = **0.0983**, Max Score = 1.0000, Average Score = **0.1752**, Median = **0.1428**, 90th Percentile = 0.2561  
+Bad Loops (Scale): Min Score = 0.0570, Max Score = 1.0000, Average Score = 0.1248, Median = 0.0943, 90th Percentile = 0.1981  
+
+## Bad Songs with Incorrectly Known Tonality:
+Song song11, Known Tonality: (10, Minor), Predicted Tonality: (10, Minor), Secret Tonalities: (6, Minor), Score: (0.13850641, 0.09976065)  
+Song song59, Known Tonality: (2, Major), Predicted Tonality: (2, Major), Secret Tonalities: (5, Major),(11, Minor),(4, Minor), Score: (0.17312339, 0.09799495)  
+Song song80, Known Tonality: (1, Minor), Predicted Tonality: (1, Minor), Secret Tonalities: (2, Minor),(10, Major), Score: (0.14890087, 0.10429658)  
+Song song178, Known Tonality: (2, Minor), Predicted Tonality: (11, Major), Secret Tonalities: (8, Minor), Score: (0.18077561, 0.10973055)  
+Song song308, Known Tonality: (10, Major), Predicted Tonality: (10, Major), Secret Tonalities: (3, Minor),(9, Minor), Score: (0.14079943, 0.09821643)  
+Song song678, Known Tonality: (6, Major), Predicted Tonality: (6, Major), Secret Tonalities: (5, Minor), Score: (0.14939918, 0.10563467)  
+Incorrectly Detected Songs with Incorrectly Known Tonality: 6 / 8 **(75.00%)**  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 970 / 1000 **(97.00%)**  
+Correctly Detected Loop Tonalities: 1367 / 1500 **(91.13%)**  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 973 / 1000 **(97.30%)**  
+Correctly Detected Loop Tonics: 1366 / 1500 **(91.07%)**  
+
+## Min,MaxLoopsPerSong = 12, 27, Both MutationProbabilities = 0%  
+
+Iteration 16, Max Change: 0.001704, took 18 milliseconds  
+Iteration 17, Max Change: 0.001290, took 20 milliseconds  
+Iteration 18, Max Change: 0.000977, took 14 milliseconds  
+Iteration 19, Max Change: 0.000741, took 12 milliseconds  
+Converged after 19 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.1094**, Max Score = 0.1596, Average Score = **0.1304**, Median = **0.1294**, 90th Percentile = 0.1419  
+Good Songs (Scale): Min Score = 0.0627, Max Score = 0.1052, Average Score = 0.0799, Median = 0.0791, 90th Percentile = 0.0888  
+Bad Songs (Tonic): Min Score = **0.0961**, Max Score = 0.1195, Average Score = **0.1049**, Median = **0.1039**, 90th Percentile = 0.1118  
+Bad Songs (Scale): Min Score = 0.0541, Max Score = 0.0740, Average Score = 0.0608, Median = 0.0592, 90th Percentile = 0.0667  
+Good Loops (Tonic): Min Score = **0.0957**, Max Score = 0.2542, Average Score = **0.1378**, Median = **0.1337**, 90th Percentile = 0.1642  
+Good Loops (Scale): Min Score = 0.0511, Max Score = 0.1909, Average Score = 0.0867, Median = 0.0830, 90th Percentile = 0.1090  
+Bad Loops (Tonic): Min Score = **0.0995**, Max Score = 0.2270, Average Score = **0.1215**, Median = **0.1155**, 90th Percentile = 0.1437  
+Bad Loops (Scale): Min Score = 0.0573, Max Score = 0.1668, Average Score = 0.0735, Median = 0.0697, 90th Percentile = 0.0896  
+
+## Bad Songs with Incorrectly Known Tonality:
+Incorrectly Detected Songs with Incorrectly Known Tonality: 0 / 7 (0.00%)  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonalities: 1500 / 1500 (100.00%)  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonics: 1500 / 1500 (100.00%)  
+
+## Min,MaxLoopsPerSong = 4, 10, TotalSongs,Loops = 1000, 400, Both MutationProbabilities = 0%  
+
+Iteration 16, Max Change: 0.001657, took 5 milliseconds  
+Iteration 17, Max Change: 0.001242, took 6 milliseconds  
+Iteration 18, Max Change: 0.000931, took 5 milliseconds  
+Iteration 19, Max Change: 0.000700, took 6 milliseconds  
+Converged after 19 iterations.  
+
+## Summary of Scores:
+Good Songs (Tonic): Min Score = **0.1029**, Max Score = 0.1865, Average Score = **0.1339**, Median = **0.1327**, 90th Percentile = 0.1485  
+Good Songs (Scale): Min Score = 0.0599, Max Score = 0.1288, Average Score = 0.0838, Median = 0.0829, 90th Percentile = 0.0964  
+Bad Songs (Tonic): Min Score = **0.0956**, Max Score = 0.1310, Average Score = **0.1082**, Median = **0.1070**, 90th Percentile = 0.1176  
+Bad Songs (Scale): Min Score = 0.0522, Max Score = 0.0788, Average Score = 0.0640, Median = 0.0633, 90th Percentile = 0.0716  
+Good Loops (Tonic): Min Score = **0.1070**, Max Score = 0.2171, Average Score = **0.1409**, Median = **0.1366**, 90th Percentile = 0.1694  
+Good Loops (Scale): Min Score = 0.0630, Max Score = 0.1616, Average Score = 0.0902, Median = 0.0863, 90th Percentile = 0.1143  
+Bad Loops (Tonic): Min Score = **0.1011**, Max Score = 0.2237, Average Score = **0.1313**, Median = **0.1224**, 90th Percentile = 0.1628  
+Bad Loops (Scale): Min Score = 0.0602, Max Score = 0.1619, Average Score = 0.0828, Median = 0.0748, 90th Percentile = 0.1091  
+
+## Bad Songs with Incorrectly Known Tonality:
+Incorrectly Detected Songs with Incorrectly Known Tonality: 0 / 14 (0.00%)  
+
+## Accuracy of Detected Tonalities:
+Correctly Detected Song Tonalities: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonalities: 400 / 400 (100.00%)  
+
+## Accuracy of Detected Tonics:
+Correctly Detected Song Tonics: 1000 / 1000 (100.00%)  
+Correctly Detected Loop Tonics: 400 / 400 (100.00%)  
