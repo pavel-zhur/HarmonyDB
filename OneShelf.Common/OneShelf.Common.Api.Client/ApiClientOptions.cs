@@ -1,10 +1,24 @@
 ﻿namespace OneShelf.Common.Api.Client;
 
-public class ApiClientOptions<TClient>
+public class ApiClientOptions<TClient> : ApiClientOptionsEndpoint<TClient>
 {
-    public required Uri Endpoint { get; set; }
+    public Dictionary<string, ApiClientOptionsEndpoint<TClient>>? ConditionalStreams { get; set; }
 
-    public required string MasterCode { get; set; }
+    public Uri GetEndpoint(string? conditionalStreamId)
+        => (conditionalStreamId == null
+               ? Endpoint
+               : ConditionalStreams?.GetValueOrDefault(conditionalStreamId)?.Endpoint ?? Endpoint)
+           ?? throw new($"The endpoint for conditional stream '{conditionalStreamId}' is not configured, the default fallback value is not available, either.");
 
-    public required string ServiceCode { get; set; }
+    public string GetMasterCode(string? conditionalStreamId)
+        => (conditionalStreamId == null
+               ? MasterCode
+               : ConditionalStreams?.GetValueOrDefault(conditionalStreamId)?.MasterCode ?? MasterCode)
+           ?? throw new($"The master code for conditional stream '{conditionalStreamId}' is not configured, the default fallback value is not available, either.");
+
+    public string GetServiceCode(string? conditionalStreamId)
+        => (conditionalStreamId == null
+               ? ServiceCode
+               : ConditionalStreams?.GetValueOrDefault(conditionalStreamId)?.ServiceCode ?? ServiceCode)
+           ?? throw new($"The service code for conditional stream '{conditionalStreamId}' is not configured, the default fallback value is not available, either.");
 }
