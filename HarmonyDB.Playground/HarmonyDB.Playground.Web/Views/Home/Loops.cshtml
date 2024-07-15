@@ -1,5 +1,5 @@
-﻿@using HarmonyDB.Index.Api.Model.VExternal1
-@using HarmonyDB.Index.Api.Model.VExternal1.Main
+﻿@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using HarmonyDB.Playground.Web.Models.Home
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
@@ -24,7 +24,7 @@
 {
     <p>
         @ViewLocalizer["Ordering"]:
-        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<LoopsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.Ordering, LoopsModel.SupportedOrdering.Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Min length"]: @Html.TextBoxFor(x => x.MinLength)
@@ -45,20 +45,14 @@
         @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)
     </p>
     <p>
+        @ViewLocalizer["Scale"]:
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
         <label>
             @Html.CheckBoxFor(x => x.IncludeTrace)
             @ViewLocalizer["Include the Index API trace for developers"]
         </label>
-    </p>
-    <p>
-        <label>
-            @Html.CheckBoxFor(x => x.IncludeRootsStatistics)
-            @ViewLocalizer["Include the roots statistics trace"]
-        </label>
-    </p>
-    <p>
-        @ViewLocalizer["Compound"]:
-        @Html.DropDownListFor(x => x.Compound, Enum.GetValues<LoopsRequestCompoundFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <input type="submit" value="@ViewLocalizer["List"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
 }
@@ -80,26 +74,33 @@
                 <td>@ViewLocalizer["Total Songs"]</td>
                 <td>@ViewLocalizer["Total Occurrences"]</td>
                 <td>@ViewLocalizer["Total Successions"]</td>
-                <td>@ViewLocalizer["Compound"]</td>
-                @if (Model.IncludeRootsStatistics)
-                {
-                    <td>@ViewLocalizer["Roots Statistics"]</td>
-                }
+                <td colspan="2">@ViewLocalizer["Tonality"]</td>
+                <td colspan="2">@ViewLocalizer["Second Tonality"]</td>
             </tr>
         </thead>
         @foreach (var loop in response.Loops)
         {
+            var predicted = loop.Probabilities.GetPredictedTonality();
+            var title = loop.Normalized.GetTitle(predicted, true);
+            var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
             <tr>
-                <td>@Html.ActionLink(loop.Progression, "SongsByChords", new SongsByChordsModel { Query = loop.Progression, JustForm = true })</td>
+                <td>@Html.ActionLink(title, "SongsByChords", new SongsByChordsModel { Query = title, JustForm = true })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
                 <td>@loop.TotalOccurrences.ToString("N0")</td>
                 <td>@loop.TotalSuccessions.ToString("N0")</td>
-                <td>@loop.IsCompound</td>
-                @if (Model.IncludeRootsStatistics)
-                {
-                    <td>@string.Join(", ", loop.RootsStatistics)</td>
-                }
+                <td>
+                    <b>@predicted.ToLoopTonalityTitle(predicted)</b>
+                </td>
+                <td>
+                    <span>@loop.Probabilities.TonalityConfidence().ToString("P0")</span>
+                </td>
+                <td>
+                    <b>@secondPredicted.ToLoopTonalityTitle(predicted)</b>
+                </td>
+                <td>
+                    <span>@secondConfidence.ToString("P0")</span>
+                </td>
             </tr>
         }
     </table>

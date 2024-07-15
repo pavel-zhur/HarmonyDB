@@ -20,7 +20,6 @@ public class IndexFunctions
     private readonly ILogger<IndexFunctions> _logger;
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
-    private readonly LoopsStatisticsCache _loopsStatisticsCache;
     private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
@@ -28,12 +27,11 @@ public class IndexFunctions
     private readonly FullTextSearchCache _fullTextSearchCache;
     private readonly StructuresCache _structuresCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache, StructuresCache structuresCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache, StructuresCache structuresCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
         _progressionsCache = progressionsCache;
-        _loopsStatisticsCache = loopsStatisticsCache;
         _indexHeadersCache = indexHeadersCache;
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
@@ -139,13 +137,6 @@ public class IndexFunctions
         return new OkResult();
     }
 
-    [Function(nameof(VDevLoopsStatisticsCacheCopy))]
-    public async Task<IActionResult> VDevLoopsStatisticsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
-    {
-        await _loopsStatisticsCache.Copy();
-        return new OkResult();
-    }
-
     [Function(nameof(VDevIndexHeadersCacheCopy))]
     public async Task<IActionResult> VDevIndexHeadersCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
@@ -157,12 +148,6 @@ public class IndexFunctions
     public async Task<IActionResult> VDevGetIndexHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         return new OkObjectResult((await _indexHeadersCache.Get()).Headers.Count);
-    }
-
-    [Function(nameof(VDevGetLoopStatisticsCacheItemsCount))]
-    public async Task<IActionResult> VDevGetLoopStatisticsCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
-    {
-        return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
     }
 
     [Function(nameof(VDevGetStructuresCacheLinksCount))]
@@ -180,13 +165,6 @@ public class IndexFunctions
             Loops = tonalitiesIndex.Loops.Count,
             Songs = tonalitiesIndex.Songs.Count,
         });
-    }
-
-    [Function(nameof(VDevRebuildLoopStatisticsCache))]
-    public async Task<IActionResult> VDevRebuildLoopStatisticsCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
-    {
-        await _loopsStatisticsCache.Rebuild();
-        return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
     }
 
     [Function(nameof(VDevRebuildStructuresCache))]

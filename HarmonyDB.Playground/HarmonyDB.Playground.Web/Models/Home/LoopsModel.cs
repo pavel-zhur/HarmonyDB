@@ -1,4 +1,4 @@
-using HarmonyDB.Index.Api.Model.VExternal1.Main;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 
 namespace HarmonyDB.Playground.Web.Models.Home;
 
@@ -8,5 +8,19 @@ public record LoopsModel : LoopsRequest
 
     public bool JustForm { get; set; }
 
-    public bool IncludeRootsStatistics { get; init; }
+    public static IReadOnlyList<LoopsRequestOrdering> SupportedOrdering { get; } = new List<LoopsRequestOrdering>
+    {
+        LoopsRequestOrdering.LengthAscSongsDesc,
+        LoopsRequestOrdering.LengthDescSongsDesc,
+        LoopsRequestOrdering.LengthAscSuccessionsDesc,
+        LoopsRequestOrdering.LengthDescSuccessionsDesc,
+        LoopsRequestOrdering.LengthAscOccurrencesDesc,
+        LoopsRequestOrdering.LengthDescOccurrencesDesc,
+        LoopsRequestOrdering.LengthAscTonalityConfidenceDesc,
+        LoopsRequestOrdering.LengthDescTonalityConfidenceDesc,
+        LoopsRequestOrdering.SongsDesc,
+        LoopsRequestOrdering.SuccessionsDesc,
+        LoopsRequestOrdering.OccurrencesDesc,
+        LoopsRequestOrdering.TonalityConfidenceDesc,
+    };
 }

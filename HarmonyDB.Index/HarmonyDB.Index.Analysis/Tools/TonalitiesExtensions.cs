@@ -99,11 +99,11 @@ public static class TonalitiesExtensions
 
     public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true) => Loop.Deserialize(normalized).GetTitle(beginningNote, loopify);
 
-    public static string GetTitle(this string normalized, (byte root, bool isMinor)? predicted)
+    public static string GetTitle(this string normalized, (byte root, bool isMinor)? predicted, bool loopify = false)
         => predicted.HasValue
             ? normalized.GetTitle(
-                predicted.Value.isMinor ? predicted.Value.root : Note.Normalize(predicted.Value.root + 3), false)
-            : normalized.GetTitle(loopify: false);
+                predicted.Value.isMinor ? predicted.Value.root : Note.Normalize(predicted.Value.root + 3), loopify)
+            : normalized.GetTitle(loopify: loopify);
 
     public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, byte beginningNote = 0, bool loopify = true)
     {

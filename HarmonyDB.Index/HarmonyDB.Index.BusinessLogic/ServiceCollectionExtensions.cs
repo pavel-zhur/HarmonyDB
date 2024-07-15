@@ -11,7 +11,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddIndexBusinessLogic(this IServiceCollection serviceCollection, IConfiguration configuration)
         => serviceCollection
             .AddSingleton<ProgressionsCache>()
-            .AddSingleton<LoopsStatisticsCache>()
             .AddSingleton<TonalitiesCache>()
             .AddSingleton<IndexHeadersCache>()
             .AddSingleton<FullTextSearchCache>()

@@ -207,7 +207,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                         ViewBag.Trace = new ApiTraceBag();
                     }
 
-                    ViewBag.Response = await _indexApiClient.Loops(loopsModel, ViewBag.Trace);
+                    ViewBag.Response = await _indexApiClient.TonalitiesLoops(loopsModel, ViewBag.Trace);
                 }
 
                 loopsModel.JustForm = false;

@@ -1,5 +1,4 @@
 ﻿using HarmonyDB.Index.Api.Model;
-using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Main;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Model.VInternal;
@@ -46,11 +45,8 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
     public async Task<SongsByHeaderResponse> SongsByHeader(SongsByHeaderRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<SongsByHeaderRequest, SongsByHeaderResponse>(IndexApiUrls.VExternal1SongsByHeader, request, apiTraceBag: apiTraceBag, conditionalStreamId: "B");
 
-    public async Task<Model.VExternal1.Main.LoopsResponse> Loops(Model.VExternal1.Main.LoopsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<Model.VExternal1.Main.LoopsRequest, Model.VExternal1.Main.LoopsResponse>(IndexApiUrls.VExternal1Loops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "B");
-
-    public async Task<Model.VExternal1.Tonalities.LoopsResponse> TonalitiesLoops(Model.VExternal1.Tonalities.LoopsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<Model.VExternal1.Tonalities.LoopsRequest, Model.VExternal1.Tonalities.LoopsResponse>(IndexApiUrls.VExternal1TonalitiesLoops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+    public async Task<LoopsResponse> TonalitiesLoops(LoopsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<LoopsRequest, LoopsResponse>(IndexApiUrls.VExternal1TonalitiesLoops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 
     public async Task<SongsResponse> TonalitiesSongs(SongsRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<SongsRequest, SongsResponse>(IndexApiUrls.VExternal1TonalitiesSongs, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
