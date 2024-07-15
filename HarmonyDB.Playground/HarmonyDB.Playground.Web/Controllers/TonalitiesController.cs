@@ -14,6 +14,7 @@ using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Playground.Web.Models.Tonalities;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -40,7 +41,7 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> StructureLoops(StructureLoopsModel model)
+        public async Task<IActionResult> Loops(StructureLoopsModel model)
         {
             try
             {
@@ -65,7 +66,7 @@ namespace HarmonyDB.Playground.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> StructureSongs(StructureSongsModel model)
+        public async Task<IActionResult> Songs(StructureSongsModel model)
         {
             try
             {
@@ -89,7 +90,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             }
         }
 
-        public async Task<IActionResult> StructureLoop(StructureLoopModel model)
+        public async Task<IActionResult> Loop(StructureLoopModel model)
         {
             try
             {
@@ -108,7 +109,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             }
         }
 
-        public async Task<IActionResult> StructureSong(StructureSongModel model)
+        public async Task<IActionResult> Song(StructureSongModel model)
         {
             try
             {

@@ -2,6 +2,7 @@
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -24,18 +25,18 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["Tonality Analysis"]: @loopTitle</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoop", Model, new { target = "_blank" })
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loop", Model, new { target = "_blank" })
 </div>
 
 <ul>
     <li>
         @if (Model.IncludeTrace)
         {
-            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "StructureLoop", Model with { IncludeTrace = false })
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Loop", Model with { IncludeTrace = false })
         }
         else
         {
-            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "StructureLoop", Model with { IncludeTrace = true })
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Loop", Model with { IncludeTrace = true })
         }
     </li>
 </ul>
@@ -233,7 +234,7 @@
         {
             <tr>
                 <td>
-                    @string.Join(", ", example.Song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(example.Song.IndexHeader.Title, "StructureSong", new StructureSongModel
+                    @string.Join(", ", example.Song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(example.Song.IndexHeader.Title, "Song", new StructureSongModel
                         {
                             ExternalId = example.Song.IndexHeader.ExternalId
                         })

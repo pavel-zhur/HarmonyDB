@@ -1,6 +1,7 @@
 ﻿@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
 @model StructureSongsModel
@@ -14,13 +15,13 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["See the songs tonality analysis"]</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", Model with
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Songs", Model with
 {
     JustForm = true,
 }, new { target = "_blank" })
 </div>
 
-@using (Html.BeginForm("StructureSongs", "Tonalities", Model, FormMethod.Get))
+@using (Html.BeginForm("Songs", "Tonalities", Model, FormMethod.Get))
 {
     <p>
         @ViewLocalizer["Ordering"]:
@@ -89,7 +90,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
-        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSongs", Model, new { target = "_blank" })
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Songs", Model, new { target = "_blank" })
     </div>
 
     <div class="mt-4">
@@ -179,7 +180,7 @@
         {
             <tr>
                 <td>
-                    @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "StructureSong", new StructureSongModel
+                    @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "Song", new StructureSongModel
                                                                                     {
                                                                                         ExternalId = song.IndexHeader.ExternalId
                                                                                     })

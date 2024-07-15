@@ -7,12 +7,14 @@
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Home
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Loop = HarmonyDB.Index.Analysis.Models.Loop
 @inject IViewLocalizer ViewLocalizer
 @inject ProgressionsVisualizer ProgressionsVisualizer
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @model SongModel
 
 @{
@@ -68,7 +70,7 @@
             <b>@tonality.Song.Probabilities.GetSecondPredictedTonality(out confidence).ToSongTonalityTitle()</b>
             <span> &ndash; @confidence.ToString("P0"), ...</span>
             <span>
-                (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "StructureSong", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
+                (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "Song", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
             </span>
         }
         else

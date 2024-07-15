@@ -3,6 +3,8 @@
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Home
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -31,18 +33,18 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["Tonality Analysis"]: @songTitle</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureSong", Model, new { target = "_blank" })
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Song", Model, new { target = "_blank" })
 </div>
 
 <ul>
     <li>
         @if (Model.IncludeTrace)
         {
-            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "StructureSong", Model with { IncludeTrace = false })
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
         }
         else
         {
-            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "StructureSong", Model with { IncludeTrace = true })
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = true })
         }
     </li>
     <li>
@@ -210,7 +212,7 @@
 
             <tr>
                 <td class="text-nowrap">
-                    @Html.ActionLink(loop.Normalized.GetTitle(beginningNote: Model.ViewMode == StructureViewMode.Interpreted ? link.NormalizationRoot : (byte)0, loopify: false), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
+                    @Html.ActionLink(loop.Normalized.GetTitle(beginningNote: Model.ViewMode == StructureViewMode.Interpreted ? link.NormalizationRoot : (byte)0, loopify: false), "Loop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
                 </td>
                 <td>
                     @if (!isFirst)

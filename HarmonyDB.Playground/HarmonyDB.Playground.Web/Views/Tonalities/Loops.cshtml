@@ -1,6 +1,7 @@
 ﻿@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -15,13 +16,13 @@
 
 <div>
     <h3 class="d-inline-block">@ViewLocalizer["See the most popular chord progressions"]</h3>
-    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", Model with
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loops", Model with
     {
         JustForm = true,
     }, new { target = "_blank" })
 </div>
 
-@using (Html.BeginForm("StructureLoops", "Tonalities", Model, FormMethod.Get))
+@using (Html.BeginForm("Loops", "Tonalities", Model, FormMethod.Get))
 {
     <p>
         @ViewLocalizer["Ordering"]:
@@ -84,7 +85,7 @@
 {
     <div class="mt-4">
         <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
-        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "StructureLoops", Model, new { target = "_blank" })
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loops", Model, new { target = "_blank" })
     </div>
 
     <div class="mt-4">
@@ -134,7 +135,7 @@
                     var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
                 }
 
-                <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
+                <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "Loop", new StructureLoopModel { Normalized = loop.Normalized })</td>
                 <td>@loop.Length</td>
                 <td>@loop.TotalSongs.ToString("N0")</td>
                 <td>@loop.TotalOccurrences.ToString("N2")</td>

@@ -1,4 +1,4 @@
-namespace HarmonyDB.Playground.Web.Models;
+namespace HarmonyDB.Playground.Web.Models.Tonalities;
 
 public interface ILoopModel
 {

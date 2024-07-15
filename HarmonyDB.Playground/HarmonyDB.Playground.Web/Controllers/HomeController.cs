@@ -15,6 +15,7 @@ using HarmonyDB.Common.Representations.OneShelf;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
+using HarmonyDB.Playground.Web.Models.Home;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
