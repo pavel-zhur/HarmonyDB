@@ -7,6 +7,6 @@ public record TestEmModel(
     IReadOnlyCollection<TestLoop> Loops)
     : IEmModel
 {
-    IReadOnlyCollection<ISong> IEmModel.Songs => Songs;
-    IReadOnlyCollection<ILoop> IEmModel.Loops => Loops;
+    IReadOnlyCollection<Song> IEmModel.Songs => Songs;
+    IReadOnlyCollection<Loop> IEmModel.Loops => Loops;
 }

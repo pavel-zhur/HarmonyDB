@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.Analysis.Em.Services;
 
 public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
 {
-    public EmContext CreateContext(IReadOnlyList<ILoopLink> loopLinks)
+    public EmContext CreateContext(IReadOnlyList<LoopLink> loopLinks)
     {
         var loopLinksByLoopId = loopLinks.ToLookup(x => x.LoopId);
         return new()
@@ -224,7 +224,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         return (tonicScore, scaleScore);
     }
 
-    private void AddShiftProbabilities(float[] shiftsCounts, ILoopLink loopLink, bool isSong)
+    private void AddShiftProbabilities(float[] shiftsCounts, LoopLink loopLink, bool isSong)
     {
         var probabilities = isSong
             ? loopLink.Loop.TonalityProbabilities

@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Tests.Em;
 
 public class Output(ILogger<Output> output, MusicAnalyzer analyzer)
 {
-    public void TraceInput(TestEmModel emModel, List<TestLoopLink> links)
+    public void TraceInput(TestEmModel emModel, List<LoopLink> links)
     {
         // Output initial data
         output.LogInformation($"Generated {emModel.Songs.Count} songs and {emModel.Loops.Count} loops.");

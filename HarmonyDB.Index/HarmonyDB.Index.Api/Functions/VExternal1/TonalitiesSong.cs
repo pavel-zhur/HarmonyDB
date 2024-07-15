@@ -16,6 +16,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
+using Loop = HarmonyDB.Index.Api.Model.VExternal1.Tonalities.Loop;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 

@@ -7,6 +7,7 @@ using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
 using OneShelf.Common;
+using Loop = HarmonyDB.Index.Analysis.Models.Loop;
 
 namespace HarmonyDB.Index.Analysis.Tools;
 

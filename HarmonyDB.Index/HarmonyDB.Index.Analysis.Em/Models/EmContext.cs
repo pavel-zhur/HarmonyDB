@@ -2,7 +2,7 @@
 
 public sealed class EmContext
 {
-    public required ILookup<string, ILoopLink> LoopLinksBySongId { get; init; }
-    public required ILookup<string, ILoopLink> LoopLinksByLoopId { get; init; }
+    public required ILookup<string, LoopLink> LoopLinksBySongId { get; init; }
+    public required ILookup<string, LoopLink> LoopLinksByLoopId { get; init; }
     public required IReadOnlyDictionary<string, int> SongCounts { get; init; }
 }

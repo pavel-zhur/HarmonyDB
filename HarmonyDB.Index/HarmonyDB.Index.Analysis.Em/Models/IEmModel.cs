@@ -2,6 +2,6 @@
 
 public interface IEmModel
 {
-    IReadOnlyCollection<ISong> Songs { get; }
-    IReadOnlyCollection<ILoop> Loops { get; }
+    IReadOnlyCollection<Song> Songs { get; }
+    IReadOnlyCollection<Loop> Loops { get; }
 }

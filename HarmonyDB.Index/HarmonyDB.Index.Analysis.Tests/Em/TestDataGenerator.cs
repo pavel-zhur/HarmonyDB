@@ -8,12 +8,12 @@ public class TestDataGenerator
 {
     private readonly Random _random = new();
 
-    public (TestEmModel emModel, List<TestLoopLink> links) GenerateTestData(
+    public (TestEmModel emModel, List<LoopLink> links) GenerateTestData(
         TestDataGeneratorParameters parameters)
     {
         var songs = new Dictionary<string, TestSong>();
         var loops = new Dictionary<string, TestLoop>();
-        var loopLinks = new List<TestLoopLink>();
+        var loopLinks = new List<LoopLink>();
 
         // Generate Loops
         for (var i = 0; i < parameters.TotalLoops; i++)

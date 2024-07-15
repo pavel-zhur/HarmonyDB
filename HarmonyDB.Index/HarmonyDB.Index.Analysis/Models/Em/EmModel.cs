@@ -1,15 +1,14 @@
 ﻿using HarmonyDB.Index.Analysis.Em.Models;
-using HarmonyDB.Index.Analysis.Models.Index;
 
 namespace HarmonyDB.Index.Analysis.Models.Em;
 
-public record EmModel : IEmModel
+public record EmModel : Analysis.Em.Models.IEmModel
 {
     private readonly Dictionary<string, Song> _songs;
-    private readonly Dictionary<string, Loop> _loops;
+    private readonly Dictionary<string, Analysis.Em.Models.Loop> _loops;
 
     public EmModel(IEnumerable<Song> songs,
-        IEnumerable<Loop> loops)
+        IEnumerable<Analysis.Em.Models.Loop> loops)
     {
         _songs = songs.ToDictionary(x => x.Id);
         _loops = loops.ToDictionary(x => x.Id);
@@ -17,11 +16,11 @@ public record EmModel : IEmModel
 
     public IReadOnlyDictionary<string, Song> Songs => _songs;
 
-    public IReadOnlyDictionary<string, Loop> Loops => _loops;
+    public IReadOnlyDictionary<string, Analysis.Em.Models.Loop> Loops => _loops;
 
-    IReadOnlyCollection<ISong> IEmModel.Songs => _songs.Values;
+    IReadOnlyCollection<Song> Analysis.Em.Models.IEmModel.Songs => _songs.Values;
     
-    IReadOnlyCollection<ILoop> IEmModel.Loops => _loops.Values;
+    IReadOnlyCollection<Analysis.Em.Models.Loop> Analysis.Em.Models.IEmModel.Loops => _loops.Values;
 
     public static EmModel Deserialize(byte[] serialized)
     {
@@ -33,7 +32,7 @@ public record EmModel : IEmModel
             .Select(i =>
             {
                 var id = reader.ReadString();
-                var loop = new Loop
+                var loop = new Analysis.Em.Models.Loop
                 {
                     Id = id,
                 };
