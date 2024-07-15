@@ -1,8 +1,9 @@
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 
 namespace HarmonyDB.Playground.Web.Models;
 
-public record StructureLoopsModel : StructureLoopsRequest, ILoopModel
+public record StructureLoopsModel : LoopsRequest, ILoopModel
 {
     public bool IncludeTrace { get; init; }
 

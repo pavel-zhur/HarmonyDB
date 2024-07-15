@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Main;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Caches;

@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.Api.Tools;
@@ -18,7 +19,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, StructureSongsResponse>
+public class StructureSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
@@ -39,10 +40,10 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
     }
 
     [Function(IndexApiUrls.VExternal1StructureSongs)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] StructureSongsRequest request)
+    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongsRequest request)
         => RunHandler(request);
 
-    protected override async Task<StructureSongsResponse> Execute(StructureSongsRequest request)
+    protected override async Task<SongsResponse> Execute(SongsRequest request)
     {
         if (_options.RedirectCachesToIndex)
         {
@@ -59,7 +60,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 x => x.stats.ExternalId, 
                 x => x.ExternalId, (x, y) => (x.tone, x.stats, header: _commonExecutions.PrepareForOutput(y)))
             .Where(x => x.header != null)
-            .Select(x => new StructureSongTonality(
+            .Select(x => new Song(
                 x.stats.ExternalId,
                 x.stats.TotalLoops,
                 x.tone.TonalityProbabilities.ToLinear(),
@@ -81,72 +82,72 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
             .Where(x => x.IndexHeader.Rating >= request.MinRating)
             .Where(x => request.DetectedScaleFilter switch
             {
-                StructureRequestScaleFilter.Any => true,
-                StructureRequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
-                StructureRequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+                RequestScaleFilter.Any => true,
+                RequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
+                RequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.KnownScaleFilter switch
             {
-                StructureRequestScaleFilter.Any => true,
-                StructureRequestScaleFilter.Major => x.KnownTonalityIndex?.FromIndex().isMinor == false,
-                StructureRequestScaleFilter.Minor => x.KnownTonalityIndex?.FromIndex().isMinor == true,
+                RequestScaleFilter.Any => true,
+                RequestScaleFilter.Major => x.KnownTonalityIndex?.FromIndex().isMinor == false,
+                RequestScaleFilter.Minor => x.KnownTonalityIndex?.FromIndex().isMinor == true,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.SecondFilter switch
             {
-                StructureRequestSecondFilter.Any => true,
-                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
-                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) != x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
+                RequestSecondFilter.Any => true,
+                RequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
+                RequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) != x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.CorrectDetectionFilter switch
             {
-                StructureSongsRequestCorrectDetectionFilter.Any => true,
-                StructureSongsRequestCorrectDetectionFilter.Exact 
+                SongsRequestCorrectDetectionFilter.Any => true,
+                SongsRequestCorrectDetectionFilter.Exact 
                     => x.KnownTonalityIndex?.FromIndex() == x.Probabilities.GetPredictedTonality(),
-                StructureSongsRequestCorrectDetectionFilter.ExactScaleAgnostic 
+                SongsRequestCorrectDetectionFilter.ExactScaleAgnostic 
                     => x.KnownTonalityIndex?.FromIndex().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
-                StructureSongsRequestCorrectDetectionFilter.No 
+                SongsRequestCorrectDetectionFilter.No 
                     => x.KnownTonalityIndex != null
                        && x.KnownTonalityIndex != x.Probabilities.GetPredictedTonality().ToIndex(),
-                StructureSongsRequestCorrectDetectionFilter.IncorrectScale
+                SongsRequestCorrectDetectionFilter.IncorrectScale
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
                             .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) == x.predicted.GetMajorTonic(true)),
-                StructureSongsRequestCorrectDetectionFilter.NoAndNotParallel
+                SongsRequestCorrectDetectionFilter.NoAndNotParallel
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
                             .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) != x.predicted.GetMajorTonic(true)),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.KnownTonalityFilter switch
             {
-                StructureSongsRequestKnownTonalityFilter.Any => true,
-                StructureSongsRequestKnownTonalityFilter.Some => x.IndexHeader.BestTonality != null,
-                StructureSongsRequestKnownTonalityFilter.No => x.IndexHeader.BestTonality == null,
-                StructureSongsRequestKnownTonalityFilter.Reliable => x.IndexHeader.BestTonality?.IsReliable == true,
-                StructureSongsRequestKnownTonalityFilter.Unreliable => x.IndexHeader.BestTonality?.IsReliable == false,
+                SongsRequestKnownTonalityFilter.Any => true,
+                SongsRequestKnownTonalityFilter.Some => x.IndexHeader.BestTonality != null,
+                SongsRequestKnownTonalityFilter.No => x.IndexHeader.BestTonality == null,
+                SongsRequestKnownTonalityFilter.Reliable => x.IndexHeader.BestTonality?.IsReliable == true,
+                SongsRequestKnownTonalityFilter.Unreliable => x.IndexHeader.BestTonality?.IsReliable == false,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();
 
         var orderedSongs = (request.Ordering switch
         {
-            StructureSongsRequestOrdering.TotalLoopsAsc => songs.OrderBy(x => x.TotalLoops),
-            StructureSongsRequestOrdering.TotalLoopsDesc => songs.OrderByDescending(x => x.TotalLoops),
-            StructureSongsRequestOrdering.ScaleScoreDesc => songs.OrderByDescending(x => x.ScaleScore),
-            StructureSongsRequestOrdering.ScaleScoreAsc => songs.OrderBy(x => x.ScaleScore),
-            StructureSongsRequestOrdering.TonicScoreDesc => songs.OrderByDescending(x => x.TonicScore),
-            StructureSongsRequestOrdering.TonicScoreAsc => songs.OrderBy(x => x.TonicScore),
-            StructureSongsRequestOrdering.TonalityConfidenceDesc => songs.OrderByDescending(x =>
+            SongsRequestOrdering.TotalLoopsAsc => songs.OrderBy(x => x.TotalLoops),
+            SongsRequestOrdering.TotalLoopsDesc => songs.OrderByDescending(x => x.TotalLoops),
+            SongsRequestOrdering.ScaleScoreDesc => songs.OrderByDescending(x => x.ScaleScore),
+            SongsRequestOrdering.ScaleScoreAsc => songs.OrderBy(x => x.ScaleScore),
+            SongsRequestOrdering.TonicScoreDesc => songs.OrderByDescending(x => x.TonicScore),
+            SongsRequestOrdering.TonicScoreAsc => songs.OrderBy(x => x.TonicScore),
+            SongsRequestOrdering.TonalityConfidenceDesc => songs.OrderByDescending(x =>
                 x.Probabilities.TonalityConfidence()),
-            StructureSongsRequestOrdering.TonalityConfidenceAsc => songs.OrderBy(x =>
+            SongsRequestOrdering.TonalityConfidenceAsc => songs.OrderBy(x =>
                 x.Probabilities.TonalityConfidence()),
-            StructureSongsRequestOrdering.TonicConfidenceDesc => songs.OrderByDescending(x =>
+            SongsRequestOrdering.TonicConfidenceDesc => songs.OrderByDescending(x =>
                 x.Probabilities.TonicConfidence(true)),
-            StructureSongsRequestOrdering.TonicConfidenceAsc => songs.OrderBy(x =>
+            SongsRequestOrdering.TonicConfidenceAsc => songs.OrderBy(x =>
                 x.Probabilities.TonicConfidence(true)),
-            StructureSongsRequestOrdering.RatingAsc => songs.OrderBy(x => x.IndexHeader.Rating),
-            StructureSongsRequestOrdering.RatingDesc => songs.OrderByDescending(x => x.IndexHeader.Rating),
+            SongsRequestOrdering.RatingAsc => songs.OrderBy(x => x.IndexHeader.Rating),
+            SongsRequestOrdering.RatingDesc => songs.OrderByDescending(x => x.IndexHeader.Rating),
             _ => throw new ArgumentOutOfRangeException()
         }).ToList();
 

@@ -1,12 +1,13 @@
 ﻿@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
 @model StructureLoopsModel
 
 @{
-    StructureLoopsResponse? response = ViewBag.Response;
+    LoopsResponse? response = ViewBag.Response;
 
     ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Popular Loops"].Value}";
     Layout = "_Layout";
@@ -24,7 +25,7 @@
 {
     <p>
         @ViewLocalizer["Ordering"]:
-        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<StructureLoopsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<LoopsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Min length"]: @Html.TextBoxFor(x => x.MinLength)
@@ -61,11 +62,11 @@
     </p>
     <p>
         @ViewLocalizer["Second filter"]:
-        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<StructureRequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<RequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Detected scale filter"]:
-        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)

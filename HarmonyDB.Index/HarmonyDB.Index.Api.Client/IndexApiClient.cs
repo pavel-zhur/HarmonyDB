@@ -1,5 +1,7 @@
 ﻿using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Main;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Model.VInternal;
 using HarmonyDB.Source.Api.Model;
 using Microsoft.Extensions.Options;
@@ -44,18 +46,18 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
     public async Task<SongsByHeaderResponse> SongsByHeader(SongsByHeaderRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<SongsByHeaderRequest, SongsByHeaderResponse>(IndexApiUrls.VExternal1SongsByHeader, request, apiTraceBag: apiTraceBag, conditionalStreamId: "B");
 
-    public async Task<LoopsResponse> Loops(LoopsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<LoopsRequest, LoopsResponse>(IndexApiUrls.VExternal1Loops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "B");
+    public async Task<Model.VExternal1.Main.LoopsResponse> Loops(Model.VExternal1.Main.LoopsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<Model.VExternal1.Main.LoopsRequest, Model.VExternal1.Main.LoopsResponse>(IndexApiUrls.VExternal1Loops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "B");
 
-    public async Task<StructureLoopsResponse> StructureLoops(StructureLoopsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<StructureLoopsRequest, StructureLoopsResponse>(IndexApiUrls.VExternal1StructureLoops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+    public async Task<Model.VExternal1.Tonalities.LoopsResponse> StructureLoops(Model.VExternal1.Tonalities.LoopsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<Model.VExternal1.Tonalities.LoopsRequest, Model.VExternal1.Tonalities.LoopsResponse>(IndexApiUrls.VExternal1StructureLoops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 
-    public async Task<StructureSongsResponse> StructureSongs(StructureSongsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<StructureSongsRequest, StructureSongsResponse>(IndexApiUrls.VExternal1StructureSongs, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+    public async Task<SongsResponse> StructureSongs(SongsRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<SongsRequest, SongsResponse>(IndexApiUrls.VExternal1StructureSongs, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 
-    public async Task<StructureLoopResponse> StructureLoop(StructureLoopRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<StructureLoopRequest, StructureLoopResponse>(IndexApiUrls.VExternal1StructureLoop, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+    public async Task<LoopResponse> StructureLoop(LoopRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<LoopRequest, LoopResponse>(IndexApiUrls.VExternal1StructureLoop, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 
-    public async Task<StructureSongResponse> StructureSong(StructureSongRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<StructureSongRequest, StructureSongResponse>(IndexApiUrls.VExternal1StructureSong, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+    public async Task<SongResponse> StructureSong(SongRequest request, ApiTraceBag? apiTraceBag = null)
+        => await PostWithCode<SongRequest, SongResponse>(IndexApiUrls.VExternal1StructureSong, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 }

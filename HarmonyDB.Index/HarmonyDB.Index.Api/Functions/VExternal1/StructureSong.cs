@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Caches;
@@ -18,7 +19,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureSong : ServiceFunctionBase<StructureSongRequest, StructureSongResponse>
+public class StructureSong : ServiceFunctionBase<SongRequest, SongResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
@@ -39,10 +40,10 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
     }
 
     [Function(IndexApiUrls.VExternal1StructureSong)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] StructureSongRequest request)
+    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongRequest request)
         => RunHandler(request);
 
-    protected override async Task<StructureSongResponse> Execute(StructureSongRequest request)
+    protected override async Task<SongResponse> Execute(SongRequest request)
     {
         if (_options.RedirectCachesToIndex)
         {
@@ -79,7 +80,7 @@ public class StructureSong : ServiceFunctionBase<StructureSongRequest, Structure
                     var stats = structures.Loops[normalized];
                     var tone = tonalities.Loops[normalized];
 
-                    return new StructureLoopTonality(
+                    return new Loop(
                         normalized,
                         stats.Length,
                         stats.TotalOccurrences,

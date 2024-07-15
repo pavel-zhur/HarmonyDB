@@ -14,6 +14,7 @@ using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 
 namespace HarmonyDB.Playground.Web.Controllers
 {
@@ -76,7 +77,7 @@ namespace HarmonyDB.Playground.Web.Controllers
 
             try
             {
-                ViewBag.Tonality = await _indexApiClient.StructureSong(new StructureSongRequest
+                ViewBag.Tonality = await _indexApiClient.StructureSong(new SongRequest
                 {
                     ExternalId = songModel.ExternalId,
                 }, ViewBag.Trace);

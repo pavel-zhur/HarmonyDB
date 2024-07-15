@@ -1,11 +1,12 @@
 ﻿@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
 @model StructureSongsModel
 
 @{
-    StructureSongsResponse? response = ViewBag.Response;
+    SongsResponse? response = ViewBag.Response;
 
     ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Songs Tonalities"].Value}";
     Layout = "_Layout";
@@ -23,7 +24,7 @@
 {
     <p>
         @ViewLocalizer["Ordering"]:
-        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<StructureSongsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<SongsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Min rating"]: @Html.TextBoxFor(x => x.MinRating)
@@ -54,23 +55,23 @@
     </p>
     <p>
         @ViewLocalizer["Second filter"]:
-        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<StructureRequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<RequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Detected scale filter"]:
-        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Correct detection filter"]:
-        @Html.DropDownListFor(x => x.CorrectDetectionFilter, Enum.GetValues<StructureSongsRequestCorrectDetectionFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.CorrectDetectionFilter, Enum.GetValues<SongsRequestCorrectDetectionFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Known tonality filter"]:
-        @Html.DropDownListFor(x => x.KnownTonalityFilter, Enum.GetValues<StructureSongsRequestKnownTonalityFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.KnownTonalityFilter, Enum.GetValues<SongsRequestKnownTonalityFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Known scale filter"]:
-        @Html.DropDownListFor(x => x.KnownScaleFilter, Enum.GetValues<StructureRequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+        @Html.DropDownListFor(x => x.KnownScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
         @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)

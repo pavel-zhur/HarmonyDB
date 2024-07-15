@@ -6,9 +6,11 @@
 @using HarmonyDB.Index.Analysis.Services
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
 @using Microsoft.AspNetCore.Mvc.Localization
+@using Loop = HarmonyDB.Index.Analysis.Models.Loop
 @inject IViewLocalizer ViewLocalizer
 @inject ProgressionsVisualizer ProgressionsVisualizer
 @model SongModel
@@ -20,7 +22,7 @@
     ViewBag.Title = title;
     Layout = "_Layout";
 
-    StructureSongResponse? tonality = ViewBag.Tonality;
+    SongResponse? tonality = ViewBag.Tonality;
 }
 
 <script src="~/js/Player.js"></script>

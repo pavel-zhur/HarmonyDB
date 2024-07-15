@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Caches;
@@ -18,7 +19,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, StructureLoopResponse>
+public class StructureLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
@@ -39,10 +40,10 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
     }
 
     [Function(IndexApiUrls.VExternal1StructureLoop)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] StructureLoopRequest request)
+    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] LoopRequest request)
         => RunHandler(request);
 
-    protected override async Task<StructureLoopResponse> Execute(StructureLoopRequest request)
+    protected override async Task<LoopResponse> Execute(LoopRequest request)
     {
         if (_options.RedirectCachesToIndex)
         {
@@ -96,7 +97,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                         derivedTonalityIndex: (Note.Normalize(x.normalizationRoot - knownOrPredicted.root), knownOrPredicted.isMinor).ToIndex(),
                         derivedFromKnown: x.known.HasValue);
                 })
-                .Select(g => new StructureLinkStatistics(
+                .Select(g => new LinkStatistics(
                     g.Key.derivedTonalityIndex,
                     g.Key.derivedFromKnown,
                     g.Count(),
@@ -113,7 +114,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                         .Select(x => (x, outputHeader: _commonExecutions.PrepareForOutput(x.header)))
                         .Where(x => x.outputHeader != null)
                         .Take(10)
-                        .Select(x => new StructureLinkExample(
+                        .Select(x => new LinkExample(
                             new(
                                 x.outputHeader!.ExternalId,
                                 x.x.stats.TotalLoops,

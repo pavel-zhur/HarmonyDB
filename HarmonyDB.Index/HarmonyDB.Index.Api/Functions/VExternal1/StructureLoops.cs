@@ -4,6 +4,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
@@ -17,7 +18,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, StructureLoopsResponse>
+public class StructureLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
@@ -34,10 +35,10 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
     }
 
     [Function(IndexApiUrls.VExternal1StructureLoops)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] StructureLoopsRequest request)
+    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] LoopsRequest request)
         => RunHandler(request);
 
-    protected override async Task<StructureLoopsResponse> Execute(StructureLoopsRequest request)
+    protected override async Task<LoopsResponse> Execute(LoopsRequest request)
     {
         if (_options.RedirectCachesToIndex)
         {
@@ -49,7 +50,7 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
 
         var results = tonalities.Loops
             .Join(structures.Loops, x => x.Key, x => x.Key, (x, y) => (tone: x.Value, stats: y.Value))
-            .Select(x => new StructureLoopTonality(
+            .Select(x => new Loop(
                 x.stats.Normalized,
                 x.stats.Length,
                 x.stats.TotalOccurrences,
@@ -75,50 +76,50 @@ public class StructureLoops : ServiceFunctionBase<StructureLoopsRequest, Structu
             .Where(x => x.ScaleScore >= request.MinScaleScore)
             .Where(x => request.DetectedScaleFilter switch
             {
-                StructureRequestScaleFilter.Any => true,
-                StructureRequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
-                StructureRequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
+                RequestScaleFilter.Any => true,
+                RequestScaleFilter.Major => !x.Probabilities.GetPredictedTonality().isMinor,
+                RequestScaleFilter.Minor => x.Probabilities.GetPredictedTonality().isMinor,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.SecondFilter switch
             {
-                StructureRequestSecondFilter.Any => true,
-                StructureRequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) == x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
-                StructureRequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) != x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
+                RequestSecondFilter.Any => true,
+                RequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) == x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
+                RequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) != x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();
 
         var orderedLoops = (request.Ordering switch
         {
-            StructureLoopsRequestOrdering.LengthAscSongsDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalSongs),
-            StructureLoopsRequestOrdering.LengthDescSongsDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalSongs),
-            StructureLoopsRequestOrdering.LengthAscSuccessionsDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalSuccessions),
-            StructureLoopsRequestOrdering.LengthDescSuccessionsDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalSuccessions),
-            StructureLoopsRequestOrdering.LengthAscOccurrencesDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalOccurrences),
-            StructureLoopsRequestOrdering.LengthDescOccurrencesDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalOccurrences),
-            StructureLoopsRequestOrdering.LengthAscCoverageDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.AverageCoverage),
-            StructureLoopsRequestOrdering.LengthDescCoverageDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.AverageCoverage),
-            StructureLoopsRequestOrdering.SongsDesc => loops.OrderByDescending(x => x.TotalSongs),
-            StructureLoopsRequestOrdering.SuccessionsDesc => loops.OrderByDescending(x => x.TotalSuccessions),
-            StructureLoopsRequestOrdering.OccurrencesDesc => loops.OrderByDescending(x => x.TotalOccurrences),
-            StructureLoopsRequestOrdering.CoverageDesc => loops.OrderByDescending(x => x.AverageCoverage),
-            StructureLoopsRequestOrdering.LengthAscScaleScoreDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.ScaleScore),
-            StructureLoopsRequestOrdering.LengthDescScaleScoreDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.ScaleScore),
-            StructureLoopsRequestOrdering.LengthAscTonicScoreDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TonicScore),
-            StructureLoopsRequestOrdering.LengthDescTonicScoreDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TonicScore),
-            StructureLoopsRequestOrdering.ScaleScoreDesc => loops.OrderByDescending(x => x.ScaleScore),
-            StructureLoopsRequestOrdering.ScaleScoreAsc => loops.OrderBy(x => x.ScaleScore),
-            StructureLoopsRequestOrdering.TonicScoreDesc => loops.OrderByDescending(x => x.TonicScore),
-            StructureLoopsRequestOrdering.TonicScoreAsc => loops.OrderBy(x => x.TonicScore),
-            StructureLoopsRequestOrdering.LengthAscTonalityConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.LengthDescTonalityConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.LengthAscTonicConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
-            StructureLoopsRequestOrdering.LengthDescTonicConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
-            StructureLoopsRequestOrdering.TonalityConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.TonalityConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonalityConfidence()),
-            StructureLoopsRequestOrdering.TonicConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonicConfidence(false)),
-            StructureLoopsRequestOrdering.TonicConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonicConfidence(false)),
+            LoopsRequestOrdering.LengthAscSongsDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalSongs),
+            LoopsRequestOrdering.LengthDescSongsDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalSongs),
+            LoopsRequestOrdering.LengthAscSuccessionsDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalSuccessions),
+            LoopsRequestOrdering.LengthDescSuccessionsDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalSuccessions),
+            LoopsRequestOrdering.LengthAscOccurrencesDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TotalOccurrences),
+            LoopsRequestOrdering.LengthDescOccurrencesDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TotalOccurrences),
+            LoopsRequestOrdering.LengthAscCoverageDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.AverageCoverage),
+            LoopsRequestOrdering.LengthDescCoverageDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.AverageCoverage),
+            LoopsRequestOrdering.SongsDesc => loops.OrderByDescending(x => x.TotalSongs),
+            LoopsRequestOrdering.SuccessionsDesc => loops.OrderByDescending(x => x.TotalSuccessions),
+            LoopsRequestOrdering.OccurrencesDesc => loops.OrderByDescending(x => x.TotalOccurrences),
+            LoopsRequestOrdering.CoverageDesc => loops.OrderByDescending(x => x.AverageCoverage),
+            LoopsRequestOrdering.LengthAscScaleScoreDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.ScaleScore),
+            LoopsRequestOrdering.LengthDescScaleScoreDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.ScaleScore),
+            LoopsRequestOrdering.LengthAscTonicScoreDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.TonicScore),
+            LoopsRequestOrdering.LengthDescTonicScoreDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.TonicScore),
+            LoopsRequestOrdering.ScaleScoreDesc => loops.OrderByDescending(x => x.ScaleScore),
+            LoopsRequestOrdering.ScaleScoreAsc => loops.OrderBy(x => x.ScaleScore),
+            LoopsRequestOrdering.TonicScoreDesc => loops.OrderByDescending(x => x.TonicScore),
+            LoopsRequestOrdering.TonicScoreAsc => loops.OrderBy(x => x.TonicScore),
+            LoopsRequestOrdering.LengthAscTonalityConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
+            LoopsRequestOrdering.LengthDescTonalityConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonalityConfidence()),
+            LoopsRequestOrdering.LengthAscTonicConfidenceDesc => loops.OrderBy(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
+            LoopsRequestOrdering.LengthDescTonicConfidenceDesc => loops.OrderByDescending(x => x.Length).ThenByDescending(x => x.Probabilities.TonicConfidence(false)),
+            LoopsRequestOrdering.TonalityConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonalityConfidence()),
+            LoopsRequestOrdering.TonalityConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonalityConfidence()),
+            LoopsRequestOrdering.TonicConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonicConfidence(false)),
+            LoopsRequestOrdering.TonicConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonicConfidence(false)),
             _ => throw new ArgumentOutOfRangeException()
         })
         .ToList();

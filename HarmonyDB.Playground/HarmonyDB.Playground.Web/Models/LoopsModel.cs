@@ -1,4 +1,5 @@
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Main;
 
 namespace HarmonyDB.Playground.Web.Models;
 

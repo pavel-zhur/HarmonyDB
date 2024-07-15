@@ -2,13 +2,14 @@
 @using HarmonyDB.Common.Transposition
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
 @model StructureSongModel
 
 @{
-    StructureSongResponse response = ViewBag.Response;
+    SongResponse response = ViewBag.Response;
 
     Layout = "_Layout";
 
