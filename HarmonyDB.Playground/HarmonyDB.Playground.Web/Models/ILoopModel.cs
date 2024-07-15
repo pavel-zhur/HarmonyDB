@@ -2,7 +2,7 @@ namespace HarmonyDB.Playground.Web.Models;
 
 public interface ILoopModel
 {
-    StructureLoopViewMode ViewMode { get; init; }
+    StructureViewMode ViewMode { get; init; }
 
-    ILoopModel With(StructureLoopViewMode viewMode);
+    ILoopModel With(StructureViewMode viewMode);
 }

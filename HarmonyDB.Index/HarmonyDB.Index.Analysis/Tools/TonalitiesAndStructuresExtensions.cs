@@ -189,10 +189,13 @@ public static class TonalitiesAndStructuresExtensions
     public static string ToSongTonalityTitle(this (byte root, bool isMinor) tonality)
         => $"{new Note(tonality.root).Representation(new())}{(tonality.isMinor ? "m" : string.Empty)}";
 
+    public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality, byte? normalizationRoot)
+        => normalizationRoot.HasValue
+            ? ToSongTonalityTitle((Note.Normalize(normalizationRoot.Value - tonality.root), tonality.isMinor))
+            : tonality.ToLoopTonalityTitle();
+
     public static string ToLoopTonalityTitle(this int tonalityIndex, (byte root, bool isMinor)? predicted = null)
-        => predicted.HasValue
-            ? tonalityIndex.FromIndex().ToLoopTonalityTitle(predicted.Value)
-            : tonalityIndex.FromIndex().ToLoopTonalityTitle();
+        => tonalityIndex.FromIndex().ToLoopTonalityTitle(predicted);
 
     public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality,
         (byte root, bool isMinor)? predicted)
