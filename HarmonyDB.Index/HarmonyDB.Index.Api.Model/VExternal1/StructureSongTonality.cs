@@ -1,4 +1,4 @@
-using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Api.Model.VExternal1.Caches;
 using HarmonyDB.Source.Api.Model.V1;
 
 namespace HarmonyDB.Index.Api.Model.VExternal1;

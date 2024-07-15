@@ -3,6 +3,7 @@ using HarmonyDB.Index.Analysis.Em.Services;
 using HarmonyDB.Index.Analysis.Models.Em;
 using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Tools;
+using HarmonyDB.Index.Api.Model.VExternal1.Caches;
 using HarmonyDB.Index.BusinessLogic.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;
@@ -72,7 +73,6 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
     private Dictionary<string, (byte songRoot, Scale scale)> GetSongsKeys(IndexHeaders indexHeaders) =>
         indexHeaders
             .Headers
-            //.Where(x => x.Value.BestTonality != null)
             .Where(x => x.Value.BestTonality?.IsReliable == true)
             .Select(x =>
             {
@@ -121,7 +121,7 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                 Loop = loops[x.Normalized],
                 Song = songs[x.ExternalId],
                 Shift = x.NormalizationRoot,
-                Weight = x.GetWeight(structures.Loops[x.Normalized], songsKeys.ContainsKey(x.ExternalId))
+                Weight = TonalitiesExtensions.GetWeight(x.Occurrences, x.Successions, structures.Loops[x.Normalized].Length, songsKeys.ContainsKey(x.ExternalId))
             })
             .ToList();
 

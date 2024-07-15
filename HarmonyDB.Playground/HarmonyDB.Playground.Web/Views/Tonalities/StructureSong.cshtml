@@ -246,7 +246,7 @@
                     <td></td>
                     <td></td>
                 }
-                <td>@link.GetWeight(loop, song.IndexHeader.BestTonality?.IsReliable == true).ToString("N2")</td>
+                <td>@TonalitiesExtensions.GetWeight(link.Occurrences, link.Successions, loop.Length, song.IndexHeader.BestTonality?.IsReliable == true).ToString("N2")</td>
                 <td>@link.Occurrences.ToString("N2")</td>
                 <td>@link.Successions.ToString("N2")</td>
                 <td>@link.Coverage.ToString("P0")</td>

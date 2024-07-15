@@ -1,5 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Api.Model.VExternal1.Caches;
 using HarmonyDB.Index.BusinessLogic.Caches.Bases;
 using HarmonyDB.Index.BusinessLogic.Models;
 using Microsoft.Extensions.Logging;

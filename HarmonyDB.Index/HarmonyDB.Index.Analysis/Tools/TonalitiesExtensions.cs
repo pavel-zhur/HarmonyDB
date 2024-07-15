@@ -10,7 +10,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tools;
 
-public static class TonalitiesAndStructuresExtensions
+public static class TonalitiesExtensions
 {
     private static readonly ConcurrentDictionary<string, (byte root, bool isMinor)?> Cache = new();
 
@@ -81,6 +81,7 @@ public static class TonalitiesAndStructuresExtensions
             ? (Note.Normalize(scale.root + (isSong ? 3 : -3)), false)
             : (Note.Normalize(scale.root + (isSong ? -3 : 3)), true);
     }
+
     public static byte GetMajorTonic(byte root, bool isMinor, bool isSong)
         => (root, isMinor).GetMajorTonic(isSong);
 
@@ -171,10 +172,10 @@ public static class TonalitiesAndStructuresExtensions
         return result;
     }
 
-    public static float GetWeight(this StructureLink structureLink, StructureLoop loop, bool isSongKnownTonality)
+    public static float GetWeight(float occurrences, float successions, int loopLength, bool isSongKnownTonality)
     {
-        return (structureLink.Occurrences + structureLink.Successions * 4)
-               * (loop.Length == 2 ? 1 : 5)
+        return (occurrences + successions * 4)
+               * (loopLength == 2 ? 1 : 5)
                * (isSongKnownTonality ? 10 : 1);
     }
 

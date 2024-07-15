@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index;
+﻿namespace HarmonyDB.Index.Api.Model.VExternal1.Caches;
 
 public record StructureLink(
     string Normalized,

@@ -1,5 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Api.Model.VExternal1.Caches;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;

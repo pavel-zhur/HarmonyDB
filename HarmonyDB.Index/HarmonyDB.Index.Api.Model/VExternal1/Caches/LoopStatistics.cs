@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Api.Model.VExternal1;
+﻿namespace HarmonyDB.Index.Api.Model.VExternal1.Caches;
 
 public class LoopStatistics
 {

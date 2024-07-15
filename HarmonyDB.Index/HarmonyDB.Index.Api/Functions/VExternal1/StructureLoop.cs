@@ -100,7 +100,7 @@ public class StructureLoop : ServiceFunctionBase<StructureLoopRequest, Structure
                     g.Key.derivedTonalityIndex,
                     g.Key.derivedFromKnown,
                     g.Count(),
-                    g.Sum(l => l.link.GetWeight(stats, l.known.HasValue)),
+                    g.Sum(l => TonalitiesExtensions.GetWeight(l.link.Occurrences, l.link.Successions, stats.Length, l.known.HasValue)),
                     g.Sum(x => x.link.Occurrences),
                     g.Sum(x => x.link.Successions),
                     g.Average(x => x.link.Coverage),
