@@ -202,14 +202,14 @@ public static class TonalitiesAndStructuresExtensions
         => !predicted.HasValue
             ? tonality.ToLoopTonalityTitle()
             : ToSongTonalityTitle((Note.Normalize(
-                tonality.root
-                - predicted.Value.root
-                - (predicted.Value.isMinor, tonality.isMinor) switch
+                predicted.Value.root 
+                - tonality.root
+                + (predicted.Value.isMinor, tonality.isMinor) switch
                 {
                     (true, true) => 0,
-                    (true, false) => 6,
+                    (true, false) => 0,
                     (false, true) => 3,
-                    (false, false) => -3,
+                    (false, false) => 3,
                 }), tonality.isMinor));
 
     public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality)
