@@ -23,8 +23,4 @@ public record SongModel
     public bool ShowBass { get; init; } = true;
 
     public bool ShowSus { get; init; } = true;
-
-    public int? LoopId { get; init; }
-
-    public bool DetectLoops { get; init; }
 }

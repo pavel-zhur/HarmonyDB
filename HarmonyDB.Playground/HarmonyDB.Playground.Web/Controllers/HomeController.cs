@@ -119,13 +119,6 @@ namespace HarmonyDB.Playground.Web.Controllers
                     Bass = x.bass,
                     Main = x.main,
                 }));
-
-            if (songModel.DetectLoops)
-            {
-                var structureLinks = _indexExtractor.FindStructureLinks(songModel.ExternalId, progression.Compact());
-
-                ViewBag.Loops = structureLinks;
-            }
             
             if (songModel.Highlight != null)
             {

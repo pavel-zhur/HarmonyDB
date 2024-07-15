@@ -39,7 +39,7 @@
         <a href="@chords.SourceUri">@ViewLocalizer["Source URL"]: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
     </li>
 
-    @if (Model is { Highlight: not null, DetectLoops: false })
+    @if (Model.Highlight != null)
     {
         <li>
             @Html.ActionLink($"{ViewLocalizer["Clear highlighting"].Value} {Model.Highlight}", "Song", Model with { Highlight = null })
@@ -156,17 +156,6 @@
     </li>
 
     <li>
-        @if (Model.DetectLoops)
-        {
-            @Html.ActionLink(ViewLocalizer["Hide detected loops"].Value, "Song", Model with { DetectLoops = false, LoopId = null, Highlight = null })
-        }
-        else
-        {
-            @Html.ActionLink(ViewLocalizer["Show detected loops"].Value, "Song", Model with { DetectLoops = true })
-        }
-    </li>
-
-    <li>
         @if (Model.IncludeTrace)
         {
             @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
@@ -177,36 +166,6 @@
         }
     </li>
 </ul>
-
-@if (Model.DetectLoops)
-{
-    <h3 class="mt-3">@ViewLocalizer["Detected Loops"]</h3>
-    <ul>
-        @{
-            List<StructureLink> loops = ViewBag.Loops;
-            @foreach (var (link, id) in loops.WithIndices().OrderBy(x => x.x.Normalized.DeserializeLoop().Length))
-            {
-                var statisticsTitle = ProgressionsVisualizer.GetLoopStatisticsTitle(link);
-                var chordsTitle = ProgressionsVisualizer.GetLoopChordsTitle(link);
-                <li>
-                    @if (id == Model.LoopId)
-                    {
-                        <span>@statisticsTitle</span>
-                        <b><span>@chordsTitle</span></b>
-                        @Html.ActionLink(ViewLocalizer["Find other songs with this loop"].Value, "SongsByChords", new SongsByChordsModel { Query = chordsTitle, JustForm = true })
-                    }
-                    else
-                    {
-                        <a style="@(Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id, Highlight = chordsTitle })">
-                            <span>@statisticsTitle</span>
-                            <b><span>@chordsTitle</span></b>
-                        </a>
-                    }
-                </li>
-            }
-        }
-    </ul>
-}
 
 <h3 class="mt-3">@ViewLocalizer["Chords"]</h3>
 <div class="chords-block">
