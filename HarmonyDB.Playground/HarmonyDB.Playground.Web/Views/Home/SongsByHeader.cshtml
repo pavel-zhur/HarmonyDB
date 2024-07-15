@@ -59,7 +59,10 @@
             </tr>
             <tr>
                 <td>@ViewLocalizer["Metadata"]</td>
-                <td>@ViewLocalizer["Predicted"]</td>
+                <td>
+                    @ViewLocalizer["Predicted"]
+                    @await Html.PartialAsync("Badge", BadgeModel.Beta)
+                </td>
             </tr>
         </thead>
         @foreach (var (song, predictedTonalityIndex) in response.Songs)

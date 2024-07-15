@@ -42,7 +42,12 @@
                             <a class="nav-link text-black" asp-area="" asp-controller="Home" asp-action="Loops" asp-route-JustForm="True">@ViewLocalizer["Loops Statistics"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-black" asp-area="" asp-controller="Tonalities" asp-action="Index">@ViewLocalizer["Tonalities"]</a>
+                            <a class="nav-link text-black" asp-area="" asp-controller="Tonalities" asp-action="Index">
+                                @ViewLocalizer["Tonalities"]
+                                <span class="my-sup">
+                                    @await Html.PartialAsync("Badge", BadgeModel.Beta)
+                                </span>
+                            </a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">

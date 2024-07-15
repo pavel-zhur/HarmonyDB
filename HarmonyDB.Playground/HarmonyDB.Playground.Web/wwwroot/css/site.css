@@ -21,14 +21,17 @@ body {
   margin-bottom: 60px;
 }
 
-span.in-progress {
+span.my-badge {
     background-color: #04AA6D;
     color: white;
     padding: 1px 4px;
-    margin-left: 6px;
     text-align: center;
     border-radius: 5px;
     font-size: 80%;
+}
+
+span.my-badge-beta {
+    background-color: #c3a900;
 }
 
 ul.sparse li {
@@ -47,4 +50,9 @@ ul.sparse li {
     padding: 0.15rem 0.5rem;
     line-height: 1.5;
     border-radius: 0.2rem;
+}
+
+.my-sup {
+    position: relative;
+    top: -0.2em;
 }

@@ -55,7 +55,10 @@
     </li>
     
     <li>
-        <span>@ViewLocalizer["Detected tonality"]: </span>
+        <span>
+            @ViewLocalizer["Detected tonality"]
+            @await Html.PartialAsync("Badge", BadgeModel.Beta)&nbsp;:
+        </span>
         @if (tonality != null)
         {
             <b>@tonality.Song.Probabilities.GetPredictedTonality(out var confidence).ToSongTonalityTitle()</b>
