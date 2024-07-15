@@ -19,7 +19,7 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
+public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
@@ -28,7 +28,7 @@ public class StructureLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly CommonExecutions _commonExecutions;
 
-    public StructureLoop(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, DownstreamApiClient downstreamApiClient, CommonExecutions commonExecutions)
+    public TonalitiesLoop(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, DownstreamApiClient downstreamApiClient, CommonExecutions commonExecutions)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _indexApiClient = indexApiClient;
@@ -39,7 +39,7 @@ public class StructureLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1StructureLoop)]
+    [Function(IndexApiUrls.VExternal1TonalitiesLoop)]
     public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] LoopRequest request)
         => RunHandler(request);
 
@@ -47,7 +47,7 @@ public class StructureLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
     {
         if (_options.RedirectCachesToIndex)
         {
-            return await _indexApiClient.StructureLoop(request);
+            return await _indexApiClient.TonalitiesLoop(request);
         }
 
         var tonalities = await _tonalitiesCache.Get();

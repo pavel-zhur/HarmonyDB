@@ -77,7 +77,7 @@ namespace HarmonyDB.Playground.Web.Controllers
 
             try
             {
-                ViewBag.Tonality = await _indexApiClient.StructureSong(new SongRequest
+                ViewBag.Tonality = await _indexApiClient.TonalitiesSong(new SongRequest
                 {
                     ExternalId = songModel.ExternalId,
                 }, ViewBag.Trace);

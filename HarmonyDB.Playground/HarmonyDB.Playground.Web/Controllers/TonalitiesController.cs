@@ -51,7 +51,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                         ViewBag.Trace = new ApiTraceBag();
                     }
 
-                    ViewBag.Response = await _indexApiClient.StructureLoops(model, ViewBag.Trace);
+                    ViewBag.Response = await _indexApiClient.TonalitiesLoops(model, ViewBag.Trace);
                 }
 
                 model.JustForm = false;
@@ -76,7 +76,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                         ViewBag.Trace = new ApiTraceBag();
                     }
 
-                    ViewBag.Response = await _indexApiClient.StructureSongs(model, ViewBag.Trace);
+                    ViewBag.Response = await _indexApiClient.TonalitiesSongs(model, ViewBag.Trace);
                 }
 
                 model.JustForm = false;
@@ -98,7 +98,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.StructureLoop(model, ViewBag.Trace);
+                ViewBag.Response = await _indexApiClient.TonalitiesLoop(model, ViewBag.Trace);
 
                 return View(model);
             }
@@ -117,7 +117,7 @@ namespace HarmonyDB.Playground.Web.Controllers
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.StructureSong(model, ViewBag.Trace);
+                ViewBag.Response = await _indexApiClient.TonalitiesSong(model, ViewBag.Trace);
             
                 return View(model);
             }

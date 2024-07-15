@@ -18,14 +18,14 @@ using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VExternal1;
 
-public class StructureLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
+public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
 {
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
     private readonly StructuresCache _structuresCache;
     private readonly TonalitiesCache _tonalitiesCache;
 
-    public StructureLoops(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache)
+    public TonalitiesLoops(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache)
         : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
     {
         _indexApiClient = indexApiClient;
@@ -34,7 +34,7 @@ public class StructureLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1StructureLoops)]
+    [Function(IndexApiUrls.VExternal1TonalitiesLoops)]
     public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] LoopsRequest request)
         => RunHandler(request);
 
@@ -42,7 +42,7 @@ public class StructureLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
     {
         if (_options.RedirectCachesToIndex)
         {
-            return await _indexApiClient.StructureLoops(request);
+            return await _indexApiClient.TonalitiesLoops(request);
         }
 
         var tonalities = await _tonalitiesCache.Get();
