@@ -21,7 +21,7 @@ body {
   margin-bottom: 60px;
 }
 
-span.in-progress, span.in-progress-ru {
+span.in-progress {
     background-color: #04AA6D;
     color: white;
     padding: 1px 4px;
@@ -29,14 +29,6 @@ span.in-progress, span.in-progress-ru {
     text-align: center;
     border-radius: 5px;
     font-size: 80%;
-}
-
-span.in-progress::after {
-    content: "IN PROGRESS";
-}
-
-span.in-progress-ru::after {
-    content: "В РАЗРАБОТКЕ";
 }
 
 ul.sparse li {
