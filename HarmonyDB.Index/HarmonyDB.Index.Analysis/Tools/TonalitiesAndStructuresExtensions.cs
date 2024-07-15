@@ -189,24 +189,27 @@ public static class TonalitiesAndStructuresExtensions
     public static string ToSongTonalityTitle(this (byte root, bool isMinor) tonality)
         => $"{new Note(tonality.root).Representation(new())}{(tonality.isMinor ? "m" : string.Empty)}";
 
+    public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality, byte? normalizationRoot)
+        => normalizationRoot.HasValue
+            ? ToSongTonalityTitle((Note.Normalize(normalizationRoot.Value - tonality.root), tonality.isMinor))
+            : tonality.ToLoopTonalityTitle();
+
     public static string ToLoopTonalityTitle(this int tonalityIndex, (byte root, bool isMinor)? predicted = null)
-        => predicted.HasValue
-            ? tonalityIndex.FromIndex().ToLoopTonalityTitle(predicted.Value)
-            : tonalityIndex.FromIndex().ToLoopTonalityTitle();
+        => tonalityIndex.FromIndex().ToLoopTonalityTitle(predicted);
 
     public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality,
         (byte root, bool isMinor)? predicted)
         => !predicted.HasValue
             ? tonality.ToLoopTonalityTitle()
             : ToSongTonalityTitle((Note.Normalize(
-                tonality.root
-                - predicted.Value.root
-                - (predicted.Value.isMinor, tonality.isMinor) switch
+                predicted.Value.root 
+                - tonality.root
+                + (predicted.Value.isMinor, tonality.isMinor) switch
                 {
                     (true, true) => 0,
-                    (true, false) => 6,
+                    (true, false) => 0,
                     (false, true) => 3,
-                    (false, false) => -3,
+                    (false, false) => 3,
                 }), tonality.isMinor));
 
     public static string ToLoopTonalityTitle(this (byte root, bool isMinor) tonality)

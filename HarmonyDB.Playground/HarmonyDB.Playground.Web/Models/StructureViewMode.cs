@@ -1,6 +1,6 @@
 namespace HarmonyDB.Playground.Web.Models;
 
-public enum StructureLoopViewMode
+public enum StructureViewMode
 {
     Normalized,
     Interpreted,

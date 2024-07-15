@@ -1,0 +1,5 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model BadgeModel
+@inject IViewLocalizer ViewLocalizer
+
+<span class="in-progress">@ViewLocalizer[Model.ToString()]</span>

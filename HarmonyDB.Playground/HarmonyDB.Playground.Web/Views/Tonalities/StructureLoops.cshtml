@@ -102,7 +102,7 @@
         <h5 class="d-inline-block">@ViewLocalizer["Loops"]</h5>
     </div>
 
-    @await Html.PartialAsync("Structure/StructureLoopViewModeSwitch", Model)
+    @await Html.PartialAsync("Structure/StructureViewModeSwitch", Model)
 
     @await Html.PartialAsync("Paging", Model)
 
@@ -130,7 +130,7 @@
                     var predicted = loop.Probabilities.GetPredictedTonality();
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale(false);
-                    var predictedViewMode = Model.ViewMode == StructureLoopViewMode.Interpreted ? predicted.OnceAsNullable() : null;
+                    var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
                 }
 
                 <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "StructureLoop", new StructureLoopModel { Normalized = loop.Normalized })</td>
