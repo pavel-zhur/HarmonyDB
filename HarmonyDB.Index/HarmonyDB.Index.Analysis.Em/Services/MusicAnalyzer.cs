@@ -194,6 +194,7 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         foreach (var link in relevantLinks)
         {
             var sourceProbabilities = isSong ? link.Loop.TonalityProbabilities : link.Song.TonalityProbabilities;
+            var sourceScore = isSong ? link.Loop.Score.ScaleScore : link.Song.Score.ScaleScore;
             for (byte i = 0; i < Constants.TonicCount; i++)
             {
                 for (byte j = 0; j < Constants.ScaleCount; j++)
@@ -228,6 +229,10 @@ public class MusicAnalyzer(ILogger<MusicAnalyzer> logger)
         var probabilities = isSong
             ? loopLink.Loop.TonalityProbabilities
             : loopLink.Song.TonalityProbabilities;
+
+        var score = isSong
+            ? loopLink.Loop.Score.TonicScore
+            : loopLink.Song.Score.TonicScore;
 
         foreach (var (tonic, scale) in Constants.Indices)
         {
