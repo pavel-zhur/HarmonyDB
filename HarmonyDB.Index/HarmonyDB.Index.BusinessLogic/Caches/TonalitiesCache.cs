@@ -101,7 +101,6 @@ public class TonalitiesCache : BytesFileCacheBase<EmModel>
                 x => new Loop
                 {
                     Id = x.Key,
-                    Length = (byte)Analysis.Models.Loop.Deserialize(x.Key).Length,
                 });
 
         var songs = structures

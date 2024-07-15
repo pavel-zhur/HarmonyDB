@@ -33,11 +33,9 @@ public record EmModel : IEmModel
             .Select(i =>
             {
                 var id = reader.ReadString();
-                var sequence = Analysis.Models.Loop.Deserialize(id);
                 var loop = new Loop
                 {
                     Id = id,
-                    Length = (byte)sequence.Length,
                 };
 
                 DeserializeSource(reader, loop);
