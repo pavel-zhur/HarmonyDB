@@ -2,12 +2,14 @@
 using System.Xml.Serialization;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Analysis.Tools;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
-public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
+public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger, IndexExtractor indexExtractor)
 {
     [Theory]
     [InlineData(2)]
@@ -35,20 +37,10 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
                     .Aggregate(x, (x, y) => x.Concat(y)))
                 .ToArray();
 
-            Loop loop = new()
-            {
-                Progression = movements,
-                Coverage = [],
-                FoundFirsts = [],
-                IsCompound = false,
-                Occurrences = 0,
-                SequenceIndex = 0,
-                Start = 0,
-                Successions = 0,
-            };
+            var loop = movements;
 
-            Loop.GetNormalizedProgression(loop.Progression, out var normalizationShift, out var invariants);
-            var invertedShift = Loop.InvertNormalizationShift(normalizationShift, loop.Length);
+            indexExtractor.GetNormalizedProgression(loop, out var normalizationShift, out var invariants);
+            var invertedShift = indexExtractor.InvertNormalizationShift(normalizationShift, loop.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
             minInvertedShift = Math.Min(minInvertedShift, invertedShift);
@@ -67,7 +59,7 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
     public void NormalizedIsStable1000()
     {
         const int length = 10;
-        (Loop loop1, Loop loop2) NewLoop()
+        (ReadOnlyMemory<CompactHarmonyMovement> loop1, ReadOnlyMemory<CompactHarmonyMovement> loop2) NewLoop()
         {
             ReadOnlyMemory<CompactHarmonyMovement> movements = Enumerable.Range(0, length).Select(_ => new CompactHarmonyMovement
             {
@@ -76,22 +68,9 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
                 RootDelta = (byte)Random.Shared.Next(0, 12),
             }).ToList().SelectSingle(x => x.Concat(x)).ToArray();
 
-            Loop loop = new()
-            {
-                Progression = movements.Slice(0, length),
-                Coverage = [],
-                FoundFirsts = [],
-                IsCompound = false,
-                Occurrences = 0,
-                SequenceIndex = 0,
-                Start = 0,
-                Successions = 0,
-            };
+            var loop = movements.Slice(0, length);
 
-            return (loop, loop with
-            {
-                Progression = movements.Slice(Random.Shared.Next(0, length), length)
-            });
+            return (loop, movements.Slice(Random.Shared.Next(0, length), length));
         }
 
         var loops = Enumerable.Repeat(0, 1000).Select(_ => NewLoop()).ToList();
@@ -102,25 +81,25 @@ public class LoopNormalizationTests(ILogger<LoopNormalizationTests> logger)
         var maxInvertedShift = int.MinValue;
         foreach (var (loop1, loop2) in loops)
         {
-            var progression1 = loop1.GetNormalizedProgression(out var normalizationShift);
-            var invertedShift = Loop.InvertNormalizationShift(normalizationShift, progression1.Length);
+            var progression1 = indexExtractor.GetNormalizedProgression(loop1, out var normalizationShift);
+            var invertedShift = indexExtractor.InvertNormalizationShift(normalizationShift, progression1.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
             minInvertedShift = Math.Min(minInvertedShift, invertedShift);
             maxInvertedShift = Math.Max(maxInvertedShift, invertedShift);
 
-            var progression2 = loop2.GetNormalizedProgression(out normalizationShift);
-            invertedShift = Loop.InvertNormalizationShift(normalizationShift, progression1.Length);
+            var progression2 = indexExtractor.GetNormalizedProgression(loop2, out normalizationShift);
+            invertedShift = indexExtractor.InvertNormalizationShift(normalizationShift, progression1.Length);
             minNormalizationShift = Math.Min(minNormalizationShift, normalizationShift);
             maxNormalizationShift = Math.Max(maxNormalizationShift, normalizationShift);
             minInvertedShift = Math.Min(minInvertedShift, invertedShift);
             maxInvertedShift = Math.Max(maxInvertedShift, invertedShift);
-            var serialized1 = Loop.Serialize(progression1);
-            var serialized2 = Loop.Serialize(progression2);
+            var serialized1 = progression1.SerializeLoop();
+            var serialized2 = progression2.SerializeLoop();
             if (serialized1 != serialized2)
             {
-                logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(loop1.Progression).Select(x => x.RootDelta)));
-                logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(loop2.Progression).Select(x => x.RootDelta)));
+                logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(loop1).Select(x => x.RootDelta)));
+                logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(loop2).Select(x => x.RootDelta)));
                 logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(progression1).Select(x => x.RootDelta)));
                 logger.LogInformation(string.Join(", ", MemoryMarshal.ToEnumerable(progression2).Select(x => x.RootDelta)));
                 Assert.Fail();

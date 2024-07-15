@@ -6,6 +6,7 @@ using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
+using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.DownstreamApi.Client;
 using Microsoft.AspNetCore.Http;
@@ -123,7 +124,7 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
                                 x.x.tone.Score.ScaleScore,
                                 x.outputHeader,
                                 x.x.tone.KnownTonality?.FromEm().ToIndex()),
-                            x.x.link))
+                            x.x.link.ToModel()))
                         .ToList()))
                 .ToList(),
         };

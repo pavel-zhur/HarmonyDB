@@ -372,7 +372,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
     private (byte root1, int root2) ToNormalizedRoots((int rootIndex1, int rootIndex2) rootIndices, string normalized,
         byte normalizationRoot1, byte? normalizationRoot2 = null)
-        => Loop.Deserialize(normalized)
+        => normalized.DeserializeLoop()
             .SelectSingle(s => (s, roots: indexExtractor.CreateRoots(s, normalizationRoot1)))
             .SelectSingle(r =>
                 normalizationRoot2 == null
@@ -759,7 +759,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             var endMovement = loopSelfJumpsBlock.StartIndex + loopSelfJumpsBlock.LoopLength - 1;
 
-            var normalized = Loop.Deserialize(loopSelfJumpsBlock.Normalized);
+            var normalized = loopSelfJumpsBlock.Normalized.DeserializeLoop();
 
             var childJumps = string.Join(Environment.NewLine, loopSelfJumpsBlock.ChildJumps.Select(j =>
                 {
@@ -917,7 +917,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             Assert.InRange(loop.EndIndex, 0, sequence.Length - 1);
             
             // loop normalization shift correctly set value test
-            Assert.Equal((loop.Normalized, loop.NormalizationShift), (Loop.Serialize(Loop.GetNormalizedProgression(loop.Loop, out var shift, out _)), shift));
+            Assert.Equal((loop.Normalized, loop.NormalizationShift), (indexExtractor.GetNormalizedProgression(loop.Loop, out var shift, out _).SerializeLoop(), shift));
 
             var rootsTrace = CreateRootsTrace(loop);
 
@@ -929,7 +929,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                                       $" {rootsTrace};");
             }
 
-            var normalized = Loop.Deserialize(loop.Normalized);
+            var normalized = loop.Normalized.DeserializeLoop();
             var normalizedRoots = indexExtractor.CreateRoots(normalized, loop.NormalizationRoot);
             var normalizedRootsIndices = Enumerable.Range(0, loop.EndIndex - loop.StartIndex + 1)
                 .Prepend(-1 + normalized.Length)

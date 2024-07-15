@@ -12,6 +12,8 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models;
+using HarmonyDB.Index.Analysis.Models.CompactV1;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
@@ -25,12 +27,13 @@ namespace HarmonyDB.Playground.Web.Controllers
         private readonly IndexApiClient _indexApiClient;
         private readonly SourceApiClient _sourceApiClient;
         private readonly ProgressionsSearch _progressionsSearch;
+        private readonly IndexExtractor _indexExtractor;
         private readonly ProgressionsBuilder _progressionsBuilder;
         private readonly ChordDataParser _chordDataParser;
         private readonly InputParser _inputParser;
         private readonly ProgressionsVisualizer _progressionsVisualizer;
 
-        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer)
+        public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer, IndexExtractor indexExtractor)
         {
             _logger = logger;
             _indexApiClient = indexApiClient;
@@ -40,6 +43,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             _chordDataParser = chordDataParser;
             _inputParser = inputParser;
             _progressionsVisualizer = progressionsVisualizer;
+            _indexExtractor = indexExtractor;
         }
 
         public IActionResult Index()
@@ -118,18 +122,12 @@ namespace HarmonyDB.Playground.Web.Controllers
 
             if (songModel.DetectLoops)
             {
-                var loops = _progressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
-                if (songModel.LoopId.HasValue)
-                {
-                    var customAttributes = _progressionsVisualizer.BuildCustomAttributesForLoop(loops, progression, songModel.LoopId.Value);
+                var structureLinks = _indexExtractor.FindStructureLinks(songModel.ExternalId, progression.Compact());
 
-                    representationSettings = representationSettings with { CustomAttributes = customAttributes };
-                }
-
-                ViewBag.Loops = loops;
-                ViewBag.Progression = progression;
+                ViewBag.Loops = structureLinks;
             }
-            else if (songModel.Highlight != null)
+            
+            if (songModel.Highlight != null)
             {
                 var searchProgression = _inputParser.Parse(songModel.Highlight);
                 var found = _progressionsSearch.Search(progression.Once().ToList(), searchProgression);

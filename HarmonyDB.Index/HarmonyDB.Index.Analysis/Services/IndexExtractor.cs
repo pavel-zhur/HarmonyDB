@@ -3,6 +3,8 @@ using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Models.Structure;
+using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Services;
@@ -63,13 +65,13 @@ public class IndexExtractor
 
             movementIndex--; // now points to the movement leading to the last root of the found sequence
 
-            var normalized = Loop.Serialize(Loop.GetNormalizedProgression(foundLoop, out var normalizationShift, out _));
+            var normalized = GetNormalizedProgression(foundLoop, out var normalizationShift, out _).SerializeLoop();
             loops.Add(new()
             {
                 Loop = foundLoop,
                 Normalized = normalized,
                 NormalizationShift = normalizationShift,
-                NormalizationRoot = roots[movementIndexToLoopStart + 1 + Loop.InvertNormalizationShift(normalizationShift, foundLoop.Length)],
+                NormalizationRoot = roots[movementIndexToLoopStart + 1 + InvertNormalizationShift(normalizationShift, foundLoop.Length)],
                 StartIndex = movementIndexToLoopStart + 1,
                 EndIndex = movementIndex,
             });
@@ -146,4 +148,103 @@ public class IndexExtractor
                 };
             })
             .ToList();
+
+    /// <returns>
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Inverts the number of steps one progression is ahead to the number of steps it is behind,
+    /// where a progression may be the normalized progression or the original progression.
+    /// Unaware of invariants.
+    /// </returns>
+    public int InvertNormalizationShift(int normalizationShift, int progressionLength) =>
+        (progressionLength - normalizationShift) % progressionLength;
+
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression)
+        => GetNormalizedProgression(progression, out _, out _);
+
+    /// <param name="normalizationShift">
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Returns the index of the start of the original progression in the normalized progression.
+    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
+    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
+    /// </param>
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int normalizationShift)
+        => GetNormalizedProgression(progression, out normalizationShift, out _);
+
+    /// <param name="normalizationShift">
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Returns the index of the start of the original progression in the normalized progression.
+    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
+    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
+    /// </param>
+    public ReadOnlyMemory<CompactHarmonyMovement> GetNormalizedProgression(ReadOnlyMemory<CompactHarmonyMovement> progression, out int normalizationShift, out int invariants)
+    {
+        var buffer = new byte[4];
+        var idSequences = MemoryMarshal.ToEnumerable(progression)
+            .Select(p =>
+            {
+                buffer[0] = p.RootDelta;
+                buffer[1] = (byte)p.FromType;
+                buffer[2] = (byte)p.ToType;
+                return BitConverter.ToInt32(buffer);
+            })
+            .ToArray();
+
+        var length = progression.Length;
+        var shifts = Enumerable.Range(0, length).ToList();
+        var iteration = 0;
+        invariants = 1;
+        while (shifts.Count > 1)
+        {
+            if (iteration == length) // multiple shifts possible
+            {
+                invariants = shifts.Count;
+                break;
+            }
+
+            shifts = shifts
+                .GroupBy(s => idSequences[(s + iteration) % length])
+                .MinBy(g => g.Key)!
+                .ToList();
+
+            iteration++;
+        }
+
+        normalizationShift = shifts
+            .Select(x => InvertNormalizationShift(x, length))
+            .Min();
+        return Enumerable.Range(shifts.First(), length)
+            .Select(s => progression.Span[s % length])
+            .ToArray();
+    }
+
+    public List<StructureLink> FindStructureLinks(string externalId, CompactChordsProgression compactChordsProgression)
+    {
+        var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (float occurrences, float successions, short length)>();
+        foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
+        {
+            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
+
+            foreach (var loop in loops)
+            {
+                var key = (loop.Normalized, loop.NormalizationRoot);
+                var counters = loopResults.GetValueOrDefault(key);
+                var length = loop.EndIndex - loop.StartIndex + 1;
+                loopResults[key] = ((float occurrences, float successions, short length))(
+                    counters.occurrences + (float)length / loop.LoopLength,
+                    counters.successions + (float)length / loop.LoopLength - 1,
+                    counters.length + length);
+            }
+        }
+
+        var items = loopResults
+            .Select(p => new StructureLink(
+                p.Key.normalized,
+                externalId,
+                p.Key.normalizationRoot,
+                p.Value.occurrences,
+                p.Value.successions,
+                (float)p.Value.length / compactChordsProgression.ExtendedHarmonyMovementsSequences.Sum(s => s.Movements.Length)))
+            .ToList();
+        return items;
+    }
 }

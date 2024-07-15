@@ -1,3 +1,3 @@
-﻿namespace HarmonyDB.Index.Api.Model.VExternal1.Caches;
+﻿namespace HarmonyDB.Index.Analysis.Models.Structure;
 
 public record StructureSong(string ExternalId, int TotalLoops);

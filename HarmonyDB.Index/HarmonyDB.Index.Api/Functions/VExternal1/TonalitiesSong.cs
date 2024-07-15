@@ -6,6 +6,7 @@ using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
+using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.DownstreamApi.Client;
 using Microsoft.AspNetCore.Http;
@@ -71,7 +72,7 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
                 header,
                 songTonality.KnownTonality?.FromEm().ToIndex()),
 
-            Links = structures.LinksBySongId[request.ExternalId].ToList(),
+            Links = structures.LinksBySongId[request.ExternalId].Select(x => x.ToModel()).ToList(),
 
             Loops = structures.LinksBySongId[request.ExternalId]
                 .Select(x => x.Normalized)

@@ -1,9 +1,7 @@
-﻿using HarmonyDB.Index.Analysis.Models;
-using HarmonyDB.Index.Analysis.Models.Index;
-using HarmonyDB.Index.Api.Model.VExternal1.Caches;
+﻿using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
 
-namespace HarmonyDB.Index.BusinessLogic.Models;
+namespace HarmonyDB.Index.Analysis.Models.Structure;
 
 public class Structures
 {
@@ -21,7 +19,7 @@ public class Structures
             links,
             links.GroupBy(x => x.Normalized).Select(g =>
             {
-                var sequence = Loop.Deserialize(g.Key);
+                var sequence = g.Key.DeserializeLoop();
                 return new StructureLoop(
                     g.Key,
                     sequence.Length,

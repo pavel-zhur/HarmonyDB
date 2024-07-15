@@ -1,11 +1,10 @@
-using HarmonyDB.Index.Api.Model.VExternal1.Caches;
 using HarmonyDB.Source.Api.Model.V1;
 
 namespace HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 
 public record Song(
 
-    // base
+    // StructureSong mirror
     string ExternalId,
     int TotalLoops,
 
@@ -14,6 +13,4 @@ public record Song(
     float TonicScore,
     float ScaleScore,
     IndexHeader IndexHeader,
-    int? KnownTonalityIndex)
-
-    : StructureSong(ExternalId, TotalLoops);
+    int? KnownTonalityIndex);

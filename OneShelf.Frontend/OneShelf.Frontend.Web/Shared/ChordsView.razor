@@ -3,7 +3,9 @@
 @using HarmonyDB.Common.Representations.OneShelf
 @using HarmonyDB.Common.Transposition
 @using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Models.Structure
 @using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Source.Api.Model.V1
 @using Microsoft.Extensions.Options
 @using OneShelf.Common
@@ -12,6 +14,7 @@
 @using OneShelf.Frontend.Web.Interop
 @using OneShelf.Frontend.Web.Models
 @using Version = OneShelf.Frontend.Api.Model.V3.Databasish.Version
+@inject InputParser InputParser
 @inject DataProvider DataProvider
 @inject CollectionIndexProvider CollectionIndexProvider
 @inject ILogger<ChordsView> Logger
@@ -35,6 +38,7 @@
 @inject ChordDataParser ChordDataParser
 @inject IOptions<FrontendOptions> Options
 @inject ProgressionsVisualizer ProgressionsVisualizer
+@inject IndexExtractor IndexExtractor
 
 <div class="page-header bg-info bg-opacity-75 mt-4 my-header my-content-addition">
 
@@ -385,11 +389,11 @@ else
     @if (_loopsMemory != null)
     {
         <div>
-            @foreach (var (loop, id) in _loopsMemory.Value.loops.WithIndices().OrderBy(x => x.x.Length))
+            @foreach (var (loop, id) in _loopsMemory.Value.loops.WithIndices().OrderBy(x => x.x.Normalized.DeserializeLoop().Length))
             {
-                <div style="@(loop.IsCompound ? "color: darkgray" : _loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
-                    <span>@ProgressionsVisualizer.GetLoopStatisticsTitle(_loopsMemory.Value.progression, loop)</span>
-                    <b><span>@ProgressionsVisualizer.GetLoopChordsTitle(_loopsMemory.Value.progression, loop)</span></b>
+                <div style="@(_loopId == id ? "color: darkgreen" : "")" @onclick="() => LoopIdClick(id)" class="my-link">
+                    <span>@ProgressionsVisualizer.GetLoopStatisticsTitle(loop)</span>
+                    <b><span>@ProgressionsVisualizer.GetLoopChordsTitle(loop)</span></b>
                 </div>
             }
         </div>
@@ -450,7 +454,7 @@ else
     
     private bool _loops;
     private int? _loopId;
-    private (List<Loop> loops, ChordsProgression progression)? _loopsMemory;
+    private (List<StructureLink> loops, ChordsProgression progression)? _loopsMemory;
     private IReadOnlyDictionary<int, string>? _loopsCustomAttributes;
 
     private bool _specialTonic;
@@ -815,7 +819,7 @@ else
         {
             var chords = _chords.Output.AsChords(_representationSettings);
             var progression = ProgressionsBuilder.BuildProgression(chords.Select(ChordDataParser.GetProgressionData).ToList());
-            var loops = ProgressionsSearch.FindAllLoops(progression.Compact().ExtendedHarmonyMovementsSequences);
+            var loops = IndexExtractor.FindStructureLinks("does not matter", progression.Compact());
             _loopsMemory = (loops, progression);
 
             SetLoopsCustomAttributes();
@@ -829,7 +833,17 @@ else
 
     private void SetLoopsCustomAttributes()
     {
-        _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForLoop(_loopsMemory.Value.loops, _loopsMemory.Value.progression, _loopId);
+        if (!_loopId.HasValue)
+        {
+            _loopsCustomAttributes = new Dictionary<int, string>();
+            return;
+        }
+
+        var loop = _loopsMemory!.Value.loops[_loopId!.Value];
+        var searchProgression = InputParser.Parse(loop.Normalized.DeserializeLoop().GetTitle(loopify: true));
+        var found = ProgressionsSearch.Search(_loopsMemory.Value.progression.Once().ToList(), searchProgression);
+
+        _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForSearch(_loopsMemory.Value.progression, found);
     }
 
     private async Task InvertSearch()

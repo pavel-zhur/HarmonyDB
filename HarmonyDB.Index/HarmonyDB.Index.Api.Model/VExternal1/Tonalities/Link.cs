@@ -1,6 +1,6 @@
-﻿namespace HarmonyDB.Index.Api.Model.VExternal1.Caches;
+namespace HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 
-public record StructureLink(
+public record Link(
     string Normalized,
     string ExternalId,
     byte NormalizationRoot,
