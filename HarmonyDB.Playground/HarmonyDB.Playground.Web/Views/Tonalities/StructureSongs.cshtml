@@ -141,6 +141,13 @@
                     <td>@value.ToString("P0")</td>
                 }
             </tr>
+            <tr>
+                <td>@ViewLocalizer["Total Loops"]</td>
+                @foreach (var value in response.Distributions.TotalLoops)
+                {
+                    <td>@value.ToString("N0")</td>
+                }
+            </tr>
         </tbody>
     </table>
 

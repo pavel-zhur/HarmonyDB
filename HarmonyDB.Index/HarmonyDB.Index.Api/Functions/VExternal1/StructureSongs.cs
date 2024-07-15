@@ -163,6 +163,7 @@ public class StructureSongs : ServiceFunctionBase<StructureSongsRequest, Structu
                 TonicConfidence = songs.GetPercentiles(x => x.Probabilities.TonicConfidence(true)),
                 TonicScore = songs.GetPercentiles(x => x.TonicScore),
                 ScaleScore = songs.GetPercentiles(x => x.ScaleScore),
+                TotalLoops = songs.GetPercentiles(x => x.TotalLoops),
             },
         };
     }
