@@ -69,7 +69,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         var found = _progressionsSearch.Search(
             headers.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
                 .Select(x => x.p.Value),
-            _inputParser.Parse(request.Query));
+            _inputParser.ParseSequence(request.Query));
 
         var results = headers
             .Select(h => progressions.TryGetValue(h.ExternalId, out var progression) && found.TryGetValue(progression, out var coverage)

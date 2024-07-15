@@ -279,7 +279,7 @@ public class ProgressionsBuilder
                         To = p.current,
                         FromType = p.previous.HarmonyData.ChordType,
                         ToType = p.current.HarmonyData.ChordType,
-                        Title = $"{(titleDelta > 0 ? "+" : null)}{titleDelta} {p.previous.HarmonyData.ChordType.ChordTypeToString(true)}-{p.current.HarmonyData.ChordType.ChordTypeToString(true)}",
+                        Title = $"{(titleDelta > 0 ? "+" : null)}{titleDelta} {p.previous.HarmonyData.ChordType.ChordTypeToString(ChordTypePresentation.MajorAsM)}-{p.current.HarmonyData.ChordType.ChordTypeToString(ChordTypePresentation.MajorAsM)}",
                     };
                 }).ToList(),
             })

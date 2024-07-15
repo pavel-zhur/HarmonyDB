@@ -4,11 +4,11 @@ namespace HarmonyDB.Index.Analysis.Tools;
 
 public static class Extensions
 {
-    public static string ChordTypeToString(this ChordType chordType, bool majorAsM = false) =>
+    public static string ChordTypeToString(this ChordType chordType, ChordTypePresentation presentation = ChordTypePresentation.Default) =>
         chordType switch
         {
-            ChordType.Major => majorAsM ? "M" : "",
-            ChordType.Minor => "m",
+            ChordType.Major => presentation == ChordTypePresentation.MajorAsM ? "M" : string.Empty,
+            ChordType.Minor => presentation != ChordTypePresentation.Degrees ? "m" : string.Empty,
             ChordType.Power => "5",
             ChordType.Sus2 => "sus2",
             ChordType.Sus4 => "sus4",

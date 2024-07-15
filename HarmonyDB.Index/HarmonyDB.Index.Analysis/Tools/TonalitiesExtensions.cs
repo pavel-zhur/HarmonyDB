@@ -120,6 +120,52 @@ public static class TonalitiesExtensions
 
     public static string ToChord(byte note, ChordType chordType) => $"{new Note(note).Representation(new())}{chordType.ChordTypeToString()}";
 
+    public static string ToChord(this (byte note, ChordType chordType) chord, (byte tonic, bool isMinor) tonality)
+    {
+        byte?[] majorDegrees = [1, null, 2, null, 3, 4, null, 5, null, 6, null, 7];
+        byte?[] minorDegrees = [1, null, 2, 3, null, 4, null, 5, 6, null, 7, null];
+        var majorRomanDegrees = "\u2160\u2161\u2162\u2163\u2164\u2165\u2166".Select(c => c.ToString()).ToArray();
+        var minorRomanDegrees = "\u2170\u2171\u2172\u2173\u2174\u2175\u2176".Select(c => c.ToString()).ToArray();
+        var unknownRomanDegrees = "1234567".Select(c => c.ToString()).ToArray();
+        bool?[] majorScaleDefaultIsMinorDegrees = [false, true, true, false, false, true, null];
+        bool?[] minorScaleDefaultIsMinorDegrees = [true, null, false, true, true, false, false];
+        const string signFlat = "♭";
+
+        var shift = Note.Normalize(chord.note - tonality.tonic);
+        var degrees = tonality.isMinor ? minorDegrees : majorDegrees;
+        var defaultIsMinorDegrees = tonality.isMinor ? minorScaleDefaultIsMinorDegrees : majorScaleDefaultIsMinorDegrees;
+
+        var unstableDegree = degrees[shift];
+        var flat = false;
+        if (unstableDegree is not { } degree)
+        {
+            degree = shift == degrees.Length - 1 ? degrees[0]!.Value : degrees[shift + 1]!.Value;
+            flat = true;
+        }
+
+        var romanDegrees = chord.chordType switch
+        {
+            ChordType.Major => majorRomanDegrees,
+            ChordType.Minor => minorRomanDegrees,
+            ChordType.Diminished => minorRomanDegrees,
+            ChordType.Augmented => majorRomanDegrees,
+            ChordType.Unknown or ChordType.Power or ChordType.Sus2 or ChordType.Sus4 
+                => !unstableDegree.HasValue 
+                    ? unknownRomanDegrees
+                    : defaultIsMinorDegrees[degree - 1] switch
+                    {
+                        null => unknownRomanDegrees,
+                        true => minorRomanDegrees,
+                        false => majorRomanDegrees,
+                    },
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return (flat ? signFlat : string.Empty)
+               + romanDegrees[degree - 1]
+               + chord.chordType.ChordTypeToString(ChordTypePresentation.Degrees);
+    }
+
     public static (byte root, bool isMinor)? TryParseBestTonality(this string tonality)
     {
         if (Cache.TryGetValue(tonality, out var cachedResult))

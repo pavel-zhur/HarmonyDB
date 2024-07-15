@@ -122,7 +122,7 @@ namespace HarmonyDB.Playground.Web.Controllers
             
             if (songModel.Highlight != null)
             {
-                var searchProgression = _inputParser.Parse(songModel.Highlight);
+                var searchProgression = _inputParser.ParseSequence(songModel.Highlight);
                 var found = _progressionsSearch.Search(progression.Once().ToList(), searchProgression);
 
                 var customAttributes = _progressionsVisualizer.BuildCustomAttributesForSearch(progression, found);

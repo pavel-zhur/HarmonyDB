@@ -189,7 +189,7 @@ public class IndexFunctions
     [Function(nameof(VDevFindAndCount))]
     public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
     {
-        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.Parse(searchQuery)).Count);
+        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.ParseSequence(searchQuery)).Count);
     }
 
     [Function(nameof(VDevFindHeaderAndCount))]
