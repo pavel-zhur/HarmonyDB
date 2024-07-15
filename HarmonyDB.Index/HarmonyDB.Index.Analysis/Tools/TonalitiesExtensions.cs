@@ -105,8 +105,7 @@ public static class TonalitiesExtensions
             : normalized.GetTitle(loopify: loopify);
 
     public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, byte beginningNote = 0, bool loopify = true)
-    {
-        return string.Join(" ", ToChord(beginningNote, sequence.Span[0].FromType)
+        => string.Join(" ", ToChord(beginningNote, sequence.Span[0].FromType)
             .Once()
             .Concat(
                 MemoryMarshal.ToEnumerable(sequence)
@@ -116,7 +115,6 @@ public static class TonalitiesExtensions
                         beginningNote = Note.Normalize(beginningNote + m.RootDelta);
                         return ToChord(beginningNote, m.ToType);
                     })));
-    }
 
     public static string ToChord(this (byte note, ChordType chordType) chord) => ToChord(chord.note, chord.chordType);
 
