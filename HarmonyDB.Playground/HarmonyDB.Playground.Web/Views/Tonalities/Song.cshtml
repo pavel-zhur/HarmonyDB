@@ -182,11 +182,15 @@
 <table class="table table-bordered table-sm">
     <thead>
         <tr class="fw-bold">
-            <td>@ViewLocalizer["Title"]</td>
-            <td>@ViewLocalizer["Modulation"]</td>
-            <td>@ViewLocalizer["Normalization Root"]</td>
-            <td class="my-vertical" colspan="2">@ViewLocalizer["Detected Tonality"]</td>
-            <td class="my-vertical" colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
+            <td>@ViewLocalizer["Progression"]</td>
+            @if (Model.ViewMode == StructureViewMode.Interpreted)
+            {
+                <td>@ViewLocalizer["Degrees in "]@predicted.ToSongTonalityTitle()</td>
+            }
+            <td class="my-vertical">@ViewLocalizer["Modulation"]</td>
+            <td class="my-vertical">@ViewLocalizer["Normalization Root"]</td>
+            <td colspan="@(Model.ViewMode == StructureViewMode.Interpreted ? 3 : 2)">@ViewLocalizer["Detected Tonality"]</td>
+            <td colspan="@(Model.ViewMode == StructureViewMode.Interpreted ? 3 : 2)">@ViewLocalizer["Second Detected Tonality"]</td>
             <td class="my-vertical" colspan="2">@ViewLocalizer["Relative Tonality<br/>(if not second)"]</td>
             <td class="my-vertical">@ViewLocalizer["Weight"]</td>
             <td class="my-vertical">@ViewLocalizer["Occurrences"]</td>
@@ -194,7 +198,6 @@
             <td class="my-vertical">@ViewLocalizer["Coverage"]</td>
             <td class="my-vertical">@ViewLocalizer["Length"]</td>
             <td class="my-vertical">@ViewLocalizer["Total Songs"]</td>
-            <td class="my-vertical">@ViewLocalizer["1 + Ln(Total Songs)"]</td>
             <td class="my-vertical">@ViewLocalizer["Total Occurrences"]</td>
             <td class="my-vertical">@ViewLocalizer["Total Successions"]</td>
             <td class="my-vertical">@ViewLocalizer["Average Coverage"]</td>
@@ -214,10 +217,14 @@
                 <td class="text-nowrap">
                     @Html.ActionLink(loop.Normalized.GetTitle(beginningNote: Model.ViewMode == StructureViewMode.Interpreted ? link.NormalizationRoot : (byte)0, loopify: false), "Loop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
                 </td>
+                @if (Model.ViewMode == StructureViewMode.Interpreted)
+                {
+                    <td>@loop.Normalized.GetFunctionsTitle((Note.Normalize(link.NormalizationRoot - predicted.root), predicted.isMinor))</td>
+                }
                 <td>
                     @if (!isFirst)
                     {
-                        <span>֎ @((link.NormalizationRoot - firstNormalizationRoot!.Value).Transposition())</span>
+                        <span>֎ @Note.Normalize(link.NormalizationRoot - firstNormalizationRoot!.Value).Transposition()</span>
                     }
                 </td>
                 <td>@link.NormalizationRoot</td>
@@ -227,12 +234,48 @@
 
                     <td class="fw-bold">@loopPredicted.ToLoopTonalityTitle(loopTitleNormalizationRoot)</td>
                     <td>@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        @if (isFirst)
+                        {
+                            <td>@loop.Normalized.GetFunctionsTitle(loopPredicted)</td>
+                        }
+                        else
+                        {
+                            <td></td>
+                        }
+                    }
                     <td class="fw-bold">@loopSecondPredicted.ToLoopTonalityTitle(loopTitleNormalizationRoot)</td>
-                    <td>@loopSecondConfidence.ToString("P0")</td>
+                    @if (isFirst)
+                    {
+                        <td>@loopSecondConfidence.ToString("P0")</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        @if (isFirst)
+                        {
+                            <td>@loop.Normalized.GetFunctionsTitle(loopSecondPredicted)</td>
+                        }
+                        else
+                        {
+                            <td></td>
+                        }
+                    }
                     @if (loopSecondPredicted != loopParallelToPredicted)
                     {
                         <td class="fw-bold">@loopParallelToPredicted.ToLoopTonalityTitle(loopTitleNormalizationRoot)</td>
-                        <td>@loop.Probabilities[loopParallelToPredicted.ToIndex()].ToString("P0")</td>
+                        @if (isFirst)
+                        {
+                            <td>@loop.Probabilities[loopParallelToPredicted.ToIndex()].ToString("P0")</td>
+                        }
+                        else
+                        {
+                            <td></td>
+                        }
                     }
                     else
                     {
@@ -244,8 +287,18 @@
                 {
                     <td></td>
                     <td></td>
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        <td></td>
+                        <td></td>
+                    }
                     <td></td>
                     <td></td>
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        <td></td>
+                        <td></td>
+                    }
                     <td></td>
                     <td></td>
                 }
@@ -257,9 +310,8 @@
                 {
                     <td>@loop.Length</td>
                     <td>@loop.TotalSongs.ToString("N0")</td>
-                    <td>@((1 + Math.Log(loop.TotalSongs)).ToString("N2"))</td>
-                    <td>@loop.TotalOccurrences.ToString("N2")</td>
-                    <td>@loop.TotalSuccessions.ToString("N2")</td>
+                    <td>@loop.TotalOccurrences.ToString("N0")</td>
+                    <td>@loop.TotalSuccessions.ToString("N0")</td>
                     <td>@loop.AverageCoverage.ToString("P0")</td>
                     <td>@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
                     <td>@loop.TonicScore.ToString("P0")</td>
@@ -267,6 +319,7 @@
                 }
                 else
                 {
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>

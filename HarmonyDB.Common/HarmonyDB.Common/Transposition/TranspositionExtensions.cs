@@ -2,6 +2,9 @@
 
 public static class TranspositionExtensions
 {
+    public static string Transposition(this byte transposition)
+        => ((int)transposition).Transposition();
+
     public static string Transposition(this int transposition)
         => transposition switch
         {
