@@ -47,6 +47,11 @@ public class HomeController : PlaygroundControllerBase
         _indexExtractor = indexExtractor;
     }
 
+    public IActionResult MyIp()
+    {
+        return Content(HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown.");
+    }
+
     public IActionResult Index()
     {
         return View();
