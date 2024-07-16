@@ -28,7 +28,7 @@
         @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<SongsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
-        @ViewLocalizer["Min rating"]: @Html.TextBoxFor(x => x.MinRating)
+        @ViewLocalizer["Min rating (whole, 0–100)"]: @Html.TextBoxFor(x => x.MinRating)
     </p>
     <p>
         @ViewLocalizer["Min total loops"]: @Html.TextBoxFor(x => x.MinTotalLoops)
@@ -170,7 +170,7 @@
                 <td>@ViewLocalizer["Total Loops"]</td>
                 <td colspan="2">@ViewLocalizer["Detected Tonality"]</td>
                 <td colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
-                <td colspan="2">@ViewLocalizer["Relative to Detected Tonality (if not second)"]</td>
+                <td colspan="2">@ViewLocalizer["Relative Tonality (if not second)"]</td>
                 <td>@ViewLocalizer["Tonic Confidence"]</td>
                 <td>@ViewLocalizer["Tonic Score"]</td>
                 <td>@ViewLocalizer["Scale Score"]</td>

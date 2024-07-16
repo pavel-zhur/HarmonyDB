@@ -117,8 +117,20 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Average Coverage" xml:space="preserve">
+    <value>Среднее покрытие</value>
+  </data>
   <data name="Degrees" xml:space="preserve">
     <value>Ступени</value>
+  </data>
+  <data name="Detected scale filter" xml:space="preserve">
+    <value>Определенный лад</value>
+  </data>
+  <data name="Detected Tonality" xml:space="preserve">
+    <value>Тональность</value>
+  </data>
+  <data name="Distributions" xml:space="preserve">
+    <value>Распределения</value>
   </data>
   <data name="found" xml:space="preserve">
     <value>нашлось</value>
@@ -132,20 +144,41 @@
   <data name="List" xml:space="preserve">
     <value>Показать</value>
   </data>
+  <data name="Loops" xml:space="preserve">
+    <value>Циклы</value>
+  </data>
   <data name="Loops Per Page" xml:space="preserve">
-    <value>Результатов на странице</value>
+    <value>Циклов на странице</value>
   </data>
   <data name="Max length" xml:space="preserve">
     <value>Длина, макс</value>
   </data>
+  <data name="Max tonality confidence" xml:space="preserve">
+    <value>Уверенность, макс</value>
+  </data>
+  <data name="Max tonic confidence" xml:space="preserve">
+    <value>Уверенность без учета лада, макс</value>
+  </data>
   <data name="Min length" xml:space="preserve">
     <value>Длина, мин</value>
+  </data>
+  <data name="Min scale score" xml:space="preserve">
+    <value>Оценка, мин</value>
+  </data>
+  <data name="Min tonality confidence" xml:space="preserve">
+    <value>Уверенность, мин</value>
+  </data>
+  <data name="Min tonic confidence" xml:space="preserve">
+    <value>Уверенность без учета лада, мин</value>
+  </data>
+  <data name="Min tonic score" xml:space="preserve">
+    <value>Оценка без учета лада, мин</value>
   </data>
   <data name="Min total occurrences" xml:space="preserve">
     <value>Повторений, мин</value>
   </data>
   <data name="Min total songs" xml:space="preserve">
-    <value>Песен, мин</value>
+    <value>Всего песен, мин</value>
   </data>
   <data name="Min total successions" xml:space="preserve">
     <value>Повторений подряд, мин</value>
@@ -156,29 +189,38 @@
   <data name="Permalink" xml:space="preserve">
     <value>Постоянная ссылка</value>
   </data>
-  <data name="Popular Loops" xml:space="preserve">
-    <value>Популярные циклы</value>
-  </data>
   <data name="Progression" xml:space="preserve">
     <value>Прогрессия</value>
+  </data>
+  <data name="Progressions Tonalities" xml:space="preserve">
+    <value>Тональности циклов</value>
+  </data>
+  <data name="Progressions Tonalities Analysis" xml:space="preserve">
+    <value>Анализ тональностей циклов</value>
   </data>
   <data name="Querying (takes 5–60 seconds)…" xml:space="preserve">
     <value>Идёт запрос (занимает 5–60 секунд)…</value>
   </data>
+  <data name="Relative Tonality&lt;br /&gt;(if not second)" xml:space="preserve">
+    <value>Параллельная тональность&lt;br /&gt;(если не следующая)</value>
+  </data>
   <data name="Results" xml:space="preserve">
     <value>Результаты</value>
   </data>
-  <data name="Scale" xml:space="preserve">
-    <value>Лад</value>
+  <data name="Scale Score" xml:space="preserve">
+    <value>Оценка</value>
   </data>
-  <data name="Second Tonality" xml:space="preserve">
+  <data name="Second Detected Tonality" xml:space="preserve">
     <value>Следующая возможная тональность</value>
   </data>
-  <data name="See the most popular chord progressions" xml:space="preserve">
-    <value>Популярные аккордовые последовательности</value>
+  <data name="Second filter" xml:space="preserve">
+    <value>Следующая возможная тональность</value>
   </data>
-  <data name="Tonality" xml:space="preserve">
-    <value>Тональность</value>
+  <data name="Tonic Confidence" xml:space="preserve">
+    <value>Уверенность без учета лада</value>
+  </data>
+  <data name="Tonic Score" xml:space="preserve">
+    <value>Оценка без учета лада</value>
   </data>
   <data name="Total Occurrences" xml:space="preserve">
     <value>Всего повторений</value>
@@ -188,5 +230,8 @@
   </data>
   <data name="Total Successions" xml:space="preserve">
     <value>Всего повторений подряд</value>
+  </data>
+  <data name="Weighted Distributions by Occurrences" xml:space="preserve">
+    <value>Взвешенно по повторениям</value>
   </data>
 </root>

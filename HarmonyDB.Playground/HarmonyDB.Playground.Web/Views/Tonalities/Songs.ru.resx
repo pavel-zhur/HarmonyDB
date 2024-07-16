@@ -117,8 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Degrees" xml:space="preserve">
-    <value>Ступени</value>
+  <data name="Correct detection filter" xml:space="preserve">
+    <value>Верность определения</value>
+  </data>
+  <data name="Detected scale filter" xml:space="preserve">
+    <value>Определенный лад</value>
+  </data>
+  <data name="Detected Tonality" xml:space="preserve">
+    <value>Определенная тональность</value>
+  </data>
+  <data name="Distributions" xml:space="preserve">
+    <value>Распределения</value>
   </data>
   <data name="found" xml:space="preserve">
     <value>нашлось</value>
@@ -126,67 +135,106 @@
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
-  <data name="Length" xml:space="preserve">
-    <value>Длина</value>
+  <data name="Known scale filter" xml:space="preserve">
+    <value>Лад из метаданных</value>
+  </data>
+  <data name="Known Tonality" xml:space="preserve">
+    <value>Тональность из метаданных</value>
+  </data>
+  <data name="Known tonality filter" xml:space="preserve">
+    <value>Тональность из метаданных</value>
+  </data>
+  <data name="Known Tonality Reliable" xml:space="preserve">
+    <value>Тональность из метаданных надежна?</value>
   </data>
   <data name="List" xml:space="preserve">
     <value>Показать</value>
   </data>
-  <data name="Loops Per Page" xml:space="preserve">
-    <value>Результатов на странице</value>
+  <data name="Max tonality confidence" xml:space="preserve">
+    <value>Уверенность, макс</value>
   </data>
-  <data name="Max length" xml:space="preserve">
-    <value>Длина, макс</value>
+  <data name="Max tonic confidence" xml:space="preserve">
+    <value>Уверенность без учета лада, макс</value>
   </data>
-  <data name="Min length" xml:space="preserve">
-    <value>Длина, мин</value>
+  <data name="Max total loops" xml:space="preserve">
+    <value>Всего циклов, макс</value>
   </data>
-  <data name="Min total occurrences" xml:space="preserve">
-    <value>Повторений, мин</value>
+  <data name="Min rating (whole, 0–100)" xml:space="preserve">
+    <value>Минимальный рейтинг (число между 0–100)</value>
   </data>
-  <data name="Min total songs" xml:space="preserve">
-    <value>Песен, мин</value>
+  <data name="Min scale score" xml:space="preserve">
+    <value>Оценка, мин</value>
   </data>
-  <data name="Min total successions" xml:space="preserve">
-    <value>Повторений подряд, мин</value>
+  <data name="Min tonality confidence" xml:space="preserve">
+    <value>Уверенность, мин</value>
+  </data>
+  <data name="Min tonic confidence" xml:space="preserve">
+    <value>Уверенность без учета лада, мин</value>
+  </data>
+  <data name="Min tonic score" xml:space="preserve">
+    <value>Оценка без учета лада, мин</value>
+  </data>
+  <data name="Min total loops" xml:space="preserve">
+    <value>Всего циклов, мин</value>
   </data>
   <data name="Ordering" xml:space="preserve">
     <value>Сортировка</value>
   </data>
+  <data name="Percentile" xml:space="preserve">
+    <value>Процентиль</value>
+  </data>
   <data name="Permalink" xml:space="preserve">
     <value>Постоянная ссылка</value>
-  </data>
-  <data name="Popular Loops" xml:space="preserve">
-    <value>Популярные циклы</value>
-  </data>
-  <data name="Progression" xml:space="preserve">
-    <value>Прогрессия</value>
   </data>
   <data name="Querying (takes 5–60 seconds)…" xml:space="preserve">
     <value>Идёт запрос (занимает 5–60 секунд)…</value>
   </data>
+  <data name="Rating" xml:space="preserve">
+    <value>Рейтинг</value>
+  </data>
+  <data name="Relative Tonality (if not second)" xml:space="preserve">
+    <value>Параллельная тональность (если на следующая)</value>
+  </data>
   <data name="Results" xml:space="preserve">
     <value>Результаты</value>
   </data>
-  <data name="Scale" xml:space="preserve">
-    <value>Лад</value>
+  <data name="Scale Score" xml:space="preserve">
+    <value>Оценка</value>
   </data>
-  <data name="Second Tonality" xml:space="preserve">
+  <data name="Second Detected Tonality" xml:space="preserve">
     <value>Следующая возможная тональность</value>
   </data>
-  <data name="See the most popular chord progressions" xml:space="preserve">
-    <value>Популярные аккордовые последовательности</value>
+  <data name="Second filter" xml:space="preserve">
+    <value>Следующая возможная тональность</value>
   </data>
-  <data name="Tonality" xml:space="preserve">
-    <value>Тональность</value>
+  <data name="Song" xml:space="preserve">
+    <value>Песня</value>
   </data>
-  <data name="Total Occurrences" xml:space="preserve">
-    <value>Всего повторений</value>
+  <data name="Songs" xml:space="preserve">
+    <value>Песни</value>
   </data>
-  <data name="Total Songs" xml:space="preserve">
-    <value>Всего песен</value>
+  <data name="Songs Per Page" xml:space="preserve">
+    <value>Песен на странице</value>
   </data>
-  <data name="Total Successions" xml:space="preserve">
-    <value>Всего повторений подряд</value>
+  <data name="Songs Tonalities" xml:space="preserve">
+    <value>Анализ тональностей</value>
+  </data>
+  <data name="Songs Tonalities Analysis" xml:space="preserve">
+    <value>Анализ тональностей песен</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Коллекция</value>
+  </data>
+  <data name="Tonality Confidence" xml:space="preserve">
+    <value>Уверенность</value>
+  </data>
+  <data name="Tonic Confidence" xml:space="preserve">
+    <value>Уверенность без учета лада</value>
+  </data>
+  <data name="Tonic Score" xml:space="preserve">
+    <value>Оценка без учета лада</value>
+  </data>
+  <data name="Total Loops" xml:space="preserve">
+    <value>Всего циклов</value>
   </data>
 </root>

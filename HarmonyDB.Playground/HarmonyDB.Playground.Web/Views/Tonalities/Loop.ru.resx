@@ -117,68 +117,131 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Average Confidence" xml:space="preserve">
+    <value>Средняя уверенность</value>
+  </data>
+  <data name="Average Coverage" xml:space="preserve">
+    <value>Среднее покрытие</value>
+  </data>
+  <data name="Average Scale Score" xml:space="preserve">
+    <value>Средняя оценка</value>
+  </data>
+  <data name="Average Tonic Score" xml:space="preserve">
+    <value>Средняя оценка без учета лада</value>
+  </data>
+  <data name="Back to Statistics" xml:space="preserve">
+    <value>Наверх к статистике</value>
+  </data>
+  <data name="Coverage" xml:space="preserve">
+    <value>Покрытие</value>
+  </data>
   <data name="Degrees" xml:space="preserve">
     <value>Ступени</value>
   </data>
-  <data name="found" xml:space="preserve">
-    <value>нашлось</value>
+  <data name="Derived From" xml:space="preserve">
+    <value>Получилась из</value>
+  </data>
+  <data name="Derived Tonality" xml:space="preserve">
+    <value>Получившаяся тональность</value>
+  </data>
+  <data name="Detected Tonality" xml:space="preserve">
+    <value>Тональность</value>
+  </data>
+  <data name="Detected Tonality Probabilities" xml:space="preserve">
+    <value>Вероятности тональностей</value>
+  </data>
+  <data name="Examples" xml:space="preserve">
+    <value>Примеры</value>
+  </data>
+  <data name="Exclude the Index API trace for developers" xml:space="preserve">
+    <value>Скрыть запросы к Index API для разработчиков</value>
+  </data>
+  <data name="Find songs with this progression" xml:space="preserve">
+    <value>Найти песни с этой прогрессией</value>
   </data>
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
   </data>
+  <data name="Known" xml:space="preserve">
+    <value>Из метаданных</value>
+  </data>
   <data name="Length" xml:space="preserve">
     <value>Длина</value>
   </data>
-  <data name="List" xml:space="preserve">
-    <value>Показать</value>
+  <data name="Link Statistics" xml:space="preserve">
+    <value>Статистика связей</value>
   </data>
-  <data name="Loops Per Page" xml:space="preserve">
-    <value>Результатов на странице</value>
+  <data name="Loop Information" xml:space="preserve">
+    <value>Информация о цикле</value>
   </data>
-  <data name="Max length" xml:space="preserve">
-    <value>Длина, макс</value>
+  <data name="Major" xml:space="preserve">
+    <value>Мажор</value>
   </data>
-  <data name="Min length" xml:space="preserve">
-    <value>Длина, мин</value>
+  <data name="Minor" xml:space="preserve">
+    <value>Минор</value>
   </data>
-  <data name="Min total occurrences" xml:space="preserve">
-    <value>Повторений, мин</value>
-  </data>
-  <data name="Min total songs" xml:space="preserve">
-    <value>Песен, мин</value>
-  </data>
-  <data name="Min total successions" xml:space="preserve">
-    <value>Повторений подряд, мин</value>
-  </data>
-  <data name="Ordering" xml:space="preserve">
-    <value>Сортировка</value>
+  <data name="Occurrences" xml:space="preserve">
+    <value>Повторений</value>
   </data>
   <data name="Permalink" xml:space="preserve">
     <value>Постоянная ссылка</value>
   </data>
-  <data name="Popular Loops" xml:space="preserve">
-    <value>Популярные циклы</value>
+  <data name="Predicted" xml:space="preserve">
+    <value>Из предсказанных</value>
   </data>
   <data name="Progression" xml:space="preserve">
     <value>Прогрессия</value>
   </data>
-  <data name="Querying (takes 5–60 seconds)…" xml:space="preserve">
-    <value>Идёт запрос (занимает 5–60 секунд)…</value>
+  <data name="Random Examples" xml:space="preserve">
+    <value>Случайные примеры</value>
   </data>
-  <data name="Results" xml:space="preserve">
-    <value>Результаты</value>
+  <data name="Rating" xml:space="preserve">
+    <value>Рейтинг</value>
   </data>
-  <data name="Scale" xml:space="preserve">
-    <value>Лад</value>
+  <data name="Relative Tonality&lt;br /&gt;(if not second)" xml:space="preserve">
+    <value>Параллельная тональность&lt;br /&gt;(если не следующая)</value>
   </data>
-  <data name="Second Tonality" xml:space="preserve">
+  <data name="Scale Agnostic" xml:space="preserve">
+    <value>Без учета лада</value>
+  </data>
+  <data name="Scale Score" xml:space="preserve">
+    <value>Оценка</value>
+  </data>
+  <data name="Second Detected Tonality" xml:space="preserve">
     <value>Следующая возможная тональность</value>
   </data>
-  <data name="See the most popular chord progressions" xml:space="preserve">
-    <value>Популярные аккордовые последовательности</value>
+  <data name="Show" xml:space="preserve">
+    <value>Смотреть</value>
   </data>
-  <data name="Tonality" xml:space="preserve">
-    <value>Тональность</value>
+  <data name="Song" xml:space="preserve">
+    <value>Песня</value>
+  </data>
+  <data name="Song Examples" xml:space="preserve">
+    <value>Примеры песен</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Коллекция</value>
+  </data>
+  <data name="Successions" xml:space="preserve">
+    <value>Повторений подряд</value>
+  </data>
+  <data name="The following table is not the primary source for loop tonality data; it highlights the most significant aspects. Each song in the 'Derived From = Predicted' group has 23 other probable tonalities with probabilities greater than 0. Refer to the 'Average Confidence' column for more details. These probabilities affect the results in a dispersed manner. Therefore, this table focuses on the key subset for each group. Displaying the aggregated source numbers would be mathematically accurate but less convenient for analysis." xml:space="preserve">
+    <value>Приведенная ниже таблица не является основным источником данных о тональностях цикла; в ней показаны наиболее значимые элементы. Каждая песня в группе «Получилась из предсказанных» имеет 23 другие вероятные тональности с вероятностью больше 0. Более подробную информацию см. в колонке « Средняя уверенность». Эти вероятности влияют на результаты рассеянно. Однако в этой таблице показано только ключевое подмножество для каждой группы. Отображение агрегированных номеров источников было бы математически точным, но менее удобным для анализа.</value>
+  </data>
+  <data name="Tonality Analysis" xml:space="preserve">
+    <value>Анализ тональности</value>
+  </data>
+  <data name="Tonality Confidence" xml:space="preserve">
+    <value>Уверенность</value>
+  </data>
+  <data name="Tonic Confidence" xml:space="preserve">
+    <value>Уверенность без учета лада</value>
+  </data>
+  <data name="Tonic Score" xml:space="preserve">
+    <value>Оценка без учета лада</value>
+  </data>
+  <data name="Total Loops" xml:space="preserve">
+    <value>Всего циклов</value>
   </data>
   <data name="Total Occurrences" xml:space="preserve">
     <value>Всего повторений</value>
@@ -188,5 +251,8 @@
   </data>
   <data name="Total Successions" xml:space="preserve">
     <value>Всего повторений подряд</value>
+  </data>
+  <data name="Total Weight" xml:space="preserve">
+    <value>Общий вес</value>
   </data>
 </root>

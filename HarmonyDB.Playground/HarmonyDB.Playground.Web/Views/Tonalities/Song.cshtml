@@ -102,7 +102,7 @@
             <td class="text-end">@secondConfidence.ToString("P0")</td>
         </tr>
         <tr>
-            <td class="fw-bold">@ViewLocalizer["Relative to Detected Tonality<br/>(if not second)"]</td>
+            <td class="fw-bold">@ViewLocalizer["Relative Tonality<br />(if not second)"]</td>
             @if (secondPredicted != relativeToPredicted)
             {
                 <td class="fw-bold">@relativeToPredicted.ToSongTonalityTitle()</td>
@@ -175,13 +175,13 @@
             <td>@ViewLocalizer["Progression"]</td>
             @if (Model.ViewMode == StructureViewMode.Interpreted)
             {
-                <td>@ViewLocalizer["Degrees in "]@predicted.ToSongTonalityTitle()</td>
+                <td>@ViewLocalizer["Degrees in"] @predicted.ToSongTonalityTitle()</td>
             }
             <td class="my-vertical">@ViewLocalizer["Modulation"]</td>
             <td class="my-vertical">@ViewLocalizer["Normalization Root"]</td>
             <td colspan="@(Model.ViewMode == StructureViewMode.Interpreted ? 3 : 2)">@ViewLocalizer["Detected Tonality"]</td>
             <td colspan="@(Model.ViewMode == StructureViewMode.Interpreted ? 3 : 2)">@ViewLocalizer["Second Detected Tonality"]</td>
-            <td class="my-vertical" colspan="2">@ViewLocalizer["Relative Tonality<br/>(if not second)"]</td>
+            <td class="my-vertical" colspan="2">@ViewLocalizer["Relative Tonality<br />(if not second)"]</td>
             <td class="my-vertical">@ViewLocalizer["Weight"]</td>
             <td class="my-vertical">@ViewLocalizer["Occurrences"]</td>
             <td class="my-vertical">@ViewLocalizer["Successions"]</td>

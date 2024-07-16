@@ -104,7 +104,7 @@
             </tr>
         }
         <tr>
-            <td class="fw-bold">@ViewLocalizer["Relative Tonality<br/>(if not second)"]</td>
+            <td class="fw-bold">@ViewLocalizer["Relative Tonality<br />(if not second)"]</td>
             @if (secondPredicted != relativeToPredicted)
             {
                 <td class="fw-bold">@relativeToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
@@ -220,7 +220,7 @@
 @foreach (var (link, i) in response.LinkStatistics.OrderByDescending(x => x.TotalWeight).WithIndices().Where(x => x.x.Examples.Any()))
 {
     <div class="mt-4 mb-2">
-        <h5 class="d-inline-block" id="examples-@i">@link.DerivedTonalityIndex.ToLoopTonalityTitle(predictedViewMode) @(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"]) Examples</h5>
+        <h5 class="d-inline-block" id="examples-@i">@link.DerivedTonalityIndex.ToLoopTonalityTitle(predictedViewMode) @(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"]) @ViewLocalizer["Examples"]</h5>
         <a href="#statistics" class="btn btn-xs btn-outline-secondary ms-2 mb-1">↑ @ViewLocalizer["Back to Statistics"]</a>
     </div>
 
