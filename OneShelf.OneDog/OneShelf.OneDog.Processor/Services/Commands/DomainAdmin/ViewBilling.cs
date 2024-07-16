@@ -31,8 +31,12 @@ public class ViewBilling : Command
     private async Task ExecuteBackground()
     {
         var all = await _billingApiClient.All(ScopeAwareness.DomainId);
-        var total = all.Usages.Where(x => x.Price.HasValue).Sum(x => x.Price);
-        if (total is 0 or null)
+        var totals = all.Usages
+            .Where(x => x.Price > 0)
+            .GroupBy(x => x.Category ?? "unknown")
+            .ToDictionary(x => x.Key, x => x.Sum(x => x.Price!.Value));
+
+        if (!totals.Any())
         {
             Io.WriteLine("Пока ничего нет.");
             return;
@@ -40,6 +44,9 @@ public class ViewBilling : Command
 
         var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == ScopeAwareness.DomainId);
 
-        Io.WriteLine($"Использовано {total * (domain.BillingRatio ?? 1):C}.");
+        foreach (var total in totals)
+        {
+            Io.WriteLine($"Использовано {total.Key} {total.Value * (domain.BillingRatio ?? 1):C}.");
+        }
     }
 }
