@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace OneShelf.Common.Api.Client;
+namespace OneShelf.Common.Api.Common;
 
 public class CacheItemNotFoundException : Exception
 {

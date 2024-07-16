@@ -16,7 +16,11 @@
 	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="1.18.0" />
 	  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.2.1" />
 	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OneShelf.Common.Api.Common\OneShelf.Common.Api.Common.csproj" />
   </ItemGroup>
 
 

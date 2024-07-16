@@ -16,6 +16,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Api;
+using OneShelf.Common.Api.Client;
+using OneShelf.Common.Api.Common;
 using OneShelf.Common.Api.WithAuthorization;
 using Loop = HarmonyDB.Index.Api.Model.VExternal1.Tonalities.Loop;
 
@@ -57,7 +59,7 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
         var headers = await _indexHeadersCache.Get();
 
         var structureSong = structures.Songs[request.ExternalId];
-        var songTonality = tonalities.Songs.TryGetValue(request.ExternalId, out var value) ? value : throw new ServiceCacheItemNotFoundException();
+        var songTonality = tonalities.Songs.TryGetValue(request.ExternalId, out var value) ? value : throw new CacheItemNotFoundException();
         var header = headers.Headers[request.ExternalId];
         header = _commonExecutions.PrepareForOutput(header) ?? throw new("The song header is not available.");
 

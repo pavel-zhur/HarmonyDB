@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Text.Json;
 using OneShelf.Authorization.Api.Model;
 using System.Net.Http.Json;
+using OneShelf.Common.Api.Common;
 
 namespace OneShelf.Common.Api.Client;
 
@@ -42,12 +43,12 @@ public class ApiClientBase<TClient>
         var started = DateTime.Now;
         using var client = _httpClientFactory.CreateClient();
         using var httpResponseMessage = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url, conditionalStreamId)), request, _jsonSerializerOptions, cancellationToken);
-        if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
+        if (httpResponseMessage.StatusCode == UnauthorizedException.StatusCode)
         {
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken));
         }
 
-        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        if (httpResponseMessage.StatusCode == ConcurrencyException.StatusCode)
         {
             throw new ConcurrencyException();
         }
@@ -76,12 +77,12 @@ public class ApiClientBase<TClient>
     {
         using var client = _httpClientFactory.CreateClient();
         using var response = await client.PostAsJsonAsync(new Uri(Options.GetEndpoint(conditionalStreamId), WithCode(url, conditionalStreamId)), request, _jsonSerializerOptions);
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        if (response.StatusCode == UnauthorizedException.StatusCode)
         {
             throw new UnauthorizedException(await response.Content.ReadAsStringAsync());
         }
 
-        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        if (response.StatusCode == ConcurrencyException.StatusCode)
         {
             throw new ConcurrencyException();
         }
@@ -101,13 +102,13 @@ public class ApiClientBase<TClient>
         using var client = _httpClientFactory.CreateClient();
         var uri = new Uri(Options.GetEndpoint(conditionalStreamId), url);
         using var httpResponseMessage = await client.PostAsJsonAsync(uri, request, _jsonSerializerOptions, cancellationToken);
-        if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
+        if (httpResponseMessage.StatusCode == UnauthorizedException.StatusCode)
         {
             unauthorized?.Invoke();
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken));
         }
 
-        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        if (httpResponseMessage.StatusCode == ConcurrencyException.StatusCode)
         {
             throw new ConcurrencyException();
         }
@@ -139,7 +140,7 @@ public class ApiClientBase<TClient>
         var uri = new Uri(Options.GetEndpoint(conditionalStreamId), url);
         using var httpResponseMessage = await client.GetAsync(uri, cancellationToken);
 
-        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        if (httpResponseMessage.StatusCode == ConcurrencyException.StatusCode)
         {
             throw new ConcurrencyException();
         }
@@ -168,13 +169,13 @@ public class ApiClientBase<TClient>
         var started = DateTime.Now;
         using var client = _httpClientFactory.CreateClient();
         using var httpResponseMessage = await client.PostAsync(new Uri(Options.GetEndpoint(conditionalStreamId), url), new StringContent(request, MediaTypeHeaderValue.Parse("application/json")));
-        if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
+        if (httpResponseMessage.StatusCode == UnauthorizedException.StatusCode)
         {
             unauthorized?.Invoke();
             throw new UnauthorizedException(await httpResponseMessage.Content.ReadAsStringAsync());
         }
 
-        if (httpResponseMessage.StatusCode == HttpStatusCode.TooManyRequests)
+        if (httpResponseMessage.StatusCode == ConcurrencyException.StatusCode)
         {
             throw new ConcurrencyException();
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneShelf.Common.Api.Common;
 
 namespace OneShelf.Common.Api;
 
@@ -19,7 +20,7 @@ public class ConcurrencyLimiter
     public async Task<TResult> ExecuteOrThrow<TResult>(Func<Task<TResult>> taskGetter)
     {
         if (_counters.GetValueOrDefault(typeof(TResult)) > _options.MaxConcurrency)
-            throw new ServiceConcurrencyException();
+            throw new ConcurrencyException();
 
         try
         {
@@ -32,7 +33,7 @@ public class ConcurrencyLimiter
 
             if (value > _options.MaxConcurrency)
             {
-                throw new ServiceConcurrencyException();
+                throw new ConcurrencyException();
             }
 
             _logger.LogInformation("Request concurrency: {concurrency}.", value);

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
+using System.Data;
+using OneShelf.Common.Api.Common;
 
 namespace OneShelf.Common.Api.WithAuthorization;
 
@@ -50,15 +52,15 @@ public abstract class AuthorizationFunctionBase<TRequest>
         {
             return new UnauthorizedObjectResult(e.Message);
         }
-        catch (ServiceConcurrencyException e)
+        catch (ConcurrencyException e)
         {
             Logger.LogError(e, "Too many requests.");
-            return new StatusCodeResult(429);
+            return new StatusCodeResult((int)ConcurrencyException.StatusCode);
         }
-        catch (ServiceCacheItemNotFoundException e)
+        catch (CacheItemNotFoundException e)
         {
             Logger.LogWarning(e, "Cache item not found.");
-            return new StatusCodeResult((int)ServiceCacheItemNotFoundException.StatusCode);
+            return new StatusCodeResult((int)CacheItemNotFoundException.StatusCode);
         }
         catch (Exception e)
         {
