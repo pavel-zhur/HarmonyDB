@@ -91,7 +91,7 @@
             @{
                 var predicted = song.Probabilities.GetPredictedTonality();
                 var secondPredicted = song.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-                var parallelToPredicted = predicted.GetParallelScale(true);
+                var relativeToPredicted = predicted.GetRelativeScale(true);
             }
             <td class="fw-bold">@predicted.ToSongTonalityTitle()</td>
             <td class="text-end">@song.Probabilities.TonalityConfidence().ToString("P0")</td>
@@ -102,11 +102,11 @@
             <td class="text-end">@secondConfidence.ToString("P0")</td>
         </tr>
         <tr>
-            <td class="fw-bold">@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</td>
-            @if (secondPredicted != parallelToPredicted)
+            <td class="fw-bold">@ViewLocalizer["Relative to Detected Tonality<br/>(if not second)"]</td>
+            @if (secondPredicted != relativeToPredicted)
             {
-                <td class="fw-bold">@parallelToPredicted.ToSongTonalityTitle()</td>
-                <td class="text-end">@song.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
+                <td class="fw-bold">@relativeToPredicted.ToSongTonalityTitle()</td>
+                <td class="text-end">@song.Probabilities[relativeToPredicted.ToIndex()].ToString("P0")</td>
             }
             else
             {
@@ -201,7 +201,7 @@
         {
             var loopPredicted = loop.Probabilities.GetPredictedTonality();
             var loopSecondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var loopSecondConfidence);
-            var loopParallelToPredicted = loopPredicted.GetParallelScale(false);
+            var loopRelativeToPredicted = loopPredicted.GetRelativeScale(false);
 
             <tr>
                 <td class="text-nowrap">
@@ -255,12 +255,12 @@
                             <td></td>
                         }
                     }
-                    @if (loopSecondPredicted != loopParallelToPredicted)
+                    @if (loopSecondPredicted != loopRelativeToPredicted)
                     {
-                        <td class="fw-bold">@loopParallelToPredicted.ToLoopTonalityTitle(loopTitleNormalizationRoot)</td>
+                        <td class="fw-bold">@loopRelativeToPredicted.ToLoopTonalityTitle(loopTitleNormalizationRoot)</td>
                         @if (isFirst)
                         {
-                            <td class="text-end">@loop.Probabilities[loopParallelToPredicted.ToIndex()].ToString("P0")</td>
+                            <td class="text-end">@loop.Probabilities[loopRelativeToPredicted.ToIndex()].ToString("P0")</td>
                         }
                         else
                         {

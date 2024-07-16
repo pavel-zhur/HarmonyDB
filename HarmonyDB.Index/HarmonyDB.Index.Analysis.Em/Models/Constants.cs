@@ -16,10 +16,10 @@ public static class Constants
 
     public static int GetMajorTonic((byte tonic, Scale scale) scale, bool isSong)
     {
-        return scale.scale == Scale.Major ? scale.tonic : GetParallelScale(scale, isSong).tonic;
+        return scale.scale == Scale.Major ? scale.tonic : GetRelativeScale(scale, isSong).tonic;
     }
 
-    public static (byte tonic, Scale scale) GetParallelScale((byte tonic, Scale scale) scale, bool isSong)
+    public static (byte tonic, Scale scale) GetRelativeScale((byte tonic, Scale scale) scale, bool isSong)
     {
         return scale.scale == Scale.Major
             ? ((byte)((scale.tonic + (isSong ? -3 : 3) + TonicCount) % TonicCount), Scale.Minor) 

@@ -73,10 +73,10 @@ public static class TonalitiesExtensions
 
     public static byte GetMajorTonic(this (byte root, bool isMinor) scale, bool isSong)
     {
-        return scale.isMinor ? scale.GetParallelScale(isSong).root : scale.root;
+        return scale.isMinor ? scale.GetRelativeScale(isSong).root : scale.root;
     }
 
-    public static (byte root, bool isMinor) GetParallelScale(this (byte root, bool isMinor) scale, bool isSong)
+    public static (byte root, bool isMinor) GetRelativeScale(this (byte root, bool isMinor) scale, bool isSong)
     {
         return scale.isMinor
             ? (Note.Normalize(scale.root + (isSong ? 3 : -3)), false)
@@ -86,15 +86,15 @@ public static class TonalitiesExtensions
     public static byte GetMajorTonic(byte root, bool isMinor, bool isSong)
         => (root, isMinor).GetMajorTonic(isSong);
 
-    public static (byte root, bool isMinor) GetParallelScale(byte root, bool isMinor, bool isSong)
-        => (root, isMinor).GetParallelScale(isSong);
+    public static (byte root, bool isMinor) GetRelativeScale(byte root, bool isMinor, bool isSong)
+        => (root, isMinor).GetRelativeScale(isSong);
 
     public static float TonalityConfidence(this float[] probabilities)
         => probabilities.Max();
 
     public static float TonicConfidence(this float[] probabilities, bool isSong)
         => Enumerable.Range(0, Note.Modulus)
-            .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true, isSong).ToIndex()])
+            .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetRelativeScale((byte)x, true, isSong).ToIndex()])
             .Max();
 
     public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true)

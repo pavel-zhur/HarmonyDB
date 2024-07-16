@@ -98,8 +98,8 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
             .Where(x => request.SecondFilter switch
             {
                 RequestSecondFilter.Any => true,
-                RequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
-                RequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) != x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
+                RequestSecondFilter.Relative => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) == x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
+                RequestSecondFilter.NotRelative => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(true) != x.Probabilities.GetPredictedTonality().GetMajorTonic(true),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .Where(x => request.CorrectDetectionFilter switch
@@ -115,7 +115,7 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
                 SongsRequestCorrectDetectionFilter.IncorrectScale
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
                             .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) == x.predicted.GetMajorTonic(true)),
-                SongsRequestCorrectDetectionFilter.NoAndNotParallel
+                SongsRequestCorrectDetectionFilter.NoAndNotRelative
                     => (known: x.KnownTonalityIndex?.FromIndex(), predicted: x.Probabilities.GetPredictedTonality())
                             .SelectSingle(x => x.known.HasValue && x.known != x.predicted && x.known.Value.GetMajorTonic(true) != x.predicted.GetMajorTonic(true)),
                 _ => throw new ArgumentOutOfRangeException(),

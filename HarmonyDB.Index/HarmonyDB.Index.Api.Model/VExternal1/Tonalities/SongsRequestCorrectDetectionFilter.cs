@@ -7,5 +7,5 @@ public enum SongsRequestCorrectDetectionFilter
     ExactScaleAgnostic,
     No,
     IncorrectScale,
-    NoAndNotParallel,
+    NoAndNotRelative,
 }

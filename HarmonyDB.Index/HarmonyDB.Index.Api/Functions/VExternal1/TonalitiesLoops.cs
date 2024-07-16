@@ -85,8 +85,8 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
             .Where(x => request.SecondFilter switch
             {
                 RequestSecondFilter.Any => true,
-                RequestSecondFilter.Parallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) == x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
-                RequestSecondFilter.NotParallel => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) != x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
+                RequestSecondFilter.Relative => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) == x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
+                RequestSecondFilter.NotRelative => x.Probabilities.GetSecondPredictedTonality().GetMajorTonic(false) != x.Probabilities.GetPredictedTonality().GetMajorTonic(false),
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();

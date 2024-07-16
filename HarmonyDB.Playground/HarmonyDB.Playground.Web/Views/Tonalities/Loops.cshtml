@@ -135,7 +135,7 @@
                 @{
                     var predicted = loop.Probabilities.GetPredictedTonality();
                     var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-                    var parallelToPredicted = predicted.GetParallelScale(false);
+                    var relativeToPredicted = predicted.GetRelativeScale(false);
                     var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
                 }
 
@@ -153,10 +153,10 @@
                     <td>@loop.Normalized.GetTitle(secondPredicted)</td>
                     <td>@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
                 }
-                @if (secondPredicted != parallelToPredicted)
+                @if (secondPredicted != relativeToPredicted)
                 {
-                    <td class="fw-bold">@parallelToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                    <td class="text-end">@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
+                    <td class="fw-bold">@relativeToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
+                    <td class="text-end">@loop.Probabilities[relativeToPredicted.ToIndex()].ToString("P0")</td>
                 }
                 else
                 {
