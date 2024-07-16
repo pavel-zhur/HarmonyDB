@@ -6,6 +6,7 @@ using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Models.V1;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tools;
@@ -96,13 +97,38 @@ public static class TonalitiesExtensions
             .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetParallelScale((byte)x, true, isSong).ToIndex()])
             .Max();
 
-    public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true) => normalized.DeserializeLoop().GetTitle(beginningNote, loopify);
+    public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true)
+        => normalized.DeserializeLoop().GetTitle(beginningNote, loopify);
 
     public static string GetTitle(this string normalized, (byte root, bool isMinor)? predicted, bool loopify = false)
         => predicted.HasValue
-            ? normalized.GetTitle(
-                predicted.Value.isMinor ? predicted.Value.root : Note.Normalize(predicted.Value.root + 3), loopify)
+            ? normalized.GetTitle(predicted.Value.GetAmCTonic(), loopify)
             : normalized.GetTitle(loopify: loopify);
+
+    public static string GetFunctionsTitle(this string normalized, (byte root, bool isMinor) predicted, bool loopify = false)
+        => normalized.DeserializeLoop().GetFunctionsTitle(predicted, loopify);
+
+    public static byte GetAmCTonic(this (byte root, bool isMinor) predicted)
+        => predicted.isMinor ? predicted.root : Note.Normalize(predicted.root + 3);
+
+    public static (byte root, ChordType chordType) ToRequiredChordValue(this ChordDataV1 chordDataV1)
+        => (chordDataV1.HarmonyData!.Root, chordDataV1.HarmonyData!.ChordType);
+
+    public static string GetFunctionsTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, (byte root, bool isMinor) predicted, bool loopify = false)
+    {
+        var beginningNote = predicted.GetAmCTonic();
+        predicted = ((byte root, bool isMinor))(predicted.isMinor ? (0, true) : (3, false));
+        return string.Join(" ", ToFunction((beginningNote, sequence.Span[0].FromType), predicted)
+            .Once()
+            .Concat(
+                MemoryMarshal.ToEnumerable(sequence)
+                    .SelectSingle(x => loopify ? x : x.SkipLast(1))
+                    .Select(m =>
+                    {
+                        beginningNote = Note.Normalize(beginningNote + m.RootDelta);
+                        return ToFunction((beginningNote, m.ToType), predicted);
+                    })));
+    }
 
     public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, byte beginningNote = 0, bool loopify = true)
         => string.Join(" ", ToChord(beginningNote, sequence.Span[0].FromType)
@@ -120,7 +146,7 @@ public static class TonalitiesExtensions
 
     public static string ToChord(byte note, ChordType chordType) => $"{new Note(note).Representation(new())}{chordType.ChordTypeToString()}";
 
-    public static string ToChord(this (byte note, ChordType chordType) chord, (byte tonic, bool isMinor) tonality)
+    public static string ToFunction(this (byte note, ChordType chordType) chord, (byte tonic, bool isMinor) tonality)
     {
         byte?[] majorDegrees = [1, null, 2, null, 3, 4, null, 5, null, 6, null, 7];
         byte?[] minorDegrees = [1, null, 2, 3, null, 4, null, 5, 6, null, 7, null];

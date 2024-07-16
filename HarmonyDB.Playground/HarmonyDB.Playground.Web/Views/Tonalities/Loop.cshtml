@@ -20,11 +20,13 @@
     var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
 
     var loopTitle = loop.Normalized.GetTitle(predictedViewMode);
-    ViewBag.Title = $"{loopTitle} - {ViewLocalizer["Tonality Analysis"].Value}";
+    var loopDegrees = loop.Normalized.GetFunctionsTitle(predicted);
+    var loopDegreesAddOn = Model.ViewMode == StructureViewMode.Interpreted ? $" ({loopDegrees})" : null;
+    ViewBag.Title = $"{loopTitle}{loopDegreesAddOn} - {ViewLocalizer["Tonality Analysis"].Value}";
 }
 
 <div>
-    <h3 class="d-inline-block">@ViewLocalizer["Tonality Analysis"]: @loopTitle</h3>
+    <h3 class="d-inline-block">@ViewLocalizer["Tonality Analysis"]: @loopTitle@loopDegreesAddOn</h3>
     @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Loop", Model, new { target = "_blank" })
 </div>
 
@@ -53,6 +55,13 @@
             <td><b>@ViewLocalizer["Progression"]</b></td>
             <td colspan="2">@loopTitle</td>
         </tr>
+        @if (Model.ViewMode == StructureViewMode.Interpreted)
+        {
+            <tr>
+                <td><b>@ViewLocalizer["Degrees"]</b></td>
+                <td colspan="2">@loopDegrees</td>
+            </tr>
+        }
         <tr>
             <td><b>@ViewLocalizer["Length"]</b></td>
             <td colspan="2">@loop.Length</td>
@@ -91,6 +100,17 @@
                 <span>@secondConfidence.ToString("P0")</span>
             </td>
         </tr>
+        @if (Model.ViewMode == StructureViewMode.Interpreted)
+        {
+            <tr>
+                <td></td>
+                <td colspan="2">@loop.Normalized.GetTitle(secondPredicted)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="2">@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
+            </tr>
+        }
         <tr>
             <td><b>@ViewLocalizer["Parallel to Detected Tonality (if not second)"]</b></td>
             <td>

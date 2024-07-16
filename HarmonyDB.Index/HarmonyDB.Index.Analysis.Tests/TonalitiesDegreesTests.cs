@@ -22,9 +22,9 @@ public class TonalitiesDegreesTests(InputParser inputParser, ILogger<TonalitiesD
 
         logger.LogInformation(string.Join(Environment.NewLine, combinations
             .Select(c => $"{c} -> {inputParser
-                .ParseChord(c.chord).HarmonyData
-                !.SelectSingle(x => (x.Root, x.ChordType))
-                .ToChord(c.tonality.TryParseBestTonality()!.Value)}")));
+                .ParseChord(c.chord)
+                .ToRequiredChordValue()
+                .ToFunction(c.tonality.TryParseBestTonality()!.Value)}")));
     }
 
     // Ⅰ, Ⅱ, Ⅲ, Ⅳ, Ⅴ, Ⅵ, Ⅶ
@@ -39,8 +39,8 @@ public class TonalitiesDegreesTests(InputParser inputParser, ILogger<TonalitiesD
         Assert.Equal(
             expected,
             inputParser
-                .ParseChord(chord).HarmonyData
-                !.SelectSingle(x => (x.Root, x.ChordType))
-                .ToChord(tonality.TryParseBestTonality()!.Value));
+                .ParseChord(chord)
+                .ToRequiredChordValue()
+                .ToFunction(tonality.TryParseBestTonality()!.Value));
     }
 }
