@@ -93,8 +93,8 @@
                 <td>@song.Header.Source</td>
                 <td>@song.Header.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
                 <td>@song.PredictedTonalityIndex?.ToSongTonalityTitle()</td>
-                <td>@((int)(song.Header.Rating ?? 0))%</td>
-                <td>@song.Coverage.ToString("P0")</td>
+                <td class="text-end">@((int)(song.Header.Rating ?? 0))%</td>
+                <td class="text-end">@song.Coverage.ToString("P0")</td>
             </tr>
         }
     </table>

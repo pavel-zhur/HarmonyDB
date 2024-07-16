@@ -112,42 +112,42 @@
                 <td>@ViewLocalizer["Rating"]</td>
                 @foreach (var value in response.Distributions.Rating)
                 {
-                    <td>@((value / 100)?.ToString("P0"))</td>
+                    <td class="text-end">@((value / 100)?.ToString("P0"))</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Tonality Confidence"]</td>
                 @foreach (var value in response.Distributions.TonalityConfidence)
                 {
-                    <td>@value.ToString("P0")</td>
+                    <td class="text-end">@value.ToString("P0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Tonic Confidence"]</td>
                 @foreach (var value in response.Distributions.TonicConfidence)
                 {
-                    <td>@value.ToString("P0")</td>
+                    <td class="text-end">@value.ToString("P0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Tonic Score"]</td>
                 @foreach (var value in response.Distributions.TonicScore)
                 {
-                    <td>@value.ToString("P0")</td>
+                    <td class="text-end">@value.ToString("P0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Scale Score"]</td>
                 @foreach (var value in response.Distributions.ScaleScore)
                 {
-                    <td>@value.ToString("P0")</td>
+                    <td class="text-end">@value.ToString("P0")</td>
                 }
             </tr>
             <tr>
                 <td>@ViewLocalizer["Total Loops"]</td>
                 @foreach (var value in response.Distributions.TotalLoops)
                 {
-                    <td>@value.ToString("N0")</td>
+                    <td class="text-end">@value.ToString("N0")</td>
                 }
             </tr>
         </tbody>
@@ -190,40 +190,30 @@
                     <b>@song.KnownTonalityIndex?.ToSongTonalityTitle()</b>
                 </td>
                 <td>@song.IndexHeader.BestTonality?.IsReliable</td>
-                <td>@((int)(song.IndexHeader.Rating ?? 0))%</td>
-                <td>@song.TotalLoops.ToString("N0")</td>
+                <td class="text-end">@((int)(song.IndexHeader.Rating ?? 0))%</td>
+                <td class="text-end">@song.TotalLoops.ToString("N0")</td>
                 @{
                     var predicted = song.Probabilities.GetPredictedTonality();
                     var secondPredicted = song.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
                     var parallelToPredicted = predicted.GetParallelScale(true);
                 }
-                <td>
-                    <b>@predicted.ToSongTonalityTitle()</b>
-                </td>
-                <td>
-                    <span>@song.Probabilities.TonalityConfidence().ToString("P0")</span>
-                </td>
-                <td>
-                    <b>@secondPredicted.ToSongTonalityTitle()</b>
-                </td>
-                <td>
-                    <span>@secondConfidence.ToString("P0")</span>
-                </td>
-                <td>
-                    @if (secondPredicted != parallelToPredicted)
-                    {
-                        <b>@parallelToPredicted.ToSongTonalityTitle()</b>
-                    }
-                </td>
-                <td>
-                    @if (secondPredicted != parallelToPredicted)
-                    {
-                        <span>@song.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</span>
-                    }
-                </td>
-                <td>@song.Probabilities.TonicConfidence(true).ToString("P0")</td>
-                <td>@song.ScaleScore.ToString("P0")</td>
-                <td>@song.TonicScore.ToString("P0")</td>
+                <td class="fw-bold">@predicted.ToSongTonalityTitle()</td>
+                <td class="text-end">@song.Probabilities.TonalityConfidence().ToString("P0")</td>
+                <td class="fw-bold">@secondPredicted.ToSongTonalityTitle()</td>
+                <td class="text-end">@secondConfidence.ToString("P0")</td>
+                @if (secondPredicted != parallelToPredicted)
+                {
+                    <td class="fw-bold">@parallelToPredicted.ToSongTonalityTitle()</td>
+                    <td class="text-end">@song.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
+                }
+                else
+                {
+                    <td></td>
+                    <td></td>
+                }
+                <td class="text-end">@song.Probabilities.TonicConfidence(true).ToString("P0")</td>
+                <td class="text-end">@song.ScaleScore.ToString("P0")</td>
+                <td class="text-end">@song.TonicScore.ToString("P0")</td>
             </tr>
         }
     </table>

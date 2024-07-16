@@ -64,33 +64,33 @@
         }
         <tr>
             <td class="fw-bold">@ViewLocalizer["Length"]</td>
-            <td colspan="2">@loop.Length</td>
+            <td class="text-end" colspan="2">@loop.Length</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Total Songs"]</td>
-            <td colspan="2">@loop.TotalSongs.ToString("N0")</td>
+            <td class="text-end" colspan="2">@loop.TotalSongs.ToString("N0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Total Occurrences"]</td>
-            <td colspan="2">@loop.TotalOccurrences.ToString("N2")</td>
+            <td class="text-end" colspan="2">@loop.TotalOccurrences.ToString("N0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Total Successions"]</td>
-            <td colspan="2">@loop.TotalSuccessions.ToString("N2")</td>
+            <td class="text-end" colspan="2">@loop.TotalSuccessions.ToString("N0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Average Coverage"]</td>
-            <td colspan="2">@loop.AverageCoverage.ToString("P0")</td>
+            <td class="text-end" colspan="2">@loop.AverageCoverage.ToString("P0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Detected Tonality"]</td>
             <td class="fw-bold">@predicted.ToLoopTonalityTitle(predictedViewMode)</td>
-            <td>@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+            <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
         </tr>
         <tr>
             <td class="fw-bold" rowspan="@(Model.ViewMode == StructureViewMode.Interpreted ? 3 : 1)">@ViewLocalizer["Second Detected Tonality"]</td>
             <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-            <td>@secondConfidence.ToString("P0")</td>
+            <td class="text-end">@secondConfidence.ToString("P0")</td>
         </tr>
         @if (Model.ViewMode == StructureViewMode.Interpreted)
         {
@@ -106,7 +106,7 @@
             @if (secondPredicted != parallelToPredicted)
             {
                 <td class="fw-bold">@parallelToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                <td>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
+                <td class="text-end">@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
             }
             else
             {
@@ -115,15 +115,15 @@
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Tonic Confidence"]</td>
-            <td colspan="2">@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
+            <td class="text-end" colspan="2">@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Tonic Score"]</td>
-            <td colspan="2">@loop.TonicScore.ToString("P0")</td>
+            <td class="text-end" colspan="2">@loop.TonicScore.ToString("P0")</td>
         </tr>
         <tr>
             <td class="fw-bold">@ViewLocalizer["Scale Score"]</td>
-            <td colspan="2">@loop.ScaleScore.ToString("P0")</td>
+            <td class="text-end" colspan="2">@loop.ScaleScore.ToString("P0")</td>
         </tr>
     </tbody>
 </table>
@@ -151,10 +151,11 @@
                     var adjustedNote = Note.Normalize(note + (isMinor ? 3 : 0));
                     var probability = loop.Probabilities[(adjustedNote, isMinor).ToIndex()];
                     sum += probability;
-                        <td class="fw-bold">@((adjustedNote, isMinor).ToLoopTonalityTitle(predictedViewMode))</td>
-                    <td>@probability.ToString("P0")</td>
+
+                    <td class="fw-bold">@((adjustedNote, isMinor).ToLoopTonalityTitle(predictedViewMode))</td>
+                        <td class="text-end">@probability.ToString("P0")</td>
                 }
-                <td>@sum.ToString("P0")</td>
+                <td class="text-end">@sum.ToString("P0")</td>
             }
         </tr>
     }
@@ -191,14 +192,14 @@
         <tr>
             <td>@link.DerivedTonalityIndex.ToLoopTonalityTitle(predictedViewMode)</td>
             <td>@(link.DerivedFromKnown ? ViewLocalizer["Known"] : ViewLocalizer["Predicted"])</td>
-            <td>@link.Count.ToString("N0")</td>
-            <td>@link.TotalWeight.ToString("N0")</td>
-            <td>@link.Occurrences.ToString("N2")</td>
-            <td>@link.Successions.ToString("N2")</td>
-            <td>@link.AverageCoverage.ToString("P0")</td>
-            <td>@link.AverageConfidence.ToString("P0")</td>
-            <td>@link.AverageTonicScore.ToString("P0")</td>
-            <td>@link.AverageScaleScore.ToString("P0")</td>
+            <td class="text-end">@link.Count.ToString("N0")</td>
+            <td class="text-end">@link.TotalWeight.ToString("N0")</td>
+            <td class="text-end">@link.Occurrences.ToString("N2")</td>
+            <td class="text-end">@link.Successions.ToString("N2")</td>
+            <td class="text-end">@link.AverageCoverage.ToString("P0")</td>
+            <td class="text-end">@link.AverageConfidence.ToString("P0")</td>
+            <td class="text-end">@link.AverageTonicScore.ToString("P0")</td>
+            <td class="text-end">@link.AverageScaleScore.ToString("P0")</td>
             <td>
                 @if (link.Examples.Any())
                 {
@@ -247,15 +248,15 @@
                         })
                 </td>
                 <td>@example.Song.IndexHeader.Source</td>
-                <td>@example.Link.Occurrences.ToString("N2")</td>
-                <td>@example.Link.Successions.ToString("N2")</td>
-                <td>@example.Link.Coverage.ToString("P0")</td>
-                <td>@((int)(example.Song.IndexHeader.Rating ?? 0))%</td>
-                <td>@example.Song.TotalLoops.ToString("N0")</td>
-                <td>@example.Song.Probabilities.TonalityConfidence().ToString("P0")</td>
-                <td>@example.Song.Probabilities.TonicConfidence(true).ToString("P0")</td>
-                <td>@example.Song.ScaleScore.ToString("P0")</td>
-                <td>@example.Song.TonicScore.ToString("P0")</td>
+                <td class="text-end">@example.Link.Occurrences.ToString("N2")</td>
+                <td class="text-end">@example.Link.Successions.ToString("N2")</td>
+                <td class="text-end">@example.Link.Coverage.ToString("P0")</td>
+                <td class="text-end">@((int)(example.Song.IndexHeader.Rating ?? 0))%</td>
+                <td class="text-end">@example.Song.TotalLoops.ToString("N0")</td>
+                <td class="text-end">@example.Song.Probabilities.TonalityConfidence().ToString("P0")</td>
+                <td class="text-end">@example.Song.Probabilities.TonicConfidence(true).ToString("P0")</td>
+                <td class="text-end">@example.Song.ScaleScore.ToString("P0")</td>
+                <td class="text-end">@example.Song.TonicScore.ToString("P0")</td>
             </tr>
         }
     </table>

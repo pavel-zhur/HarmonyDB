@@ -82,7 +82,7 @@
                 <td>@song.Source</td>
                 <td>@song.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
                 <td>@predictedTonalityIndex?.ToSongTonalityTitle()</td>
-                <td>@((int)(song.Rating ?? 0))%</td>
+                <td class="text-end">@((int)(song.Rating ?? 0))%</td>
             </tr>
         }
     </table>

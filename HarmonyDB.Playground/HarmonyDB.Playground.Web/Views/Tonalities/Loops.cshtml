@@ -145,9 +145,9 @@
                     <td>@loop.Normalized.GetFunctionsTitle(predicted)</td>
                 }
                 <td class="fw-bold">@predicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                <td>@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+                <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
                 <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                <td>@secondConfidence.ToString("P0")</td>
+                <td class="text-end">@secondConfidence.ToString("P0")</td>
                 @if (Model.ViewMode == StructureViewMode.Interpreted)
                 {
                     <td>@loop.Normalized.GetTitle(secondPredicted)</td>
@@ -156,21 +156,21 @@
                 @if (secondPredicted != parallelToPredicted)
                 {
                     <td class="fw-bold">@parallelToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                    <td>@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
+                    <td class="text-end">@loop.Probabilities[parallelToPredicted.ToIndex()].ToString("P0")</td>
                 }
                 else
                 {
                     <td></td>
                     <td></td>
                 }
-                <td>@loop.TonicScore.ToString("P0")</td>
-                <td>@loop.Length</td>
-                <td>@loop.TotalSongs.ToString("N0")</td>
-                <td>@loop.TotalOccurrences.ToString("N0")</td>
-                <td>@loop.TotalSuccessions.ToString("N0")</td>
-                <td>@loop.AverageCoverage.ToString("P0")</td>
-                <td>@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
-                <td>@loop.ScaleScore.ToString("P0")</td>
+                <td class="text-end">@loop.TonicScore.ToString("P0")</td>
+                <td class="text-end">@loop.Length</td>
+                <td class="text-end">@loop.TotalSongs.ToString("N0")</td>
+                <td class="text-end">@loop.TotalOccurrences.ToString("N0")</td>
+                <td class="text-end">@loop.TotalSuccessions.ToString("N0")</td>
+                <td class="text-end">@loop.AverageCoverage.ToString("P0")</td>
+                <td class="text-end">@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
+                <td class="text-end">@loop.ScaleScore.ToString("P0")</td>
             </tr>
         }
     </table>
