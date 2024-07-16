@@ -1,5 +1,4 @@
-﻿using HarmonyDB.Index.Analysis.Em.Models;
-using HarmonyDB.Index.Analysis.Models;
+﻿using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
@@ -15,7 +14,7 @@ public class ProgressionsVisualizer
         $"{link.Successions:N2}/{link.Occurrences:N2}, {link.Coverage:P0}%";
 
     public string GetLoopChordsTitle(StructureLink link) =>
-        link.Normalized.GetTitle(link.NormalizationRoot);
+        link.Normalized.GetTitle(link.NormalizationRoot, true);
 
     public IReadOnlyDictionary<int, string> BuildCustomAttributesForSearch(
         ChordsProgression progression,

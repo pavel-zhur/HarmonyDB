@@ -97,50 +97,74 @@ public static class TonalitiesExtensions
             .Select(x => probabilities[ToIndex((byte)x, true)] + probabilities[GetRelativeScale((byte)x, true, isSong).ToIndex()])
             .Max();
 
-    public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = true)
-        => normalized.DeserializeLoop().GetTitle(beginningNote, loopify);
-
-    public static string GetTitle(this string normalized, (byte root, bool isMinor)? predicted, bool loopify = false)
-        => predicted.HasValue
-            ? normalized.GetTitle(predicted.Value.GetAmCTonic(), loopify)
-            : normalized.GetTitle(loopify: loopify);
-
-    public static string GetFunctionsTitle(this string normalized, (byte root, bool isMinor) predicted, bool loopify = false)
-        => normalized.DeserializeLoop().GetFunctionsTitle(predicted, loopify);
-
     public static byte GetAmCTonic(this (byte root, bool isMinor) predicted)
         => predicted.isMinor ? predicted.root : Note.Normalize(predicted.root + 3);
+
+    public static (byte root, bool isMinor) GetAmCRoot(this (byte root, bool isMinor) predicted)
+        => (predicted.isMinor ? (byte)0 : (byte)3, predicted.isMinor);
 
     public static (byte root, ChordType chordType) ToRequiredChordValue(this ChordDataV1 chordDataV1)
         => (chordDataV1.HarmonyData!.Root, chordDataV1.HarmonyData!.ChordType);
 
-    public static string GetFunctionsTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, (byte root, bool isMinor) predicted, bool loopify = false)
+    public static string GetTitle(this string normalized, (byte root, bool isMinor)? predicted, bool loopify = false, bool shiftLoop = true)
+        => predicted.HasValue
+            ? normalized.DeserializeLoop().GetTitle(predicted?.GetAmCRoot(), predicted.Value.GetAmCTonic(), loopify, shiftLoop)
+            : normalized.GetTitle(loopify: loopify);
+
+    public static string GetTitle(this string normalized, byte beginningNote = 0, bool loopify = false)
+        => normalized.DeserializeLoop().GetTitle(null, beginningNote, loopify, false);
+
+    public static string GetTitle(this string normalized, (byte root, bool isMinor) predicted, byte beginningNote, bool loopify = false)
+        => normalized.DeserializeLoop().GetTitle(predicted, beginningNote, loopify);
+
+    public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, (byte root, bool isMinor)? predicted, byte beginningNote = 0, bool loopify = false, bool shiftLoop = true)
     {
-        var beginningNote = predicted.GetAmCTonic();
-        predicted = ((byte root, bool isMinor))(predicted.isMinor ? (0, true) : (3, false));
-        return string.Join(" ", ToFunction((beginningNote, sequence.Span[0].FromType), predicted)
-            .Once()
-            .Concat(
-                MemoryMarshal.ToEnumerable(sequence)
-                    .SelectSingle(x => loopify ? x : x.SkipLast(1))
-                    .Select(m =>
-                    {
-                        beginningNote = Note.Normalize(beginningNote + m.RootDelta);
-                        return ToFunction((beginningNote, m.ToType), predicted);
-                    })));
+        return string.Join(" ",
+                   sequence.ToSequence(predicted, beginningNote, out _, loopify, shiftLoop)
+                       .Select(x => x.ToChord()));
     }
 
-    public static string GetTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, byte beginningNote = 0, bool loopify = true)
-        => string.Join(" ", ToChord(beginningNote, sequence.Span[0].FromType)
+    public static string GetFunctionsTitle(this string normalized, (byte root, bool isMinor) predicted, bool loopify = false, bool shiftLoop = true)
+        => normalized.DeserializeLoop().GetFunctionsTitle(predicted, loopify, shiftLoop);
+
+    public static string GetFunctionsTitle(this ReadOnlyMemory<CompactHarmonyMovement> sequence, (byte root, bool isMinor) predicted, bool loopify = false, bool shiftLoop = true)
+    {
+        var beginningNote = predicted.GetAmCTonic();
+        predicted = predicted.GetAmCRoot();
+        return string.Join(
+                   " ",
+                   sequence
+                       .ToSequence(predicted, beginningNote, out _, loopify, shiftLoop)
+                       .Select(x => x.ToFunction(predicted)));
+    }
+
+    public static IEnumerable<(byte note, ChordType chordType)> ToSequence(
+        this ReadOnlyMemory<CompactHarmonyMovement> sequence,
+        (byte root, bool isMinor)? predicted,
+        byte beginningNote,
+        out int? shift,
+        bool loopify = false,
+        bool shiftLoop = true)
+        => (beginningNote, chordType: sequence.Span[0].FromType)
             .Once()
             .Concat(
                 MemoryMarshal.ToEnumerable(sequence)
-                    .SelectSingle(x => loopify ? x : x.SkipLast(1))
+                    .SkipLast(1)
                     .Select(m =>
                     {
                         beginningNote = Note.Normalize(beginningNote + m.RootDelta);
-                        return ToChord(beginningNote, m.ToType);
-                    })));
+                        return (beginningNote, chordType: m.ToType);
+                    }))
+            .ShiftLoop(
+                shiftLoop && predicted.HasValue,
+                x =>
+                    x.beginningNote != predicted!.Value.root
+                        ? 0
+                        : (predicted.Value.isMinor ? ChordType.Minor : ChordType.Major) == x.chordType
+                            ? 2
+                            : 1,
+                out shift)
+            .Loopify(loopify);
 
     public static string ToChord(this (byte note, ChordType chordType) chord) => ToChord(chord.note, chord.chordType);
 

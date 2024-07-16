@@ -202,14 +202,17 @@
             var loopPredicted = loop.Probabilities.GetPredictedTonality();
             var loopSecondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var loopSecondConfidence);
             var loopRelativeToPredicted = loopPredicted.GetRelativeScale(false);
+            
+            var predictedForLoop = predicted with { root = Note.Normalize(link.NormalizationRoot - predicted.root) };
+            var songTonalityShift = Model.ViewMode == StructureViewMode.Interpreted ? link.NormalizationRoot : (byte)0;
 
             <tr>
                 <td class="text-nowrap">
-                    @Html.ActionLink(loop.Normalized.GetTitle(beginningNote: Model.ViewMode == StructureViewMode.Interpreted ? link.NormalizationRoot : (byte)0, loopify: false), "Loop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
+                    @Html.ActionLink(loop.Normalized.GetTitle(predicted, songTonalityShift), "Loop", new StructureLoopModel { Normalized = loop.Normalized }, new { @class = isFirst ? null : "text-muted" })
                 </td>
                 @if (Model.ViewMode == StructureViewMode.Interpreted)
                 {
-                    <td>@loop.Normalized.GetFunctionsTitle((Note.Normalize(link.NormalizationRoot - predicted.root), predicted.isMinor))</td>
+                    <td>@loop.Normalized.GetFunctionsTitle(predictedForLoop)</td>
                 }
                 <td>
                     @if (!isFirst)
