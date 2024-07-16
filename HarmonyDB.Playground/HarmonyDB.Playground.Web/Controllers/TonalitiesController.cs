@@ -17,116 +17,115 @@ using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Playground.Web.Models.Tonalities;
 using OneShelf.Common.Api.Common;
 
-namespace HarmonyDB.Playground.Web.Controllers
+namespace HarmonyDB.Playground.Web.Controllers;
+
+public class TonalitiesController : PlaygroundControllerBase
 {
-    public class TonalitiesController : Controller
+    private readonly ILogger<TonalitiesController> _logger;
+    private readonly IndexApiClient _indexApiClient;
+
+    public TonalitiesController(ILogger<TonalitiesController> logger, IndexApiClient indexApiClient)
     {
-        private readonly ILogger<TonalitiesController> _logger;
-        private readonly IndexApiClient _indexApiClient;
+        _logger = logger;
+        _indexApiClient = indexApiClient;
+    }
 
-        public TonalitiesController(ILogger<TonalitiesController> logger, IndexApiClient indexApiClient)
+    public IActionResult Index()
+    {
+        return View();
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Loops(StructureLoopsModel model)
+    {
+        try
         {
-            _logger = logger;
-            _indexApiClient = indexApiClient;
-        }
-
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Loops(StructureLoopsModel model)
-        {
-            try
-            {
-                if (!model.JustForm)
-                {
-                    if (model.IncludeTrace)
-                    {
-                        ViewBag.Trace = new ApiTraceBag();
-                    }
-
-                    ViewBag.Response = await _indexApiClient.TonalitiesLoops(model, ViewBag.Trace);
-                }
-
-                model.JustForm = false;
-
-                return View(model);
-            }
-            catch (ConcurrencyException)
-            {
-                return View("Concurrency");
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Songs(StructureSongsModel model)
-        {
-            try
-            {
-                if (!model.JustForm)
-                {
-                    if (model.IncludeTrace)
-                    {
-                        ViewBag.Trace = new ApiTraceBag();
-                    }
-
-                    ViewBag.Response = await _indexApiClient.TonalitiesSongs(model, ViewBag.Trace);
-                }
-
-                model.JustForm = false;
-
-                return View(model);
-            }
-            catch (ConcurrencyException)
-            {
-                return View("Concurrency");
-            }
-        }
-
-        public async Task<IActionResult> Loop(StructureLoopModel model)
-        {
-            try
+            if (!model.JustForm)
             {
                 if (model.IncludeTrace)
                 {
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.TonalitiesLoop(model, ViewBag.Trace);
+                ViewBag.Response = await _indexApiClient.TonalitiesLoops(model, ViewBag.Trace);
+            }
 
-                return View(model);
-            }
-            catch (ConcurrencyException)
-            {
-                return View("Concurrency");
-            }
+            model.JustForm = false;
+
+            return View(model);
         }
-
-        public async Task<IActionResult> Song(StructureSongModel model)
+        catch (ConcurrencyException)
         {
-            try
+            return Concurrency();
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Songs(StructureSongsModel model)
+    {
+        try
+        {
+            if (!model.JustForm)
             {
                 if (model.IncludeTrace)
                 {
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.TonalitiesSong(model, ViewBag.Trace);
+                ViewBag.Response = await _indexApiClient.TonalitiesSongs(model, ViewBag.Trace);
+            }
+
+            model.JustForm = false;
+
+            return View(model);
+        }
+        catch (ConcurrencyException)
+        {
+            return Concurrency();
+        }
+    }
+
+    public async Task<IActionResult> Loop(StructureLoopModel model)
+    {
+        try
+        {
+            if (model.IncludeTrace)
+            {
+                ViewBag.Trace = new ApiTraceBag();
+            }
+
+            ViewBag.Response = await _indexApiClient.TonalitiesLoop(model, ViewBag.Trace);
+
+            return View(model);
+        }
+        catch (ConcurrencyException)
+        {
+            return Concurrency();
+        }
+    }
+
+    public async Task<IActionResult> Song(StructureSongModel model)
+    {
+        try
+        {
+            if (model.IncludeTrace)
+            {
+                ViewBag.Trace = new ApiTraceBag();
+            }
+
+            ViewBag.Response = await _indexApiClient.TonalitiesSong(model, ViewBag.Trace);
             
-                return View(model);
-            }
-            catch (ConcurrencyException)
-            {
-                return View("Concurrency");
-            }
+            return View(model);
+        }
+        catch (ConcurrencyException)
+        {
+            return Concurrency();
         }
     }
 }
