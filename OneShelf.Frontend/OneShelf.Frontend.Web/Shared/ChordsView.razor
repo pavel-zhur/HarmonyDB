@@ -840,7 +840,7 @@ else
         }
 
         var loop = _loopsMemory!.Value.loops[_loopId!.Value];
-        var searchProgression = InputParser.Parse(loop.Normalized.DeserializeLoop().GetTitle(loopify: true));
+        var searchProgression = InputParser.ParseSequence(loop.Normalized.DeserializeLoop().GetTitle(loopify: true));
         var found = ProgressionsSearch.Search(_loopsMemory.Value.progression.Once().ToList(), searchProgression);
 
         _loopsCustomAttributes = ProgressionsVisualizer.BuildCustomAttributesForSearch(_loopsMemory.Value.progression, found);
