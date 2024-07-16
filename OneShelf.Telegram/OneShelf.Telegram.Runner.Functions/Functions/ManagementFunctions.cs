@@ -35,7 +35,7 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
-            await response.WriteStringAsync($"Welcome to Azure Functions!");
+            await response.WriteStringAsync("Welcome to Azure Functions!");
 
             return response;
         }
@@ -63,7 +63,7 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
-            await response.WriteStringAsync($"Done.");
+            await response.WriteStringAsync("Done.");
 
             return response;
         }

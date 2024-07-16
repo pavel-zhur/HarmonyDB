@@ -8,7 +8,7 @@ public interface ISearchableHarmonyMovementsSequence
 
     int MovementsCount { get; }
 
-    int FirstRoot { get; }
+    byte FirstRoot { get; }
 
     CompactHarmonyMovement GetMovement(int index);
 }

@@ -48,7 +48,7 @@ public class ImagesProcessor
 
     private ImageCodecInfo? GetEncoder(ImageFormat format)
     {
-        ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+        var codecs = ImageCodecInfo.GetImageEncoders();
         foreach (ImageCodecInfo codec in codecs)
         {
             if (codec.FormatID == format.Guid)

@@ -16,7 +16,7 @@ public class ChordDataParser
     private const int Modulus = 12;
     private const string NotePattern = "\\[\\!(\\d+)([b#])?\\!\\]";
 
-    private readonly ConcurrentDictionary<string, (int[], int, int? bass, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string?, NoteAlteration? rootAlteration, NoteAlteration? bassAlteration)?> _chordDataCache = new();
+    private readonly ConcurrentDictionary<string, (byte[] chord, byte root, byte? bass, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string?, NoteAlteration? rootAlteration, NoteAlteration? bassAlteration)?> _chordDataCache = new();
 
     private readonly ILogger<ChordDataParser> _logger;
 
@@ -59,7 +59,7 @@ public class ChordDataParser
         var originalRepresentation = Regex.Replace(
             chordData,
             NotePattern,
-            match => new Note(int.Parse(match.Groups[1].Value), ParseNoteAlteration(match.Groups[2].Value)).Representation(new()));
+            match => new Note(byte.Parse(match.Groups[1].Value), ParseNoteAlteration(match.Groups[2].Value)).Representation(new()));
 
         var chord = GetChord(chordData);
         if (!chord.HasValue)
@@ -97,19 +97,19 @@ public class ChordDataParser
         };
     }
 
-    public (int[] chord, int root, int? bass, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string? fingering, NoteAlteration? rootAlteration, NoteAlteration? bassAlteration)? GetChord(string chordData)
+    public (byte[] chord, byte root, byte? bass, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string? fingering, NoteAlteration? rootAlteration, NoteAlteration? bassAlteration)? GetChord(string chordData)
     {
         return _chordDataCache.GetOrAdd(chordData, _ =>
         {
             try
             {
                 var bassMatch = Regex.Match(chordData, $"^(.+)\\/{NotePattern}$");
-                int? bass = null;
+                byte? bass = null;
                 NoteAlteration? bassAlteration = null;
                 var rootData = chordData;
                 if (bassMatch.Success)
                 {
-                    bass = int.Parse(bassMatch.Groups[2].Value);
+                    bass = byte.Parse(bassMatch.Groups[2].Value);
                     bassAlteration = ParseNoteAlteration(bassMatch.Groups[3].Value);
                     rootData = bassMatch.Groups[1].Value;
                 }
@@ -117,63 +117,63 @@ public class ChordDataParser
                 var fingeringMatch = Regex.Match(rootData, $"^{NotePattern}(.*)$");
                 var rootAlteration = fingeringMatch.Success ? ParseNoteAlteration(fingeringMatch.Groups[2].Value) : null;
                 var fingering = fingeringMatch.Success ? fingeringMatch.Groups[3].Value : null;
-                var tests = new (string pattern, Func<int[]> notes, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string? fingeringOverride)[]
+                var tests = new (string pattern, Func<byte[]> notes, ChordType chordTypeForCircleOfFifths, ChordType chordTypeForProgressions, string? fingeringOverride)[]
                 {
-                ($"^{NotePattern}$", () => new[] { 0, 4, 7, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}\\d*add\\d+$", () => new[] { 0, 4, 7, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}m$", () => new[] { 0, 3, 7, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}m\\d*add\\d+$", () => new[] { 0, 3, 7, }, ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}$", () => [0, 4, 7], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}\\d*add\\d+$", () => [0, 4, 7], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}m$", () => [0, 3, 7], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}m\\d*add\\d+$", () => [0, 3, 7], ChordType.Minor, ChordType.Minor, null),
 
-                ($"^{NotePattern}5$", () => new[] { 0, 7, }, ChordType.Unknown, ChordType.Power, null),
+                ($"^{NotePattern}5$", () => [0, 7], ChordType.Unknown, ChordType.Power, null),
 
-                ($"^{NotePattern}[7913]+$", () => new[] { 0, 4, 7, 10, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}m[7913]+$", () => new[] { 0, 3, 7, 10, }, ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}[7913]+$", () => [0, 4, 7, 10], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}m[7913]+$", () => [0, 3, 7, 10], ChordType.Minor, ChordType.Minor, null),
 
-                ($"^{NotePattern}\\d*sus2$", () => new[] { 0, 2, 7, }, ChordType.Unknown, ChordType.Sus2, null),
-                ($"^{NotePattern}m\\d*sus2$", () => new[] { 0, 2, 7, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}\\d*sus4?$", () => new[] { 0, 5, 7, }, ChordType.Unknown, ChordType.Sus4, null),
-                ($"^{NotePattern}m\\d*sus4?$", () => new[] { 0, 5, 7, }, ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}\\d*sus2$", () => [0, 2, 7], ChordType.Unknown, ChordType.Sus2, null),
+                ($"^{NotePattern}m\\d*sus2$", () => [0, 2, 7], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}\\d*sus4?$", () => [0, 5, 7], ChordType.Unknown, ChordType.Sus4, null),
+                ($"^{NotePattern}m\\d*sus4?$", () => [0, 5, 7], ChordType.Minor, ChordType.Minor, null),
 
-                ($"^{NotePattern}m5$", () => new[] { 0, 7, }, ChordType.Unknown, ChordType.Unknown, null), // eq 5
-                ($"^{NotePattern}m\\+$", () => new[] { 0, 7, }, ChordType.Unknown, ChordType.Unknown, null), // eq 5
+                ($"^{NotePattern}m5$", () => [0, 7], ChordType.Unknown, ChordType.Unknown, null), // eq 5
+                ($"^{NotePattern}m\\+$", () => [0, 7], ChordType.Unknown, ChordType.Unknown, null), // eq 5
 
-                ($"^{NotePattern}maj[7913]+$", () => new[] { 0, 4, 7, 11, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}\\+[7913]+$", () => new[] { 0, 4, 7, 11, }, ChordType.Major, ChordType.Unknown, null),
-                ($"^{NotePattern}[7913]+\\+$", () => new[] { 0, 4, 7, 11, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}maj$", () => new[] { 0, 4, 7, 11, }, ChordType.Major, ChordType.Major, null),
-                ($"^{NotePattern}maj", () => new[] { 0, 4, 7, 11, }, ChordType.Major, ChordType.Unknown, null), // all starting with (to avoid mixing with m)
-                ($"^{NotePattern}mmaj[7913]+$", () => new[] { 0, 3, 7, 11, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}m\\+[7913]+$", () => new[] { 0, 3, 7, 11, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}m[7913]+\\+$", () => new[] { 0, 3, 7, 11, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}mmaj$", () => new[] { 0, 3, 7, 11, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}mmaj", () => new[] { 0, 3, 7, 11, }, ChordType.Minor, ChordType.Minor, null), // all starting with (to avoid mixing with m)
+                ($"^{NotePattern}maj[7913]+$", () => [0, 4, 7, 11], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}\\+[7913]+$", () => [0, 4, 7, 11], ChordType.Major, ChordType.Unknown, null),
+                ($"^{NotePattern}[7913]+\\+$", () => [0, 4, 7, 11], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}maj$", () => [0, 4, 7, 11], ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}maj", () => [0, 4, 7, 11], ChordType.Major, ChordType.Unknown, null), // all starting with (to avoid mixing with m)
+                ($"^{NotePattern}mmaj[7913]+$", () => [0, 3, 7, 11], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}m\\+[7913]+$", () => [0, 3, 7, 11], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}m[7913]+\\+$", () => [0, 3, 7, 11], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}mmaj$", () => [0, 3, 7, 11], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}mmaj", () => [0, 3, 7, 11], ChordType.Minor, ChordType.Minor, null), // all starting with (to avoid mixing with m)
 
-                ($"^{NotePattern}m6$", () => new[] { 0, 3, 7, 9, }, ChordType.Minor, ChordType.Minor, null),
-                ($"^{NotePattern}6$", () => new[] { 0, 4, 7, 9, }, ChordType.Major, ChordType.Major, null),
+                ($"^{NotePattern}m6$", () => [0, 3, 7, 9], ChordType.Minor, ChordType.Minor, null),
+                ($"^{NotePattern}6$", () => [0, 4, 7, 9], ChordType.Major, ChordType.Major, null),
 
-                ($"^{NotePattern}9$", () => new[] { 0, 4, 7, 10, }, ChordType.Major, ChordType.Major, null), // will play 7
-                ($"^{NotePattern}m9$", () => new[] { 0, 3, 7, 10, }, ChordType.Minor, ChordType.Minor, null), // will play 7
+                ($"^{NotePattern}9$", () => [0, 4, 7, 10], ChordType.Major, ChordType.Major, null), // will play 7
+                ($"^{NotePattern}m9$", () => [0, 3, 7, 10], ChordType.Minor, ChordType.Minor, null), // will play 7
 
-                ($"^{NotePattern}[7913]+sus4$", () => new[] { 0, 5, 7, 10, }, ChordType.Unknown, ChordType.Sus4, null),
-                ($"^{NotePattern}[7913]+sus$", () => new[] { 0, 5, 7, 10, }, ChordType.Unknown, ChordType.Sus4, null), // sus4
-                ($"^{NotePattern}[7913]+sus2$", () => new[] { 0, 2, 7, 10, }, ChordType.Unknown, ChordType.Sus2, null),
+                ($"^{NotePattern}[7913]+sus4$", () => [0, 5, 7, 10], ChordType.Unknown, ChordType.Sus4, null),
+                ($"^{NotePattern}[7913]+sus$", () => [0, 5, 7, 10], ChordType.Unknown, ChordType.Sus4, null), // sus4
+                ($"^{NotePattern}[7913]+sus2$", () => [0, 2, 7, 10], ChordType.Unknown, ChordType.Sus2, null),
 
-                ($"^{NotePattern}dim[7913]+$", () => new[] { 0, 3, 6, 10, }, ChordType.Minor, ChordType.Diminished, null),
-                ($"^{NotePattern}m[7913]+5-$", () => new[] { 0, 3, 6, 10, }, ChordType.Minor, ChordType.Diminished, null),
-                ($"^{NotePattern}m[7913]+-5$", () => new[] { 0, 3, 6, 10, }, ChordType.Minor, ChordType.Diminished, null),
-                ($"^{NotePattern}dim$", () => new[] { 0, 3, 6, }, ChordType.Minor, ChordType.Diminished, null),
-                ($"^{NotePattern}m-5$", () => new[] { 0, 3, 6, }, ChordType.Minor, ChordType.Diminished, null),
-                ($"^{NotePattern}m5-$", () => new[] { 0, 3, 6, }, ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}dim[7913]+$", () => [0, 3, 6, 10], ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}m[7913]+5-$", () => [0, 3, 6, 10], ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}m[7913]+-5$", () => [0, 3, 6, 10], ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}dim$", () => [0, 3, 6], ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}m-5$", () => [0, 3, 6], ChordType.Minor, ChordType.Diminished, null),
+                ($"^{NotePattern}m5-$", () => [0, 3, 6], ChordType.Minor, ChordType.Diminished, null),
 
-                ($"^{NotePattern}\\+$", () => new[] { 0, 4, 8, }, ChordType.Major, ChordType.Unknown, null),
-                ($"^{NotePattern}aug$", () => new[] { 0, 4, 8, }, ChordType.Major, ChordType.Augmented, null),
-                ($"^{NotePattern}[7913]+\\#5$", () => new[] { 0, 4, 8, }, ChordType.Major, ChordType.Augmented, null),
-                ($"^{NotePattern}[7913]+?5+$", () => new[] { 0, 4, 8, }, ChordType.Major, ChordType.Augmented, null),
-                ($"^{NotePattern}\\#5$", () => new[] { 0, 4, 8, }, ChordType.Major, ChordType.Augmented, null),
-                ($"^{NotePattern}.*5\\+$", () => new[] { 0, 4, 8, }, ChordType.Unknown, ChordType.Unknown, null),
+                ($"^{NotePattern}\\+$", () => [0, 4, 8], ChordType.Major, ChordType.Unknown, null),
+                ($"^{NotePattern}aug$", () => [0, 4, 8], ChordType.Major, ChordType.Augmented, null),
+                ($"^{NotePattern}[7913]+\\#5$", () => [0, 4, 8], ChordType.Major, ChordType.Augmented, null),
+                ($"^{NotePattern}[7913]+?5+$", () => [0, 4, 8], ChordType.Major, ChordType.Augmented, null),
+                ($"^{NotePattern}\\#5$", () => [0, 4, 8], ChordType.Major, ChordType.Augmented, null),
+                ($"^{NotePattern}.*5\\+$", () => [0, 4, 8], ChordType.Unknown, ChordType.Unknown, null),
 
-                ($"^{NotePattern}m", () => new[] { 0, 3, 7, }, ChordType.Minor, ChordType.Unknown, null),
-                ($"^{NotePattern}", () => new[] { 0, 4, 7, }, ChordType.Major, ChordType.Unknown, null),
+                ($"^{NotePattern}m", () => [0, 3, 7], ChordType.Minor, ChordType.Unknown, null),
+                ($"^{NotePattern}", () => [0, 4, 7], ChordType.Major, ChordType.Unknown, null),
                 };
 
                 var match = tests
@@ -186,7 +186,7 @@ public class ChordDataParser
                     return null;
                 }
 
-                return (match.notes(), int.Parse(match.match.Groups[1].Value), bass, match.chordTypeForCircleOfFifths, match.chordTypeForProgressions, match.fingeringOverride ?? fingering, rootAlteration, bassAlteration);
+                return (match.notes(), byte.Parse(match.match.Groups[1].Value), bass, match.chordTypeForCircleOfFifths, match.chordTypeForProgressions, match.fingeringOverride ?? fingering, rootAlteration, bassAlteration);
             }
             catch (Exception e)
             {

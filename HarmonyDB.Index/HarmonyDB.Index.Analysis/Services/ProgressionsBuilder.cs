@@ -261,9 +261,8 @@ public class ProgressionsBuilder
     }
 
     internal static IReadOnlyList<HarmonyMovementsSequence> GetHarmonyMovementsSequences(List<HarmonyGroup> sequence, Func<HarmonyGroup, bool> isValid) =>
-        sequence.WithPrevious()
-            .Where(x => x.previous != null)
-            .ToChunks(pair => isValid(pair.previous!) && isValid(pair.current))
+        sequence.AsPairs()
+            .ToChunks(pair => isValid(pair.previous) && isValid(pair.current))
             .Where(c => c.criterium)
             .Select(c => new HarmonyMovementsSequence
             {
@@ -280,7 +279,7 @@ public class ProgressionsBuilder
                         To = p.current,
                         FromType = p.previous.HarmonyData.ChordType,
                         ToType = p.current.HarmonyData.ChordType,
-                        Title = $"{(titleDelta > 0 ? "+" : null)}{titleDelta} {p.previous.HarmonyData.ChordType.ChordTypeToString(true)}-{p.current.HarmonyData.ChordType.ChordTypeToString(true)}",
+                        Title = $"{(titleDelta > 0 ? "+" : null)}{titleDelta} {p.previous.HarmonyData.ChordType.ChordTypeToString(ChordTypePresentation.MajorAsM)}-{p.current.HarmonyData.ChordType.ChordTypeToString(ChordTypePresentation.MajorAsM)}",
                     };
                 }).ToList(),
             })

@@ -2,20 +2,20 @@
 using HarmonyDB.Index.Analysis.Services;
 using Xunit.Abstractions;
 
-namespace HarmonyDB.Index.Analysis.Tests
+namespace HarmonyDB.Index.Analysis.Tests;
+
+public class ChordDataParserTests
 {
-    public class ChordDataParserTests
+    private readonly ITestOutputHelper _output;
+    private readonly ChordDataParser _chordDataParser;
+
+    public ChordDataParserTests(ITestOutputHelper output, ChordDataParser chordDataParser)
     {
-        private readonly ITestOutputHelper _output;
-        private readonly ChordDataParser _chordDataParser;
+        _output = output;
+        _chordDataParser = chordDataParser;
+    }
 
-        public ChordDataParserTests(ITestOutputHelper output, ChordDataParser chordDataParser)
-        {
-            _output = output;
-            _chordDataParser = chordDataParser;
-        }
-
-        private const string Tests = @"[!5!]
+    private const string Tests = @"[!5!]
 [!5!]m
 [!5!]7
 [!5!]5
@@ -131,33 +131,32 @@ namespace HarmonyDB.Index.Analysis.Tests
 [!5!]add13-
 [!5!]m7b5";
 
-        [Fact]
-        public void GetChord()
+    [Fact]
+    public void GetChord()
+    {
+        foreach (var x in Tests.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            foreach (var x in Tests.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            var result = _chordDataParser.GetChord(x);
+            if (result.HasValue)
             {
-                var result = _chordDataParser.GetChord(x);
-                if (result.HasValue)
-                {
-                    Assert.Equal(5, result.Value.root);
-                    _output.WriteLine($"{x,-20}\t\tb={result.Value.bass}\t{string.Join(", ", result.Value.chord)}");
-                }
-                else
-                {
-                    _output.WriteLine(x);
-                }
+                Assert.Equal(5, result.Value.root);
+                _output.WriteLine($"{x,-20}\t\tb={result.Value.bass}\t{string.Join(", ", result.Value.chord)}");
+            }
+            else
+            {
+                _output.WriteLine(x);
             }
         }
+    }
 
-        [Fact]
-        public void GetAlteration()
-        {
-            Assert.Equal(NoteAlteration.Flat, _chordDataParser.GetChord("[!5b!]xxx/[!3#!]")!.Value.rootAlteration);
-            Assert.Equal(NoteAlteration.Sharp, _chordDataParser.GetChord("[!5#!]xxx/[!3b!]")!.Value.rootAlteration);
-            Assert.Equal(null, _chordDataParser.GetChord("[!5!]xxx/[!3!]")!.Value.rootAlteration);
-            Assert.Equal(NoteAlteration.Sharp, _chordDataParser.GetChord("[!5b!]xxx/[!3#!]")!.Value.bassAlteration);
-            Assert.Equal(NoteAlteration.Flat, _chordDataParser.GetChord("[!5#!]xxx/[!3b!]")!.Value.bassAlteration);
-            Assert.Equal(null, _chordDataParser.GetChord("[!5!]xxx/[!3!]")!.Value.bassAlteration);
-        }
+    [Fact]
+    public void GetAlteration()
+    {
+        Assert.Equal(NoteAlteration.Flat, _chordDataParser.GetChord("[!5b!]xxx/[!3#!]")!.Value.rootAlteration);
+        Assert.Equal(NoteAlteration.Sharp, _chordDataParser.GetChord("[!5#!]xxx/[!3b!]")!.Value.rootAlteration);
+        Assert.Equal(null, _chordDataParser.GetChord("[!5!]xxx/[!3!]")!.Value.rootAlteration);
+        Assert.Equal(NoteAlteration.Sharp, _chordDataParser.GetChord("[!5b!]xxx/[!3#!]")!.Value.bassAlteration);
+        Assert.Equal(NoteAlteration.Flat, _chordDataParser.GetChord("[!5#!]xxx/[!3b!]")!.Value.bassAlteration);
+        Assert.Equal(null, _chordDataParser.GetChord("[!5!]xxx/[!3!]")!.Value.bassAlteration);
     }
 }

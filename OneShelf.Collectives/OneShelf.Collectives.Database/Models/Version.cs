@@ -27,7 +27,7 @@ public record Version : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!Authors.Any() || Authors.Any(x => x.Trim() != x) || Authors.AnyDuplicates(out _) || Authors.Any(string.IsNullOrWhiteSpace))
+        if (!Authors.Any() || Authors.Any(x => x.Trim() != x) || Authors.AnyDuplicates() || Authors.Any(string.IsNullOrWhiteSpace))
             yield return new("Authors not trimmed or absent or whitespace or duplicate.");
 
         if (string.IsNullOrWhiteSpace(Title) || Title.Trim() != Title)

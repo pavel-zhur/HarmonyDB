@@ -1,10 +1,12 @@
 ﻿using HarmonyDB.Index.Analysis.Services;
+using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Main;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
-using HarmonyDB.Index.BusinessLogic.Services;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
@@ -24,21 +26,21 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly InputParser _inputParser;
-    private readonly DownstreamApiClient _downstreamApiClient;
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
     private readonly CommonExecutions _commonExecutions;
+    private readonly TonalitiesCache _tonalitiesCache;
 
-    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions)
-        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
+    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
+        : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _progressionsCache = progressionsCache;
         _indexHeadersCache = indexHeadersCache;
         _progressionsSearch = progressionsSearch;
         _inputParser = inputParser;
-        _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
         _commonExecutions = commonExecutions;
+        _tonalitiesCache = tonalitiesCache;
         _options = options.Value;
     }
 
@@ -65,7 +67,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         var found = _progressionsSearch.Search(
             headers.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
                 .Select(x => x.p.Value),
-            _inputParser.Parse(request.Query));
+            _inputParser.ParseSequence(request.Query));
 
         var results = headers
             .Select(h => progressions.TryGetValue(h.ExternalId, out var progression) && found.TryGetValue(progression, out var coverage)
@@ -84,12 +86,15 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
             })
             .ToList();
 
+        var tonalitiesCache = await _tonalitiesCache.Get();
+
         return new()
         {
             Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SongsByChordsResponseSong
             {
                 Header = x.h,
                 Coverage = x.coverage,
+                PredictedTonalityIndex = tonalitiesCache.Songs.GetValueOrDefault(x.h.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
             }).ToList(),
             Total = results.Count,
             TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),

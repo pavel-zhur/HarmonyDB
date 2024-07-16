@@ -1,0 +1,28 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@using HarmonyDB.Playground.Web.Models.Tonalities
+@model ILoopModel
+
+<p>
+    <span>@ViewLocalizer["View mode"]: </span>
+    
+    @if (Model.ViewMode == StructureViewMode.Normalized)
+    {
+        <span>@ViewLocalizer[StructureViewMode.Normalized.ToString()]</span>
+    }
+    else
+    {
+        @Html.ActionLink($"{ViewLocalizer[StructureViewMode.Normalized.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureViewMode.Normalized))
+    }
+
+    <span>| </span>
+
+    @if (Model.ViewMode == StructureViewMode.Interpreted)
+    {
+        <span>@ViewLocalizer[StructureViewMode.Interpreted.ToString()]</span>
+    }
+    else
+    {
+        @Html.ActionLink($"{ViewLocalizer[StructureViewMode.Interpreted.ToString()].Value}", ViewContext.RouteData.Values["action"]!.ToString(), Model.With(StructureViewMode.Interpreted))
+    }
+</p>

@@ -1,8 +1,8 @@
 using HarmonyDB.Index.Analysis.Models.Interfaces;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Services;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.BusinessLogic.Models;
-using HarmonyDB.Index.BusinessLogic.Services;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.VInternal;
@@ -20,22 +20,24 @@ public class IndexFunctions
     private readonly ILogger<IndexFunctions> _logger;
     private readonly DownstreamApiClient _downstreamApiClient;
     private readonly ProgressionsCache _progressionsCache;
-    private readonly LoopsStatisticsCache _loopsStatisticsCache;
+    private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly InputParser _inputParser;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly FullTextSearchCache _fullTextSearchCache;
+    private readonly StructuresCache _structuresCache;
 
-    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, LoopsStatisticsCache loopsStatisticsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache)
+    public IndexFunctions(ILogger<IndexFunctions> logger, DownstreamApiClient downstreamApiClient, ProgressionsCache progressionsCache, SecurityContext securityContext, IndexHeadersCache indexHeadersCache, InputParser inputParser, ProgressionsSearch progressionsSearch, FullTextSearchCache fullTextSearchCache, TonalitiesCache tonalitiesCache, StructuresCache structuresCache)
     {
         _logger = logger;
         _downstreamApiClient = downstreamApiClient;
         _progressionsCache = progressionsCache;
-        _loopsStatisticsCache = loopsStatisticsCache;
         _indexHeadersCache = indexHeadersCache;
         _inputParser = inputParser;
         _progressionsSearch = progressionsSearch;
         _fullTextSearchCache = fullTextSearchCache;
+        _tonalitiesCache = tonalitiesCache;
+        _structuresCache = structuresCache;
 
         securityContext.InitService();
     }
@@ -121,10 +123,17 @@ public class IndexFunctions
         return new OkResult();
     }
 
-    [Function(nameof(VDevLoopsStatisticsCacheCopy))]
-    public async Task<IActionResult> VDevLoopsStatisticsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevStructuresCacheCopy))]
+    public async Task<IActionResult> VDevStructuresCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        await _loopsStatisticsCache.Copy();
+        await _structuresCache.Copy();
+        return new OkResult();
+    }
+
+    [Function(nameof(VDevTonalitiesCacheCopy))]
+    public async Task<IActionResult> VDevTonalitiesCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _tonalitiesCache.Copy();
         return new OkResult();
     }
 
@@ -141,29 +150,46 @@ public class IndexFunctions
         return new OkObjectResult((await _indexHeadersCache.Get()).Headers.Count);
     }
 
-    [Function(nameof(VDevGetLoopStatisticsCacheItemsCount))]
-    public async Task<IActionResult> VDevGetLoopStatisticsCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetStructuresCacheLinksCount))]
+    public async Task<IActionResult> VDevGetStructuresCacheLinksCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
+        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
     }
 
-    [Function(nameof(VDevGetLoopStatisticsCacheTop1000))]
-    public async Task<IActionResult> VDevGetLoopStatisticsCacheTop1000([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount))]
+    public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        return new OkObjectResult((await _loopsStatisticsCache.Get()).Take(1000).ToList());
+        var tonalitiesIndex = await _tonalitiesCache.Get();
+        return new OkObjectResult(new
+        {
+            Loops = tonalitiesIndex.Loops.Count,
+            Songs = tonalitiesIndex.Songs.Count,
+        });
     }
 
-    [Function(nameof(VDevRebuildLoopStatisticsCache))]
-    public async Task<IActionResult> VDevRebuildLoopStatisticsCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevRebuildStructuresCache))]
+    public async Task<IActionResult> VDevRebuildStructuresCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
-        await _loopsStatisticsCache.Rebuild();
-        return new OkObjectResult((await _loopsStatisticsCache.Get()).Count);
+        await _structuresCache.Rebuild();
+        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+    }
+
+    [Function(nameof(VDevRebuildTonalitiesCache))]
+    public async Task<IActionResult> VDevRebuildTonalitiesCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        await _tonalitiesCache.Rebuild();
+        var tonalitiesIndex = await _tonalitiesCache.Get();
+        return new OkObjectResult(new
+        {
+            Loops = tonalitiesIndex.Loops.Count,
+            Songs = tonalitiesIndex.Songs.Count,
+        });
     }
 
     [Function(nameof(VDevFindAndCount))]
     public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
     {
-        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.Parse(searchQuery)).Count);
+        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.ParseSequence(searchQuery)).Count);
     }
 
     [Function(nameof(VDevFindHeaderAndCount))]

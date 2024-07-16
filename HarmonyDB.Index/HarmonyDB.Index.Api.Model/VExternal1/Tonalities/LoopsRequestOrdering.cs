@@ -1,0 +1,33 @@
+namespace HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
+
+public enum LoopsRequestOrdering
+{
+    LengthAscSongsDesc,
+    LengthDescSongsDesc,
+    LengthAscSuccessionsDesc,
+    LengthDescSuccessionsDesc,
+    LengthAscOccurrencesDesc,
+    LengthDescOccurrencesDesc,
+    LengthAscCoverageDesc,
+    LengthDescCoverageDesc,
+    LengthAscTonalityConfidenceDesc,
+    LengthDescTonalityConfidenceDesc,
+    LengthAscTonicConfidenceDesc,
+    LengthDescTonicConfidenceDesc,
+    LengthAscScaleScoreDesc,
+    LengthDescScaleScoreDesc,
+    LengthAscTonicScoreDesc,
+    LengthDescTonicScoreDesc,
+    SongsDesc,
+    SuccessionsDesc,
+    OccurrencesDesc,
+    CoverageDesc,
+    TonalityConfidenceDesc,
+    TonalityConfidenceAsc,
+    TonicConfidenceDesc,
+    TonicConfidenceAsc,
+    ScaleScoreDesc,
+    ScaleScoreAsc,
+    TonicScoreDesc,
+    TonicScoreAsc,
+}

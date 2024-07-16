@@ -1,5 +1,8 @@
 ﻿@using HarmonyDB.Common.FullTextSearch
+@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Main
+@using HarmonyDB.Playground.Web.Models.Home
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
 @model SongsByHeaderModel
@@ -48,18 +51,26 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table>
+    <table class="table table-bordered table-sm">
         <thead>
             <tr class="fw-bold">
-                <td>@ViewLocalizer["Song"]</td>
-                <td class="ps-2">@ViewLocalizer["Source"]</td>
-                <td class="ps-2">@ViewLocalizer["Rating"]</td>
+                <td rowspan="2">@ViewLocalizer["Song"]</td>
+                <td rowspan="2">@ViewLocalizer["Source"]</td>
+                <td colspan="2">@ViewLocalizer["Tonality"]</td>
+                <td rowspan="2">@ViewLocalizer["Rating"]</td>
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Metadata"]</td>
+                <td>
+                    @ViewLocalizer["Predicted"]
+                    @await Html.PartialAsync("Badge", BadgeModel.Beta)
+                </td>
             </tr>
         </thead>
-        @foreach (var song in response.Songs)
+        @foreach (var (song, predictedTonalityIndex) in response.Songs)
         {
             <tr>
-                <td class="pt-1">
+                <td>
                     @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, string.Join(", ", song.Artists ?? Enumerable.Empty<string>())))
                     {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
                     <span> – </span>
@@ -68,8 +79,10 @@
                         {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
                     </a>
                 </td>
-                <td class="pt-1 ps-2">@song.Source</td>
-                <td class="pt-1 ps-2">@((int)(song.Rating ?? 0))%</td>
+                <td>@song.Source</td>
+                <td>@song.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
+                <td>@predictedTonalityIndex?.ToSongTonalityTitle()</td>
+                <td class="text-end">@((int)(song.Rating ?? 0))%</td>
             </tr>
         }
     </table>

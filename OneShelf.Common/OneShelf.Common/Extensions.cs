@@ -11,6 +11,8 @@ public static class Extensions
     }
 
     public static IReadOnlyList<T> AsIReadOnlyList<T>(this IReadOnlyList<T> list) => list;
+    
+    public static IReadOnlyDictionary<TKey, TValue> AsIReadOnlyDictionary<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary) => dictionary;
 
     public static IEnumerable<T?> AsNullable<T>(this IEnumerable<T> enumeration)
         where T : struct
@@ -18,6 +20,9 @@ public static class Extensions
 
     public static bool AnyDuplicates<T>(this IEnumerable<T> source, out T? firstDuplicate)
         => source.AnyDuplicates(x => x, out firstDuplicate);
+
+    public static bool AnyDuplicates<T>(this IEnumerable<T> source)
+        => source.AnyDuplicates(x => x, out _);
 
     public static bool AnyDuplicates<TSource, TItem>(this IEnumerable<TSource> source, Func<TSource, TItem> selector, out TItem? firstDuplicate)
     {
@@ -78,12 +83,29 @@ public static class Extensions
         => source.WithIsFirst().WithIsLast().Select(x => (x.x.x, x.x.isFirst, x.isLast));
 
     public static IEnumerable<(T? previous, T current)> WithPrevious<T>(this IEnumerable<T> source)
+        where T : class
     {
-        T? previous = default;
+        T? previous = null;
         foreach (var x in source)
         {
             yield return (previous, x);
 
+            previous = x;
+        }
+    }
+
+    public static IEnumerable<(T previous, T current)> AsPairs<T>(this IEnumerable<T> source)
+    {
+        T? previous = default;
+        foreach (var (x, isFirst) in source.WithIsFirst())
+        {
+            if (isFirst)
+            {
+                previous = x;
+                continue;
+            }
+
+            yield return (previous!, x);
             previous = x;
         }
     }
@@ -118,7 +140,7 @@ public static class Extensions
         }
     }
 
-    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> items, bool overwrite) 
+    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, IEnumerable<(TKey key, TValue value)> items, bool overwrite)
         where TKey : notnull
     {
         foreach (var (key, value) in items)

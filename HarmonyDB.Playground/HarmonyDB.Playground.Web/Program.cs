@@ -14,8 +14,6 @@ namespace HarmonyDB.Playground.Web
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Configuration.AddJsonFile("appsettings.Secrets.json", true);
-
             // Add services to the container.
             builder.Services
                 .AddControllersWithViews(o => 

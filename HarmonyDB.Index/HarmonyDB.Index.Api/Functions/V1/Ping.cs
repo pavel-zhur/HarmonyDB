@@ -1,4 +1,5 @@
 using System.Net;
+using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
@@ -13,10 +14,12 @@ namespace HarmonyDB.Index.Api.Functions.V1
     {
         private readonly ILogger _logger;
         private readonly DownstreamApiClient _downstreamApiClient;
+        private readonly IndexApiClient _indexApiClient;
 
-        public Ping(ILoggerFactory loggerFactory, DownstreamApiClient downstreamApiClient)
+        public Ping(ILoggerFactory loggerFactory, DownstreamApiClient downstreamApiClient, IndexApiClient indexApiClient)
         {
             _downstreamApiClient = downstreamApiClient;
+            _indexApiClient = indexApiClient;
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
@@ -24,6 +27,10 @@ namespace HarmonyDB.Index.Api.Functions.V1
         public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            //await Task.WhenAll(
+            //    _downstreamApiClient.PingAll(),
+            //    _indexApiClient.PingAll());
 
             await _downstreamApiClient.PingAll();
 

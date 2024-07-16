@@ -3,12 +3,18 @@
 @using HarmonyDB.Common
 @using HarmonyDB.Common.Transposition
 @using HarmonyDB.Index.Analysis.Models
+@using HarmonyDB.Index.Analysis.Models.Structure
 @using HarmonyDB.Index.Analysis.Services
+@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Home
 @using HarmonyDB.Source.Api.Model.V1
 @using OneShelf.Common
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
 @inject ProgressionsVisualizer ProgressionsVisualizer
+@using HarmonyDB.Playground.Web.Models.Tonalities
 @model SongModel
 
 @{
@@ -17,6 +23,8 @@
 
     ViewBag.Title = title;
     Layout = "_Layout";
+
+    SongResponse? tonality = ViewBag.Tonality;
 }
 
 <script src="~/js/Player.js"></script>
@@ -31,12 +39,49 @@
         <a href="@chords.SourceUri">@ViewLocalizer["Source URL"]: @string.Join(".", chords.SourceUri.Host.Split('.').TakeLast(2))</a>
     </li>
 
-    @if (Model is { Highlight: not null, DetectLoops: false })
+    @if (Model.Highlight != null)
     {
         <li>
             @Html.ActionLink($"{ViewLocalizer["Clear highlighting"].Value} {Model.Highlight}", "Song", Model with { Highlight = null })
         </li>
     }
+    
+    <li>
+        <span>@ViewLocalizer["Metadata tonality"]: </span>
+        @if (chords.BestTonality?.TryParseBestTonality() == null)
+        {
+            <span style="color: darkgray">@ViewLocalizer["unknown"]</span>
+        }
+        else
+        {
+            <b>@chords.BestTonality.TryParseBestTonality()!.Value.ToSongTonalityTitle()</b>
+        }
+    </li>
+    
+    <li>
+        <span>
+            @ViewLocalizer["Detected tonality"]
+            @await Html.PartialAsync("Badge", BadgeModel.Beta)&nbsp;:
+        </span>
+        @if (tonality != null)
+        {
+            <b>@tonality.Song.Probabilities.GetPredictedTonality(out var confidence).ToSongTonalityTitle()</b>
+            <span> &ndash; @confidence.ToString("P0"), </span>
+            <b>@tonality.Song.Probabilities.GetSecondPredictedTonality(out confidence).ToSongTonalityTitle()</b>
+            <span> &ndash; @confidence.ToString("P0"), ...</span>
+            <span>
+                (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "Song", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
+            </span>
+        }
+        else if (ViewBag.TonalityConcurrencyException == true)
+        {
+            <span style="color: darkgray">@await Html.PartialAsync("ConcurrencyPartial")</span>
+        }
+        else
+        {
+            <span style="color: darkgray">@ViewLocalizer["unknown"]</span>
+        }
+    </li>
 
     <li>
         <span>@ViewLocalizer["Transpose"]: </span>
@@ -115,17 +160,6 @@
     </li>
 
     <li>
-        @if (Model.DetectLoops)
-        {
-            @Html.ActionLink(ViewLocalizer["Hide detected loops"].Value, "Song", Model with { DetectLoops = false })
-        }
-        else
-        {
-            @Html.ActionLink(ViewLocalizer["Show detected loops"].Value, "Song", Model with { DetectLoops = true })
-        }
-    </li>
-
-    <li>
         @if (Model.IncludeTrace)
         {
             @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
@@ -136,37 +170,6 @@
         }
     </li>
 </ul>
-
-@if (Model.DetectLoops)
-{
-    <h3 class="mt-3">@ViewLocalizer["Detected Loops"]</h3>
-    <ul>
-        @{
-            List<Loop> loops = ViewBag.Loops;
-            ChordsProgression progression = ViewBag.Progression;
-            @foreach (var (loop, id) in loops.WithIndices().OrderBy(x => x.x.Length))
-            {
-                var statisticsTitle = ProgressionsVisualizer.GetLoopStatisticsTitle(progression, loop);
-                var chordsTitle = ProgressionsVisualizer.GetLoopChordsTitle(progression, loop);
-                <li>
-                    @if (id == Model.LoopId)
-                    {
-                        <span>@statisticsTitle</span>
-                        <b><span>@chordsTitle</span></b>
-                        @Html.ActionLink(ViewLocalizer["Find other songs with this loop"].Value, "SongsByChords", new SongsByChordsModel { Query = chordsTitle, JustForm = true })
-                    }
-                    else
-                    {
-                        <a style="@(loop.IsCompound ? "color: darkgray" : Model.LoopId == id ? "color: darkgreen" : "")" href="@Url.ActionLink("Song", values: Model with { LoopId = id })">
-                            <span>@statisticsTitle</span>
-                            <b><span>@chordsTitle</span></b>
-                        </a>
-                    }
-                </li>
-            }
-        }
-    </ul>
-}
 
 <h3 class="mt-3">@ViewLocalizer["Chords"]</h3>
 <div class="chords-block">

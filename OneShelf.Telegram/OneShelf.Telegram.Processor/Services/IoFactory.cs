@@ -11,7 +11,7 @@ public class IoFactory
     private readonly IOptions<TelegramOptions> _telegramOptions;
 
     private Io? _io;
-    private ILogger<Io> _ioLogger;
+    private readonly ILogger<Io> _ioLogger;
     private readonly ILogger<IoFactory> _logger;
 
     public IoFactory(IOptions<TelegramOptions> telegramOptions, ILogger<Io> ioLogger, ILogger<IoFactory> logger)

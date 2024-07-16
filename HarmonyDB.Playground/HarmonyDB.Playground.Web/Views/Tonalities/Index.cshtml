@@ -1,0 +1,26 @@
+﻿@{
+    ViewBag.Title = "Tonalities Analysis";
+    Layout = "_Layout";
+}
+
+<h1 class="display-4">Tonalities Analysis</h1>
+
+<p>
+    This section is dedicated to the analysis of song tonalities and chord progressions. It provides insights into scores, probabilities, and weights derived from the <b>Expectation-Maximization (EM) algorithm.</b> Users can explore the results of tonality detection, facilitating model refinement and adjustments. Detailed filters allow for in-depth exploration of the data.
+</p>
+
+<p>
+    The EM algorithm iteratively refines the probabilities of tonalities for songs and loops (chord progressions) based on observed data. The algorithm aims to maximize the likelihood of the observed data under the model, adjusting tonality probabilities and scores to better fit the data. This process involves calculating probabilities, updating scores based on these probabilities, and iterating until convergence is achieved. The outcome is a set of probabilities and scores that indicate the most likely tonalities for songs and loops.
+</p>
+
+<h1 class="display-4 mt-5">Available Queries</h1>
+
+<h3>
+    @Html.ActionLink("\u2713 Songs Tonalities Analysis \u2192", "Songs", "Tonalities", new { JustForm = true })
+</h3>
+<p>Explore the model from the perspective of songs, analyzing tonalities and their statistical distributions.</p>
+
+<h3>
+    @Html.ActionLink("\u2713 Progressions Tonalities Analysis \u2192", "Loops", "Tonalities", new { JustForm = true })
+</h3>
+<p>Examine the model from the perspective of loops (chord progressions), focusing on tonalities and their statistical distributions.</p>

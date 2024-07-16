@@ -1,0 +1,73 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model HarmonyDB.Index.Api.Model.VExternal1.Tonalities.LoopsResponseDistributions
+@inject IViewLocalizer ViewLocalizer
+
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>@ViewLocalizer["Percentile"]</th>
+            @for (var i = 0; i <= 100; i += 10)
+            {
+                <th>@i%</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>@ViewLocalizer["Total Songs"]</td>
+            @foreach (var value in Model.TotalSongs)
+            {
+                <td class="text-end">@value.ToString("N0")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Total Occurrences"]</td>
+            @foreach (var value in Model.TotalOccurrences)
+            {
+                <td class="text-end">@value.ToString("N2")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Total Successions"]</td>
+            @foreach (var value in Model.TotalSuccessions)
+            {
+                <td class="text-end">@value.ToString("N2")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Average Coverage"]</td>
+            @foreach (var value in Model.AverageCoverage)
+            {
+                <td class="text-end">@value.ToString("P0")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Tonality Confidence"]</td>
+            @foreach (var value in Model.TonalityConfidence)
+            {
+                <td class="text-end">@value.ToString("P0")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Tonic Confidence"]</td>
+            @foreach (var value in Model.TonicConfidence)
+            {
+                <td class="text-end">@value.ToString("P0")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Tonic Score"]</td>
+            @foreach (var value in Model.TonicScore)
+            {
+                <td class="text-end">@value.ToString("P0")</td>
+            }
+        </tr>
+        <tr>
+            <td>@ViewLocalizer["Scale Score"]</td>
+            @foreach (var value in Model.ScaleScore)
+            {
+                <td class="text-end">@value.ToString("P0")</td>
+            }
+        </tr>
+    </tbody>
+</table>

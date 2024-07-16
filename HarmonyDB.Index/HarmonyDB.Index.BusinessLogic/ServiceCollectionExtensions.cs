@@ -1,6 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis;
+using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.BusinessLogic.Models;
-using HarmonyDB.Index.BusinessLogic.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,9 +11,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddIndexBusinessLogic(this IServiceCollection serviceCollection, IConfiguration configuration)
         => serviceCollection
             .AddSingleton<ProgressionsCache>()
-            .AddSingleton<LoopsStatisticsCache>()
+            .AddSingleton<TonalitiesCache>()
             .AddSingleton<IndexHeadersCache>()
             .AddSingleton<FullTextSearchCache>()
+            .AddSingleton<StructuresCache>()
             .AddIndexAnalysis()
             .Configure<FileCacheBaseOptions>(o => configuration.GetSection(nameof(FileCacheBaseOptions)).Bind(o));
 }

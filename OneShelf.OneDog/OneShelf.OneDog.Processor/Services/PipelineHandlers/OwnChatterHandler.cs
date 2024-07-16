@@ -15,7 +15,7 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
 public class OwnChatterHandler : ChatterHandlerBase
 {
-    private ILogger<OwnChatterHandler> _logger;
+    private readonly ILogger<OwnChatterHandler> _logger;
     private readonly DialogRunner _dialogRunner;
 
     public OwnChatterHandler(

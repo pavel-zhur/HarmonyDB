@@ -132,7 +132,7 @@ public class DialogHandler : PipelineHandler
                 alias = _dialogHandlerMemory.Help.attribute.Alias;
                 parameters = null;
                 _ioFactory.InitDialog(userId, alias, parameters);
-                _ioFactory.Io.WriteLine($"Такая команда не найдена.");
+                _ioFactory.Io.WriteLine("Такая команда не найдена.");
                 _ioFactory.Io.WriteLine();
                 command = _dialogHandlerMemory.Help.commandType;
             }

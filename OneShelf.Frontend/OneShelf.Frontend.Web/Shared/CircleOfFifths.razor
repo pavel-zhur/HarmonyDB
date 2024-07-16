@@ -21,7 +21,7 @@
         
 @code {
 
-    private HashSet<(int note, ChordType type)>? _chords;
+    private HashSet<(byte note, ChordType type)>? _chords;
 
     [Parameter]
     public required Action<Note, ChordType> Played { get; set; }
@@ -44,7 +44,7 @@
             .ToHashSet();
     }
 
-    private string GetStyle(int note, ChordType chordType)
+    private string GetStyle(byte note, ChordType chordType)
     {
         if (_chords == null) return string.Empty;
 

@@ -12,7 +12,7 @@
 @inject IdentityProvider IdentityProvider
 @inject ILogger<Print> Logger
 @inject Preferences Preferences
-@inject IJSRuntime JS
+@inject IJSRuntime Js
 
 <h3>Генерация книжки из списка</h3>
 
@@ -446,7 +446,7 @@ else
     {
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        await Js.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 
 }

@@ -1,0 +1,5 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model BadgeModel
+@inject IViewLocalizer ViewLocalizer
+
+<span class="my-badge @(Model == BadgeModel.Beta ? "my-badge-beta" : string.Empty)">@ViewLocalizer[Model.ToString()]</span>

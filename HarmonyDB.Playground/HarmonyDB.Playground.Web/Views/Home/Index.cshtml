@@ -1,4 +1,5 @@
-﻿@{
+﻿@using HarmonyDB.Playground.Web.Models.Home
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -35,20 +36,25 @@
 <p>All songs have been analyzed and the chord progression loops (repetitive subsequences) have been extracted. This query shows all progressions, starting with the most popular.</p>
 <p>For loops, statistics on how often a cycle continuously follows itself or how often it is followed by a different cycle is also calculated.</p>
 
+<h3 class="mt-3">
+    @Html.ActionLink("\u2713 Tonalities analysis \u2192", "Index", "Tonalities")
+</h3>
+<p>View the analysis of song tonalities and chord progressions, including scores, probabilities, and weights. This area is usable for model refinement and adjustment. It also aids in understanding tonality detection and allows for exploration through detailed filters.</p>
+
 <h1 class="display-4 mt-5">More queries and visuals coming</h1>
 <p>Here are some ideas and future development plans. Please drop me a line if you have items you would like to see added to this list.</p>
 <p>
     <ul class="sparse">
         <li>Analysis of how different chord sequences can continue, similar to that of the <a href="https://www.hooktheory.com/theorytab">Hooktheory TheoryTab DB</a>. It will allow you to drill down the tree of possible progression continuation variants, with probabilities and examples of songs.</li>
-        <li>Highlighting of found sequences and repeating loops in the song.<span class="in-progress"></span></li>
-        <li>Analysis and statistics of transitions from one sequence to another.<span class="in-progress"></span></li>
+        <li>Highlighting of found sequences and repeating loops in the song.@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
+        <li>Analysis and statistics of transitions from one sequence to another.@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
         <li>Statistics on how often a loop tends to cover the whole song.</li>
-        <li>Analyze the relationship between loops, how often they occur together in the same song (compatibility), and perhaps identify clusters of sequences that are more likely to occur together.<span class="in-progress"></span></li>
+        <li>Analyze the relationship between loops, how often they occur together in the same song (compatibility), and perhaps identify clusters of sequences that are more likely to occur together.@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
         <li>Statistics of possible extra notes in the chords in the sequences (possible 7 / 9 / 11 / 13, bass notes, etc.) - and how it depends on the chord sequence.</li>
-        <li>Tonality detection - what key is the song in?<span class="in-progress"></span></li>
+        <li>Tonality detection - what key is the song in?@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
         <li>Chord substitution options within loops and their variations.</li>
-        <li>Modulation detection - e.g. find songs with modulations 3 steps up, or how likely are the popular sequences to be in the songs with modulations, or find songs with modulations by a given artist, etc.<span class="in-progress"></span></li>
-        <li>Modulation options - possible transitions and their exact mechanisms, their connection points to the main sequences, etc.<span class="in-progress"></span></li>
+        <li>Modulation detection - e.g. find songs with modulations 3 steps up, or how likely are the popular sequences to be in the songs with modulations, or find songs with modulations by a given artist, etc.@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
+        <li>Modulation options - possible transitions and their exact mechanisms, their connection points to the main sequences, etc.@await Html.PartialAsync("Badge", BadgeModel.InProgress)</li>
         <li>Bridge creation ideas based on existing bridges in songs with similar chord sequences, popularity of different bridges in different genres, etc.</li>
         <li>Harmonic analysis - detection and naming of chord functions in a given context, and detection of peculiarities of the development of song harmony in a given song.</li>
         <li>Display of maps showing how and where a given chord sequence loop may exit, with probabilities, and allowing to drill down into them.</li>

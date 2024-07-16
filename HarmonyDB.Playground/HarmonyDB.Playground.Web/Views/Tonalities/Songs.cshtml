@@ -1,0 +1,224 @@
+﻿@using HarmonyDB.Index.Analysis.Tools
+@using HarmonyDB.Index.Api.Model.VExternal1
+@using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Tonalities
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+@model StructureSongsModel
+
+@{
+    SongsResponse? response = ViewBag.Response;
+
+    ViewBag.Title = $"{(response == null ? null : $"{response.Total} {ViewLocalizer["found"].Value} - ")}{ViewLocalizer["Songs Tonalities"].Value}";
+    Layout = "_Layout";
+}
+
+<div>
+    <h3 class="d-inline-block">@ViewLocalizer["Songs Tonalities Analysis"]</h3>
+    @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Songs", Model with
+{
+    JustForm = true,
+}, new { target = "_blank" })
+</div>
+
+@using (Html.BeginForm("Songs", "Tonalities", Model, FormMethod.Get))
+{
+    <p>
+        @ViewLocalizer["Ordering"]:
+        @Html.DropDownListFor(x => x.Ordering, Enum.GetValues<SongsRequestOrdering>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Min rating (whole, 0–100)"]: @Html.TextBoxFor(x => x.MinRating)
+    </p>
+    <p>
+        @ViewLocalizer["Min total loops"]: @Html.TextBoxFor(x => x.MinTotalLoops)
+    </p>
+    <p>
+        @ViewLocalizer["Max total loops"]: @Html.TextBoxFor(x => x.MaxTotalLoops)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonality confidence"]: @Html.TextBoxFor(x => x.MinTonalityConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonic confidence"]: @Html.TextBoxFor(x => x.MinTonicConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Max tonality confidence"]: @Html.TextBoxFor(x => x.MaxTonalityConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Max tonic confidence"]: @Html.TextBoxFor(x => x.MaxTonicConfidence)
+    </p>
+    <p>
+        @ViewLocalizer["Min tonic score"]: @Html.TextBoxFor(x => x.MinTonicScore)
+    </p>
+    <p>
+        @ViewLocalizer["Min scale score"]: @Html.TextBoxFor(x => x.MinScaleScore)
+    </p>
+    <p>
+        @ViewLocalizer["Second filter"]:
+        @Html.DropDownListFor(x => x.SecondFilter, Enum.GetValues<RequestSecondFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Detected scale filter"]:
+        @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Correct detection filter"]:
+        @Html.DropDownListFor(x => x.CorrectDetectionFilter, Enum.GetValues<SongsRequestCorrectDetectionFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Known tonality filter"]:
+        @Html.DropDownListFor(x => x.KnownTonalityFilter, Enum.GetValues<SongsRequestKnownTonalityFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Known scale filter"]:
+        @Html.DropDownListFor(x => x.KnownScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
+    </p>
+    <p>
+        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)
+    </p>
+    <p>
+        <label>
+            @Html.CheckBoxFor(x => x.IncludeTrace)
+            @ViewLocalizer["Include the Index API trace for developers"]
+        </label>
+    </p>
+    <input type="submit" value="@ViewLocalizer["List"]" onclick="this.form.submit(); this.disabled=true; this.value='@ViewLocalizer["Querying (takes 5–60 seconds)…"]'; " />
+}
+
+@if (response != null)
+{
+    <div class="mt-4">
+        <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
+        @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Songs", Model, new { target = "_blank" })
+    </div>
+
+    <div class="mt-4">
+        <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>
+    </div>
+
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr>
+                <th>@ViewLocalizer["Percentile"]</th>
+                @for (var i = 0; i <= 100; i += 10)
+                {
+                    <th>@i%</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@ViewLocalizer["Rating"]</td>
+                @foreach (var value in response.Distributions.Rating)
+                {
+                    <td class="text-end">@((value / 100)?.ToString("P0"))</td>
+                }
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Tonality Confidence"]</td>
+                @foreach (var value in response.Distributions.TonalityConfidence)
+                {
+                    <td class="text-end">@value.ToString("P0")</td>
+                }
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Tonic Confidence"]</td>
+                @foreach (var value in response.Distributions.TonicConfidence)
+                {
+                    <td class="text-end">@value.ToString("P0")</td>
+                }
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Tonic Score"]</td>
+                @foreach (var value in response.Distributions.TonicScore)
+                {
+                    <td class="text-end">@value.ToString("P0")</td>
+                }
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Scale Score"]</td>
+                @foreach (var value in response.Distributions.ScaleScore)
+                {
+                    <td class="text-end">@value.ToString("P0")</td>
+                }
+            </tr>
+            <tr>
+                <td>@ViewLocalizer["Total Loops"]</td>
+                @foreach (var value in response.Distributions.TotalLoops)
+                {
+                    <td class="text-end">@value.ToString("N0")</td>
+                }
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <h5 class="d-inline-block">@ViewLocalizer["Songs"]</h5>
+    </div>
+
+    @await Html.PartialAsync("Paging", Model)
+
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr class="fw-bold">
+                <td>@ViewLocalizer["Song"]</td>
+                <td>@ViewLocalizer["Source"]</td>
+                <td>@ViewLocalizer["Known Tonality"]</td>
+                <td>@ViewLocalizer["Known Tonality Reliable"]</td>
+                <td>@ViewLocalizer["Rating"]</td>
+                <td>@ViewLocalizer["Total Loops"]</td>
+                <td colspan="2">@ViewLocalizer["Detected Tonality"]</td>
+                <td colspan="2">@ViewLocalizer["Second Detected Tonality"]</td>
+                <td colspan="2">@ViewLocalizer["Relative Tonality (if not second)"]</td>
+                <td>@ViewLocalizer["Tonic Confidence"]</td>
+                <td>@ViewLocalizer["Tonic Score"]</td>
+                <td>@ViewLocalizer["Scale Score"]</td>
+            </tr>
+        </thead>
+        @foreach (var song in response.Songs)
+        {
+            <tr>
+                <td>
+                    @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.IndexHeader.Title, "Song", new StructureSongModel
+                                                                                    {
+                                                                                        ExternalId = song.IndexHeader.ExternalId
+                                                                                    })
+                </td>
+                <td>@song.IndexHeader.Source</td>
+                <td>
+                    <b>@song.KnownTonalityIndex?.ToSongTonalityTitle()</b>
+                </td>
+                <td>@song.IndexHeader.BestTonality?.IsReliable</td>
+                <td class="text-end">@((int)(song.IndexHeader.Rating ?? 0))%</td>
+                <td class="text-end">@song.TotalLoops.ToString("N0")</td>
+                @{
+                    var predicted = song.Probabilities.GetPredictedTonality();
+                    var secondPredicted = song.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
+                    var relativeToPredicted = predicted.GetRelativeScale(true);
+                }
+                <td class="fw-bold">@predicted.ToSongTonalityTitle()</td>
+                <td class="text-end">@song.Probabilities.TonalityConfidence().ToString("P0")</td>
+                <td class="fw-bold">@secondPredicted.ToSongTonalityTitle()</td>
+                <td class="text-end">@secondConfidence.ToString("P0")</td>
+                @if (secondPredicted != relativeToPredicted)
+                {
+                    <td class="fw-bold">@relativeToPredicted.ToSongTonalityTitle()</td>
+                    <td class="text-end">@song.Probabilities[relativeToPredicted.ToIndex()].ToString("P0")</td>
+                }
+                else
+                {
+                    <td></td>
+                    <td></td>
+                }
+                <td class="text-end">@song.Probabilities.TonicConfidence(true).ToString("P0")</td>
+                <td class="text-end">@song.ScaleScore.ToString("P0")</td>
+                <td class="text-end">@song.TonicScore.ToString("P0")</td>
+            </tr>
+        }
+    </table>
+
+    @await Html.PartialAsync("Paging", Model)
+}
+
+@await Html.PartialAsync("Trace")

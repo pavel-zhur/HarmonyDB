@@ -4,14 +4,14 @@ public record Note
 {
     public const int Modulus = 12;
 
-    public int Value { get; init; }
+    public byte Value { get; init; }
     public NoteAlteration? Alteration { get; init; }
 
     public Note()
     {
     }
 
-    public Note(int value, NoteAlteration? alteration = null)
+    public Note(byte value, NoteAlteration? alteration = null)
     {
         Value = value;
         Alteration = alteration;
@@ -25,18 +25,18 @@ public record Note
     public static Note F { get; } = new(8);
     public static Note G { get; } = new(10);
 
-    public static readonly IReadOnlyList<int> Major = new List<int>
+    public static readonly IReadOnlyList<byte> Major = new List<byte>
     {
         A.Value,
         B.Value,
-        C.Value + 1,
+        (byte)(C.Value + 1),
         D.Value,
         E.Value,
-        F.Value + 1,
-        G.Value + 1,
+        (byte)(F.Value + 1),
+        (byte)(G.Value + 1),
     };
 
-    public static readonly IReadOnlyList<int> Minor = new List<int>
+    public static readonly IReadOnlyList<byte> Minor = new List<byte>
     {
         A.Value,
         B.Value,
@@ -52,6 +52,7 @@ public record Note
         { 'A', A },
         { 'B', B },
         { 'C', C },
+        { 'С', C }, // russian
         { 'D', D },
         { 'E', E },
         { 'F', F },
@@ -59,8 +60,8 @@ public record Note
         { 'H', B },
     };
 
-    private static IReadOnlyDictionary<int, char> NotesToCharacters { get; } = CharactersToNotes
-        .Where(x => x.Key != 'H')
+    private static IReadOnlyDictionary<byte, char> NotesToCharacters { get; } = CharactersToNotes
+        .Where(x => x.Key is not ('H' or 'С')) // russian 'С'
         .ToDictionary(x => x.Value.Value, x => x.Key);
 
     public static Note Max { get; } = new(11);
@@ -73,7 +74,7 @@ public record Note
         var circleOfFifths = new List<(Note, Note, bool isSharps)>();
 
         var current = new Note(3).Add(-7);
-        for (var i = 0; i < 12; i++)
+        for (var i = 0; i < Modulus; i++)
         {
             var isSharps = i <= 6;
 
@@ -95,23 +96,23 @@ public record Note
     }
 
     public Note Sharp() => new(
-        Value == Max.Value ? Min.Value : Value + 1,
+        Value == Max.Value ? Min.Value : (byte)(Value + 1),
         NoteAlteration.Sharp);
 
     public Note Flat() => new(
-        Value == Min.Value ? Max.Value : Value - 1,
+        Value == Min.Value ? Max.Value : (byte)((Value + Modulus - 1) % Modulus),
         NoteAlteration.Flat);
 
     public Note Add(int delta)
     {
         var newValue = Value + delta;
-        newValue %= 12;
+        newValue %= Modulus;
         if (newValue < Min.Value)
         {
-            newValue += 12;
+            newValue += Modulus;
         }
 
-        return new(newValue);
+        return new((byte)newValue);
     }
 
     public string Representation(RepresentationSettings representationSettings)
@@ -122,7 +123,6 @@ public record Note
         {
             var (note, major) = representationSettings.RelativeTo.Value;
             var scale = major ? Major : Minor;
-            var isSharps = CircleOfFifths.Single(x => (major ? x.major : x.minor).Value == note).isSharps;
             scale = scale.Select(n => new Note(n).Add(note).Add(-representationSettings.Transpose).Value).ToList();
             var found = scale.Select((x, i) => (x, i: i + 1)).SingleOrDefault(x => x.x == Value).i;
             if (found > 0) return found.ToString();
@@ -132,7 +132,7 @@ public record Note
         var preferredAlteration = Alteration;
         if (representationSettings.Transpose != 0)
         {
-            value = (value + Modulus + representationSettings.Transpose) % Modulus;
+            value = (byte)((value + Modulus + representationSettings.Transpose) % Modulus);
             preferredAlteration = null;
         }
 
@@ -145,22 +145,22 @@ public record Note
         switch (preferredAlteration)
         {
             case NoteAlteration.Flat:
-                return $"{NotesToCharacters[value == Max.Value ? Min.Value : value + 1]}{SignsConstants.SignFlat}";
+                return $"{NotesToCharacters[(byte)(value == Max.Value ? Min.Value : value + 1)]}{SignsConstants.SignFlat}";
 
             case NoteAlteration.Sharp:
-                return $"{NotesToCharacters[value == Min.Value ? Max.Value : value - 1]}{SignsConstants.SignSharp}";
+                return $"{NotesToCharacters[(byte)(value == Min.Value ? Max.Value : value - 1)]}{SignsConstants.SignSharp}";
 
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    public int Tone(RepresentationSettings representationSettings)
+    public byte Tone(RepresentationSettings representationSettings)
     {
         var value = Value;
         if (representationSettings.Transpose != 0)
         {
-            value = (value + Modulus + representationSettings.Transpose) % Modulus;
+            value = (byte)((value + Modulus + representationSettings.Transpose) % Modulus);
         }
 
         return value;

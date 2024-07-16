@@ -14,7 +14,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink($"{ViewLocalizer["Page"].Value} 1", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            @Html.ActionLink($"{ViewLocalizer["Page"].Value} 1", ViewContext.RouteData.Values["action"]!.ToString(), Model with
             {
                 PageNumber = 1,
             })
@@ -24,7 +24,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink(ViewLocalizer["Previous Page"].Value, ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            @Html.ActionLink(ViewLocalizer["Previous Page"].Value, ViewContext.RouteData.Values["action"]!.ToString(), Model with
             {
                 PageNumber = Model.PageNumber - 1,
             })
@@ -35,7 +35,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink(ViewLocalizer["Next Page"].Value, ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            @Html.ActionLink(ViewLocalizer["Next Page"].Value, ViewContext.RouteData.Values["action"]!.ToString(), Model with
             {
                 PageNumber = Model.PageNumber + 1,
             })
@@ -45,7 +45,7 @@
     {
         <span>
             <span>| </span>
-            @Html.ActionLink($"{ViewLocalizer["Page"].Value} {response.TotalPages}", ViewContext.RouteData.Values["action"]!.ToString(), "Home", Model with
+            @Html.ActionLink($"{ViewLocalizer["Page"].Value} {response.TotalPages}", ViewContext.RouteData.Values["action"]!.ToString(), Model with
             {
                 PageNumber = response.TotalPages,
             })

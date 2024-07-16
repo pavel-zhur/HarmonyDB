@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.Analysis.Models;
 
 public class HarmonyMovementsSequence : ISearchableHarmonyMovementsSequence
 {
-    public required int FirstRoot { get; init; }
+    public required byte FirstRoot { get; init; }
 
     public required IReadOnlyList<HarmonyMovement> Movements { get; init; }
 

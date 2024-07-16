@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Average Confidence" xml:space="preserve">
+    <value>Средняя уверенность</value>
+  </data>
+  <data name="Average Coverage" xml:space="preserve">
+    <value>Среднее покрытие</value>
+  </data>
+  <data name="Average Scale Score" xml:space="preserve">
+    <value>Средняя оценка</value>
+  </data>
+  <data name="Average Tonic Score" xml:space="preserve">
+    <value>Средняя оценка без учета лада</value>
+  </data>
+  <data name="Back to Statistics" xml:space="preserve">
+    <value>Наверх к статистике</value>
+  </data>
+  <data name="Coverage" xml:space="preserve">
+    <value>Покрытие</value>
+  </data>
+  <data name="Degrees" xml:space="preserve">
+    <value>Ступени</value>
+  </data>
+  <data name="Derived From" xml:space="preserve">
+    <value>Получилась из</value>
+  </data>
+  <data name="Derived Tonality" xml:space="preserve">
+    <value>Получившаяся тональность</value>
+  </data>
+  <data name="Detected Tonality" xml:space="preserve">
+    <value>Тональность</value>
+  </data>
+  <data name="Detected Tonality Probabilities" xml:space="preserve">
+    <value>Вероятности тональностей</value>
+  </data>
+  <data name="Examples" xml:space="preserve">
+    <value>Примеры</value>
+  </data>
+  <data name="Exclude the Index API trace for developers" xml:space="preserve">
+    <value>Скрыть запросы к Index API для разработчиков</value>
+  </data>
+  <data name="Find songs with this progression" xml:space="preserve">
+    <value>Найти песни с этой прогрессией</value>
+  </data>
+  <data name="Include the Index API trace for developers" xml:space="preserve">
+    <value>Показать запросы к Index API для разработчиков</value>
+  </data>
+  <data name="Known" xml:space="preserve">
+    <value>Из метаданных</value>
+  </data>
+  <data name="Length" xml:space="preserve">
+    <value>Длина</value>
+  </data>
+  <data name="Link Statistics" xml:space="preserve">
+    <value>Статистика связей</value>
+  </data>
+  <data name="Loop Information" xml:space="preserve">
+    <value>Информация о цикле</value>
+  </data>
+  <data name="Major" xml:space="preserve">
+    <value>Мажор</value>
+  </data>
+  <data name="Minor" xml:space="preserve">
+    <value>Минор</value>
+  </data>
+  <data name="Occurrences" xml:space="preserve">
+    <value>Повторений</value>
+  </data>
+  <data name="Permalink" xml:space="preserve">
+    <value>Постоянная ссылка</value>
+  </data>
+  <data name="Predicted" xml:space="preserve">
+    <value>Из предсказанных</value>
+  </data>
+  <data name="Progression" xml:space="preserve">
+    <value>Прогрессия</value>
+  </data>
+  <data name="Random Examples" xml:space="preserve">
+    <value>Случайные примеры</value>
+  </data>
+  <data name="Rating" xml:space="preserve">
+    <value>Рейтинг</value>
+  </data>
+  <data name="Relative Tonality&lt;br /&gt;(if not second)" xml:space="preserve">
+    <value>Параллельная тональность&lt;br /&gt;(если не следующая)</value>
+  </data>
+  <data name="Scale Agnostic" xml:space="preserve">
+    <value>Без учета лада</value>
+  </data>
+  <data name="Scale Score" xml:space="preserve">
+    <value>Оценка</value>
+  </data>
+  <data name="Second Detected Tonality" xml:space="preserve">
+    <value>Следующая возможная тональность</value>
+  </data>
+  <data name="Show" xml:space="preserve">
+    <value>Смотреть</value>
+  </data>
+  <data name="Song" xml:space="preserve">
+    <value>Песня</value>
+  </data>
+  <data name="Song Examples" xml:space="preserve">
+    <value>Примеры песен</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Коллекция</value>
+  </data>
+  <data name="Successions" xml:space="preserve">
+    <value>Повторений подряд</value>
+  </data>
+  <data name="The following table is not the primary source for loop tonality data; it highlights the most significant aspects. Each song in the 'Derived From = Predicted' group has 23 other probable tonalities with probabilities greater than 0. Refer to the 'Average Confidence' column for more details. These probabilities affect the results in a dispersed manner. Therefore, this table focuses on the key subset for each group. Displaying the aggregated source numbers would be mathematically accurate but less convenient for analysis." xml:space="preserve">
+    <value>Приведенная ниже таблица не является основным источником данных о тональностях цикла; в ней показаны наиболее значимые элементы. Каждая песня в группе «Получилась из предсказанных» имеет 23 другие вероятные тональности с вероятностью больше 0. Более подробную информацию см. в колонке « Средняя уверенность». Эти вероятности влияют на результаты рассеянно. Однако в этой таблице показано только ключевое подмножество для каждой группы. Отображение агрегированных номеров источников было бы математически точным, но менее удобным для анализа.</value>
+  </data>
+  <data name="Tonality Analysis" xml:space="preserve">
+    <value>Анализ тональности</value>
+  </data>
+  <data name="Tonality Confidence" xml:space="preserve">
+    <value>Уверенность</value>
+  </data>
+  <data name="Tonic Confidence" xml:space="preserve">
+    <value>Уверенность без учета лада</value>
+  </data>
+  <data name="Tonic Score" xml:space="preserve">
+    <value>Оценка без учета лада</value>
+  </data>
+  <data name="Total Loops" xml:space="preserve">
+    <value>Всего циклов</value>
+  </data>
+  <data name="Total Occurrences" xml:space="preserve">
+    <value>Всего повторений</value>
+  </data>
+  <data name="Total Songs" xml:space="preserve">
+    <value>Всего песен</value>
+  </data>
+  <data name="Total Successions" xml:space="preserve">
+    <value>Всего повторений подряд</value>
+  </data>
+  <data name="Total Weight" xml:space="preserve">
+    <value>Общий вес</value>
+  </data>
+</root>

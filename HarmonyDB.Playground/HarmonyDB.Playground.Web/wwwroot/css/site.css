@@ -21,22 +21,17 @@ body {
   margin-bottom: 60px;
 }
 
-span.in-progress, span.in-progress-ru {
+span.my-badge {
     background-color: #04AA6D;
     color: white;
     padding: 1px 4px;
-    margin-left: 6px;
     text-align: center;
     border-radius: 5px;
     font-size: 80%;
 }
 
-span.in-progress::after {
-    content: "IN PROGRESS";
-}
-
-span.in-progress-ru::after {
-    content: "В РАЗРАБОТКЕ";
+span.my-badge-beta {
+    background-color: #c3a900;
 }
 
 ul.sparse li {
@@ -45,4 +40,24 @@ ul.sparse li {
 
 .search-highlighted {
     background-color: chartreuse;
+}
+
+.table-fixed {
+    table-layout: fixed;
+}
+
+.btn-xs {
+    padding: 0.15rem 0.5rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+.my-sup {
+    position: relative;
+    top: -0.2em;
+}
+
+.my-vertical {
+    writing-mode: vertical-rl;
+    text-align: end;
 }

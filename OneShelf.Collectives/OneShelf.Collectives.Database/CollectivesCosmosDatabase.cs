@@ -50,8 +50,8 @@ namespace OneShelf.Collectives.Database
         {
             if (_collectivesContainer != null) return;
 
-            using var _ = await _lock.LockAsync();
-            var databaseResponse = await _client.CreateDatabaseIfNotExistsAsync(_options.DatabaseName, 1000);
+            using var _ = await Lock.LockAsync();
+            var databaseResponse = await Client.CreateDatabaseIfNotExistsAsync(_options.DatabaseName, 1000);
 
             _collectivesContainer = await databaseResponse.Database.CreateContainerIfNotExistsAsync(new($"{nameof(Collective)}{_options.ContainerNamePostfix.SelectSingle(x => string.IsNullOrWhiteSpace(x) ? null : $"-{x}")}", "/createdByUserId")
             {

@@ -117,17 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Compound" xml:space="preserve">
-    <value>Составной</value>
+  <data name="Degrees" xml:space="preserve">
+    <value>Ступени</value>
   </data>
   <data name="found" xml:space="preserve">
     <value>нашлось</value>
   </data>
   <data name="Include the Index API trace for developers" xml:space="preserve">
     <value>Показать запросы к Index API для разработчиков</value>
-  </data>
-  <data name="Include the roots statistics trace" xml:space="preserve">
-    <value>Показать отладку статистики тональностей цикла</value>
   </data>
   <data name="Length" xml:space="preserve">
     <value>Длина</value>
@@ -171,11 +168,17 @@
   <data name="Results" xml:space="preserve">
     <value>Результаты</value>
   </data>
-  <data name="Roots Statistics" xml:space="preserve">
-    <value>Статистика тональностей</value>
+  <data name="Scale" xml:space="preserve">
+    <value>Лад</value>
+  </data>
+  <data name="Second Tonality" xml:space="preserve">
+    <value>Следующая возможная тональность</value>
   </data>
   <data name="See the most popular chord progressions" xml:space="preserve">
     <value>Популярные аккордовые последовательности</value>
+  </data>
+  <data name="Tonality" xml:space="preserve">
+    <value>Тональность</value>
   </data>
   <data name="Total Occurrences" xml:space="preserve">
     <value>Всего повторений</value>
