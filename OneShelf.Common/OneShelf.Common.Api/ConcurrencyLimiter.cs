@@ -7,8 +7,8 @@ public class ConcurrencyLimiter
 {
     private readonly ILogger<ConcurrencyLimiter> _logger;
     private readonly ConcurrencyLimiterOptions _options;
-    
-    private volatile int _current;
+
+    private readonly Dictionary<Type, int> _counters = new();
 
     public ConcurrencyLimiter(IOptions<ConcurrencyLimiterOptions> options, ILogger<ConcurrencyLimiter> logger)
     {
@@ -18,23 +18,33 @@ public class ConcurrencyLimiter
 
     public async Task<TResult> ExecuteOrThrow<TResult>(Func<Task<TResult>> taskGetter)
     {
-        if (_current > _options.MaxConcurrency)
+        if (_counters.GetValueOrDefault(typeof(TResult)) > _options.MaxConcurrency)
             throw new ServiceConcurrencyException();
 
         try
         {
-            var value = Interlocked.Increment(ref _current);
-            _logger.LogInformation("Request concurrency: {concurrency}.", value);
+            int value;
+            lock (_counters)
+            {
+                var current = _counters.GetValueOrDefault(typeof(TResult));
+                value = _counters[typeof(TResult)] = current + 1;
+            }
+
             if (value > _options.MaxConcurrency)
             {
                 throw new ServiceConcurrencyException();
             }
 
+            _logger.LogInformation("Request concurrency: {concurrency}.", value);
+
             return await taskGetter();
         }
         finally
         {
-            Interlocked.Decrement(ref _current);
+            lock (_counters)
+            {
+                _counters[typeof(TResult)]--;
+            }
         }
     }
 }

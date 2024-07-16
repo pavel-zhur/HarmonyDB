@@ -8,4 +8,4 @@
 
 <h2>@ViewLocalizer["Too many requests"].</h2>
 
-<p>@ViewLocalizer["Please try to refresh in a few moments"]: <input type="button" value="@ViewLocalizer["Refresh"]" onclick="location.reload()" /></p>
+<p>@await Html.PartialAsync("ConcurrencyPartial")</p>

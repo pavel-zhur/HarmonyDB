@@ -30,7 +30,7 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
     private readonly CommonExecutions _commonExecutions;
 
     public TonalitiesLoop(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, DownstreamApiClient downstreamApiClient, CommonExecutions commonExecutions)
-        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
+        : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
         _structuresCache = structuresCache;

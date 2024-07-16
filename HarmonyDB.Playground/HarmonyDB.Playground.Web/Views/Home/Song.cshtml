@@ -73,6 +73,10 @@
                 (@Html.ActionLink(ViewLocalizer["go to analysis"].Value, "Song", "Tonalities", new StructureSongModel { ExternalId = Model.ExternalId, }))
             </span>
         }
+        else if (ViewBag.TonalityConcurrencyException == true)
+        {
+            <span style="color: darkgray">@await Html.PartialAsync("ConcurrencyPartial")</span>
+        }
         else
         {
             <span style="color: darkgray">@ViewLocalizer["unknown"]</span>

@@ -30,7 +30,7 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
     private readonly CommonExecutions _commonExecutions;
 
     public TonalitiesSongs(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions)
-        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
+        : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
         _structuresCache = structuresCache;

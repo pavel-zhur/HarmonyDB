@@ -1,0 +1,4 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+
+@ViewLocalizer["Too many requests"]. @ViewLocalizer["Please try to refresh in a few moments"]: <input type="button" value="@ViewLocalizer["Refresh"]" onclick="location.reload()" />

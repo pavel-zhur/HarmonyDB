@@ -9,9 +9,9 @@ public abstract class FunctionBase<TRequest>
 
     protected readonly ILogger Logger;
 
-    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false)
+    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null)
     {
-        _concurrencyLimiter = limitConcurrency ? concurrencyLimiter ?? throw new("Concurrency limiter is required.") : null;
+        _concurrencyLimiter = concurrencyLimiter;
         Logger = loggerFactory.CreateLogger(GetType());
     }
 
@@ -55,8 +55,8 @@ public abstract class FunctionBase<TRequest>
 
 public abstract class FunctionBase<TRequest, TResponse> : FunctionBase<TRequest>
 {
-    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null, bool limitConcurrency = false)
-        : base(loggerFactory, concurrencyLimiter, limitConcurrency)
+    protected FunctionBase(ILoggerFactory loggerFactory, ConcurrencyLimiter? concurrencyLimiter = null)
+        : base(loggerFactory, concurrencyLimiter)
     {
     }
 

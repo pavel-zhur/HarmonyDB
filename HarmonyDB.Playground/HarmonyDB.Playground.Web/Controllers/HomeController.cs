@@ -91,6 +91,10 @@ namespace HarmonyDB.Playground.Web.Controllers
             {
                 _logger.LogWarning(e, "The song tonality is not available.");
             }
+            catch (ConcurrencyException)
+            {
+                ViewBag.TonalityConcurrencyException = true;
+            }
 
             var representationSettings = new RepresentationSettings(
                 transpose: songModel.Transpose, 

@@ -26,20 +26,18 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly ProgressionsSearch _progressionsSearch;
     private readonly InputParser _inputParser;
-    private readonly DownstreamApiClient _downstreamApiClient;
     private readonly IndexApiOptions _options;
     private readonly IndexApiClient _indexApiClient;
     private readonly CommonExecutions _commonExecutions;
     private readonly TonalitiesCache _tonalitiesCache;
 
-    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, DownstreamApiClient downstreamApiClient, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
-        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
+    public SongsByChords(ILoggerFactory loggerFactory, SecurityContext securityContext, ProgressionsCache progressionsCache, IndexHeadersCache indexHeadersCache, ProgressionsSearch progressionsSearch, InputParser inputParser, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
+        : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _progressionsCache = progressionsCache;
         _indexHeadersCache = indexHeadersCache;
         _progressionsSearch = progressionsSearch;
         _inputParser = inputParser;
-        _downstreamApiClient = downstreamApiClient;
         _indexApiClient = indexApiClient;
         _commonExecutions = commonExecutions;
         _tonalitiesCache = tonalitiesCache;

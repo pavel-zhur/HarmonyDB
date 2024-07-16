@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Please try to refresh in a few moments" xml:space="preserve">
+    <value>Пожалуйста, попробуйте чуть позже</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
   <data name="Too many requests" xml:space="preserve">
     <value>Слишком много запросов</value>
   </data>

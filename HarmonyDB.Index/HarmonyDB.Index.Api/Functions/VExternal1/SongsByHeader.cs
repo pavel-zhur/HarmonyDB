@@ -29,7 +29,7 @@ public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHe
     private readonly TonalitiesCache _tonalitiesCache;
 
     public SongsByHeader(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, FullTextSearchCache fullTextSearchCache, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
-        : base(loggerFactory, securityContext, concurrencyLimiter, options.Value.RedirectCachesToIndex)
+        : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
         _fullTextSearchCache = fullTextSearchCache;
