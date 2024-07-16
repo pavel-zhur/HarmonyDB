@@ -6,33 +6,21 @@
 <h1 class="display-4">Tonalities Analysis</h1>
 
 <p>
-    The Tonalities section offers tools for analyzing the harmonic structures of songs and loops. It uses Expectation-Maximization (EM) models to process audio features, aiming to identify patterns such as predominant tonality, tonic, and scale confidence scores.
+    This section is dedicated to the analysis of song tonalities and chord progressions. It provides insights into scores, probabilities, and weights derived from the <b>Expectation-Maximization (EM) algorithm.</b> Users can explore the results of tonality detection, facilitating model refinement and adjustments. Detailed filters allow for in-depth exploration of the data.
 </p>
 
 <p>
-    EM models help in determining the most likely tonality by processing harmonic elements like chords and melodies. This method iteratively refines its predictions, improving the accuracy of identifying tonal structures.
+    The EM algorithm iteratively refines the probabilities of tonalities for songs and loops (chord progressions) based on observed data. The algorithm aims to maximize the likelihood of the observed data under the model, adjusting tonality probabilities and scores to better fit the data. This process involves calculating probabilities, updating scores based on these probabilities, and iterating until convergence is achieved. The outcome is a set of probabilities and scores that indicate the most likely tonalities for songs and loops.
 </p>
 
-<p>
-    The analysis includes tonality confidence scores, which reflect the certainty of the model's predictions. These scores help in understanding the clarity of the tonal characteristics of songs and loops.
-</p>
-
-<p>
-    A database of known tonalities supports the analysis, allowing for comparison and validation of results. This aids in making the predictions more accurate and relevant.
-</p>
-
-<h2>Available Analysis Features</h2>
+<h1 class="display-4 mt-5">Available Queries</h1>
 
 <h3>
-    @Html.ActionLink("Songs Tonalities Analysis \u2192", "Songs", "Tonalities", new { JustForm = true })
+    @Html.ActionLink("\u2713 Songs Tonalities Analysis \u2192", "Songs", "Tonalities", new { JustForm = true })
 </h3>
-<p>Analyze the harmonic structure of songs to identify common tonalities and their features.</p>
+<p>Explore the model from the perspective of songs, analyzing tonalities and their statistical distributions.</p>
 
 <h3>
-    @Html.ActionLink("Loops Tonalities Analysis \u2192", "Loops", "Tonalities", new { JustForm = true })
+    @Html.ActionLink("\u2713 Progressions Tonalities Analysis \u2192", "Loops", "Tonalities", new { JustForm = true })
 </h3>
-<p>Analyze chord loops to discover harmonic patterns characteristic of different music genres and styles.</p>
-
-<p>
-    This section provides tools for a detailed examination of the tonal structures in music, supporting a deeper exploration into music theory and composition.
-</p>
+<p>Examine the model from the perspective of loops (chord progressions), focusing on tonalities and their statistical distributions.</p>

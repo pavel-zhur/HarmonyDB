@@ -2,6 +2,7 @@
 @using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Home
 @using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
@@ -31,6 +32,7 @@
 </div>
 
 <ul>
+    <li>@Html.ActionLink(ViewLocalizer["Find songs with this progression"].Value, "SongsByChords", "Home", new SongsByChordsModel { Query = loop.Normalized.GetTitle(predicted, true), JustForm = true })</li>
     <li>
         @if (Model.IncludeTrace)
         {
