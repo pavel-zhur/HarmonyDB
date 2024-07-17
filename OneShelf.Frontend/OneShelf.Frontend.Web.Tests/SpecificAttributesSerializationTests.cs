@@ -1,4 +1,3 @@
-using Newtonsoft.Json;
 using OneShelf.Frontend.SpecificModel;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
