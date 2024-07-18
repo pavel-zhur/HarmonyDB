@@ -716,6 +716,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.False(loopSelfJumpsBlocks.Select(l => l.StartIndex).AnyDuplicates());
         Assert.False(loopSelfJumpsBlocks.Select(l => l.EndIndex).AnyDuplicates());
 
+        AssertSequencePossible(loops, loopSelfJumpsBlocks);
+
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
         string CreateRootsTrace(IBlock block) => CreateRootsTraceByIndices(block.StartIndex, block.EndIndex);
@@ -963,6 +965,19 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     (roots[loop.EndIndex + 2], sequence.Span[loop.EndIndex + 1].ToType));
             }
         }
+    }
+
+    private void AssertSequencePossible(List<LoopBlock> loops, List<LoopSelfMultiJumpBlock> loopSelfMultiJumpBlocks)
+    {
+        // there's no such multijump that contains another multijump
+        Assert.False(loopSelfMultiJumpBlocks.Any(x => loopSelfMultiJumpBlocks.Where(y => y != x)
+            .Any(y => x.StartIndex <= y.StartIndex && x.EndIndex >= y.EndIndex)));
+
+        // any movement is covered by a maximum of 2 multijumps
+        Assert.False(loopSelfMultiJumpBlocks
+            .SelectMany(x => Enumerable.Range(x.StartIndex, x.EndIndex - x.StartIndex + 1))
+            .GroupBy(x => x)
+            .Any(x => x.Count() > 2));
     }
 
     private void AssertNormalized((byte root1, byte root2) roots, (int rootIndex1, int rootIndex2) rootIndices, LoopSelfJumpBlock loopSelfJumpBlocks)
