@@ -38,6 +38,9 @@
 
 <ul>
     <li>
+        @Html.ActionLink(ViewLocalizer["Go to the song page"].Value, "Song", "Home", new SongModel { ExternalId = Model.ExternalId, })
+    </li>
+    <li>
         @if (Model.IncludeTrace)
         {
             @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
@@ -46,9 +49,6 @@
         {
             @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = true })
         }
-    </li>
-    <li>
-        @Html.ActionLink(ViewLocalizer["Go to the song page"].Value, "Song", "Home", new SongModel { ExternalId = Model.ExternalId, })
     </li>
 </ul>
 
