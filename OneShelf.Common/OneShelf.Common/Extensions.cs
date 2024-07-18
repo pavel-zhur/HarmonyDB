@@ -132,6 +132,21 @@ public static class Extensions
             .ToList();
     }
 
+    public static List<List<T>> ToChunksByShouldStartNew<T>(this IEnumerable<T> source, Func<T, bool> shouldStartNewGetter)
+    {
+        var counter = 0;
+
+        return source
+            .GroupBy(x =>
+            {
+                var shouldStartNew = shouldStartNewGetter(x);
+                if (shouldStartNew) return ++counter;
+                return counter;
+            })
+            .Select(g => g.ToList())
+            .ToList();
+    }
+
     public static void AddRange<T>(this HashSet<T> hashSet, IEnumerable<T> items)
     {
         foreach (var item in items)

@@ -2,21 +2,11 @@
 
 namespace HarmonyDB.Index.Analysis.Models.Index;
 
-public record LoopBlock : ILoopBlock
+public record SequenceBlock : IBlock
 {
-    public required ReadOnlyMemory<CompactHarmonyMovement> Loop { get; init; }
-
-    public int LoopLength => Loop.Length;
+    public required ReadOnlyMemory<CompactHarmonyMovement> Sequence { get; init; }
 
     public required string Normalized { get; init; }
-
-    /// <summary>
-    /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the index of the start of the original progression in the normalized progression.
-    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
-    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
-    /// </summary>
-    public required int NormalizationShift { get; init; }
 
     /// <summary>
     /// Corresponds to the key (it is different for the same normalized progression if and only if it is in different keys).

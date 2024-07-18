@@ -6,6 +6,7 @@ using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -18,9 +19,9 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
-    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
+    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot, out List<byte> roots)
     {
-        var roots = CreateRoots(sequence, firstRoot);
+        roots = CreateRoots(sequence, firstRoot);
 
         Dictionary<(byte root, ChordType chordType), int> indices = new()
         {
@@ -83,7 +84,7 @@ public class IndexExtractor
         return loops;
     }
 
-    public List<LoopSelfMultiJumpBlock> FindSelfJumps(ReadOnlyMemory<CompactHarmonyMovement> sequence, List<LoopBlock> loops)
+    public List<LoopSelfMultiJumpBlock> FindSelfJumps(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<LoopBlock> loops)
         => loops
             .WithIndices()
             .GroupBy(x => x.x.Normalized)
@@ -145,6 +146,75 @@ public class IndexExtractor
                             return result;
                         })
                         .ToList(),
+                };
+            })
+            .ToList();
+
+    public List<IBlock> FindAnyLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot, BlocksExtractionLogic blocksExtractionLogic, out List<byte> roots)
+    {
+        var loops = FindSimpleLoops(sequence, firstRoot, out roots);
+
+        switch (blocksExtractionLogic)
+        {
+            case BlocksExtractionLogic.Loops:
+                return loops.Cast<IBlock>().ToList();
+            
+            case BlocksExtractionLogic.ReplaceWithSelfJumps:
+            {
+                var jumps = FindSelfJumps(sequence, loops).SelectMany(x => x.ChildJumps).ToList();
+                var involvedLoops = jumps
+                    .SelectMany(x => new[] { x.Loop1, x.Loop2, x.JointLoop, })
+                    .Where(x => x != null)
+                    .Distinct();
+
+                return loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+            }
+
+            case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
+            {
+                var jumps = FindSelfJumps(sequence, loops);
+                var involvedLoops = jumps
+                    .SelectMany(x => x.ChildLoops)
+                    .Distinct();
+
+                return loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+            }
+
+            case BlocksExtractionLogic.All:
+            {
+                var jumps = FindSelfJumps(sequence, loops);
+                return jumps.Cast<IBlock>()
+                    .Concat(jumps.SelectMany(x => x.ChildJumps))
+                    .Concat(loops)
+                    .ToList();
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
+        }
+    }
+
+    public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
+        => Enumerable
+            .Range(0, sequence.Length)
+            .Except(existingBlocks.SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
+            .OrderBy(x => x)
+            .WithPrevious()
+            .ToChunksByShouldStartNew(x => x.previous + 1 != x.current)
+            .Select(c =>
+            {
+                var startIndex = c[0].current;
+                var endIndex = c[^1].current;
+
+                var subsequence = sequence.Slice(startIndex, endIndex - startIndex + 1);
+
+                return new SequenceBlock
+                {
+                    StartIndex = startIndex,
+                    EndIndex = endIndex,
+                    Sequence = subsequence,
+                    Normalized = subsequence.SerializeLoop(),
+                    NormalizationRoot = roots[startIndex + 1],
                 };
             })
             .ToList();
@@ -222,7 +292,7 @@ public class IndexExtractor
         var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (float occurrences, float successions, short length)>();
         foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
         {
-            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
+            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot, out _);
 
             foreach (var loop in loops)
             {
