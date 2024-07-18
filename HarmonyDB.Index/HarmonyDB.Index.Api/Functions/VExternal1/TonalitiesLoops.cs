@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Em.Models;
+﻿using System.Net;
+using HarmonyDB.Index.Analysis.Em.Models;
 using HarmonyDB.Index.Analysis.Em.Services;
 using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
@@ -35,6 +36,7 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
         _options = options.Value;
     }
 
+    [ProducesResponseType<LoopsResponse>(200)]
     [Function(IndexApiUrls.VExternal1TonalitiesLoops)]
     public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] LoopsRequest request)
         => RunHandler(request);
