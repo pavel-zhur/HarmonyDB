@@ -183,9 +183,11 @@ public class IndexExtractor
             case BlocksExtractionLogic.All:
             {
                 var jumps = FindSelfJumps(sequence, loops);
+                var massiveOverlaps = FindMassiveOverlapsBlocks(sequence, loops);
                 return jumps.Cast<IBlock>()
                     .Concat(jumps.SelectMany(x => x.ChildJumps))
                     .Concat(loops)
+                    .Concat(massiveOverlaps)
                     .ToList();
             }
 
@@ -223,7 +225,7 @@ public class IndexExtractor
         IReadOnlyList<LoopBlock> loopBlocks)
     {
         var result = new List<LoopMassiveOverlapsBlock>();
-        var currentOpenLoops = new HashSet<LoopBlock>();
+        var currentOpenLoops = new List<LoopBlock>();
         List<LoopBlock>? currentMassiveOverlapsBlock = null;
         foreach (var (i, isStart, loop) in loopBlocks
                      .SelectMany(x => new[]
@@ -243,7 +245,7 @@ public class IndexExtractor
             {
                 if (currentMassiveOverlapsBlock == null)
                 {
-                    currentMassiveOverlapsBlock = [loop];
+                    currentMassiveOverlapsBlock = currentOpenLoops.ToList();
                 }
                 else if (!currentMassiveOverlapsBlock.Contains(loop))
                     currentMassiveOverlapsBlock.Add(loop);
@@ -252,6 +254,7 @@ public class IndexExtractor
             if (!isStart)
             {
                 currentOpenLoops.Remove(loop);
+
                 if (currentOpenLoops.Count == 1 && currentMassiveOverlapsBlock != null)
                 {
                     var first = currentMassiveOverlapsBlock[0];

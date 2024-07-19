@@ -1082,9 +1082,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }
     }
 
-    private void TraceAndTest(List<IBlock> blocks)
+    private void TraceAndTest(List<IBlock> blocks, bool anyMassiveOverlaps)
     {
-        AssertLoopsSequencePossible(blocks);
+        AssertLoopsSequencePossible(blocks, anyMassiveOverlaps);
 
         // sequences do not overlap with anything else
         Assert.False(blocks.OfType<SequenceBlock>().Cast<IBlock>().Any(s => blocks.Any(l => l != s && (
@@ -1092,7 +1092,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             || l.EndIndex >= s.StartIndex && l.EndIndex <= s.EndIndex)))); // l.EndIndex within the sequence
     }
 
-    private void AssertLoopsSequencePossible(IReadOnlyList<IBlock> blocks)
+    private void AssertLoopsSequencePossible(IReadOnlyList<IBlock> blocks, bool anyMassiveOverlaps)
     {
         // there's no such block that contains another block
         Assert.False(blocks.Any(x => blocks.Where(y => y != x)
@@ -1101,14 +1101,25 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         // any movement is covered by a maximum of 2 multijumps
         Assert.False(blocks
             .SelectMany(x => Enumerable.Range(x.StartIndex, x.EndIndex - x.StartIndex + 1).Select(i => (i, isSimple: x is LoopBlock)))
-            .GroupBy(x => x)
-            .Where(x => // if multiple simple blocks, treat them as one
-                x.Count()
-                - x.Count(x => x.isSimple)
-                + (x.Any(x => x.isSimple) ? 1 : 0)
-                > 2)
-            .SelectMany(x => x)
-            .Any());
+            .GroupBy(x => x.i)
+            .Any(x => anyMassiveOverlaps
+
+                // if multiple simple blocks, treat them as one
+                ? x.Count()
+                  - x.Count(x => x.isSimple)
+                  + (x.Any(x => x.isSimple) ? 1 : 0)
+                  > 2
+
+                // no massive overlaps, not more than two are allowed, even simple
+                : x.Count() > 2));
+
+        if (anyMassiveOverlaps)
+        {
+            Assert.True(blocks
+                .SelectMany(x => Enumerable.Range(x.StartIndex, x.EndIndex - x.StartIndex + 1).Select(i => (i, isSimple: x is LoopBlock)))
+                .GroupBy(x => x.i)
+                .Any(x => x.Count() > 2));
+        }
     }
 
     private void AssertNormalized((byte root1, byte root2) roots, (int rootIndex1, int rootIndex2) rootIndices, LoopSelfJumpBlock loopSelfJumpBlock)
