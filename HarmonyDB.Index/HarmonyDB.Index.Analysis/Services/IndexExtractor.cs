@@ -19,10 +19,8 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
-    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot, out List<byte> roots)
+    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
     {
-        roots = CreateRoots(sequence, firstRoot);
-
         Dictionary<(byte root, ChordType chordType), int> indices = new()
         {
             { (roots[0], sequence.Span[0].FromType), -1 }
@@ -150,9 +148,9 @@ public class IndexExtractor
             })
             .ToList();
 
-    public List<IBlock> FindAnyLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot, BlocksExtractionLogic blocksExtractionLogic, out List<byte> roots)
+    public List<IBlock> FindAnyLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
     {
-        var loops = FindSimpleLoops(sequence, firstRoot, out roots);
+        var loops = FindSimpleLoops(sequence, roots);
 
         switch (blocksExtractionLogic)
         {
@@ -183,7 +181,7 @@ public class IndexExtractor
             case BlocksExtractionLogic.All:
             {
                 var jumps = FindSelfJumps(sequence, loops);
-                var massiveOverlaps = FindMassiveOverlapsBlocks(sequence, loops);
+                var massiveOverlaps = FindMassiveOverlapsBlocks(loops);
                 return jumps.Cast<IBlock>()
                     .Concat(jumps.SelectMany(x => x.ChildJumps))
                     .Concat(loops)
@@ -223,6 +221,7 @@ public class IndexExtractor
 
     public List<LoopMassiveOverlapsBlock> FindMassiveOverlapsBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence,
         IReadOnlyList<LoopBlock> loopBlocks)
+    public List<LoopMassiveOverlapsBlock> FindMassiveOverlapsBlocks(IReadOnlyList<LoopBlock> loopBlocks)
     {
         var result = new List<LoopMassiveOverlapsBlock>();
         var currentOpenLoops = new List<LoopBlock>();
@@ -356,7 +355,8 @@ public class IndexExtractor
         var loopResults = new Dictionary<(string normalized, byte normalizationRoot), (float occurrences, float successions, short length)>();
         foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
         {
-            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot, out _);
+            var roots = CreateRoots(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
+            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, roots);
 
             foreach (var loop in loops)
             {
