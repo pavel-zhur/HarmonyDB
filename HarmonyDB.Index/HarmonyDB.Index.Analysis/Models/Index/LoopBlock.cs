@@ -29,4 +29,24 @@ public record LoopBlock : ILoopBlock
     public required int EndIndex { get; init; }
 
     public int BlockLength => EndIndex - StartIndex + 1;
+
+    /// <summary>
+    /// Is a whole number of and only if edge chords are the same. Min = 1.
+    /// Greater than 1 if at least one movement repeats twice.
+    /// Equals 1 if all chords repeat once except the edge ones.
+    /// </summary>
+    public float Occurrences => (float)BlockLength / LoopLength;
+
+    /// <summary>
+    /// Is a whole number of and only if edge chords are the same. Min = 0.
+    /// Greater than 0 if at least one movement repeats twice.
+    /// Equals 0 if all chords repeat once except the edge ones.
+    /// </summary>
+    public float Successions => (float)BlockLength / LoopLength - 1;
+
+    /// <summary>
+    /// Greater than 1. Is a whole if all chords repeat exactly the same number of times, like A B C D A B C D A B C D.
+    /// Might be a convenient indicator of significance (if value >= 2).
+    /// </summary>
+    public float EachChordCoveredTimes => (float)(BlockLength + 1) / LoopLength;
 }

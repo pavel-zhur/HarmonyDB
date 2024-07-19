@@ -298,11 +298,10 @@ public class IndexExtractor
             {
                 var key = (loop.Normalized, loop.NormalizationRoot);
                 var counters = loopResults.GetValueOrDefault(key);
-                var length = loop.EndIndex - loop.StartIndex + 1;
                 loopResults[key] = ((float occurrences, float successions, short length))(
-                    counters.occurrences + (float)length / loop.LoopLength,
-                    counters.successions + (float)length / loop.LoopLength - 1,
-                    counters.length + length);
+                    counters.occurrences + loop.Occurrences,
+                    counters.successions + loop.Successions,
+                    counters.length + loop.BlockLength);
             }
         }
 

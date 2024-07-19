@@ -664,7 +664,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     RootDelta = (byte)d,
                     FromType = chordType,
                     ToType = chordType = GetRandomChordType(),
-                }).ToArray();
+                }).Where(m => m.FromType != m.ToType || m.RootDelta != 0).ToArray();
 
             var firstRoot = (byte)Random.Shared.Next(0, 12);
             var loops = indexExtractor.FindSimpleLoops(sequence, firstRoot, out _);
@@ -746,9 +746,32 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
+        Assert.All(loops, l => Assert.True(l.LoopLength > 1));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.Successions == Math.Round(l.Successions),
+            l.Occurrences == Math.Round(l.Occurrences)));
+
+        Assert.All(loops, l => Assert.True(l.Occurrences >= 1));
+        Assert.All(loops, l => Assert.True(l.Successions >= 0));
+
+        Assert.All(loops, l => Assert.False(
+            l.Occurrences == Math.Round(l.Occurrences)
+            && l.EachChordCoveredTimes == Math.Round(l.EachChordCoveredTimes)));
+
+        Assert.All(loops, l => Assert.True(l.EachChordCoveredTimes > 1 + float.Epsilon));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.EachChordCoveredTimes == Math.Round(l.EachChordCoveredTimes),
+            roots[l.StartIndex + l.LoopLength - 1] == roots[l.EndIndex + 1] && sequence.Span[l.StartIndex + l.LoopLength - 1].FromType == sequence.Span[l.EndIndex].ToType));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.Successions == Math.Round(l.Successions),
+            roots[l.StartIndex] == roots[l.EndIndex + 1] && sequence.Span[l.StartIndex].FromType == sequence.Span[l.EndIndex].ToType));
+
         string CreateRootsTrace(IBlock block) => CreateRootsTraceByIndices(block.StartIndex, block.EndIndex, out _);
 
-        string CreateRootsTraceByIndices(int coveredByStartIndex, int coveredByEndIndex, out List<(int startPosition, int endPosition)> positions, bool typesToo = true)
+        string CreateRootsTraceByIndices(int coveredByStartIndex, int coveredByEndIndex, out List<int> positions, bool typesToo = true)
         {
             var builder = new StringBuilder();
             builder.Append(roots[coveredByStartIndex]);
@@ -759,7 +782,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             positions =
             [
-                (0, builder.Length - 1),
+                0,
             ];
 
             for (var i = coveredByStartIndex; i <= coveredByEndIndex; i++)
@@ -773,7 +796,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     builder.Append(sequence.Span[i].ToType.ChordTypeToString());
                 }
 
-                positions.Add((startPosition, builder.Length - 1));
+                positions.Add(startPosition);
             }
 
             return builder.ToString();
@@ -790,9 +813,29 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                 var rootsTrace = CreateRootsTraceByIndices(0, sequence.Length - 1, out var positions, false);
 
                 var lines = all
-                    .Select((x, i) => string.Join(string.Empty,
-                                          Enumerable.Range(0, rootsTrace.Length).Select(j => positions[x.StartIndex].startPosition <= j && positions[x.EndIndex + 1].endPosition >= j ? '-' : ' '))
-                                      + $"  {all[i].GetType().Name}")
+                    .Select((block, i) =>
+                    {
+                        var startPosition = positions[block.StartIndex];
+                        var endPosition = positions[block.EndIndex + 1];
+                        var specialPositions = block is LoopBlock loop
+                            ? Enumerable.Range(0, block.BlockLength / loop.LoopLength + 1)
+                                .Select(x => x * loop.LoopLength + block.StartIndex)
+                                .Select(x => positions[x])
+                            : Enumerable.Empty<int>();
+
+                        return string.Join(
+                                   string.Empty,
+                                   Enumerable
+                                       .Range(0, rootsTrace.Length)
+                                       .Select(j =>
+                                           startPosition <= j &&
+                                           endPosition >= j
+                                               ? specialPositions.Contains(j)
+                                                   ? '|'
+                                                   : '-'
+                                               : ' '))
+                               + $"  {all[i].GetType().Name}";
+                    })
                     .ToList();
 
                 logger.LogInformation(string.Join(Environment.NewLine, string.Empty.Once()
