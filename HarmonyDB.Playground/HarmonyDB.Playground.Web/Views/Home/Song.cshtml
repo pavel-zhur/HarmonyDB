@@ -171,6 +171,13 @@
     </li>
 </ul>
 
+<h3 class="mt-3">@ViewLocalizer["Visualizations"]</h3>
+
+@foreach (string visualization in ViewBag.Visualizations)
+{
+    <pre style="margin-left: calc((100vw - 100%) / -2 + 2em); margin-right: calc((100vw - 100%) / -2 + 2em);">@visualization</pre>
+}
+
 <h3 class="mt-3">@ViewLocalizer["Chords"]</h3>
 <div class="chords-block">
     @Html.Raw(chords.Output.AsHtml(ViewBag.RepresentationSettings))
