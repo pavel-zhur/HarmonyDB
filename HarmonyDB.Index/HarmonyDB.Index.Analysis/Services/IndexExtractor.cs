@@ -6,7 +6,6 @@ using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -219,8 +218,6 @@ public class IndexExtractor
             })
             .ToList();
 
-    public List<LoopMassiveOverlapsBlock> FindMassiveOverlapsBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence,
-        IReadOnlyList<LoopBlock> loopBlocks)
     public List<LoopMassiveOverlapsBlock> FindMassiveOverlapsBlocks(IReadOnlyList<LoopBlock> loopBlocks)
     {
         var result = new List<LoopMassiveOverlapsBlock>();
@@ -280,6 +277,25 @@ public class IndexExtractor
         }
 
         return result;
+    }
+
+    public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
+    {
+        var blocks = FindAnyLoops(sequence, roots, blocksExtractionLogic);
+
+        var sequences = FindSequenceBlocks(sequence, blocks, roots);
+
+        blocks.AddRange(sequences);
+
+        blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
+        {
+            var x when x != 0 => x,
+            _ when block1 == block2 => 0,
+            _ when blocksExtractionLogic == BlocksExtractionLogic.All => -block1.EndIndex.CompareTo(block2.EndIndex),
+            _ => throw new("Duplicate start indices could not have happened."),
+        });
+
+        return blocks;
     }
 
     /// <returns>

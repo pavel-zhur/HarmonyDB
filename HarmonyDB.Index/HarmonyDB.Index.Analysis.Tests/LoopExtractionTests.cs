@@ -754,9 +754,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
-        TraceAndTest(ExtractBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
-        TraceAndTest(ExtractBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfJumps), anyMassiveOverlaps);
-        TraceAndTest(ExtractBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfMultiJumps), anyMassiveOverlaps);
+        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
+        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfJumps), anyMassiveOverlaps);
+        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfMultiJumps), anyMassiveOverlaps);
 
         // sequence integrity test
         Assert.True(MemoryMarshal.ToEnumerable(sequence).AsPairs().All(p => p.current.FromType == p.previous.ToType), 
@@ -801,9 +801,9 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             if (visualize)
             {
-                var all = ExtractBlocks(sequence, roots, BlocksExtractionLogic.All);
+                var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
                 var result = progressionsVisualizer.VisualizeBlocks(sequence, roots, all, false);
-                logger.LogInformation(result);
+                logger.LogInformation(Environment.NewLine + result);
             }
         }
 

@@ -66,8 +66,8 @@ public class ProgressionsVisualizer
             })
             .ToList();
 
-        var result = string.Join(Environment.NewLine, string.Empty.Once()
-            .Append(rootsTrace)
+        var result = string.Join(Environment.NewLine, rootsTrace
+            .Once()
             .Concat(lines)
             .Append(string.Empty));
         return result;
