@@ -802,7 +802,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             if (visualize)
             {
                 var all = ExtractBlocks(sequence, roots, BlocksExtractionLogic.All);
-                var result = progressionsVisualizer.VisualizeBlocks(sequence, roots, all);
+                var result = progressionsVisualizer.VisualizeBlocks(sequence, roots, all, false);
                 logger.LogInformation(result);
             }
         }

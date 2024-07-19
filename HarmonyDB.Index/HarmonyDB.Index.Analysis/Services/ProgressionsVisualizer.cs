@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Models;
+﻿using System.Globalization;
+using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Models.Structure;
@@ -35,33 +36,33 @@ public class ProgressionsVisualizer
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
 
-    public string VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true)
+    public string VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, typesToo);
 
         var lines = blocks
-            .Select((block, i) =>
+            .GroupBy(x => x is LoopBlock loopBlock && groupNormalized ? loopBlock.Normalized : Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture))
+            .Select(grouping =>
             {
-                var startPosition = positions[block.StartIndex];
-                var endPosition = positions[block.EndIndex + 1];
-                var specialPositions = block is LoopBlock loop
-                    ? Enumerable.Range(0, block.BlockLength / loop.LoopLength + 1)
-                        .Select(x => x * loop.LoopLength + block.StartIndex)
-                        .Select(x => positions[x])
-                    : Enumerable.Empty<int>();
+                List<int> specialPositions = new();
+                foreach (var loop in grouping.OfType<LoopBlock>())
+                {
+                    specialPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
+                            .Select(x => x * loop.LoopLength + loop.StartIndex)
+                            .Select(x => positions[x]));
+                }
 
                 return string.Join(
                            string.Empty,
                            Enumerable
                                .Range(0, rootsTrace.Length)
                                .Select(j =>
-                                   startPosition <= j &&
-                                   endPosition >= j
+                                   grouping.Any(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j)
                                        ? specialPositions.Contains(j)
                                            ? '|'
                                            : '-'
                                        : ' '))
-                       + $"  {blocks[i].GetType().Name}";
+                       + $"  {(grouping.Count() == 1 ? grouping.Single().GetType().Name : grouping.Key)}";
             })
             .ToList();
 
