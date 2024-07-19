@@ -738,6 +738,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         // sequence integrity test
         Assert.True(MemoryMarshal.ToEnumerable(sequence).AsPairs().All(p => p.current.FromType == p.previous.ToType), 
             "sequential to type and from type mismatch");
+        Assert.All(MemoryMarshal.ToEnumerable(sequence), m => Assert.False(m.RootDelta == 0 && m.FromType == m.ToType,
+            "null movements in the sequence"));
 
         Assert.False(loops.Select(l => l.StartIndex).AnyDuplicates());
         Assert.False(loops.Select(l => l.EndIndex).AnyDuplicates());
