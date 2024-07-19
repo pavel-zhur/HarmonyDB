@@ -219,6 +219,67 @@ public class IndexExtractor
             })
             .ToList();
 
+    public List<LoopMassiveOverlapsBlock> FindMassiveOverlapsBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence,
+        IReadOnlyList<LoopBlock> loopBlocks)
+    {
+        var result = new List<LoopMassiveOverlapsBlock>();
+        var currentOpenLoops = new HashSet<LoopBlock>();
+        List<LoopBlock>? currentMassiveOverlapsBlock = null;
+        foreach (var (i, isStart, loop) in loopBlocks
+                     .SelectMany(x => new[]
+                     {
+                         (i: x.StartIndex, isStart: true, loop: x),
+                         (i: x.EndIndex, isStart: false, loop: x),
+                     })
+                     .OrderBy(x => x.i)
+                     .ThenByDescending(x => x.isStart))
+        {
+            if (isStart)
+            {
+                currentOpenLoops.Add(loop);
+            }
+
+            if (currentOpenLoops.Count > 2)
+            {
+                if (currentMassiveOverlapsBlock == null)
+                {
+                    currentMassiveOverlapsBlock = [loop];
+                }
+                else if (!currentMassiveOverlapsBlock.Contains(loop))
+                    currentMassiveOverlapsBlock.Add(loop);
+            }
+
+            if (!isStart)
+            {
+                currentOpenLoops.Remove(loop);
+                if (currentOpenLoops.Count == 1 && currentMassiveOverlapsBlock != null)
+                {
+                    var first = currentMassiveOverlapsBlock[0];
+                    var last = currentMassiveOverlapsBlock[^1];
+                    currentMassiveOverlapsBlock.RemoveAt(0);
+                    currentMassiveOverlapsBlock.RemoveAt(currentMassiveOverlapsBlock.Count - 1);
+                    result.Add(new()
+                    {
+                        StartIndex = first.StartIndex,
+                        EndIndex = last.EndIndex,
+                        Edge1 = first,
+                        Edge2 = last,
+                        InternalLoops = currentMassiveOverlapsBlock,
+                    });
+
+                    currentMassiveOverlapsBlock = null;
+                }
+            }
+        }
+
+        if (currentOpenLoops.Count != 0 || currentMassiveOverlapsBlock != null)
+        {
+            throw new("Could not have happened.");
+        }
+
+        return result;
+    }
+
     /// <returns>
     /// Between 0 (inclusive) and progression length (exclusive).
     /// Inverts the number of steps one progression is ahead to the number of steps it is behind,

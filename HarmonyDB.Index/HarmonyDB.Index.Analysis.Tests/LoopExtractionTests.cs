@@ -728,12 +728,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         bool trace = true,
         bool visualize = true)
     {
-        AssertLoopsSequencePossible(loops);
-        AssertLoopsSequencePossible(loopSelfJumpsBlocks);
+        var massiveOverlaps = indexExtractor.FindMassiveOverlapsBlocks(sequence, loops);
+        var anyMassiveOverlaps = massiveOverlaps.Any();
 
-        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.Loops));
-        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.ReplaceWithSelfJumps));
-        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.ReplaceWithSelfMultiJumps));
+        AssertLoopsSequencePossible(loops, anyMassiveOverlaps);
+        AssertLoopsSequencePossible(loopSelfJumpsBlocks, false);
+
+        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
+        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.ReplaceWithSelfJumps), anyMassiveOverlaps);
+        TraceAndTest(ExtractBlocks(sequence, firstRoot, BlocksExtractionLogic.ReplaceWithSelfMultiJumps), anyMassiveOverlaps);
 
         // sequence integrity test
         Assert.True(MemoryMarshal.ToEnumerable(sequence).AsPairs().All(p => p.current.FromType == p.previous.ToType), 
