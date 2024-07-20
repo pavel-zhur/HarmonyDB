@@ -27,12 +27,20 @@ public record LoopBlock : ILoopBlock
     /// Equals 0 if all chords repeat once except the edge ones.
     /// </summary>
     public float Successions => (float)BlockLength / LoopLength - 1;
-
+    
+    public bool SuccessionsWhole => BlockLength % LoopLength == 0;
+    
+    public bool SuccessionsSignificant => BlockLength >= LoopLength * 2;
+    
     /// <summary>
     /// Greater than 1. Is a whole if all chords repeat exactly the same number of times, like A B C D A B C D A B C D.
     /// Might be a convenient indicator of significance (if value >= 2).
     /// </summary>
     public float EachChordCoveredTimes => (float)(BlockLength + 1) / LoopLength;
+
+    public bool EachChordCoveredTimesWhole => (BlockLength + 1) % LoopLength == 0;
+
+    public bool EachChordCoveredTimesSignificant => BlockLength + 1 >= LoopLength * 2;
 
     public required string Normalized { get; init; }
 

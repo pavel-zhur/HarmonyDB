@@ -67,12 +67,17 @@ public class ProgressionsVisualizer
             })
             .Select(grouping =>
             {
-                List<int> specialPositions = new();
+                List<int> periodPositions = new(), almostPeriodPositions = new();
                 foreach (var loop in grouping.OfType<LoopBlock>())
                 {
-                    specialPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
+                    periodPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
                             .Select(x => x * loop.LoopLength + loop.StartIndex)
                             .Select(x => positions[x]));
+
+                    if (loop.EachChordCoveredTimesWhole)
+                    {
+                        almostPeriodPositions.Add(positions[loop.EndIndex + 1]);
+                    }
                 }
 
                 return (left: string.Join(
@@ -82,20 +87,22 @@ public class ProgressionsVisualizer
                             .Select(j =>
                             {
                                 var found = grouping.FirstOrDefault(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j);
-                                
+
                                 var isModulation = found switch
                                 {
                                     LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
                                     SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
                                     _ => false,
                                 };
-                                
+
                                 return found != null
-                                    ? specialPositions.Contains(j)
+                                    ? periodPositions.Contains(j)
                                         ? '|'
-                                        : isModulation 
-                                            ? '~'
-                                            : '-'
+                                        : almostPeriodPositions.Contains(j)
+                                            ? '+'
+                                            : isModulation
+                                                ? '~'
+                                                : '-'
                                     : whiteBulletPositions.Contains(j)
                                         ? '\u25e6'
                                         : ' ';

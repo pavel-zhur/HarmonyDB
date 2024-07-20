@@ -770,8 +770,28 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             roots[l.StartIndex + l.LoopLength - 1] == roots[l.EndIndex + 1] && sequence.Span[l.StartIndex + l.LoopLength - 1].FromType == sequence.Span[l.EndIndex].ToType));
 
         Assert.All(loops, l => Assert.Equal(
+            l.EachChordCoveredTimes == Math.Round(l.EachChordCoveredTimes),
+            l.EachChordCoveredTimesWhole));
+
+        Assert.All(loops, l => Assert.Equal(
             l.Successions == Math.Round(l.Successions),
             roots[l.StartIndex] == roots[l.EndIndex + 1] && sequence.Span[l.StartIndex].FromType == sequence.Span[l.EndIndex].ToType));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.Successions == Math.Round(l.Successions),
+            l.SuccessionsWhole));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.Successions >= 1,
+            l.SuccessionsSignificant));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.EachChordCoveredTimes >= 2,
+            l.EachChordCoveredTimesSignificant));
+
+        Assert.All(loops, l => Assert.Equal(
+            l.Successions,
+            l.Occurrences - 1));
 
         string CreateRootsTrace(IBlock block) => progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, block.StartIndex, block.EndIndex, out _);
 
