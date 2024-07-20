@@ -1043,6 +1043,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }
     }
 
+    private void TraceAndTest(BlockGraph graph)
+    {
+        Assert.All(graph.Environments, e => Assert.Distinct(e.ChildrenSubtree));
+        Assert.All(graph.Environments, e => Assert.Distinct(e.Children));
+        Assert.All(graph.Environments, e => Assert.Distinct(e.Parents));
+        Assert.All(graph.Environments, e => Assert.Distinct(e.LeftJoints));
+        Assert.All(graph.Environments, e => Assert.Distinct(e.RightJoints));
+    }
+
     private void TraceAndTest(List<IBlock> blocks, bool anyMassiveOverlaps)
     {
         AssertLoopsSequencePossible(blocks, anyMassiveOverlaps);
