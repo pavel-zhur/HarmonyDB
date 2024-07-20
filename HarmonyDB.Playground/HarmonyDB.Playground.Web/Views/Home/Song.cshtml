@@ -15,11 +15,12 @@
 @inject IViewLocalizer ViewLocalizer
 @inject ProgressionsVisualizer ProgressionsVisualizer
 @using HarmonyDB.Playground.Web.Models.Tonalities
+@using HarmonyDB.Playground.Web.Tools
 @model SongModel
 
 @{
     Chords chords = ViewBag.Chords;
-    var title = $"{string.Join(", ", chords.Artists ?? [])} – {chords.Title}";
+    var title = chords.ToTitle();
 
     ViewBag.Title = title;
     Layout = "_Layout";

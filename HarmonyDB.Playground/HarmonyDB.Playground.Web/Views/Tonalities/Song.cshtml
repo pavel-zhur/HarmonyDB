@@ -5,6 +5,7 @@
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using HarmonyDB.Playground.Web.Models.Home
 @using HarmonyDB.Playground.Web.Models.Tonalities
+@using HarmonyDB.Playground.Web.Tools
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -27,7 +28,7 @@
             .Select(x => (x.x, x.isFirst, firstNormalizationRot: x.isFirst ? (byte?)null : g.MaxBy(x => x.link.Occurrences).link.NormalizationRoot)))
         .ToList();
 
-    var songTitle = $"{string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>())} – {song.IndexHeader.Title}";
+    var songTitle = song.IndexHeader.ToTitle();
     ViewBag.Title = $"{songTitle} - {ViewLocalizer["Tonality Analysis"].Value}";
 }
 
@@ -61,7 +62,7 @@
         <tr>
             <td class="fw-bold">@ViewLocalizer["Song"]</td>
             <td colspan="2">
-                @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @song.IndexHeader.Title
+                @song.IndexHeader.ToTitle()
             </td>
         </tr>
         <tr>
