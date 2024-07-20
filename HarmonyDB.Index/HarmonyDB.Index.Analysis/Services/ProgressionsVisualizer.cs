@@ -59,7 +59,12 @@ public class ProgressionsVisualizer
         var whiteBulletPositions = positions.Where((x, i) => i % 6 == 5).ToList();
         
         var lines = blocks
-            .GroupBy(x => x is LoopBlock loopBlock && groupNormalized ? loopBlock.Normalized : Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture))
+            .GroupBy(x => x switch
+            {
+                LoopBlock loopBlock when groupNormalized => loopBlock.Normalized,
+                SequenceBlock sequenceBlock when groupNormalized => sequenceBlock.Normalized,
+                _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
+            })
             .Select(grouping =>
             {
                 List<int> specialPositions = new();
