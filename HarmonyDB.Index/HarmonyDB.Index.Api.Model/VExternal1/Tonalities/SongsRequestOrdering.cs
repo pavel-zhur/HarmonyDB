@@ -14,4 +14,5 @@ public enum SongsRequestOrdering
     TonicScoreAsc,
     RatingAsc,
     RatingDesc,
+    Random,
 }

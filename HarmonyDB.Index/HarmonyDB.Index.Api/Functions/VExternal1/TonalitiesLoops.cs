@@ -121,6 +121,7 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
             LoopsRequestOrdering.TonalityConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonalityConfidence()),
             LoopsRequestOrdering.TonicConfidenceDesc => loops.OrderByDescending(x => x.Probabilities.TonicConfidence(false)),
             LoopsRequestOrdering.TonicConfidenceAsc => loops.OrderBy(x => x.Probabilities.TonicConfidence(false)),
+            LoopsRequestOrdering.Random => loops.OrderBy(_ => Random.Shared.NextDouble()),
             _ => throw new ArgumentOutOfRangeException()
         })
         .ToList();
