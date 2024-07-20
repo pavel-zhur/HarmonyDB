@@ -14,7 +14,6 @@ using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
-using HarmonyDB.Index.Analysis.Models.Index;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
