@@ -7,6 +7,7 @@ using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
 using System.Text;
 using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 namespace HarmonyDB.Index.Analysis.Services;
 

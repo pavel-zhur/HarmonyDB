@@ -1,8 +1,8 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 
-namespace HarmonyDB.Index.Analysis.Models.Index;
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
-public class SequenceBlock : IBlock
+public class SequenceBlock : IIndexedBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Sequence { get; init; }
 

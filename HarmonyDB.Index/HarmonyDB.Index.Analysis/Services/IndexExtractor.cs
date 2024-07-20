@@ -3,6 +3,8 @@ using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;

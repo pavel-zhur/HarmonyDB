@@ -1,8 +1,8 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 
-namespace HarmonyDB.Index.Analysis.Models.Index;
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
-public class LoopBlock : IBlock
+public class LoopBlock : IIndexedBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Loop { get; init; }
 
@@ -43,11 +43,11 @@ public class LoopBlock : IBlock
     /// Equals 0 if all chords repeat once except the edge ones.
     /// </summary>
     public float Successions => (float)BlockLength / LoopLength - 1;
-    
+
     public bool SuccessionsWhole => BlockLength % LoopLength == 0;
-    
+
     public bool SuccessionsSignificant => BlockLength >= LoopLength * 2;
-    
+
     /// <summary>
     /// Greater than 1. Is a whole if all chords repeat exactly the same number of times, like A B C D A B C D A B C D.
     /// Might be a convenient indicator of significance (if value >= 2).

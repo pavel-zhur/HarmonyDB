@@ -1,7 +1,7 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 
-namespace HarmonyDB.Index.Analysis.Models.Index;
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 public class LoopSelfJumpBlock : IBlock
 {

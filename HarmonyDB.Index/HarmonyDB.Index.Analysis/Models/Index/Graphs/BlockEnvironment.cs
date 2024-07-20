@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index;
+﻿namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 public class BlockEnvironment : IBlockEnvironment
 {

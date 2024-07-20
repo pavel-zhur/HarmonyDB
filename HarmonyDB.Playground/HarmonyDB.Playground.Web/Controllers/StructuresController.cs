@@ -7,10 +7,10 @@ using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Playground.Web.Models.Home;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using OneShelf.Common.Api.Client;
-using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Source.Api.Model.V1;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 namespace HarmonyDB.Playground.Web.Controllers;
 
