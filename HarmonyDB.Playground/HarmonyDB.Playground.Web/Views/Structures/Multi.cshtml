@@ -1,0 +1,69 @@
+﻿@using HarmonyDB.Playground.Web.Tools
+@using HarmonyDB.Source.Api.Model.V1.Api
+@using Microsoft.AspNetCore.Mvc.Localization
+@using OneShelf.Common
+@inject IViewLocalizer ViewLocalizer
+@model HarmonyDB.Playground.Web.Models.Structures.MultiModel
+
+@{
+    ViewBag.Title = "Multi";
+    ViewBag.ContainerType = "-fluid";
+    Layout = "_Layout";
+}
+
+@section styles {
+    <link rel="Stylesheet" href="@Href("~/css/Structures/Multi.css")" />
+}
+
+<h2>Multi</h2>
+
+<ul>
+    <li>
+        @if (Model.IncludeTrace)
+        {
+            @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Multi", Model with { IncludeTrace = false })
+        }
+        else
+        {
+            @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Multi", Model with { IncludeTrace = true })
+        }
+    </li>
+</ul>
+
+
+@using (Html.BeginForm("Multi", "Structures", Model, FormMethod.Get))
+{
+    @foreach (var value in Model.ExternalIds)
+    {
+        <input type="hidden" name="@nameof(Model.ExternalIds)" value="@value" />
+    }
+
+    <span>Add: </span>
+    <input type="text" name="@nameof(Model.ExternalIds)" />
+
+    <input type="submit" value="Add" />
+}
+
+@foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((GetSongResponse[])ViewBag.Songs).Zip((List<List<(string left, string right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
+{
+    <div class="mt-4">
+        <h5 class="d-inline-block">@song.Song.ToTitle()</h5>
+        @Html.ActionLink("remove", "Multi", Model with { ToRemove = i })
+    </div>
+
+    @foreach (var (left, right) in visualizations)
+    {
+        <table class="my-visualization">
+            <tr>
+                <td>
+                    <pre>@left</pre>
+                </td>
+                <td>
+                    <pre>@right</pre>
+                </td>
+            </tr>
+        </table>
+    }
+})
+
+@await Html.PartialAsync("Trace")

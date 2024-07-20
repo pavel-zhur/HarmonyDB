@@ -148,7 +148,7 @@ public class HomeController : PlaygroundControllerBase
             var compact = s.Compact();
             var sequence = compact.Movements;
             var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
-            return _progressionsVisualizer.VisualizeBlocks(sequence, roots, _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All));
+            return _progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All));
         }).ToList();
 
         return View(songModel);
