@@ -56,7 +56,7 @@
         <table class="my-visualization">
             <tr>
                 <td>
-                    <pre>@left</pre>
+                    <pre>@Html.Raw(left.Replace("\u25e6", "<span class='text-warning'>\u25e6</span>"))</pre>
                 </td>
                 <td>
                     <pre>@right</pre>
