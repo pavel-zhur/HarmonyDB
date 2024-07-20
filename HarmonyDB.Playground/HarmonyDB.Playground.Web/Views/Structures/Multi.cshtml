@@ -1,5 +1,5 @@
 ﻿@using HarmonyDB.Playground.Web.Tools
-@using HarmonyDB.Source.Api.Model.V1.Api
+@using HarmonyDB.Source.Api.Model.V1
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -44,10 +44,10 @@
     <input type="submit" value="Add" />
 }
 
-@foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((GetSongResponse[])ViewBag.Songs).Zip((List<List<(string left, string right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
+@foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((List<Chords>)ViewBag.Songs).Zip((List<List<(string left, string right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
 {
     <div class="mt-4">
-        <h5 class="d-inline-block">@song.Song.ToTitle()</h5>
+        <h5 class="d-inline-block">@song.ToTitle()</h5>
         @Html.ActionLink("remove", "Multi", Model with { ToRemove = i })
     </div>
 

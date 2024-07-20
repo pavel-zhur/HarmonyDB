@@ -56,13 +56,11 @@ public class StructuresController : PlaygroundControllerBase
             ViewBag.Trace = new ApiTraceBag();
         }
 
-        var songs = await Task.WhenAll(model.ExternalIds.Select(id => 
-            (Task<GetSongResponse>)_sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), id,
-                ViewBag.Trace)));
-
+        var songs = ((GetSongsResponse)await _sourceApiClient.V1GetSongs(_sourceApiClient.GetServiceIdentity(), model.ExternalIds, ViewBag.Trace)).Songs.Values.ToList();
+        
         ViewBag.Visualizations = songs.Select(x =>
         {
-            var chordsData = x.Song.Output.AsChords(new());
+            var chordsData = x.Output.AsChords(new());
             var progression =
                 _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
 
@@ -71,8 +69,8 @@ public class StructuresController : PlaygroundControllerBase
                 var compact = s.Compact();
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
-                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots,
-                    _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All));
+                var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
+                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks);
             }).ToList();
         }).ToList();
         
