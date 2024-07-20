@@ -2,7 +2,7 @@
 
 namespace HarmonyDB.Index.Analysis.Models.Index;
 
-public record SequenceBlock : IBlock
+public class SequenceBlock : IBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Sequence { get; init; }
 
@@ -19,4 +19,6 @@ public record SequenceBlock : IBlock
     public required int EndIndex { get; init; }
 
     public int BlockLength => EndIndex - StartIndex + 1;
+
+    public IEnumerable<IBlock> Children => [];
 }

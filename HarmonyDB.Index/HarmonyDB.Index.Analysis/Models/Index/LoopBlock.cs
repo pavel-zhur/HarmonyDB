@@ -2,7 +2,7 @@
 
 namespace HarmonyDB.Index.Analysis.Models.Index;
 
-public record LoopBlock : ILoopBlock
+public class LoopBlock : IBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Loop { get; init; }
 
@@ -13,6 +13,22 @@ public record LoopBlock : ILoopBlock
     public required int EndIndex { get; init; }
 
     public int BlockLength => EndIndex - StartIndex + 1;
+
+    public required string Normalized { get; init; }
+
+    /// <summary>
+    /// Between 0 (inclusive) and progression length (exclusive).
+    /// Returns the index of the start of the original progression in the normalized progression.
+    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
+    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
+    /// </summary>
+    public required int NormalizationShift { get; init; }
+
+    /// <summary>
+    /// Corresponds to the key (it is different for the same normalized progression if and only if it is in different keys).
+    /// More precisely, it is the root of the first movement of the normalized sequence, wherever its corresponding original sequence movement is.
+    /// </summary>
+    public required byte NormalizationRoot { get; init; }
 
     /// <summary>
     /// Is a whole number of and only if edge chords are the same. Min = 1.
@@ -42,19 +58,5 @@ public record LoopBlock : ILoopBlock
 
     public bool EachChordCoveredTimesSignificant => BlockLength + 1 >= LoopLength * 2;
 
-    public required string Normalized { get; init; }
-
-    /// <summary>
-    /// Between 0 (inclusive) and progression length (exclusive).
-    /// Returns the index of the start of the original progression in the normalized progression.
-    /// In other words, the number of steps the original progression is ahead or the normalized progression is behind.
-    /// For invariants > 1, returns the minimal possible shift, i.e. between 0 (inclusive) and (progression length / invariants) (exclusive).
-    /// </summary>
-    public required int NormalizationShift { get; init; }
-
-    /// <summary>
-    /// Corresponds to the key (it is different for the same normalized progression if and only if it is in different keys).
-    /// More precisely, it is the root of the first movement of the normalized sequence, wherever its corresponding original sequence movement is.
-    /// </summary>
-    public required byte NormalizationRoot { get; init; }
+    public IEnumerable<IBlock> Children => [];
 }

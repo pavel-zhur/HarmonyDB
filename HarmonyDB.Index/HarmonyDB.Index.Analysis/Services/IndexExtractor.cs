@@ -305,6 +305,59 @@ public class IndexExtractor
         return blocks;
     }
 
+    private static IEnumerable<IBlock> GetChildBlocksSubtree(IBlock block) =>
+        block.Children.SelectMany(b => GetChildBlocksSubtree(b).Prepend(b));
+
+    public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks)
+    {
+        var environments = blocks.Select(b => new BlockEnvironment
+        {
+            Block = b,
+        }).ToDictionary(x => x.Block);
+        
+        foreach (var environment in environments.Values)
+        {
+            environment.Children.AddRange(environment.Block.Children.Select(c => environments[c]));
+            environment.ChildrenSubtree.AddRange(GetChildBlocksSubtree(environment.Block).Select(c => environments[c]).Distinct());
+        }
+
+        foreach (var (p, c) in environments.Values.SelectMany(p => p.ChildrenSubtree.Select(c => (p, c))))
+        {
+            c.Parents.Add(p);
+        }
+        
+        var joints = environments.Values.SelectMany((b1, i1) => environments.Values
+                .Where((b2, i2) =>
+                    i2 > i1 && !(b1.Block.StartIndex > b2.Block.EndIndex + 1 || b2.Block.StartIndex > b1.Block.EndIndex + 1) &&
+                    !b1.ChildrenSubtree.Contains(b2) && !b2.ChildrenSubtree.Contains(b1))
+                .Select(b2 => b1.Block.StartIndex.CompareTo(b2.Block.StartIndex) switch
+                {
+                    -1 => (b1, b2),
+                    1 => (b1: b2, b2: b1),
+                    0 => throw new("The blocks starts may not be the same."),
+                    _ => throw new ArgumentOutOfRangeException(),
+                }))
+            .Select(x => new BlockJoint
+            {
+                Block1 = x.b1,
+                Block2 = x.b2,
+            })
+            .ToList();
+
+        foreach (var joint in joints)
+        {
+            joint.Block1.RightJoints.Add(joint);
+            joint.Block2.LeftJoints.Add(joint);
+        }
+
+        return new()
+        {
+            EnvironmentsByBlock = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
+            Environments = environments.Values.ToList(),
+            Joints = joints,
+        };
+    }
+
     /// <returns>
     /// Between 0 (inclusive) and progression length (exclusive).
     /// Inverts the number of steps one progression is ahead to the number of steps it is behind,

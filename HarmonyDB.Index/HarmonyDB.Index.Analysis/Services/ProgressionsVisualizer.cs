@@ -85,16 +85,18 @@ public class ProgressionsVisualizer
                             .Range(0, rootsTrace.Length)
                             .Select(j =>
                             {
-                                var found = grouping.FirstOrDefault(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j);
+                                var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
 
-                                var isModulation = found switch
+                                if (found.Count > 2) throw new("Could not have happened.");
+
+                                var isModulation = found.FirstOrDefault() switch
                                 {
                                     LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
                                     SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
                                     _ => false,
                                 };
 
-                                return found != null
+                                return found.Any()
                                     ? periodPositions.Contains(j)
                                         ? '|'
                                         : almostPeriodPositions.Contains(j)
