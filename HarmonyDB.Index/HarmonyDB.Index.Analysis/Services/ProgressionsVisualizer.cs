@@ -11,7 +11,7 @@ using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class ProgressionsVisualizer
+public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer, IndexExtractor indexExtractor)
 {
     public const string AttributeSearch = "search";
     public const string AttributeSearchFirst = "search-first";
@@ -56,8 +56,11 @@ public class ProgressionsVisualizer
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, typesToo);
 
-        var gridPositions = positions.Where((x, i) => i % 6 == 5).ToList();
-        
+        var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
+
+        var blocksToIds = new Dictionary<IBlock, int>();
+
+        var blockId = 0;
         var lines = blocks
             .GroupBy(x => x switch
             {
@@ -67,6 +70,13 @@ public class ProgressionsVisualizer
             })
             .Select(grouping =>
             {
+                blockId++;
+                
+                foreach (var block in grouping)
+                {
+                    blocksToIds[block] = blockId;
+                }
+                
                 List<int> periodPositions = new(), almostPeriodPositions = new();
                 foreach (var loop in grouping.OfType<LoopBlock>())
                 {
@@ -109,11 +119,19 @@ public class ProgressionsVisualizer
                                         ? '+'
                                         : ' ';
                             })),
-                    right: $"{(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}");
+                    right: $"{blockId}: {(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}");
             })
             .ToList();
 
         lines.Insert(0, (rootsTrace, string.Empty));
+        
+        lines.Add((string.Empty, string.Empty));
+
+        var graph = indexExtractor.FindGraph(blocks);
+        var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
+        
+        lines.Add((string.Join(Environment.NewLine, paths.Select(p => string.Join(" ", p.Select(x => blocksToIds[x])))), string.Empty));
+        
         return lines;
     }
 
