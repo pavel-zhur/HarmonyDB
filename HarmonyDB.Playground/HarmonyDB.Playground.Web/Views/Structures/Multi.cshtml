@@ -1,4 +1,5 @@
-﻿@using HarmonyDB.Playground.Web.Tools
+﻿@using HarmonyDB.Playground.Web.Models.Home
+@using HarmonyDB.Playground.Web.Tools
 @using HarmonyDB.Source.Api.Model.V1
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
@@ -15,7 +16,12 @@
     <link rel="Stylesheet" href="@Href("~/css/Structures/Multi.css")" />
 }
 
-<h2>Multi</h2>
+<div>
+    <h2 class="d-inline-block">Multi</h2>
+    <span class="my-sup-2">
+        @await Html.PartialAsync("Badge", BadgeModel.Experimental)
+    </span>
+</div>
 
 <ul>
     <li>
@@ -48,8 +54,12 @@
 {
     <div class="mt-4">
         <h5 class="d-inline-block">@song.ToTitle()</h5>
-        @Html.ActionLink("remove", "Multi", Model with { ToRemove = i })
     </div>
+
+    <ul>
+        <li>@Html.ActionLink("Remove", "Multi", Model with { ToRemove = i })</li>
+        <li>@Html.ActionLink("Go to the song page", "Song", "Home", new SongModel { ExternalId = song.ExternalId, })</li>
+    </ul>
 
     @foreach (var (left, right) in visualizations)
     {
