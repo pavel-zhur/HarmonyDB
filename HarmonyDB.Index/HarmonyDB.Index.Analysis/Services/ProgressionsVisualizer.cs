@@ -56,7 +56,7 @@ public class ProgressionsVisualizer
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, typesToo);
 
-        var whiteBulletPositions = positions.Where((x, i) => i % 6 == 5).ToList();
+        var gridPositions = positions.Where((x, i) => i % 6 == 5).ToList();
         
         var lines = blocks
             .GroupBy(x => x switch
@@ -99,12 +99,12 @@ public class ProgressionsVisualizer
                                     ? periodPositions.Contains(j)
                                         ? '|'
                                         : almostPeriodPositions.Contains(j)
-                                            ? '+'
+                                            ? '\u25e6'
                                             : isModulation
                                                 ? '~'
                                                 : '-'
-                                    : whiteBulletPositions.Contains(j)
-                                        ? '\u25e6'
+                                    : gridPositions.Contains(j)
+                                        ? '+'
                                         : ' ';
                             })),
                     right: $"{(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}");
