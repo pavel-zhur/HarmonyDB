@@ -97,7 +97,7 @@
     <ul>
         <li>
             @Html.ActionLink(ViewLocalizer["View structures"].Value, "Multi", "Structures", new MultiModel { ExternalIds = response.Songs.Select(x => x.ExternalId).ToList(), })
-            @await Html.PartialAsync("Badge", BadgeModel.Beta)
+            @await Html.PartialAsync("Badge", BadgeModel.Experimental)
         </li>
     </ul>
 

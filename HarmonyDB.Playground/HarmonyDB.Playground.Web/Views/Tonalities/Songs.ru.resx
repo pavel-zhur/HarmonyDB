@@ -237,4 +237,7 @@
   <data name="Total Loops" xml:space="preserve">
     <value>Всего циклов</value>
   </data>
+  <data name="View structures" xml:space="preserve">
+    <value>Смотреть структуры</value>
+  </data>
 </root>
