@@ -38,8 +38,7 @@ public class ProgressionsVisualizer
     public string VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
     {
         var lines = VisualizeBlocks(sequence, roots, blocks, typesToo, groupNormalized);
-        var result = string.Join(Environment.NewLine, lines.Select(x => $"{x.left}   {x.right}"));
-        return result;
+        return string.Join(Environment.NewLine, lines.Select(x => $"{x.left}   {x.right}"));
     }
 
     public (string left, string right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)

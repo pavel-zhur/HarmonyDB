@@ -151,11 +151,13 @@ public class IndexExtractor
     {
         var loops = FindSimpleLoops(sequence, roots);
 
+        List<IBlock> blocks;
         switch (blocksExtractionLogic)
         {
             case BlocksExtractionLogic.Loops:
-                return loops.Cast<IBlock>().ToList();
-            
+                blocks = loops.Cast<IBlock>().ToList();
+                break;
+                
             case BlocksExtractionLogic.ReplaceWithSelfJumps:
             {
                 var jumps = FindSelfJumps(sequence, loops).SelectMany(x => x.ChildJumps).ToList();
@@ -164,7 +166,8 @@ public class IndexExtractor
                     .Where(x => x != null)
                     .Distinct();
 
-                return loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                break;
             }
 
             case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
@@ -174,23 +177,27 @@ public class IndexExtractor
                     .SelectMany(x => x.ChildLoops)
                     .Distinct();
 
-                return loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                break;
             }
 
             case BlocksExtractionLogic.All:
             {
                 var jumps = FindSelfJumps(sequence, loops);
                 var massiveOverlaps = FindMassiveOverlapsBlocks(loops);
-                return jumps.Cast<IBlock>()
+                blocks = jumps.Cast<IBlock>()
                     .Concat(jumps.SelectMany(x => x.ChildJumps))
                     .Concat(loops)
                     .Concat(massiveOverlaps)
                     .ToList();
+                break;
             }
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
         }
+
+        return blocks;
     }
 
     public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
