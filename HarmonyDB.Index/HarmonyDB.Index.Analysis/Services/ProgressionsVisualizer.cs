@@ -80,14 +80,27 @@ public class ProgressionsVisualizer
                         Enumerable
                             .Range(0, rootsTrace.Length)
                             .Select(j =>
-                                grouping.Any(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j)
+                            {
+                                var found = grouping.FirstOrDefault(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j);
+                                
+                                var isModulation = found switch
+                                {
+                                    LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
+                                    SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
+                                    _ => false,
+                                };
+                                
+                                return found != null
                                     ? specialPositions.Contains(j)
                                         ? '|'
-                                        : '-'
+                                        : isModulation 
+                                            ? '~'
+                                            : '-'
                                     : whiteBulletPositions.Contains(j)
                                         ? '\u25e6'
-                                        : ' ')),
-                    right: $"{(grouping.Count() == 1 ? grouping.Single().GetType().Name : grouping.Key)}");
+                                        : ' ';
+                            })),
+                    right: $"{(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}");
             })
             .ToList();
 
