@@ -35,7 +35,24 @@ public class ProgressionsVisualizer
             .Where(x => x.isFirst.HasValue)
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
-    public string VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
+    public string VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
+    {
+        var lines = VisualizeBlocks(sequence, roots, blocks, typesToo, groupNormalized);
+        var result = string.Join(Environment.NewLine, lines.Select(x => $"{x.left}   {x.right}"));
+        return result;
+    }
+
+    public (string left, string right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
+    {
+        var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, typesToo, groupNormalized);
+
+        var left = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.left));
+        var right = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.right));
+
+        return (left, right);
+    }
+    
+    public List<(string left, string right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true)
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, typesToo);
 
@@ -51,25 +68,22 @@ public class ProgressionsVisualizer
                             .Select(x => positions[x]));
                 }
 
-                return string.Join(
-                           string.Empty,
-                           Enumerable
-                               .Range(0, rootsTrace.Length)
-                               .Select(j =>
-                                   grouping.Any(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j)
-                                       ? specialPositions.Contains(j)
-                                           ? '|'
-                                           : '-'
-                                       : ' '))
-                       + $"  {(grouping.Count() == 1 ? grouping.Single().GetType().Name : grouping.Key)}";
+                return (left: string.Join(
+                        string.Empty,
+                        Enumerable
+                            .Range(0, rootsTrace.Length)
+                            .Select(j =>
+                                grouping.Any(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j)
+                                    ? specialPositions.Contains(j)
+                                        ? '|'
+                                        : '-'
+                                    : ' ')),
+                    right: $"{(grouping.Count() == 1 ? grouping.Single().GetType().Name : grouping.Key)}");
             })
             .ToList();
 
-        var result = string.Join(Environment.NewLine, rootsTrace
-            .Once()
-            .Concat(lines)
-            .Append(string.Empty));
-        return result;
+        lines.Insert(0, (rootsTrace, string.Empty));
+        return lines;
     }
 
     public string CreateRootsTraceByIndices(

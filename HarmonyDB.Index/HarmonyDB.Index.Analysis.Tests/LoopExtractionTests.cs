@@ -716,25 +716,6 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         Assert.Equal(2, loopSelfMultiJumpBlocks.Count);
     }
 
-    private List<IBlock> ExtractBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
-    {
-        var blocks = indexExtractor.FindAnyLoops(sequence, roots, blocksExtractionLogic);
-
-        var sequences = indexExtractor.FindSequenceBlocks(sequence, blocks, roots);
-
-        blocks.AddRange(sequences);
-
-        blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
-        {
-            var x when x != 0 => x,
-            _ when block1 == block2 => 0,
-            _ when blocksExtractionLogic == BlocksExtractionLogic.All => -block1.EndIndex.CompareTo(block2.EndIndex),
-            _ => throw new("Duplicate start indices could not have happened."),
-        });
-
-        return blocks;
-    }
-
     private void TraceAndTest(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         byte firstRoot,
@@ -802,8 +783,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             if (visualize)
             {
                 var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
-                var result = progressionsVisualizer.VisualizeBlocks(sequence, roots, all, false);
-                logger.LogInformation(Environment.NewLine + result);
+                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, false);
+                logger.LogInformation(Environment.NewLine + result + Environment.NewLine);
             }
         }
 
