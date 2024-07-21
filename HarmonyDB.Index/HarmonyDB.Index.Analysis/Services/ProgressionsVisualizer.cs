@@ -131,16 +131,15 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             .ToList();
 
         lines.Insert(0, (rootsTrace.AsText(), Text.Empty));
-        
-        lines.Add((Text.Empty, Text.Empty));
 
         if (parameters.AddPaths)
         {
+            lines.Add((Text.Empty, Text.Empty));
             var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
-
+            var path = paths.MinBy(x => x.Count)!;
             lines.Add((
-                Text.Join(Text.NewLine, paths.Select(p => string.Join(" ", p.Select(x => blocksToIds[x])).AsText())),
-                Text.Empty));
+                string.Join(" ", path.Select(x => blocksToIds[x])).AsText(),
+                $"1 / {paths.Count}".AsText()));
         }
 
         return lines;
