@@ -49,7 +49,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             while (!cancellationToken.IsCancellationRequested)
             {
                 counter++;
-                ChordType last = ChordType.Major;
+                var last = ChordType.Major;
                 ChordType GetRandomChordType()
                 {
                     while (true)
