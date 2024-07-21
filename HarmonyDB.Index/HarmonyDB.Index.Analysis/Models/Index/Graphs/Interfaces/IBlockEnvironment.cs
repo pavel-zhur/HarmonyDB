@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 public interface IBlockEnvironment
 {
-    IBlock Block { get; init; }
+    IBlock Block { get; }
     IReadOnlyList<IBlockEnvironment> Parents { get; }
     IReadOnlyList<IBlockEnvironment> Children { get; }
     IReadOnlyList<IBlockEnvironment> ChildrenSubtree { get; }
