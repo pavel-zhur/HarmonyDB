@@ -14,5 +14,6 @@ public static class ServiceCollectionExtensions
         .AddSingleton<InputParser>()
         .AddSingleton<ProgressionsSearch>()
         .AddSingleton<ProgressionsOptimizer>()
+        .AddSingleton<TrieOperations>()
         .AddIndexAnalysisEm();
 }
