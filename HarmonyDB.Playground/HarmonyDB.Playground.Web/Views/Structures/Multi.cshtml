@@ -50,6 +50,16 @@
     <input type="submit" value="Add" />
 }
 
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function () {
+            alert('Copied to clipboard.');
+        }, function (err) {
+            console.error('Could not copy text: ', err);
+        });
+    }
+</script>
+
 @foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((List<Chords>)ViewBag.Songs).Zip((List<List<(string left, string right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
 {
     <div class="mt-4">
@@ -59,6 +69,7 @@
     <ul>
         <li>@Html.ActionLink("Remove", "Multi", Model with { ToRemove = i })</li>
         <li>@Html.ActionLink("Go to the song page", "Song", "Home", new SongModel { ExternalId = song.ExternalId, })</li>
+        <li><a href="javascript:void(0)" onclick="copyToClipboard('@song.ExternalId')">Copy @song.ExternalId 📋</a></li>
     </ul>
 
     @foreach (var (left, right) in visualizations)
