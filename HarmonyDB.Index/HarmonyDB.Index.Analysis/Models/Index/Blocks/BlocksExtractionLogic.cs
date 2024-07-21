@@ -5,5 +5,6 @@ public enum BlocksExtractionLogic
     Loops,
     ReplaceWithSelfJumps,
     ReplaceWithSelfMultiJumps,
+    LoopsAndMultiJumps,
     All,
 }

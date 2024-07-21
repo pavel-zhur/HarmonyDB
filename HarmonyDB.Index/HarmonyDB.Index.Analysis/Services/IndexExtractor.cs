@@ -183,6 +183,15 @@ public class IndexExtractor
                 break;
             }
 
+            case BlocksExtractionLogic.LoopsAndMultiJumps:
+            {
+                var jumps = FindSelfJumps(sequence, loops);
+                blocks = jumps.Cast<IBlock>()
+                    .Concat(loops)
+                    .ToList();
+                break;
+            }
+
             case BlocksExtractionLogic.All:
             {
                 var jumps = FindSelfJumps(sequence, loops);
@@ -300,7 +309,7 @@ public class IndexExtractor
         {
             var x when x != 0 => x,
             _ when block1 == block2 => 0,
-            _ when blocksExtractionLogic == BlocksExtractionLogic.All => -block1.EndIndex.CompareTo(block2.EndIndex),
+            _ when blocksExtractionLogic is BlocksExtractionLogic.All or BlocksExtractionLogic.LoopsAndMultiJumps => -block1.EndIndex.CompareTo(block2.EndIndex),
             _ => throw new("Duplicate start indices could not have happened."),
         });
 
