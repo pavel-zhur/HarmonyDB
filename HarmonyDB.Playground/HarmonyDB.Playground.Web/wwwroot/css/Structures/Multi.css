@@ -1,0 +1,25 @@
+﻿    .my-visualization {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        width: 100%;
+    }
+
+    .my-visualization table {
+        width: auto;
+        min-width: 100%;
+        table-layout: fixed;
+    }
+
+    .my-visualization td:first-child {
+        width: 70%;
+    }
+
+    .my-visualization td:last-child {
+        width: 30%;
+        position: sticky;
+        right: 0;
+        background-color: white; /* Ensure the background isn't transparent */
+        padding-left: 2em;
+    }
+

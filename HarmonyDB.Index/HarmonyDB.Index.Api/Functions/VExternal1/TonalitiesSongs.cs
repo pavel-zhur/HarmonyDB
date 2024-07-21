@@ -149,7 +149,8 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
                 x.Probabilities.TonicConfidence(true)),
             SongsRequestOrdering.RatingAsc => songs.OrderBy(x => x.IndexHeader.Rating),
             SongsRequestOrdering.RatingDesc => songs.OrderByDescending(x => x.IndexHeader.Rating),
-            _ => throw new ArgumentOutOfRangeException()
+            SongsRequestOrdering.Random => songs.OrderBy(_ => Random.Shared.NextDouble()),
+            _ => throw new ArgumentOutOfRangeException(),
         }).ToList();
 
         return new()

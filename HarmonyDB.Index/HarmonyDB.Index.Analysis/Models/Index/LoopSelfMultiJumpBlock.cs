@@ -1,6 +1,6 @@
 ﻿namespace HarmonyDB.Index.Analysis.Models.Index;
 
-public record LoopSelfMultiJumpBlock : IBlock
+public class LoopSelfMultiJumpBlock : IBlock
 {
     public int LoopLength => ChildLoops[0].LoopLength;
 
@@ -22,4 +22,8 @@ public record LoopSelfMultiJumpBlock : IBlock
     public required IReadOnlyList<LoopBlock> ChildLoops { get; init; }
 
     public required IReadOnlyList<LoopSelfJumpBlock> ChildJumps { get; init; }
+
+    public int BlockLength => EndIndex - StartIndex + 1;
+
+    public IEnumerable<IBlock> Children => ChildJumps;
 }

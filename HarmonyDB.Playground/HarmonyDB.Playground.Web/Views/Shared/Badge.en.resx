@@ -120,6 +120,9 @@
   <data name="Beta" xml:space="preserve">
     <value>BETA</value>
   </data>
+  <data name="Experimental" xml:space="preserve">
+    <value>EXPERIMENTAL</value>
+  </data>
   <data name="InProgress" xml:space="preserve">
     <value>IN PROGRESS</value>
   </data>

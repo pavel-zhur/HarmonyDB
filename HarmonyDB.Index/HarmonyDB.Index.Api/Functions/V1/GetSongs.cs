@@ -18,7 +18,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
         private readonly DownstreamApiClient _downstreamApiClient;
 
         public GetSongs(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, DownstreamApiClient downstreamApiClient, SecurityContext securityContext) 
-            : base(loggerFactory, authorizationApiClient, securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode: true)
         {
             _downstreamApiClient = downstreamApiClient;
         }

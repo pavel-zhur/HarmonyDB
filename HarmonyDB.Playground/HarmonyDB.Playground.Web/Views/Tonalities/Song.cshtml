@@ -4,7 +4,9 @@
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
 @using HarmonyDB.Playground.Web.Models.Home
+@using HarmonyDB.Playground.Web.Models.Structures
 @using HarmonyDB.Playground.Web.Models.Tonalities
+@using HarmonyDB.Playground.Web.Tools
 @using Microsoft.AspNetCore.Mvc.Localization
 @using OneShelf.Common
 @inject IViewLocalizer ViewLocalizer
@@ -27,7 +29,7 @@
             .Select(x => (x.x, x.isFirst, firstNormalizationRot: x.isFirst ? (byte?)null : g.MaxBy(x => x.link.Occurrences).link.NormalizationRoot)))
         .ToList();
 
-    var songTitle = $"{string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>())} – {song.IndexHeader.Title}";
+    var songTitle = song.IndexHeader.ToTitle();
     ViewBag.Title = $"{songTitle} - {ViewLocalizer["Tonality Analysis"].Value}";
 }
 
@@ -38,6 +40,13 @@
 
 <ul>
     <li>
+        @Html.ActionLink(ViewLocalizer["Go to the song page"].Value, "Song", "Home", new SongModel { ExternalId = Model.ExternalId, })
+    </li>
+    <li>
+        @Html.ActionLink(ViewLocalizer["View structures"].Value, "Multi", "Structures", new MultiModel { ExternalIds = [response.Song.ExternalId], })
+        @await Html.PartialAsync("Badge", BadgeModel.Experimental)
+    </li>
+    <li>
         @if (Model.IncludeTrace)
         {
             @Html.ActionLink(ViewLocalizer["Exclude the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = false })
@@ -46,9 +55,6 @@
         {
             @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Song", Model with { IncludeTrace = true })
         }
-    </li>
-    <li>
-        @Html.ActionLink(ViewLocalizer["Go to the song page"].Value, "Song", "Home", new SongModel { ExternalId = Model.ExternalId, })
     </li>
 </ul>
 
@@ -61,7 +67,7 @@
         <tr>
             <td class="fw-bold">@ViewLocalizer["Song"]</td>
             <td colspan="2">
-                @string.Join(", ", song.IndexHeader.Artists ?? Enumerable.Empty<string>()) – @song.IndexHeader.Title
+                @song.IndexHeader.ToTitle()
             </td>
         </tr>
         <tr>

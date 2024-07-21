@@ -3,7 +3,7 @@ using HarmonyDB.Index.Analysis.Models.CompactV1;
 
 namespace HarmonyDB.Index.Analysis.Models.Index;
 
-public record LoopSelfJumpBlock : IBlock
+public class LoopSelfJumpBlock : IBlock
 {
     public int LoopLength => Loop1.LoopLength;
 
@@ -22,6 +22,10 @@ public record LoopSelfJumpBlock : IBlock
     public required LoopBlock? JointLoop { get; init; }
 
     public required CompactHarmonyMovement? JointMovement { get; set; }
+
+    public int BlockLength => EndIndex - StartIndex + 1;
+
+    public IEnumerable<IBlock> Children => JointLoop == null ? [Loop1, Loop2] : [Loop1, JointLoop!, Loop2];
 
     public LoopSelfJumpType Type
     {

@@ -1,6 +1,7 @@
 ﻿@using HarmonyDB.Index.Analysis.Tools
 @using HarmonyDB.Index.Api.Model.VExternal1
 @using HarmonyDB.Index.Api.Model.VExternal1.Tonalities
+@using HarmonyDB.Playground.Web.Models.Structures
 @using HarmonyDB.Playground.Web.Models.Tonalities
 @using Microsoft.AspNetCore.Mvc.Localization
 @inject IViewLocalizer ViewLocalizer
@@ -92,6 +93,13 @@
         <h3 class="d-inline-block">@ViewLocalizer["Results"]</h3>
         @Html.ActionLink($"\ud83d\udd17{ViewLocalizer["Permalink"].Value}", "Songs", Model, new { target = "_blank" })
     </div>
+
+    <ul>
+        <li>
+            @Html.ActionLink(ViewLocalizer["View structures"].Value, "Multi", "Structures", new MultiModel { ExternalIds = response.Songs.Select(x => x.ExternalId).ToList(), })
+            @await Html.PartialAsync("Badge", BadgeModel.Experimental)
+        </li>
+    </ul>
 
     <div class="mt-4">
         <h5 class="d-inline-block">@ViewLocalizer["Distributions"]</h5>

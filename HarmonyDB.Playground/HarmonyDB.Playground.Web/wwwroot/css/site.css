@@ -30,7 +30,7 @@ span.my-badge {
     font-size: 80%;
 }
 
-span.my-badge-beta {
+span.my-badge-beta, span.my-badge-experimental {
     background-color: #c3a900;
 }
 
@@ -55,6 +55,11 @@ ul.sparse li {
 .my-sup {
     position: relative;
     top: -0.2em;
+}
+
+.my-sup-2 {
+    position: relative;
+    top: -0.7em;
 }
 
 .my-vertical {

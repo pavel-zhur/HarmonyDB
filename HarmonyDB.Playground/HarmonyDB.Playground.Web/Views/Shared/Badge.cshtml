@@ -2,4 +2,4 @@
 @model BadgeModel
 @inject IViewLocalizer ViewLocalizer
 
-<span class="my-badge @(Model == BadgeModel.Beta ? "my-badge-beta" : string.Empty)">@ViewLocalizer[Model.ToString()]</span>
+<span class="my-badge @(Model == BadgeModel.Beta ? "my-badge-beta" : Model == BadgeModel.Experimental ? "my-badge-experimental" : null)">@ViewLocalizer[Model.ToString()]</span>

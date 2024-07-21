@@ -3,8 +3,12 @@
 
 name: unit tests
 
-# Triggers the workflow on push or pull request events
-on: [push, pull_request]
+# Triggers the workflow on push to any branch, but not a tag
+# https://stackoverflow.com/questions/68573888/how-can-i-not-execute-a-github-action-when-i-push-a-new-tag
+on:
+  push:
+    branches:
+      - '**'
 
 jobs:
   build:

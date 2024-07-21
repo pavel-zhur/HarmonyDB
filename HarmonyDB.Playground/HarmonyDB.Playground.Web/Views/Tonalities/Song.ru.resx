@@ -222,6 +222,9 @@
   <data name="Total Successions" xml:space="preserve">
     <value>Всего повторений подряд</value>
   </data>
+  <data name="View structures" xml:space="preserve">
+    <value>Смотреть структуры</value>
+  </data>
   <data name="Weight" xml:space="preserve">
     <value>Вес</value>
   </data>

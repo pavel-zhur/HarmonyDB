@@ -36,12 +36,12 @@ public class SourceApiClient : ApiClientBase<SourceApiClient>
     public async Task<GetIndexHeadersResponse> VInternalGetIndexHeaders(GetIndexHeadersRequest request, CancellationToken cancellationToken)
         => await PostWithCode<GetIndexHeadersRequest, GetIndexHeadersResponse>(SourceApiUrls.VInternalGetIndexHeaders, request, cancellationToken);
 
-    public async Task<GetSongsResponse> V1GetSongs(Identity identity, IReadOnlyList<string> externalIds)
+    public async Task<GetSongsResponse> V1GetSongs(Identity identity, IReadOnlyList<string> externalIds, ApiTraceBag? apiTraceBag = null)
         => await Post<GetSongsRequest, GetSongsResponse>(SourceApiUrls.V1GetSongs, new()
         {
             Identity = identity,
             ExternalIds = externalIds,
-        });
+        }, apiTraceBag: apiTraceBag);
 
     public async Task V1Ping()
         => await Ping(SourceApiUrls.V1Ping);

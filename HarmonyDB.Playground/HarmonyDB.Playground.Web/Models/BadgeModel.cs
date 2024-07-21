@@ -4,4 +4,5 @@ public enum BadgeModel
 {
     InProgress,
     Beta,
+    Experimental,
 }

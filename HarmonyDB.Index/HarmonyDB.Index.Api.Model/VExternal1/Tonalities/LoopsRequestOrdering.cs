@@ -30,4 +30,5 @@ public enum LoopsRequestOrdering
     ScaleScoreAsc,
     TonicScoreDesc,
     TonicScoreAsc,
+    Random,
 }
