@@ -37,23 +37,23 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             .Where(x => x.isFirst.HasValue)
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
-    public string VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public Text VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
         var lines = VisualizeBlocks(sequence, roots, blocks, parameters);
-        return string.Join(Environment.NewLine, lines.Select(x => $"{x.left}   {x.right}"));
+        return Text.Join(Text.NewLine, lines.Select(x => $"{x.left}   {x.right}".AsText()));
     }
 
-    public (string left, string right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public (Text left, Text right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
         var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, parameters);
 
-        var left = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.left));
-        var right = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.right));
+        var left = Text.Join(Text.NewLine, blockVisualizations.Select(v => v.left));
+        var right = Text.Join(Text.NewLine, blockVisualizations.Select(v => v.right));
 
         return (left, right);
     }
     
-    public List<(string left, string right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, parameters.TypesToo);
 
@@ -91,8 +91,8 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
                     }
                 }
 
-                return (left: string.Join(
-                        string.Empty,
+                return (left: Text.Join(
+                        Text.Empty,
                         Enumerable
                             .Range(0, rootsTrace.Length)
                             .Select(j =>
@@ -110,23 +110,23 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
                                 return found.Any()
                                     ? periodPositions.Contains(j)
-                                        ? '|'
+                                        ? '|'.AsText()
                                         : almostPeriodPositions.Contains(j)
-                                            ? '\u25e6'
+                                            ? '\u25e6'.AsText()
                                             : isModulation
-                                                ? '~'
-                                                : '-'
+                                                ? '~'.AsText()
+                                                : '-'.AsText()
                                     : gridPositions.Contains(j)
-                                        ? '+'
-                                        : ' ';
+                                        ? '+'.AsText(Text.CssTextLightGray)
+                                        : ' '.AsText();
                             })),
-                    right: $"{blockId}: {(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}");
+                    right: $"{blockId}: {(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
             })
             .ToList();
 
-        lines.Insert(0, (rootsTrace, string.Empty));
+        lines.Insert(0, (rootsTrace.AsText(), Text.Empty));
         
-        lines.Add((string.Empty, string.Empty));
+        lines.Add((Text.Empty, Text.Empty));
 
         if (parameters.AddPaths)
         {
@@ -134,8 +134,8 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
 
             lines.Add((
-                string.Join(Environment.NewLine, paths.Select(p => string.Join(" ", p.Select(x => blocksToIds[x])))),
-                string.Empty));
+                Text.Join(Text.NewLine, paths.Select(p => string.Join(" ", p.Select(x => blocksToIds[x])).AsText())),
+                Text.Empty));
         }
 
         return lines;

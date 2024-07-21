@@ -1,4 +1,5 @@
-﻿@using HarmonyDB.Playground.Web.Models.Home
+﻿@using HarmonyDB.Index.Analysis.Models.TextGraphics
+@using HarmonyDB.Playground.Web.Models.Home
 @using HarmonyDB.Playground.Web.Tools
 @using HarmonyDB.Source.Api.Model.V1
 @using Microsoft.AspNetCore.Mvc.Localization
@@ -60,7 +61,7 @@
     }
 </script>
 
-@foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((List<Chords>)ViewBag.Songs).Zip((List<List<(string left, string right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
+@foreach (var (i, song, visualizations) in Model.ExternalIds.WithIndices().Zip((List<Chords>)ViewBag.Songs).Zip((List<List<(Text left, Text right)>>)ViewBag.Visualizations).Select(x => (x.First.First.i, song: x.First.Second, visualizations: x.Second)))
 {
     <div class="mt-4">
         <h5 class="d-inline-block">@song.ToTitle()</h5>
@@ -77,7 +78,7 @@
         <table class="my-visualization">
             <tr>
                 <td>
-                    <pre>@Html.Raw(left.Replace("+", "<span style='color: rgb(215 215 215)'>+</span>"))</pre>
+                    <pre>@Html.Raw(left.AsHtml())</pre>
                 </td>
                 <td class="align-top">
                     <pre>@right</pre>
