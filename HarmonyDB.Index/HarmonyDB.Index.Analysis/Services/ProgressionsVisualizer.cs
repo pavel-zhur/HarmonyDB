@@ -103,7 +103,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
                                 if (found.Count > 2) throw new("Could not have happened.");
 
-                                var uselessLoop = found.All(x => graph.EnvironmentsByBlock[x].Detections.HasFlag(BlockDetections.UselessLoop));
+                                var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.EnvironmentsByBlock[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
                                 
                                 var isModulation = found.FirstOrDefault() switch
                                 {

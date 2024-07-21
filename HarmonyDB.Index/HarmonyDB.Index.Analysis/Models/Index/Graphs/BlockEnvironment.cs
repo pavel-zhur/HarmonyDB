@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 public class BlockEnvironment : IBlockEnvironment
 {
-    public required IBlock Block { get; init; }
+    public required IIndexedBlock Block { get; init; }
     
     public List<BlockEnvironment> Parents { get; } = new();
     public List<BlockEnvironment> Children { get; } = new();

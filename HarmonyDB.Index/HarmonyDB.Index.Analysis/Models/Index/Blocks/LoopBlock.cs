@@ -59,5 +59,5 @@ public class LoopBlock : IIndexedBlock
 
     public bool EachChordCoveredTimesSignificant => BlockLength + 1 >= LoopLength * 2;
 
-    public IEnumerable<IBlock> Children => [];
+    public IEnumerable<IIndexedBlock> Children => [];
 }

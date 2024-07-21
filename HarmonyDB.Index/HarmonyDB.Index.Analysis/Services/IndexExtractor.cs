@@ -318,12 +318,12 @@ public class IndexExtractor
         return blocks;
     }
 
-    private static IEnumerable<IBlock> GetChildBlocksSubtree(IBlock block) =>
+    private static IEnumerable<IIndexedBlock> GetChildBlocksSubtree(IIndexedBlock block) =>
         block.Children.SelectMany(b => GetChildBlocksSubtree(b).Prepend(b));
 
     public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks)
     {
-        var environments = blocks.Select(b => new BlockEnvironment
+        var environments = blocks.OfType<IIndexedBlock>().Select(b => new BlockEnvironment
         {
             Block = b,
         }).ToDictionary(x => x.Block);

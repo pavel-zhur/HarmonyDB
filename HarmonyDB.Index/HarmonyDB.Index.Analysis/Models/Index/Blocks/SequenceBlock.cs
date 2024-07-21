@@ -21,5 +21,5 @@ public class SequenceBlock : IIndexedBlock
 
     public int BlockLength => EndIndex - StartIndex + 1;
 
-    public IEnumerable<IBlock> Children => [];
+    public IEnumerable<IIndexedBlock> Children => [];
 }

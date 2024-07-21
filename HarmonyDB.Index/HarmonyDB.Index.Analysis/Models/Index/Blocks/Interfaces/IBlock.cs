@@ -7,6 +7,4 @@ public interface IBlock
     int EndIndex { get; }
 
     int BlockLength { get; }
-
-    IEnumerable<IBlock> Children { get; }
 }

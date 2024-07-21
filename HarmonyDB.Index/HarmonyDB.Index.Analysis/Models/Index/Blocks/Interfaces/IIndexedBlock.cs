@@ -2,4 +2,5 @@
 
 public interface IIndexedBlock : IBlock
 {
+    IEnumerable<IIndexedBlock> Children { get; }
 }

@@ -15,6 +15,4 @@ public class LoopMassiveOverlapsBlock : IBlock
     public required LoopBlock Edge1 { get; init; }
 
     public required LoopBlock Edge2 { get; init; }
-
-    public IEnumerable<IBlock> Children => InternalLoops.Prepend(Edge1).Append(Edge2);
 }
