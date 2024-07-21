@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IndexHeadersCache>()
             .AddSingleton<FullTextSearchCache>()
             .AddSingleton<StructuresCache>()
+            .AddSingleton<TrieCache>()
             .AddIndexAnalysis()
             .Configure<FileCacheBaseOptions>(o => configuration.GetSection(nameof(FileCacheBaseOptions)).Bind(o));
 }
