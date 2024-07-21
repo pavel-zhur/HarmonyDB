@@ -9,6 +9,7 @@ using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 using HarmonyDB.Index.Analysis.Models.TextGraphics;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -55,6 +56,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
     
     public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
+        var graph = indexExtractor.FindGraph(blocks);
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
@@ -101,6 +103,8 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
                                 if (found.Count > 2) throw new("Could not have happened.");
 
+                                var uselessLoop = found.All(x => graph.EnvironmentsByBlock[x].Detections.HasFlag(BlockDetections.UselessLoop));
+                                
                                 var isModulation = found.FirstOrDefault() switch
                                 {
                                     LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
@@ -108,14 +112,16 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
                                     _ => false,
                                 };
 
+                                var css = uselessLoop ? Text.CssTextLightYellow : null;
+                                
                                 return found.Any()
                                     ? periodPositions.Contains(j)
-                                        ? '|'.AsText()
+                                        ? '|'.AsText(css)
                                         : almostPeriodPositions.Contains(j)
-                                            ? '\u25e6'.AsText()
+                                            ? '\u25e6'.AsText(css)
                                             : isModulation
-                                                ? '~'.AsText()
-                                                : '-'.AsText()
+                                                ? '~'.AsText(css)
+                                                : '-'.AsText(css)
                                     : gridPositions.Contains(j)
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
@@ -130,7 +136,6 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
         if (parameters.AddPaths)
         {
-            var graph = indexExtractor.FindGraph(blocks);
             var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
 
             lines.Add((

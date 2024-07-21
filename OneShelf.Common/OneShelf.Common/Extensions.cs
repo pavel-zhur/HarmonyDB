@@ -110,21 +110,23 @@ public static class Extensions
         }
     }
 
-    public static List<(List<T> chunk, TCriterium criterium)> ToChunks<T, TCriterium>(this IEnumerable<T> source, Func<T, TCriterium> criteriumGetter)
-        where TCriterium : struct
+    public static List<(List<T> chunk, TCriterium? criterium)> ToChunks<T, TCriterium>(this IEnumerable<T> source, Func<T, TCriterium?> criteriumGetter)
+        where TCriterium : class
     {
         TCriterium? previous = null;
+        var previousSet = false;
         var counter = 0;
 
         return source
             .GroupBy(x =>
             {
                 var criterium = criteriumGetter(x);
-                if (previous.HasValue && !previous.Equals(criterium))
+                if (previousSet && (!previous?.Equals(criterium) ?? criterium != null))
                 {
                     counter++;
                 }
 
+                previousSet = true;
                 previous = criterium;
                 return (criterium, counter);
             })

@@ -363,6 +363,23 @@ public class IndexExtractor
             joint.Block2.LeftJoints.Add(joint);
         }
 
+        var uselessLoops = environments.Values.Where(e =>
+        {
+            if (e.Block is not LoopBlock)
+                return false;
+
+            var left = e.LeftJoints.Select(x => x.Block1.Block).OfType<LoopBlock>().ToList();
+            var right = e.RightJoints.Select(x => x.Block2.Block).OfType<LoopBlock>().ToList();
+            return left.Count == 1
+                   && right.Count == 1
+                   && left.Single().EndIndex + 1 >= right.Single().StartIndex;
+        });
+        
+        foreach (var environment in uselessLoops)
+        {
+            environment.Detections |= BlockDetections.UselessLoop;
+        }
+
         return new()
         {
             EnvironmentsByBlock = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),

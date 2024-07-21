@@ -14,7 +14,7 @@ public class BlockEnvironment : IBlockEnvironment
     public List<BlockJoint> LeftJoints { get; } = new();
     public List<BlockJoint> RightJoints { get; } = new();
     
-    public BlockDetections Detections { get; init; }
+    public BlockDetections Detections { get; set; }
 
     IReadOnlyList<IBlockEnvironment> IBlockEnvironment.Parents => Parents;
     IReadOnlyList<IBlockEnvironment> IBlockEnvironment.Children => Children;

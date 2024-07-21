@@ -5,9 +5,10 @@ namespace HarmonyDB.Index.Analysis.Models.TextGraphics;
 
 public class Text
 {
-    private readonly List<(string? css, string text)> _pieces = new();
+    private List<(string? css, string text)> _pieces = new();
     
     public const string CssTextLightGray = "text-lightgray";
+    public const string CssTextLightYellow = "text-lightyellow";
 
     public void Append(string? css, string text)
     {
@@ -54,6 +55,8 @@ public class Text
     
     public string AsHtml()
     {
+        _pieces = _pieces.ToChunks(x => x.css).Select(c => (c.criterium, string.Join(string.Empty, c.chunk.Select(x => x.text)))).ToList();
+        
         var stringBuilder = new StringBuilder();
         foreach (var (css, text) in _pieces)
         {
