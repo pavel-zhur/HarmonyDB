@@ -30,11 +30,11 @@ public class TrieCache : BytesFileCacheBase<TrieNode>
         return TrieNode.Deserialize(reader);
     }
 
-    public async Task Rebuild(int? limit = null)
+    public async Task Rebuild(int? songsLimit = null, int? depthLimit = null)
     {
         var progressions = (await _progressionsCache.Get())
             .Values
-            .SelectSingle(x => limit.HasValue ? x.Take(limit.Value).OrderBy(_ => Random.Shared.NextDouble()) : x)
+            .SelectSingle(x => songsLimit.HasValue ? x.Take(songsLimit.Value).OrderBy(_ => Random.Shared.NextDouble()) : x)
             .SelectMany(x => x.ExtendedHarmonyMovementsSequences)
             .ToList();
         
@@ -53,7 +53,8 @@ public class TrieCache : BytesFileCacheBase<TrieNode>
                 MemoryMarshal.ToEnumerable(compactHarmonyMovementsSequence.Movements)
                     .Select(x => (x.RootDelta, x.ToType))
                     .Prepend(((byte)0, compactHarmonyMovementsSequence.Movements.Span[0].FromType))
-                    .ToArray());
+                    .ToArray(),
+                depthLimit);
 
             return ValueTask.CompletedTask;
         });

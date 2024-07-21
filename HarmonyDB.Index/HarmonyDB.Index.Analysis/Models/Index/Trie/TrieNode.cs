@@ -11,21 +11,21 @@ public class TrieNode
     }
     
     private volatile int _frequency;
-    private ((byte rootDelta, ChordType toType) key, TrieNode value)[] _children = [];
+    private (byte rootDelta, ChordType toType, TrieNode value)[] _children = [];
     private readonly ReaderWriterLockSlim? _lock;
     
     public int Frequency => _frequency;
 
     public void Increment(int delta = 1) => Interlocked.Add(ref _frequency, delta);
 
-    public IReadOnlyList<((byte rootDelta, ChordType toType) key, TrieNode value)> All => _children;
+    public IReadOnlyList<(byte rootDelta, ChordType toType, TrieNode value)> All => _children;
     
-    public TrieNode? Get((byte rootDelta, ChordType toType) key)
+    public TrieNode? Get(byte rootDelta, ChordType toType)
     {
-        return _children.SingleOrDefault(x => x.key == key).value;
+        return _children.SingleOrDefault(x => x.rootDelta == rootDelta && x.toType == toType).value;
     }
 
-    public TrieNode GetOrCreate((byte rootDelta, ChordType toType) key)
+    public TrieNode GetOrCreate(byte rootDelta, ChordType toType)
     {
         if (_lock == null)
         {
@@ -37,19 +37,19 @@ public class TrieNode
         var write = false;
         try
         {
-            var value = _children.SingleOrDefault(x => x.key == key).value;
+            var value = _children.SingleOrDefault(x => x.rootDelta == rootDelta && x.toType == toType).value;
             if (value != null)
                 return value;
             
             _lock.EnterWriteLock();
             write = true;
 
-            value = _children.SingleOrDefault(x => x.key == key).value;
+            value = _children.SingleOrDefault(x => x.rootDelta == rootDelta && x.toType == toType).value;
             if (value != null)
                 return value;
 
             value = new(false);
-            _children = _children.Append((key, value)).ToArray();
+            _children = _children.Append((rootDelta, toType, value)).ToArray();
             return value;
         }
         finally
@@ -69,13 +69,13 @@ public class TrieNode
     {
         var frequency = reader.ReadInt32();
         var childrenCount = reader.ReadByte();
-        var children = new ((byte rootDelta, ChordType toType) key, TrieNode value)[childrenCount];
+        var children = new (byte rootDelta, ChordType toType, TrieNode value)[childrenCount];
         for (var i = 0; i < childrenCount; i++)
         {
             var rootDelta = reader.ReadByte();
             var toType = (ChordType)reader.ReadByte();
             var value = Deserialize(reader);
-            children[i] = ((rootDelta, toType), value);
+            children[i] = (rootDelta, toType, value);
         }
 
         return new(true)
@@ -91,7 +91,7 @@ public class TrieNode
         {
             writer.Write(_frequency);
             writer.Write((byte)_children.Length);
-            foreach (var ((rootDelta, toType), value) in _children)
+            foreach (var (rootDelta, toType, value) in _children)
             {
                 writer.Write(rootDelta);
                 writer.Write((byte)toType);

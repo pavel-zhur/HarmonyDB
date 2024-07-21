@@ -5,18 +5,17 @@ namespace HarmonyDB.Index.Analysis.Services;
 
 public class TrieOperations
 {
-    public void Insert(TrieNode root, ReadOnlyMemory<(byte rootDelta, ChordType toType)> progression)
+    public void Insert(TrieNode root, ReadOnlyMemory<(byte rootDelta, ChordType toType)> progression, int? limit)
     {
         // Insert all suffixes of the progression into the trie
         for (var start = 0; start < progression.Length; start++)
         {
-            TrieNode node = root;
-            for (var i = start; i < progression.Length && i < start + 8; i++)
+            var node = root;
+            for (var i = start; i < progression.Length && (!limit.HasValue || i < start + limit); i++)
             {
                 var currentMovement = progression.Span[i];
-                var key = (currentMovement.rootDelta, currentMovement.toType);
-
-                node = node.GetOrCreate(key);
+                
+                node = node.GetOrCreate(currentMovement.rootDelta, currentMovement.toType);
                 node.Increment();
             }
         }
@@ -25,10 +24,9 @@ public class TrieOperations
     public Dictionary<(byte rootDelta, ChordType toType), int>? Search(TrieNode root, ReadOnlyMemory<(byte rootDelta, ChordType toType)> subsequence)
     {
         var node = root;
-        foreach (var movement in subsequence.Span)
+        foreach (var (rootDelta, toType) in subsequence.Span)
         {
-            var key = (movement.rootDelta, movement.toType);
-            var child = node.Get(key);
+            var child = node.Get(rootDelta, toType);
             if (child == null)
             {
                 return null; // Subsequence not found
@@ -37,6 +35,6 @@ public class TrieOperations
             node = child;
         }
         
-        return node.All.ToDictionary(pair => pair.key, pair => pair.value.Frequency);
+        return node.All.ToDictionary(pair => (pair.rootDelta, pair.toType), pair => pair.value.Frequency);
     }
 }

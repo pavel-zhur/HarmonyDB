@@ -17,6 +17,7 @@
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=StructuredMessageTemplateProblem/@EntryIndexedValue">ERROR</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=SuggestVarOrType_005FBuiltInTypes/@EntryIndexedValue">ERROR</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=SuggestVarOrType_005FElsewhere/@EntryIndexedValue">ERROR</s:String>
+	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=SuggestVarOrType_005FSimpleTypes/@EntryIndexedValue">ERROR</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault/@EntryIndexedValue">ERROR</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=SwitchStatementHandlesSomeKnownEnumValuesWithDefault/@EntryIndexedValue">ERROR</s:String>
 	<s:String x:Key="/Default/CodeStyle/CodeFormatting/CSharpCodeStyle/OBJECT_CREATION_WHEN_TYPE_NOT_EVIDENT/@EntryValue">TargetTyped</s:String>
