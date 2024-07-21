@@ -112,7 +112,7 @@ public class ProgressionsVisualizer
             })
             .ToList();
 
-        lines.Insert(0, (rootsTrace, string.Empty));
+        lines.Insert(0, (rootsTrace, " ")); // a fix for linux
         return lines;
     }
 
