@@ -1,4 +1,4 @@
-﻿using HarmonyDB.Index.Analysis.Models.Index;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 namespace HarmonyDB.Index.Analysis.Services;

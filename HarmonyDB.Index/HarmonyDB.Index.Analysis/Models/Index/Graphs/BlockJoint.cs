@@ -1,4 +1,6 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
+
+namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 public class BlockJoint : IBlockJoint
 {

@@ -1,4 +1,8 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
+
+namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 public class BlockEnvironment : IBlockEnvironment
 {
@@ -9,6 +13,8 @@ public class BlockEnvironment : IBlockEnvironment
     public List<BlockEnvironment> ChildrenSubtree { get; } = new();
     public List<BlockJoint> LeftJoints { get; } = new();
     public List<BlockJoint> RightJoints { get; } = new();
+    
+    public BlockDetections Detections { get; init; }
 
     IReadOnlyList<IBlockEnvironment> IBlockEnvironment.Parents => Parents;
     IReadOnlyList<IBlockEnvironment> IBlockEnvironment.Children => Children;

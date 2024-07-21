@@ -1,4 +1,6 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 public class LoopSelfMultiJumpBlock : IBlock
 {

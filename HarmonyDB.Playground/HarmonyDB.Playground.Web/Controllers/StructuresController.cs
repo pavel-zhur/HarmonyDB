@@ -10,7 +10,7 @@ using OneShelf.Common.Api.Client;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Source.Api.Model.V1;
-using HarmonyDB.Index.Analysis.Models.Index.Blocks;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Playground.Web.Controllers;
 

@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 

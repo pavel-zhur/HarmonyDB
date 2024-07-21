@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
+﻿namespace HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 public enum BlocksExtractionLogic
 {

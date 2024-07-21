@@ -1,5 +1,7 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
