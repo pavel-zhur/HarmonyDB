@@ -3,28 +3,50 @@
 public class TrieNode
 {
     private volatile int _frequency;
-    private readonly Dictionary<(byte rootDelta, ChordType toType), TrieNode> _children = new();
+    private ((byte rootDelta, ChordType toType) key, TrieNode value)[] _children = [];
+    private readonly ReaderWriterLockSlim _lock = new();
     
     public int Frequency => _frequency;
-    public IReadOnlyDictionary<(byte rootDelta, ChordType toType), TrieNode> Children => _children;
 
     public void Increment(int delta = 1) => Interlocked.Add(ref _frequency, delta);
 
-    public TrieNode GetSafe((byte rootDelta, ChordType toType) key)
+    public IReadOnlyList<((byte rootDelta, ChordType toType) key, TrieNode value)> All => _children;
+    
+    public TrieNode? Get((byte rootDelta, ChordType toType) key)
     {
-        if (Children.TryGetValue(key, out var value))
+        return _children.SingleOrDefault(x => x.key == key).value;
+    }
+
+    public TrieNode GetOrCreate((byte rootDelta, ChordType toType) key)
+    {
+        _lock.EnterUpgradeableReadLock();
+
+        var write = false;
+        try
         {
+            var value = _children.SingleOrDefault(x => x.key == key).value;
+            if (value != null)
+                return value;
+            
+            _lock.EnterWriteLock();
+            write = true;
+
+            value = _children.SingleOrDefault(x => x.key == key).value;
+            if (value != null)
+                return value;
+
+            value = new();
+            _children = _children.Append((key, value)).ToArray();
             return value;
         }
-
-        lock (_children)
+        finally
         {
-            if (_children.TryGetValue(key, out value))
+            if (write)
             {
-                return value;
+                _lock.ExitWriteLock();
             }
-            
-            return _children[key] = new();
+
+            _lock.ExitUpgradeableReadLock();
         }
     }
 }

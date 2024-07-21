@@ -11,12 +11,12 @@ public class TrieOperations
         for (var start = 0; start < progression.Length; start++)
         {
             TrieNode node = root;
-            for (var i = start; i < progression.Length; i++)
+            for (var i = start; i < progression.Length && i < start + 8; i++)
             {
                 var currentMovement = progression.Span[i];
                 var key = (currentMovement.rootDelta, currentMovement.toType);
 
-                node = node.GetSafe(key);
+                node = node.GetOrCreate(key);
                 node.Increment();
             }
         }
@@ -28,7 +28,8 @@ public class TrieOperations
         foreach (var movement in subsequence.Span)
         {
             var key = (movement.rootDelta, movement.toType);
-            if (!node.Children.TryGetValue(key, out var child))
+            var child = node.Get(key);
+            if (child == null)
             {
                 return null; // Subsequence not found
             }
@@ -36,6 +37,6 @@ public class TrieOperations
             node = child;
         }
         
-        return node.Children.ToDictionary(pair => pair.Key, pair => pair.Value.Frequency);
+        return node.All.ToDictionary(pair => pair.key, pair => pair.value.Frequency);
     }
 }
