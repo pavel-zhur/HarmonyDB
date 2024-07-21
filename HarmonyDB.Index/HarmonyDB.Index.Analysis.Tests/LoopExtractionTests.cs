@@ -808,7 +808,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             if (visualize)
             {
                 var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
-                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, false);
+                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, new() { TypesToo = false });
                 logger.LogInformation(Environment.NewLine + result + Environment.NewLine);
             }
         }

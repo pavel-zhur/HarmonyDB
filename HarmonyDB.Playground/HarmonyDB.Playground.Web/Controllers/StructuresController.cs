@@ -70,7 +70,7 @@ public class StructuresController : PlaygroundControllerBase
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
                 var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
-                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks);
+                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, new());
             }).ToList();
         }).ToList();
         

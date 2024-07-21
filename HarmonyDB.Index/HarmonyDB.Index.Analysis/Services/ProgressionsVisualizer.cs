@@ -8,6 +8,7 @@ using OneShelf.Common;
 using System.Text;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks;
+using HarmonyDB.Index.Analysis.Models.TextGraphics;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -36,15 +37,15 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             .Where(x => x.isFirst.HasValue)
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
-    public string VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true, bool addPaths = false)
+    public string VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
-        var lines = VisualizeBlocks(sequence, roots, blocks, typesToo, groupNormalized, addPaths);
+        var lines = VisualizeBlocks(sequence, roots, blocks, parameters);
         return string.Join(Environment.NewLine, lines.Select(x => $"{x.left}   {x.right}"));
     }
 
-    public (string left, string right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true, bool addPaths = false)
+    public (string left, string right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
-        var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, typesToo, groupNormalized, addPaths);
+        var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, parameters);
 
         var left = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.left));
         var right = string.Join(Environment.NewLine, blockVisualizations.Select(v => v.right));
@@ -52,9 +53,9 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
         return (left, right);
     }
     
-    public List<(string left, string right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, bool typesToo = true, bool groupNormalized = true, bool addPaths = false)
+    public List<(string left, string right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
-        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, typesToo);
+        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
@@ -64,8 +65,8 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
         var lines = blocks
             .GroupBy(x => x switch
             {
-                LoopBlock loopBlock when groupNormalized => loopBlock.Normalized,
-                SequenceBlock sequenceBlock when groupNormalized => sequenceBlock.Normalized,
+                LoopBlock loopBlock when parameters.GroupNormalized => loopBlock.Normalized,
+                SequenceBlock sequenceBlock when parameters.GroupNormalized => sequenceBlock.Normalized,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
             .Select(grouping =>
@@ -127,7 +128,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
         
         lines.Add((string.Empty, string.Empty));
 
-        if (addPaths)
+        if (parameters.AddPaths)
         {
             var graph = indexExtractor.FindGraph(blocks);
             var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
