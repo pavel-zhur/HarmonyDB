@@ -62,10 +62,10 @@ public abstract class LoopBlockBase : IIndexedBlock
 
     public IEnumerable<IIndexedBlock> Children => [];
 
-    public int? GetNormalizedCoordinate(int index)
+    public string? GetNormalizedCoordinate(int index)
         => index < StartIndex || index > EndIndex 
             ? throw new ArgumentOutOfRangeException(nameof(index)) 
-            : (NormalizationShift + index - StartIndex) % LoopLength; // proven on paper :)
+            : ((NormalizationShift + index - StartIndex) % LoopLength).ToString(); // proven on paper :)
 
     public abstract IndexedBlockType Type { get; }
 }

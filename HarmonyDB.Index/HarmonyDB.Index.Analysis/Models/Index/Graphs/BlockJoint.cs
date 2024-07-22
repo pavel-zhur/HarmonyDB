@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
@@ -11,18 +12,23 @@ public class BlockJoint : IBlockJoint
     IBlockEnvironment IBlockJoint.Block1 => Block1;
     IBlockEnvironment IBlockJoint.Block2 => Block2;
 
-    public int OverlapLength => Block1.Block.EndIndex - Block2.Block.StartIndex switch
-    {
-        var x and >= 0 => x,
-        _ => throw new("The overlap cannot be negative."),
-    };
+    public int OverlapLength => GetOverlapLength(Block1.Block, Block2.Block);
+    
+    public static int GetOverlapLength(IIndexedBlock block1, IIndexedBlock block2) =>
+        block1.EndIndex - block2.StartIndex switch
+        {
+            var x and >= 0 => x,
+            _ => throw new("The overlap cannot be negative."),
+        };
 
-    public string Normalization =>
-        $"{Block1.Block.Type}, " +
-        $"{Block2.Block.Type}, " +
-        $"{Block1.Block.Normalized}, " +
-        $"{Block2.Block.Normalized}, " +
-        $"{OverlapLength}, " +
-        $"{Block1.Block.GetNormalizedCoordinate(Block2.Block.StartIndex - 1)}, " +
-        $"{Block2.Block.GetNormalizedCoordinate(Block1.Block.EndIndex + 1)}";
+    public static string GetNormalization(IIndexedBlock block1, IIndexedBlock block2) =>
+        $"{block1.Type}, " +
+        $"{block2.Type}, " +
+        $"{block1.Normalized}, " +
+        $"{block2.Normalized}, " +
+        $"{GetOverlapLength(block1, block2)}, " +
+        $"{block1.GetNormalizedCoordinate(block2.StartIndex - 1)}, " +
+        $"{block2.GetNormalizedCoordinate(block1.EndIndex + 1)}";
+    
+    public string Normalization => GetNormalization(Block1.Block, Block2.Block);
 }

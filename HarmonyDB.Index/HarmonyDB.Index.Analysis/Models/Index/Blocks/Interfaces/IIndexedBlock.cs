@@ -6,7 +6,7 @@ public interface IIndexedBlock : IBlock
 {
     IEnumerable<IIndexedBlock> Children { get; }
 
-    int? GetNormalizedCoordinate(int index);
+    string? GetNormalizedCoordinate(int index);
     
     IndexedBlockType Type { get; }
     

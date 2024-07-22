@@ -22,6 +22,34 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
+    public List<PingPongBlock> FindPingPongs(BlockGraph graph)
+        => graph.Joints
+            .SelectMany(l => l.Block2.RightJoints.Select(r => (l, r)))
+            .Where(x => x.l.Block1.Block.Type == x.r.Block2.Block.Type &&
+                        x.l.Block1.Block.Normalized == x.r.Block2.Block.Normalized)
+            .GroupBy(x =>
+            {
+                var normalizations = x.l.Normalization.Once().Append(x.r.Normalization).OrderBy(x => x).ToList();
+                return normalizations[0] + normalizations[1];
+            })
+            .SelectMany(pingPongsOfTheNormalization => pingPongsOfTheNormalization
+                // find consecutive joints, each subgroup will become a ping pong
+                .WithPrevious()
+                .ToChunksByShouldStartNew(p => p.current.l != p.previous?.r)
+                .Select(c => c.Select(p => p.current)))
+            .Select(x =>
+            {
+                var children = x.SelectMany(x => x.l.Block1.Block.Once().Append(x.r.Block1.Block).Append(x.r.Block2.Block)).Distinct().OrderBy(x => x.StartIndex).ToList();
+                if (children.Select(x => x.StartIndex).AnyDuplicates()
+                    || children.Select(x => x.EndIndex).AnyDuplicates())
+                    throw new("Unique blocks start indices expected.");
+                return new PingPongBlock
+                {
+                    Children = children,
+                };
+            })
+            .ToList();
+
     public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
     {
         Dictionary<(byte root, ChordType chordType), int> indices = new()
@@ -151,68 +179,6 @@ public class IndexExtractor
             })
             .ToList();
 
-    public List<IBlock> FindAnyLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
-    {
-        var loops = FindSimpleLoops(sequence, roots);
-
-        List<IBlock> blocks;
-        switch (blocksExtractionLogic)
-        {
-            case BlocksExtractionLogic.Loops:
-                blocks = loops.Cast<IBlock>().ToList();
-                break;
-                
-            case BlocksExtractionLogic.ReplaceWithSelfJumps:
-            {
-                var jumps = FindSelfJumps(sequence, loops).SelectMany(x => x.ChildJumps).ToList();
-                var involvedLoops = jumps
-                    .SelectMany(x => new[] { x.Loop1, x.Loop2, x.JointLoop, })
-                    .Where(x => x != null)
-                    .Distinct();
-
-                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                break;
-            }
-
-            case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
-            {
-                var jumps = FindSelfJumps(sequence, loops);
-                var involvedLoops = jumps
-                    .SelectMany(x => x.ChildLoops)
-                    .Distinct();
-
-                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                break;
-            }
-
-            case BlocksExtractionLogic.LoopsAndMultiJumps:
-            {
-                var jumps = FindSelfJumps(sequence, loops);
-                blocks = jumps.Cast<IBlock>()
-                    .Concat(loops)
-                    .ToList();
-                break;
-            }
-
-            case BlocksExtractionLogic.All:
-            {
-                var jumps = FindSelfJumps(sequence, loops);
-                var massiveOverlaps = FindMassiveOverlapsBlocks(loops);
-                blocks = jumps.Cast<IBlock>()
-                    .Concat(jumps.SelectMany(x => x.ChildJumps))
-                    .Concat(loops)
-                    .Concat(massiveOverlaps)
-                    .ToList();
-                break;
-            }
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
-        }
-
-        return blocks;
-    }
-
     public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
         => Enumerable
             .Range(0, sequence.Length)
@@ -301,18 +267,74 @@ public class IndexExtractor
 
     public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
     {
-        var blocks = FindAnyLoops(sequence, roots, blocksExtractionLogic);
+        var simpleLoops = FindSimpleLoops(sequence, roots);
 
-        var sequences = FindSequenceBlocks(sequence, blocks, roots);
+        List<IBlock> blocks;
+        switch (blocksExtractionLogic)
+        {
+            case BlocksExtractionLogic.Loops:
+                blocks = simpleLoops.Cast<IBlock>().ToList();
+                break;
 
-        blocks.AddRange(sequences);
+            case BlocksExtractionLogic.ReplaceWithSelfJumps:
+                {
+                    var jumps = FindSelfJumps(sequence, simpleLoops).SelectMany(x => x.ChildJumps).ToList();
+                    var involvedLoops = jumps
+                        .SelectMany(x => new[] { x.Loop1, x.Loop2, x.JointLoop, })
+                        .Where(x => x != null)
+                        .Distinct();
+
+                    blocks = simpleLoops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                    break;
+                }
+
+            case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
+                {
+                    var jumps = FindSelfJumps(sequence, simpleLoops);
+                    var involvedLoops = jumps
+                        .SelectMany(x => x.ChildLoops)
+                        .Distinct();
+
+                    blocks = simpleLoops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
+                    break;
+                }
+
+            case BlocksExtractionLogic.LoopsAndMultiJumps:
+                {
+                    var jumps = FindSelfJumps(sequence, simpleLoops);
+                    blocks = jumps.Cast<IBlock>()
+                        .Concat(simpleLoops)
+                        .ToList();
+                    break;
+                }
+
+            case BlocksExtractionLogic.All:
+                {
+                    var jumps = FindSelfJumps(sequence, simpleLoops);
+                    var massiveOverlaps = FindMassiveOverlapsBlocks(simpleLoops);
+                    blocks = jumps.Cast<IBlock>()
+                        .Concat(jumps.SelectMany(x => x.ChildJumps))
+                        .Concat(simpleLoops)
+                        .Concat(massiveOverlaps)
+                        .ToList();
+                    break;
+                }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
+        }
+
+        blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
+
+        var graph = FindGraph(blocks);
+
+        blocks.AddRange(FindPingPongs(graph));
 
         blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
         {
             var x when x != 0 => x,
             _ when block1 == block2 => 0,
-            _ when blocksExtractionLogic is BlocksExtractionLogic.All or BlocksExtractionLogic.LoopsAndMultiJumps => -block1.EndIndex.CompareTo(block2.EndIndex),
-            _ => throw new("Duplicate start indices could not have happened."),
+            _ => -block1.EndIndex.CompareTo(block2.EndIndex),
         });
 
         return blocks;
@@ -341,8 +363,14 @@ public class IndexExtractor
         
         var joints = environments.Values.SelectMany((b1, i1) => environments.Values
                 .Where((b2, i2) =>
-                    i2 > i1 && !(b1.Block.StartIndex > b2.Block.EndIndex + 1 || b2.Block.StartIndex > b1.Block.EndIndex + 1) &&
-                    !b1.ChildrenSubtree.Contains(b2) && !b2.ChildrenSubtree.Contains(b1))
+                    i2 > i1 
+                    && !(b1.Block.StartIndex > b2.Block.EndIndex + 1 || b2.Block.StartIndex > b1.Block.EndIndex + 1) 
+                    && !b1.ChildrenSubtree.Contains(b2) 
+                    && !b2.ChildrenSubtree.Contains(b1)
+                    
+                    // neither of them is fully within another
+                    && new[] { b1.Block.StartIndex, b1.Block.EndIndex, }.Any(x => !x.IsBetween(b2.Block.StartIndex, b2.Block.EndIndex))
+                    && new[] { b2.Block.StartIndex, b2.Block.EndIndex, }.Any(x => !x.IsBetween(b1.Block.StartIndex, b1.Block.EndIndex)))
                 .Select(b2 => b1.Block.StartIndex.CompareTo(b2.Block.StartIndex) switch
                 {
                     -1 => (b1, b2),

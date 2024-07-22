@@ -24,7 +24,7 @@ public class SequenceBlock : IIndexedBlock
 
     public IEnumerable<IIndexedBlock> Children => [];
 
-    public int? GetNormalizedCoordinate(int index)
+    public string? GetNormalizedCoordinate(int index)
         => index < StartIndex || index > EndIndex
             ? throw new ArgumentOutOfRangeException(nameof(index))
             : null; // sequence blocks do not have normalization shifts

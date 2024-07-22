@@ -69,6 +69,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             {
                 LoopBlock loopBlock when parameters.GroupNormalized => loopBlock.Normalized,
                 SequenceBlock sequenceBlock when parameters.GroupNormalized => sequenceBlock.Normalized,
+                PingPongBlock pingPongBlock when parameters.GroupNormalized => pingPongBlock.Normalized,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
             .Select(grouping =>
@@ -126,7 +127,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
                             })),
-                    right: $"{blockId}: {(grouping.Count() == 1 ? grouping.Single().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
+                    right: $"{blockId}: {(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
             })
             .ToList();
 
@@ -140,13 +141,16 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             .GroupBy(x => x.positionIndex)
             .ToDictionary(x => x.Key, x => x.Select(x => x.title).OrderBy(x => x).ToList());
 
-        foreach (var lineIndex in Enumerable.Range(0, jointTitles.Max(x => x.Value.Count)).Reverse())
+        if (jointTitles.Any())
         {
-            lines.Add((
-                new string(Enumerable.Range(0, rootsTrace.Length).Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ').ToArray()).AsText(), 
-                lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty));
+            foreach (var lineIndex in Enumerable.Range(0, jointTitles.Max(x => x.Value.Count)).Reverse())
+            {
+                lines.Add((
+                    new string(Enumerable.Range(0, rootsTrace.Length).Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ').ToArray()).AsText(),
+                    lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty));
+            }
         }
-        
+
         if (parameters.AddPaths)
         {
             lines.Add((Text.Empty, Text.Empty));

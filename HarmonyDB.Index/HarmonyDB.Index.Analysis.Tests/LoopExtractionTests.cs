@@ -1060,13 +1060,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         AssertLoopsSequencePossible(blocks, anyMassiveOverlaps);
 
         // sequences do not overlap with anything else
-        Assert.False(blocks.OfType<SequenceBlock>().Cast<IBlock>().Any(s => blocks.Any(l => l != s && (
+        Assert.False(blocks.OfType<SequenceBlock>().Cast<IBlock>().Any(s => blocks.Where(b => b is not PingPongBlock).Any(l => l != s && (
             l.StartIndex >= s.StartIndex && l.StartIndex <= s.EndIndex // l.StartIndex within the sequence
             || l.EndIndex >= s.StartIndex && l.EndIndex <= s.EndIndex)))); // l.EndIndex within the sequence
     }
 
     private void AssertLoopsSequencePossible(IReadOnlyList<IBlock> blocks, bool anyMassiveOverlaps)
     {
+        blocks = blocks.Where(x => x is not PingPongBlock).ToList();
+        
         // there's no such block that contains another block
         Assert.False(blocks.Any(x => blocks.Where(y => y != x)
             .Any(y => x.StartIndex <= y.StartIndex && x.EndIndex >= y.EndIndex)));

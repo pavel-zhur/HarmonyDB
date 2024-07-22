@@ -5,4 +5,5 @@ public enum IndexedBlockType : byte
     Loop,
     Sequence,
     PolyLoop,
+    PingPong,
 }
