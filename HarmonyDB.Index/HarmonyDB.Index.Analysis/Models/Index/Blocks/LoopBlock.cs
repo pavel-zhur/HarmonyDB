@@ -1,5 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
@@ -60,4 +61,11 @@ public class LoopBlock : IIndexedBlock
     public bool EachChordCoveredTimesSignificant => BlockLength + 1 >= LoopLength * 2;
 
     public IEnumerable<IIndexedBlock> Children => [];
+    
+    public int? GetNormalizedCoordinate(int index)
+        => index < StartIndex || index > EndIndex 
+            ? throw new ArgumentOutOfRangeException(nameof(index)) 
+            : (NormalizationShift + index - StartIndex) % LoopLength; // proven on paper :)
+
+    public IndexedBlockType Type => IndexedBlockType.Loop;
 }

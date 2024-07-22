@@ -1,5 +1,6 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
@@ -22,4 +23,11 @@ public class SequenceBlock : IIndexedBlock
     public int BlockLength => EndIndex - StartIndex + 1;
 
     public IEnumerable<IIndexedBlock> Children => [];
+
+    public int? GetNormalizedCoordinate(int index)
+        => index < StartIndex || index > EndIndex
+            ? throw new ArgumentOutOfRangeException(nameof(index))
+            : null; // sequence blocks do not have normalization shifts
+
+    public IndexedBlockType Type => IndexedBlockType.Sequence;
 }

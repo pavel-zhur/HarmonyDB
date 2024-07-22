@@ -16,4 +16,13 @@ public class BlockJoint : IBlockJoint
         var x and >= 0 => x,
         _ => throw new("The overlap cannot be negative."),
     };
+
+    public string Normalization =>
+        $"{Block1.Block.Type}, " +
+        $"{Block2.Block.Type}, " +
+        $"{Block1.Block.Normalized}, " +
+        $"{Block2.Block.Normalized}, " +
+        $"{OverlapLength}, " +
+        $"{Block1.Block.GetNormalizedCoordinate(Block2.Block.StartIndex)}, " +
+        $"{Block2.Block.GetNormalizedCoordinate(Block1.Block.EndIndex)}";
 }

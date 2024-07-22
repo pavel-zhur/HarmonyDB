@@ -1,6 +1,14 @@
-﻿namespace HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+﻿using HarmonyDB.Index.Analysis.Models.Index.Enums;
+
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 
 public interface IIndexedBlock : IBlock
 {
     IEnumerable<IIndexedBlock> Children { get; }
+
+    int? GetNormalizedCoordinate(int index);
+    
+    IndexedBlockType Type { get; }
+    
+    string Normalized { get; }
 }
