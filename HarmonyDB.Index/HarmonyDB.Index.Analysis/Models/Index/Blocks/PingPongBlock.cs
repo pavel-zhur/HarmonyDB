@@ -17,6 +17,9 @@ public class PingPongBlock : IIndexedBlock
         string.Join(", ", BlockJoint.GetNormalization(Children[0], Children[1]).Once()
             .Append(BlockJoint.GetNormalization(Children[1], Children[2])).OrderBy(x => x).ToList());
 
+    public byte NormalizationRoot => throw new InvalidOperationException(
+        "The ping pong block does not currently participate in other ping pong blocks, and probably will not. So this property is not implemented.");
+
     public int StartIndex => Children[0].StartIndex;
     
     public int EndIndex => Children[^1].EndIndex;

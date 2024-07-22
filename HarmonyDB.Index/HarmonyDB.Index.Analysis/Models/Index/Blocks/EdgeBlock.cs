@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 public class EdgeBlock(IndexedBlockType type) : IIndexedBlock
 {
     public string Normalized => throw new InvalidOperationException();
-
+    
     public byte NormalizationRoot => throw new InvalidOperationException();
 
     public int StartIndex => throw new InvalidOperationException();

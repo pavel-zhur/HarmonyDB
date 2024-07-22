@@ -25,8 +25,9 @@ public class IndexExtractor
     public List<PingPongBlock> FindPingPongs(BlockGraph graph)
         => graph.Joints
             .SelectMany(l => l.Block2.RightJoints.Select(r => (l, r)))
-            .Where(x => x.l.Block1.Block.Type == x.r.Block2.Block.Type &&
-                        x.l.Block1.Block.Normalized == x.r.Block2.Block.Normalized)
+            .Where(x => x.l.Block1.Block.Type == x.r.Block2.Block.Type
+                        && x.l.Block1.Block.Normalized == x.r.Block2.Block.Normalized
+                        && x.l.Block1.Block.NormalizationRoot == x.r.Block2.Block.NormalizationRoot)
             .GroupBy(x =>
             {
                 var normalizations = x.l.Normalization.Once().Append(x.r.Normalization).OrderBy(x => x).ToList();
