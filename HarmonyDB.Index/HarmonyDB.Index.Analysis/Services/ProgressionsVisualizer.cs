@@ -13,7 +13,7 @@ using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer, IndexExtractor indexExtractor)
+public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtractor)
 {
     public const string AttributeSearch = "search";
     public const string AttributeSearchFirst = "search-first";
@@ -56,7 +56,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
     
     public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
-        var graph = indexExtractor.FindGraph(blocks);
+        var graph = indexExtractor.FindGraph(blocks, sequence.Length);
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
@@ -65,6 +65,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
         var blockId = 0;
         var lines = blocks
+            .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
             {
                 LoopBlock loopBlock when parameters.GroupNormalized => loopBlock.Normalized,
@@ -135,6 +136,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
         lines.Add((Text.Empty, Text.Empty));
         var jointTitles = graph.Joints
+            .Where(x => !x.IsEdge)
             .GroupBy(x => x.Normalization)
             .SelectMany((g, i) =>
                 g.Select(j => (title: (char)('a' + i), positionIndex: positions[j.Block2.Block.StartIndex])))
@@ -151,14 +153,22 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             }
         }
 
-        if (parameters.AddPaths)
+        var path = dijkstra.GetShortestPath(graph);
+        if (path != null)
         {
             lines.Add((Text.Empty, Text.Empty));
-            var paths = progressionsOptimizer.GetAllPossiblePaths(graph);
-            var path = paths.MinBy(x => x.Count)!;
             lines.Add((
-                string.Join(" ", path.Select(x => blocksToIds[x])).AsText(),
-                $"1 / {paths.Count} ({paths.Min(x => x.Count)}..{paths.Max(x => x.Count)})".AsText()));
+                string.Join(" ", path.Select(x => x.Type switch
+                {
+                    IndexedBlockType.SequenceStart => "start",
+                    IndexedBlockType.SequenceEnd => "end",
+                    _ => blocksToIds[x].ToString(),
+                })).AsText(),
+                Text.Empty));
+        }
+        else
+        {
+            throw new("The shortest path is mandatory.");
         }
 
         return lines;

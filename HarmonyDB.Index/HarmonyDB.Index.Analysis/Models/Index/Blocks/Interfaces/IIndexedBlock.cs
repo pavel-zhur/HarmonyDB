@@ -11,4 +11,6 @@ public interface IIndexedBlock : IBlock
     IndexedBlockType Type { get; }
     
     string Normalized { get; }
+
+    float Score => 1;
 }

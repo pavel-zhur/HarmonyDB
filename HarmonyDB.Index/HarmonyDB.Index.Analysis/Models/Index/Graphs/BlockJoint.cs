@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
@@ -31,4 +32,8 @@ public class BlockJoint : IBlockJoint
         $"{block2.GetNormalizedCoordinate(block1.EndIndex + 1)}";
     
     public string Normalization => GetNormalization(Block1.Block, Block2.Block);
+
+    public bool IsEdge
+        => Block1.Block.Type is IndexedBlockType.SequenceStart or IndexedBlockType.SequenceEnd
+           || Block2.Block.Type is IndexedBlockType.SequenceStart or IndexedBlockType.SequenceEnd;
 }

@@ -14,7 +14,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
-public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer)
+public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer, Dijkstra dijkstra)
 {
     [InlineData("Am D G E Am D G E Am D G E Am D G E", 5)] // normalized start of Am-D-G-E is D.
     [InlineData("Gm C F D Gm C F D Gm C F D Gm C F D", 3)]
@@ -742,7 +742,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfJumps), anyMassiveOverlaps);
         TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfMultiJumps), anyMassiveOverlaps);
 
-        var graph = indexExtractor.FindGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All));
+        var graph = indexExtractor.FindGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All), sequence.Length);
         TraceAndTest(graph);
 
         // sequence integrity test
@@ -1048,6 +1048,8 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
     private void TraceAndTest(BlockGraph graph)
     {
+        Assert.NotNull(dijkstra.GetShortestPath(graph));
+        
         Assert.All(graph.Environments, e => Assert.Distinct(e.ChildrenSubtree));
         Assert.All(graph.Environments, e => Assert.Distinct(e.Children));
         Assert.All(graph.Environments, e => Assert.Distinct(e.Parents));

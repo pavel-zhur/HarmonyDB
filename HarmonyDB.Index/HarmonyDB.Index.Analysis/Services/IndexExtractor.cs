@@ -326,7 +326,7 @@ public class IndexExtractor
 
         blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
 
-        var graph = FindGraph(blocks);
+        var graph = FindGraph(blocks, sequence.Length);
 
         blocks.AddRange(FindPingPongs(graph));
 
@@ -343,7 +343,7 @@ public class IndexExtractor
     private static IEnumerable<IIndexedBlock> GetChildBlocksSubtree(IIndexedBlock block) =>
         block.Children.SelectMany(b => GetChildBlocksSubtree(b).Prepend(b));
 
-    public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks)
+    public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks, int sequenceLength)
     {
         var environments = blocks.OfType<IIndexedBlock>().Select(b => new BlockEnvironment
         {
@@ -385,6 +385,28 @@ public class IndexExtractor
             })
             .ToList();
 
+        var startBlock = new EdgeBlock(IndexedBlockType.SequenceStart);
+        var endBlock = new EdgeBlock(IndexedBlockType.SequenceEnd);
+        environments[startBlock] = new()
+        {
+            Block = startBlock,
+        };
+        environments[endBlock] = new()
+        {
+            Block = endBlock,
+        };
+        
+        joints.AddRange(blocks.OfType<IIndexedBlock>().Where(x => x.StartIndex == 0).Select(x => new BlockJoint
+        {
+            Block1 = environments[startBlock],
+            Block2 = environments[x],
+        }));
+        joints.AddRange(blocks.OfType<IIndexedBlock>().Where(x => x.EndIndex == sequenceLength - 1).Select(x => new BlockJoint
+        {
+            Block1 = environments[x],
+            Block2 = environments[endBlock],
+        }));
+        
         foreach (var joint in joints)
         {
             joint.Block1.RightJoints.Add(joint);

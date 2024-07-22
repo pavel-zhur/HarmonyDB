@@ -4,5 +4,4 @@ public class BlocksChartParameters
 {
     public bool TypesToo { get; init; } = true;
     public bool GroupNormalized { get; init; } = true;
-    public bool AddPaths { get; init; } = false;
 }

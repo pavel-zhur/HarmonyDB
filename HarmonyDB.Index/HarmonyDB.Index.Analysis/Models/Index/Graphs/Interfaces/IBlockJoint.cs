@@ -6,4 +6,5 @@ public interface IBlockJoint
     IBlockEnvironment Block2 { get; }
     int OverlapLength { get; }
     string Normalization { get; }
+    bool IsEdge { get; }
 }
