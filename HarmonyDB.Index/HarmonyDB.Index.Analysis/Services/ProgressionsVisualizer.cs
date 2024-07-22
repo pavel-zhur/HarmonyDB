@@ -62,6 +62,8 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
         var shortestPath = dijkstra.GetShortestPath(graph) ?? throw new("The shortest path is required.");
+
+        const string allUselessChunks = "~UselessChunkBlocks";
         
         var lines = blocks
             .Where(x => x is not EdgeBlock)
@@ -70,6 +72,8 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                 LoopBlock loopBlock when parameters.GroupNormalized => loopBlock.Normalized,
                 SequenceBlock sequenceBlock when parameters.GroupNormalized => sequenceBlock.Normalized,
                 PingPongBlock pingPongBlock when parameters.GroupNormalized => pingPongBlock.Normalized,
+                UselessChunkBlock uselessChunkBlock when parameters.GroupNormalized && shortestPath.Contains(uselessChunkBlock) => uselessChunkBlock.Normalized,
+                UselessChunkBlock when parameters.GroupNormalized => allUselessChunks,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
             .Select(grouping =>
@@ -95,8 +99,6 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                             {
                                 var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
 
-                                if (found.Count > 2) throw new("Could not have happened.");
-
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.EnvironmentsByBlock[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
                                 var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPath?.Contains(x) == true);
                                 
@@ -110,7 +112,9 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                 var css = uselessLoop
                                     ? Text.CssTextLightYellow
                                     : shortestPathLoop
-                                        ? Text.CssTextBold
+                                        ? found.FirstOrDefault() is UselessChunkBlock
+                                            ? Text.CssTextBoldRed
+                                            : Text.CssTextBold
                                         : null;
 
                                 return found.Any()
@@ -127,7 +131,12 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
                             })),
-                    right: $"{(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
+                    right: (grouping.First() switch {
+                        _ when grouping.Key == allUselessChunks => $"{grouping.Key} \u00d7{grouping.Count()}",
+                        _ when grouping.Count() == 1 => grouping.First().GetType().Name,
+                        PingPongBlock or UselessChunkBlock => grouping.First().GetType().Name,
+                        _ => $"{grouping.Key} \u00d7{grouping.Count()}",
+                    }).AsText());
             })
             .ToList();
 
@@ -135,6 +144,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         lines.Add((Text.Empty, Text.Empty));
         var jointTitles = graph.Joints
+            .Where(x => x.Block1.Block.Type != IndexedBlockType.UselessChunk && x.Block2.Block.Type != IndexedBlockType.UselessChunk)
             .Where(x => !x.IsEdge)
             .GroupBy(x => x.Normalization)
             .SelectMany((g, i) =>

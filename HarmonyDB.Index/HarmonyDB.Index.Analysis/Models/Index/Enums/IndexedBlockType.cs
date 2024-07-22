@@ -8,4 +8,5 @@ public enum IndexedBlockType : byte
     PingPong,
     SequenceStart,
     SequenceEnd,
+    UselessChunk,
 }

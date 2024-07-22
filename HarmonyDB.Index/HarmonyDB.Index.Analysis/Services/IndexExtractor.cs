@@ -22,6 +22,55 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
+    public List<UselessChunkBlock> FindUselessChunks(BlockGraph graph)
+    {
+        var result = new List<UselessChunkBlock>();
+
+        var blocks = graph.Environments
+            .Where(x => x.Block.Type == IndexedBlockType.Sequence || x.Block is LoopBlock
+            {
+                EachChordCoveredTimesSignificant: false
+            })
+            .Where(x => !x.Parents.Any())
+            .Select(x => x.Block)
+            .ToHashSet();
+        
+        result.AddRange(graph.Joints
+            .Where(x => blocks.Contains(x.Block1.Block) && blocks.Contains(x.Block2.Block))
+            .Select(j => new UselessChunkBlock
+            {
+                Children = new List<IIndexedBlock>
+                {
+                    j.Block1.Block,
+                    j.Block2.Block,
+                }
+            }));
+
+        //var previousIterationResult = result.ToList();
+        //while (true)
+        //{
+        //    var more = previousIterationResult
+        //        .SelectMany(x => graph.EnvironmentsByBlock[x.Children[^1]].RightJoints
+        //            .Where(j => blocks.Contains(j.Block2.Block))
+        //            .Select(j => new UselessChunkBlock
+        //            {
+        //                Children = x.Children.Append(j.Block2.Block).ToList(),
+        //            }))
+        //        .ToList();
+
+        //    if (!more.Any()) break;
+            
+        //    result.AddRange(more);
+        //    previousIterationResult = more;
+        //}
+
+        //var distinct = result.DistinctBy(x => string.Join(" ", x.Children.Select(x => $"{x.StartIndex} {x.EndIndex}")))
+        //    .ToList();
+        //if (distinct.Count != result.Count) throw new($"{distinct.Count} cs {result.Count}");
+        
+        return result;
+    }
+    
     public List<PingPongBlock> FindPingPongs(BlockGraph graph)
         => graph.Joints
             .SelectMany(l => l.Block2.RightJoints.Select(r => (l, r)))
@@ -307,6 +356,11 @@ public class IndexExtractor
         var graph = FindGraph(blocks, sequence.Length);
 
         blocks.AddRange(FindPingPongs(graph));
+
+        graph = FindGraph(blocks, sequence.Length);
+        
+        // necessarily last. blocks get parents, and it excludes them from useless chunks participation.
+        blocks.AddRange(FindUselessChunks(graph));
 
         blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
         {
