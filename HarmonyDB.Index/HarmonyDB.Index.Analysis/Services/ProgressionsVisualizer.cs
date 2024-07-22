@@ -132,6 +132,21 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
 
         lines.Insert(0, (rootsTrace.AsText(), Text.Empty));
 
+        lines.Add((Text.Empty, Text.Empty));
+        var jointTitles = graph.Joints
+            .GroupBy(x => x.Normalization)
+            .SelectMany((g, i) =>
+                g.Select(j => (title: (char)('a' + i), positionIndex: positions[j.Block2.Block.StartIndex])))
+            .GroupBy(x => x.positionIndex)
+            .ToDictionary(x => x.Key, x => x.Select(x => x.title).OrderBy(x => x).ToList());
+
+        foreach (var lineIndex in Enumerable.Range(0, jointTitles.Max(x => x.Value.Count)).Reverse())
+        {
+            lines.Add((
+                new string(Enumerable.Range(0, rootsTrace.Length).Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ').ToArray()).AsText(), 
+                lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty));
+        }
+        
         if (parameters.AddPaths)
         {
             lines.Add((Text.Empty, Text.Empty));
@@ -139,7 +154,7 @@ public class ProgressionsVisualizer(ProgressionsOptimizer progressionsOptimizer,
             var path = paths.MinBy(x => x.Count)!;
             lines.Add((
                 string.Join(" ", path.Select(x => blocksToIds[x])).AsText(),
-                $"1 / {paths.Count}".AsText()));
+                $"1 / {paths.Count} ({paths.Min(x => x.Count)}..{paths.Max(x => x.Count)})".AsText()));
         }
 
         return lines;

@@ -23,6 +23,6 @@ public class BlockJoint : IBlockJoint
         $"{Block1.Block.Normalized}, " +
         $"{Block2.Block.Normalized}, " +
         $"{OverlapLength}, " +
-        $"{Block1.Block.GetNormalizedCoordinate(Block2.Block.StartIndex)}, " +
-        $"{Block2.Block.GetNormalizedCoordinate(Block1.Block.EndIndex)}";
+        $"{Block1.Block.GetNormalizedCoordinate(Block2.Block.StartIndex - 1)}, " +
+        $"{Block2.Block.GetNormalizedCoordinate(Block1.Block.EndIndex + 1)}";
 }
