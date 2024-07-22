@@ -61,9 +61,8 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
-        var blocksToIds = new Dictionary<IBlock, int>();
-
-        var blockId = 0;
+        var shortestPath = dijkstra.GetShortestPath(graph) ?? throw new("The shortest path is required.");
+        
         var lines = blocks
             .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
@@ -75,13 +74,6 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
             })
             .Select(grouping =>
             {
-                blockId++;
-                
-                foreach (var block in grouping)
-                {
-                    blocksToIds[block] = blockId;
-                }
-                
                 List<int> periodPositions = new(), almostPeriodPositions = new();
                 foreach (var loop in grouping.OfType<LoopBlock>())
                 {
@@ -106,6 +98,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                 if (found.Count > 2) throw new("Could not have happened.");
 
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.EnvironmentsByBlock[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
+                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPath?.Contains(x) == true);
                                 
                                 var isModulation = found.FirstOrDefault() switch
                                 {
@@ -114,21 +107,27 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                     _ => false,
                                 };
 
-                                var css = uselessLoop ? Text.CssTextLightYellow : null;
-                                
+                                var css = uselessLoop
+                                    ? Text.CssTextLightYellow
+                                    : shortestPathLoop
+                                        ? Text.CssTextBold
+                                        : null;
+
                                 return found.Any()
-                                    ? periodPositions.Contains(j)
-                                        ? '|'.AsText(css)
+                                    ? (periodPositions.Contains(j)
+                                        ? '|'
                                         : almostPeriodPositions.Contains(j)
-                                            ? '\u25e6'.AsText(css)
+                                            ? '\u25e6'
                                             : isModulation
-                                                ? '~'.AsText(css)
-                                                : '-'.AsText(css)
+                                                ? '~'
+                                                : shortestPathLoop
+                                                    ? '='
+                                                    : '-').AsText(css)
                                     : gridPositions.Contains(j)
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
                             })),
-                    right: $"{blockId}: {(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
+                    right: $"{(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
             })
             .ToList();
 
@@ -151,24 +150,6 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                     new string(Enumerable.Range(0, rootsTrace.Length).Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ').ToArray()).AsText(),
                     lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty));
             }
-        }
-
-        var path = dijkstra.GetShortestPath(graph);
-        if (path != null)
-        {
-            lines.Add((Text.Empty, Text.Empty));
-            lines.Add((
-                string.Join(" ", path.Select(x => x.Type switch
-                {
-                    IndexedBlockType.SequenceStart => "start",
-                    IndexedBlockType.SequenceEnd => "end",
-                    _ => blocksToIds[x].ToString(),
-                })).AsText(),
-                Text.Empty));
-        }
-        else
-        {
-            throw new("The shortest path is mandatory.");
         }
 
         return lines;
