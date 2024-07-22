@@ -9,8 +9,7 @@ public class Text
     
     public const string CssTextLightGray = "text-lightgray";
     public const string CssTextLightYellow = "text-lightyellow";
-    public const string CssTextBold = "fw-bold";
-    public const string CssTextBoldRed = "fw-bold text-danger";
+    public const string CssTextRed = "text-danger";
 
     public void Append(string? css, string text)
     {

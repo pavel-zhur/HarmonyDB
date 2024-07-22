@@ -109,9 +109,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
                                 var css = uselessLoop
                                     ? Text.CssTextLightYellow
-                                    : shortestPathLoop
-                                        ? Text.CssTextBold
-                                        : null;
+                                    : null;
 
                                 return found.Any()
                                     ? (periodPositions.Contains(j)
