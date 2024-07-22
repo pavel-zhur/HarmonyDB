@@ -131,7 +131,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
             })
             .ToList();
 
-        lines.Insert(0, (rootsTrace.AsText(), " ")); // a fix for linux
+        lines.Insert(0, (rootsTrace.AsText(), " ".AsText())); // a fix for linux
 
         var jointTitles = graph.Joints
             .Where(x => !x.IsEdge)
@@ -143,7 +143,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         if (jointTitles.Any())
         {
-            lines.Add((" ".ToText(), " ".ToText()));
+            lines.Add((" ".AsText(), " ".AsText()));
             foreach (var lineIndex in Enumerable.Range(0, jointTitles.Max(x => x.Value.Count)).Reverse())
             {
                 lines.Add((
