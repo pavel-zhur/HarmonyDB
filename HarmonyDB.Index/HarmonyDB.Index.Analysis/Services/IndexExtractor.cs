@@ -182,7 +182,7 @@ public class IndexExtractor
     public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
         => Enumerable
             .Range(0, sequence.Length)
-            .Except(existingBlocks.SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
+            .Except(existingBlocks.OfType<IIndexedBlock>().SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
             .OrderBy(x => x)
             .WithPrevious()
             .ToChunksByShouldStartNew(x => x.previous + 1 != x.current)
@@ -275,29 +275,6 @@ public class IndexExtractor
             case BlocksExtractionLogic.Loops:
                 blocks = simpleLoops.Cast<IBlock>().ToList();
                 break;
-
-            case BlocksExtractionLogic.ReplaceWithSelfJumps:
-                {
-                    var jumps = FindSelfJumps(sequence, simpleLoops).SelectMany(x => x.ChildJumps).ToList();
-                    var involvedLoops = jumps
-                        .SelectMany(x => new[] { x.Loop1, x.Loop2, x.JointLoop, })
-                        .Where(x => x != null)
-                        .Distinct();
-
-                    blocks = simpleLoops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                    break;
-                }
-
-            case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
-                {
-                    var jumps = FindSelfJumps(sequence, simpleLoops);
-                    var involvedLoops = jumps
-                        .SelectMany(x => x.ChildLoops)
-                        .Distinct();
-
-                    blocks = simpleLoops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                    break;
-                }
 
             case BlocksExtractionLogic.LoopsAndMultiJumps:
                 {
