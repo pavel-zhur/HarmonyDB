@@ -5,5 +5,4 @@ public enum BlockDetections
 {
     None = 0,
     UselessLoop = 1,
-    UselessLoopsGroup = 2,
 }
