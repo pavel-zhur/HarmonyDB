@@ -67,5 +67,5 @@ public abstract class LoopBlockBase : IIndexedBlock
             ? throw new ArgumentOutOfRangeException(nameof(index)) 
             : ((NormalizationShift + index - StartIndex) % LoopLength).ToString(); // proven on paper :)
 
-    public abstract IndexedBlockType Type { get; }
+    public abstract BlockType Type { get; }
 }

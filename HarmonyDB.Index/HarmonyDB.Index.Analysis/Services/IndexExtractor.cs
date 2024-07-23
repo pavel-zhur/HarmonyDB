@@ -308,8 +308,8 @@ public class IndexExtractor
 
         blocks.AddRange(FindPingPongs(graph));
 
-        blocks.Add(new EdgeBlock(IndexedBlockType.SequenceStart, sequence.Length));
-        blocks.Add(new EdgeBlock(IndexedBlockType.SequenceEnd, sequence.Length));
+        blocks.Add(new EdgeBlock(BlockType.SequenceStart, sequence.Length));
+        blocks.Add(new EdgeBlock(BlockType.SequenceEnd, sequence.Length));
 
         blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
         {

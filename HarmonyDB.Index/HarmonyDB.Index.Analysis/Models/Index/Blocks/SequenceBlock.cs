@@ -29,5 +29,5 @@ public class SequenceBlock : IIndexedBlock
             ? throw new ArgumentOutOfRangeException(nameof(index))
             : null; // sequence blocks do not have normalization shifts
 
-    public IndexedBlockType Type => IndexedBlockType.Sequence;
+    public BlockType Type => BlockType.Sequence;
 }

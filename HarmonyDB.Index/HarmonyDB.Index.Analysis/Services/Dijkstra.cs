@@ -9,8 +9,8 @@ public class Dijkstra
 {
     public List<IBlockJoint> GetShortestPath(BlockGraph graph)
     {
-        var startBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceStart).Block;
-        var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceEnd).Block;
+        var startBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceStart).Block;
+        var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceEnd).Block;
 
         var distances = new Dictionary<IIndexedBlock, float>();
         var previousJoints = new Dictionary<IIndexedBlock, IBlockJoint?>();

@@ -1,9 +1,11 @@
 ﻿namespace HarmonyDB.Index.Analysis.Models.Index.Enums;
 
-public enum IndexedBlockType : byte
+public enum BlockType : byte
 {
     Loop,
     Sequence,
+
+    [Obsolete]
     PolyLoop,
     PingPong,
     SequenceStart,

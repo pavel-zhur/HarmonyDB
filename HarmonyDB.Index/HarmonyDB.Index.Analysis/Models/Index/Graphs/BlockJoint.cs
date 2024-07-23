@@ -34,6 +34,6 @@ public class BlockJoint : IBlockJoint
     public string Normalization => GetNormalization(Block1.Block, Block2.Block);
 
     public bool IsEdge
-        => Block1.Block.Type is IndexedBlockType.SequenceStart or IndexedBlockType.SequenceEnd
-           || Block2.Block.Type is IndexedBlockType.SequenceStart or IndexedBlockType.SequenceEnd;
+        => Block1.Block.Type is BlockType.SequenceStart or BlockType.SequenceEnd
+           || Block2.Block.Type is BlockType.SequenceStart or BlockType.SequenceEnd;
 }

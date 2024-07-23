@@ -5,7 +5,7 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 public class EdgeBlock : IIndexedBlock
 {
-    public EdgeBlock(IndexedBlockType type, int sequenceLength)
+    public EdgeBlock(BlockType type, int sequenceLength)
     {
         Normalized = type.ToString();
         Type = type;
@@ -13,8 +13,8 @@ public class EdgeBlock : IIndexedBlock
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         (StartIndex, EndIndex) = type switch
         {
-            IndexedBlockType.SequenceStart => (-1, -1),
-            IndexedBlockType.SequenceEnd => (sequenceLength, sequenceLength),
+            BlockType.SequenceStart => (-1, -1),
+            BlockType.SequenceEnd => (sequenceLength, sequenceLength),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
@@ -33,5 +33,5 @@ public class EdgeBlock : IIndexedBlock
 
     public string? GetNormalizedCoordinate(int index) => null; // song start blocks do not have normalization shifts
 
-    public IndexedBlockType Type { get; }
+    public BlockType Type { get; }
 }

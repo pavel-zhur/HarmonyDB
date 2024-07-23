@@ -11,7 +11,7 @@ public class PingPongBlock : IIndexedBlock
 
     IEnumerable<IIndexedBlock> IIndexedBlock.Children => Children;
 
-    public IndexedBlockType Type => IndexedBlockType.PingPong;
+    public BlockType Type => BlockType.PingPong;
     
     public string Normalized =>
         string.Join(", ", BlockJoint.GetNormalization(Children[0], Children[1]).Once()
