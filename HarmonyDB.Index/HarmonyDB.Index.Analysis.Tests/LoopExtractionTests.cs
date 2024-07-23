@@ -741,10 +741,10 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
 
-        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), sequence.Length));
+        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops)));
         
         var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
-        var graph = indexExtractor.CreateGraph(all, sequence.Length);
+        var graph = indexExtractor.CreateGraph(all);
         var shortestPath = dijkstra.GetShortestPath(graph);
         TraceAndTest(graph);
 

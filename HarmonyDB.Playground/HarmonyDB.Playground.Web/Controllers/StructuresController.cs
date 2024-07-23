@@ -72,7 +72,7 @@ public class StructuresController : PlaygroundControllerBase
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
                 var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
-                var graph = _indexExtractor.CreateGraph(blocks, sequence.Length);
+                var graph = _indexExtractor.CreateGraph(blocks);
                 var shortestPath = _dijkstra.GetShortestPath(graph);
                 return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new());
             }).ToList();

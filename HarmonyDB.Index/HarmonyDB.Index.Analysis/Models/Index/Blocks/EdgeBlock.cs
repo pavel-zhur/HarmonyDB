@@ -3,21 +3,35 @@ using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
-public class EdgeBlock(IndexedBlockType type) : IIndexedBlock
+public class EdgeBlock : IIndexedBlock
 {
-    public string Normalized => throw new InvalidOperationException();
+    public EdgeBlock(IndexedBlockType type, int sequenceLength)
+    {
+        Normalized = type.ToString();
+        Type = type;
+        
+        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+        (StartIndex, EndIndex) = type switch
+        {
+            IndexedBlockType.SequenceStart => (-1, -1),
+            IndexedBlockType.SequenceEnd => (sequenceLength, sequenceLength),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
+    }
+
+    public string Normalized { get; }
     
-    public byte NormalizationRoot => throw new InvalidOperationException();
+    public byte NormalizationRoot => 0;
 
-    public int StartIndex => throw new InvalidOperationException();
+    public int StartIndex { get; }
 
-    public int EndIndex => throw new InvalidOperationException();
+    public int EndIndex { get; }
 
-    public int BlockLength => 0;
+    public int BlockLength => 1;
     
     public IEnumerable<IIndexedBlock> Children => [];
 
     public string? GetNormalizedCoordinate(int index) => null; // song start blocks do not have normalization shifts
 
-    public IndexedBlockType Type { get; } = type;
+    public IndexedBlockType Type { get; }
 }
