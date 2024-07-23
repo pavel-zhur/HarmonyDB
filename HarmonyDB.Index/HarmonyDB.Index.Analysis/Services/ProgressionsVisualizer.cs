@@ -80,7 +80,38 @@ public class ProgressionsVisualizer
             lines.AddRange(jointLines);
         }
 
+        lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
+        var pathLines = CreatePathLines(shortestPath, blockGroups);
+        lines.AddRange(pathLines);
+
         return lines;
+    }
+
+    private List<(Text left, Text right)> CreatePathLines(IReadOnlyList<IBlockJoint> shortestPath, Dictionary<IIndexedBlock, int> blockGroups)
+    {
+        var titles = blockGroups
+            .Select(x => (key: x.Key, title: x.Value.ToString()))
+            .Append((key: shortestPath[0].Block1.Block, title: "ss"))
+            .Append((key: shortestPath[^1].Block2.Block, title: "se"))
+            .ToDictionary(x => x.key, x => x.title);
+
+        var pathVisualization = shortestPath
+            .GroupBy(x => (x.Block1.Block.Normalized, x.Block2.Block.Normalized))
+            .Select(g =>
+            {
+                var path = $"{titles[g.First().Block1.Block]} -> {titles[g.First().Block2.Block]}".AsText();
+                var counts = g.GroupBy(x => x.Normalization).Select(x => x.Count()).ToList();
+                path.Append(counts is [1] 
+                    ? Text.Empty
+                    : counts.Count == 1
+                        ? $" {Times}{counts[0]}".AsText()
+                        : string.Join(",", counts.Select(x => $" {Times}{x}")).AsText(Text.CssTextRed));
+
+                return path;
+            })
+            .ToList();
+
+        return pathVisualization.Select(x => (x, EmptyLineContents: Text.EmptyLineContent)).ToList();
     }
 
     private static List<(Text left, Text right)> CreateJointsLines(BlockGraph graph, List<int> positions, int rootsTraceLength)
@@ -94,7 +125,7 @@ public class ProgressionsVisualizer
             .ToDictionary(x => x.Key, x => x.Select(x => x.title).OrderBy(x => x).ToList());
 
         return Enumerable
-            .Range(0, jointTitles.Max(x => x.Value.Count))
+            .Range(0, jointTitles.Max(x => (int?)x.Value.Count) ?? 0)
             .Reverse()
             .Select(lineIndex => (
                 new string(
