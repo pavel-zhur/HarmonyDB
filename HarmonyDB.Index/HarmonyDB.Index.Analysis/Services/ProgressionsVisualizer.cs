@@ -15,10 +15,12 @@ using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtractor)
+public class ProgressionsVisualizer
 {
     public const string AttributeSearch = "search";
     public const string AttributeSearchFirst = "search-first";
+    private const char Bullet = '\u25e6';
+    private const char Times = '\u00d7';
 
     public string GetLoopStatisticsTitle(StructureLink link) =>
         $"{link.Successions:N2}/{link.Occurrences:N2}, {link.Coverage:P0}%";
@@ -66,23 +68,22 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         var lines = new List<(Text left, Text right)>
         {
-            (rootsTrace.AsText(), " ".AsText()) // a fix for linux
+            (rootsTrace.AsText(), Text.EmptyLineContent)
         };
         
-        lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace, shortestPathBlocks, gridPositions));
+        lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace.Length, shortestPathBlocks, gridPositions, out var blockGroups));
         
-        var jointLines = CreateJointsLines(graph, positions, rootsTrace);
-
+        var jointLines = CreateJointsLines(graph, positions, rootsTrace.Length);
         if (jointLines.Any())
         {
-            lines.Add((" ".AsText(), " ".AsText())); // a fix for linux
+            lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
             lines.AddRange(jointLines);
         }
 
         return lines;
     }
 
-    private static List<(Text left, Text right)> CreateJointsLines(BlockGraph graph, List<int> positions, string rootsTrace)
+    private static List<(Text left, Text right)> CreateJointsLines(BlockGraph graph, List<int> positions, int rootsTraceLength)
     {
         var jointTitles = graph.Joints
             .Where(x => !x.IsEdge)
@@ -98,7 +99,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
             .Select(lineIndex => (
                 new string(
                         Enumerable
-                            .Range(0, rootsTrace.Length)
+                            .Range(0, rootsTraceLength)
                             .Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ')
                             .ToArray())
                     .AsText(),
@@ -106,8 +107,17 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
             .ToList();
     }
 
-    private static List<(Text left, Text right)> CreateBlocksLines(IReadOnlyList<IBlock> blocks, BlockGraph graph, BlocksChartParameters parameters, List<int> positions, string rootsTrace, HashSet<IIndexedBlock> shortestPathBlocks, List<int> gridPositions)
-        => blocks
+    private static List<(Text left, Text right)> CreateBlocksLines(
+        IReadOnlyList<IBlock> blocks, 
+        BlockGraph graph,
+        BlocksChartParameters parameters, 
+        List<int> positions, 
+        int rootsTraceLength,
+        HashSet<IIndexedBlock> shortestPathBlocks, 
+        List<int> gridPositions,
+        out Dictionary<IIndexedBlock, int> blockGroups)
+    {
+        var groups = blocks
             .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
             {
@@ -116,8 +126,16 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                 PingPongBlock pingPongBlock when parameters.GroupNormalized => pingPongBlock.Normalized,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
-            .Select(grouping =>
+            .ToList();
+
+        blockGroups = groups.WithIndices().SelectMany(g => g.x.OfType<IIndexedBlock>().Select(b => (b, g.i))).ToDictionary(x => x.b, x => x.i + 1);
+        
+        return groups
+            .WithIndices()
+            .Select(pair =>
             {
+                var (grouping, i) = pair;
+                
                 List<int> periodPositions = new(), almostPeriodPositions = new();
                 foreach (var loop in grouping.OfType<LoopBlock>())
                 {
@@ -134,7 +152,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                 return (left: Text.Join(
                         Text.Empty,
                         Enumerable
-                            .Range(0, rootsTrace.Length)
+                            .Range(0, rootsTraceLength)
                             .Select(j =>
                             {
                                 var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
@@ -142,8 +160,8 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                 if (found.Count > 2) throw new("Could not have happened.");
 
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
-                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPathBlocks.Contains(x) == true);
-                                
+                                var shortestPathLoop = found.Any(shortestPathBlocks.Contains);
+
                                 var isModulation = found.FirstOrDefault() switch
                                 {
                                     LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
@@ -159,7 +177,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                     ? (periodPositions.Contains(j)
                                         ? '|'
                                         : almostPeriodPositions.Contains(j)
-                                            ? '\u25e6'
+                                            ? Bullet
                                             : isModulation
                                                 ? '~'
                                                 : shortestPathLoop
@@ -169,9 +187,10 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
                             })),
-                    right: $"{(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
+                    right: $"{i + 1}: {(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} {Times}{grouping.Count()}")}".AsText());
             })
             .ToList();
+    }
 
     public string CreateRootsTraceByIndices(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,

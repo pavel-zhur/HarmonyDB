@@ -27,16 +27,10 @@ public class Text
         => text._pieces.ForEach(_pieces.Add);
 
     public static Text Empty => new();
-    
-    public static Text NewLine
-    {
-        get
-        {
-            var result = new Text();
-            result.Append(null, Environment.NewLine);
-            return result;
-        }
-    }
+
+    public static Text EmptyLineContent => " ".AsText();
+
+    public static Text NewLine  => Environment.NewLine.AsText();
 
     public static Text Join(Text separator, IEnumerable<Text> lines)
     {
