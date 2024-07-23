@@ -75,7 +75,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         if (jointLines.Any())
         {
-            lines.Add((" ".AsText(), " ".AsText()));
+            lines.Add((" ".AsText(), " ".AsText())); // a fix for linux
             lines.AddRange(jointLines);
         }
 
