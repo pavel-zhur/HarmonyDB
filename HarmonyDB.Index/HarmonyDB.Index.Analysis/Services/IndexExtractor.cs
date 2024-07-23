@@ -2,6 +2,7 @@
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Index.Enums;
@@ -266,50 +267,55 @@ public class IndexExtractor
         return result;
     }
 
-    public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
+    public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<BlockType> blockTypes)
     {
-        var simpleLoops = FindSimpleLoops(sequence, roots);
+        List<IBlock> blocks = new();
 
-        List<IBlock> blocks;
-        switch (blocksExtractionLogic)
+        if (blockTypes.Contains(BlockType.Loop))
         {
-            case BlocksExtractionLogic.Loops:
-                blocks = simpleLoops.Cast<IBlock>().ToList();
-                break;
+            var simpleLoops = FindSimpleLoops(sequence, roots);
+            blocks.AddRange(simpleLoops);
 
-            case BlocksExtractionLogic.LoopsAndMultiJumps:
+            if (blockTypes.Contains(BlockType.LoopSelfJump) || blockTypes.Contains(BlockType.LoopSelfMultiJump))
+            {
+                var jumps = FindSelfJumps(sequence, simpleLoops);
+                if (blockTypes.Contains(BlockType.LoopSelfMultiJump))
                 {
-                    var jumps = FindSelfJumps(sequence, simpleLoops);
-                    blocks = jumps.Cast<IBlock>()
-                        .Concat(simpleLoops)
-                        .ToList();
-                    break;
+                    blocks.AddRange(jumps);
                 }
 
-            case BlocksExtractionLogic.All:
+                if (blockTypes.Contains(BlockType.LoopSelfJump))
                 {
-                    var jumps = FindSelfJumps(sequence, simpleLoops);
-                    var massiveOverlaps = FindMassiveOverlapsBlocks(simpleLoops);
-                    blocks = jumps.Cast<IBlock>()
-                        .Concat(jumps.SelectMany(x => x.ChildJumps))
-                        .Concat(simpleLoops)
-                        .Concat(massiveOverlaps)
-                        .ToList();
-                    break;
+                    blocks.AddRange(jumps.SelectMany(x => x.ChildJumps));
                 }
+            }
 
-            default:
-                throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
+            if (blockTypes.Contains(BlockType.MassiveOverlaps))
+            {
+                blocks.AddRange(FindMassiveOverlapsBlocks(simpleLoops));
+            }
         }
 
-        blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
+        if (blockTypes.Contains(BlockType.Sequence))
+        {
+            blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
+        }
 
-        var graph = CreateGraph(blocks);
+        if (blockTypes.Contains(BlockType.PingPong))
+        {
+            var graph = CreateGraph(blocks);
+            blocks.AddRange(FindPingPongs(graph));
+        }
 
-        blocks.AddRange(FindPingPongs(graph));
+        if (blockTypes.Contains(BlockType.SequenceStart))
+        {
+            blocks.Add(new EdgeBlock(BlockType.SequenceStart, sequence.Length));
+        }
 
-        blocks.Add(new EdgeBlock(BlockType.SequenceStart, sequence.Length));
-        blocks.Add(new EdgeBlock(BlockType.SequenceEnd, sequence.Length));
+        if (blockTypes.Contains(BlockType.SequenceEnd))
+        {
+            blocks.Add(new EdgeBlock(BlockType.SequenceEnd, sequence.Length));
+        }
 
         blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
         {

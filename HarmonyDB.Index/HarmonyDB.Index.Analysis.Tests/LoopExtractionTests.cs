@@ -3,6 +3,7 @@ using System.Text;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Index.Enums;
@@ -739,11 +740,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
-        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
+        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlockTypes.Loop), anyMassiveOverlaps);
 
-        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops)));
+        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlockTypes.Loop)));
         
-        var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
+        var all = indexExtractor.FindBlocks(sequence, roots, BlockTypes.All);
         var graph = indexExtractor.CreateGraph(all);
         var shortestPath = dijkstra.GetShortestPath(graph);
         TraceAndTest(graph);

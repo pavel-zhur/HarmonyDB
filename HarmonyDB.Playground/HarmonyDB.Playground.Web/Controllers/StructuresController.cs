@@ -10,7 +10,7 @@ using OneShelf.Common.Api.Client;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Source.Api.Model.V1;
-using HarmonyDB.Index.Analysis.Models.Index.Enums;
+using HarmonyDB.Index.Analysis.Models.Index;
 
 namespace HarmonyDB.Playground.Web.Controllers;
 
@@ -71,7 +71,7 @@ public class StructuresController : PlaygroundControllerBase
                 var compact = s.Compact();
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
-                var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
+                var blocks = _indexExtractor.FindBlocks(sequence, roots, BlockTypes.Loop);
                 var graph = _indexExtractor.CreateGraph(blocks);
                 var shortestPath = _dijkstra.GetShortestPath(graph);
                 return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new());
