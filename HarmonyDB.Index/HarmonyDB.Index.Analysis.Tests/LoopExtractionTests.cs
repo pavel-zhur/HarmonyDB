@@ -11,6 +11,7 @@ using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Analysis.Tools;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
@@ -741,7 +742,10 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
 
         TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), sequence.Length));
-        var graph = indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All), sequence.Length);
+        
+        var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
+        var graph = indexExtractor.CreateGraph(all, sequence.Length);
+        var shortestPath = dijkstra.GetShortestPath(graph);
         TraceAndTest(graph);
 
         // sequence integrity test
@@ -807,8 +811,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
             if (visualize)
             {
-                var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
-                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, new() { TypesToo = false });
+                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, graph, shortestPath, new() { TypesToo = false });
                 logger.LogInformation(Environment.NewLine + result + Environment.NewLine);
             }
         }
@@ -1047,8 +1050,6 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
     private void TraceAndTest(BlockGraph graph)
     {
-        dijkstra.GetShortestPath(graph); // assert not throws
-        
         Assert.All(graph.Environments.Values, e => Assert.Distinct(e.ChildrenSubtree));
         Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Children));
         Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Parents));

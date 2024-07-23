@@ -22,8 +22,9 @@ public class StructuresController : PlaygroundControllerBase
     private readonly ProgressionsBuilder _progressionsBuilder;
     private readonly ChordDataParser _chordDataParser;
     private readonly ProgressionsVisualizer _progressionsVisualizer;
+    private readonly Dijkstra _dijkstra;
 
-    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer)
+    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer, Dijkstra dijkstra)
     {
         _logger = logger;
         _sourceApiClient = sourceApiClient;
@@ -31,6 +32,7 @@ public class StructuresController : PlaygroundControllerBase
         _progressionsBuilder = progressionsBuilder;
         _chordDataParser = chordDataParser;
         _progressionsVisualizer = progressionsVisualizer;
+        _dijkstra = dijkstra;
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -70,7 +72,9 @@ public class StructuresController : PlaygroundControllerBase
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
                 var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
-                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, new());
+                var graph = _indexExtractor.CreateGraph(blocks, sequence.Length);
+                var shortestPath = _dijkstra.GetShortestPath(graph);
+                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new());
             }).ToList();
         }).ToList();
         

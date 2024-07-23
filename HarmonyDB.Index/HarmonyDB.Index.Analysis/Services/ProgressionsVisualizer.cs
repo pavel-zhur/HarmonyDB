@@ -10,6 +10,8 @@ using HarmonyDB.Index.Analysis.Models.Index.Blocks;
 using HarmonyDB.Index.Analysis.Models.TextGraphics;
 using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Index.Enums;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
@@ -38,15 +40,15 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
             .Where(x => x.isFirst.HasValue)
             .ToDictionary(x => x.i, x => x.isFirst!.Value ? AttributeSearchFirst : AttributeSearch);
 
-    public Text VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public Text VisualizeBlocksAsOne(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
     {
-        var lines = VisualizeBlocks(sequence, roots, blocks, parameters);
+        var lines = VisualizeBlocks(sequence, roots, blocks, graph, shortestPath, parameters);
         return Text.Join(Text.NewLine, lines.Select(x => $"{x.left}   {x.right}".AsText()));
     }
 
-    public (Text left, Text right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public (Text left, Text right) VisualizeBlocksAsTwo(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
     {
-        var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, parameters);
+        var blockVisualizations = VisualizeBlocks(sequence, roots, blocks, graph, shortestPath, parameters);
 
         var left = Text.Join(Text.NewLine, blockVisualizations.Select(v => v.left));
         var right = Text.Join(Text.NewLine, blockVisualizations.Select(v => v.right));
@@ -54,14 +56,13 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
         return (left, right);
     }
     
-    public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
+    public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
     {
-        var graph = indexExtractor.CreateGraph(blocks, sequence.Length);
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
-        var shortestPath = dijkstra.GetShortestPath(graph).SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToList();
+        var shortestPathVertices = shortestPath.SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToList();
         
         var lines = blocks
             .Where(x => x is not EdgeBlock)
@@ -98,7 +99,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                 if (found.Count > 2) throw new("Could not have happened.");
 
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
-                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPath?.Contains(x) == true);
+                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPathVertices?.Contains(x) == true);
                                 
                                 var isModulation = found.FirstOrDefault() switch
                                 {
