@@ -61,7 +61,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
-        var shortestPath = dijkstra.GetShortestPath(graph);
+        var shortestPath = dijkstra.GetShortestPath(graph).SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToList();
         
         var lines = blocks
             .Where(x => x is not EdgeBlock)
