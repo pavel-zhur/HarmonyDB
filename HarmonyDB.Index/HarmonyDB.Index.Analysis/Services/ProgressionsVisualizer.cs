@@ -62,7 +62,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
-        var shortestPathVertices = shortestPath.SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToList();
+        var shortestPathBlocks = shortestPath.SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToHashSet();
         
         var lines = blocks
             .Where(x => x is not EdgeBlock)
@@ -99,7 +99,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                                 if (found.Count > 2) throw new("Could not have happened.");
 
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
-                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPathVertices?.Contains(x) == true);
+                                var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPathBlocks.Contains(x) == true);
                                 
                                 var isModulation = found.FirstOrDefault() switch
                                 {
