@@ -797,12 +797,12 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             l.Successions,
             l.Occurrences - 1));
 
-        string CreateRootsTrace(IBlock block) => progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, block.StartIndex, block.EndIndex, out _);
+        string CreateRootsTrace(IBlock block) => progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, out _, block: block);
 
         if (trace)
         {
             logger.LogInformation(
-                $"loops: {loops.Count}, self jumps: {loopSelfJumpsBlocks.Count}, roots: {(visualize ? null : progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out _))}");
+                $"loops: {loops.Count}, self jumps: {loopSelfJumpsBlocks.Count}, roots: {(visualize ? null : progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, out _))}");
 
             if (visualize)
             {

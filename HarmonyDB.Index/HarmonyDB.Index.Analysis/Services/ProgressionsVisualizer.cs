@@ -57,7 +57,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
     public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
         var graph = indexExtractor.FindGraph(blocks, sequence.Length);
-        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out var positions, parameters.TypesToo);
+        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
@@ -156,11 +156,13 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
     public string CreateRootsTraceByIndices(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         IReadOnlyList<byte> roots,
-        int startIndex,
-        int endIndex,
         out List<int> positions,
-        bool typesToo = true)
+        bool typesToo = true,
+        IBlock? block = null)
     {
+        var startIndex = block?.StartIndex ?? 0;
+        var endIndex = block?.EndIndex ?? (sequence.Length - 1);
+        
         var builder = new StringBuilder();
         if (typesToo)
         {
