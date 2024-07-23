@@ -1046,7 +1046,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
     private void TraceAndTest(BlockGraph graph)
     {
-        Assert.NotNull(dijkstra.GetShortestPath(graph));
+        dijkstra.GetShortestPath(graph); // assert not throws
         
         Assert.All(graph.Environments.Values, e => Assert.Distinct(e.ChildrenSubtree));
         Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Children));

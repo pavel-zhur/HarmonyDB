@@ -6,7 +6,7 @@ namespace HarmonyDB.Index.Analysis.Services;
 
 public class Dijkstra
 {
-    public List<IIndexedBlock>? GetShortestPath(BlockGraph graph)
+    public List<IIndexedBlock> GetShortestPath(BlockGraph graph)
     {
         var startBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceStart).Block; // Assuming the start is the first block in environments
         var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceEnd).Block; // Assuming the target is the last block in environments
@@ -52,7 +52,7 @@ public class Dijkstra
         return ReconstructPath(previousBlocks, startBlock, targetBlock);
     }
 
-    private List<IIndexedBlock>? ReconstructPath(Dictionary<IIndexedBlock, IIndexedBlock?> previousBlocks, IIndexedBlock startBlock, IIndexedBlock targetBlock)
+    private List<IIndexedBlock> ReconstructPath(Dictionary<IIndexedBlock, IIndexedBlock?> previousBlocks, IIndexedBlock startBlock, IIndexedBlock targetBlock)
     {
         var path = new List<IIndexedBlock>();
         for (var at = targetBlock; at != null; at = previousBlocks[at])
@@ -60,6 +60,6 @@ public class Dijkstra
             path.Add(at);
         }
         path.Reverse();
-        return path.Contains(startBlock) ? path : null; // Return the path if it includes the start block, otherwise return null
+        return path.Contains(startBlock) ? path : throw new("The path from start to end is not found");
     }
 }
