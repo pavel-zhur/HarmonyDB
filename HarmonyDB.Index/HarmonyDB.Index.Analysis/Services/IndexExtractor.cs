@@ -304,7 +304,7 @@ public class IndexExtractor
 
         blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
 
-        var graph = FindGraph(blocks, sequence.Length);
+        var graph = CreateGraph(blocks, sequence.Length);
 
         blocks.AddRange(FindPingPongs(graph));
 
@@ -321,7 +321,7 @@ public class IndexExtractor
     private static IEnumerable<IIndexedBlock> GetChildBlocksSubtree(IIndexedBlock block) =>
         block.Children.SelectMany(b => GetChildBlocksSubtree(b).Prepend(b));
 
-    public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks, int sequenceLength)
+    public BlockGraph CreateGraph(IReadOnlyList<IBlock> blocks, int sequenceLength)
     {
         var environments = blocks.OfType<IIndexedBlock>().Select(b => new BlockEnvironment
         {

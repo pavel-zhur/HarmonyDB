@@ -56,7 +56,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
     
     public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlocksChartParameters parameters)
     {
-        var graph = indexExtractor.FindGraph(blocks, sequence.Length);
+        var graph = indexExtractor.CreateGraph(blocks, sequence.Length);
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
