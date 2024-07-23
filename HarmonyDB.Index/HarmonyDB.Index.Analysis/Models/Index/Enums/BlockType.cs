@@ -10,4 +10,8 @@ public enum BlockType : byte
     PingPong,
     SequenceStart,
     SequenceEnd,
+    
+    MassiveOverlaps,
+    LoopSelfJump,
+    LoopSelfMultiJump,
 }

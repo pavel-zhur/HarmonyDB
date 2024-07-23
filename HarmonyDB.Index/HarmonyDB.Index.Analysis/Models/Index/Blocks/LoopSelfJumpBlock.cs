@@ -29,6 +29,8 @@ public class LoopSelfJumpBlock : IBlock
 
     public IEnumerable<IBlock> Children => JointLoop == null ? [Loop1, Loop2] : [Loop1, JointLoop!, Loop2];
 
+    BlockType IBlock.Type => BlockType.LoopSelfJump;
+
     public LoopSelfJumpType Type
     {
         get

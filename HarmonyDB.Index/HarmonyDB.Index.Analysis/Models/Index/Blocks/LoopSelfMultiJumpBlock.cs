@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
@@ -28,4 +29,6 @@ public class LoopSelfMultiJumpBlock : IBlock
     public int BlockLength => EndIndex - StartIndex + 1;
 
     public IEnumerable<IBlock> Children => ChildJumps;
+
+    BlockType IBlock.Type => BlockType.LoopSelfMultiJump;
 }
