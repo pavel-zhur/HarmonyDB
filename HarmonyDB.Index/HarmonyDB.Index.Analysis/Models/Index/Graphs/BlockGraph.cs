@@ -5,9 +5,7 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Graphs;
 
 public class BlockGraph
 {
-    public required IReadOnlyList<IBlockEnvironment> Environments { get; init; }
-    
-    public required IReadOnlyDictionary<IIndexedBlock, IBlockEnvironment> EnvironmentsByBlock { get; init; }
+    public required IReadOnlyDictionary<IIndexedBlock, IBlockEnvironment> Environments { get; init; }
     
     public required IReadOnlyList<IBlockJoint> Joints { get; init; }
 }

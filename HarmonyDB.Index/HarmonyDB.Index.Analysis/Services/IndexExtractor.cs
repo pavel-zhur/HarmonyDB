@@ -410,8 +410,7 @@ public class IndexExtractor
 
         return new()
         {
-            EnvironmentsByBlock = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
-            Environments = environments.Values.ToList(),
+            Environments = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
             Joints = joints,
         };
     }

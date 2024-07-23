@@ -97,7 +97,7 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
                                 if (found.Count > 2) throw new("Could not have happened.");
 
-                                var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.EnvironmentsByBlock[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
+                                var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
                                 var shortestPathLoop = found.Any(x => x is IIndexedBlock && shortestPath?.Contains(x) == true);
                                 
                                 var isModulation = found.FirstOrDefault() switch

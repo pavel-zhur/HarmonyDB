@@ -1048,11 +1048,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         Assert.NotNull(dijkstra.GetShortestPath(graph));
         
-        Assert.All(graph.Environments, e => Assert.Distinct(e.ChildrenSubtree));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.Children));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.Parents));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.LeftJoints));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.RightJoints));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.ChildrenSubtree));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Children));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Parents));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.LeftJoints));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.RightJoints));
     }
 
     private void TraceAndTest(List<IBlock> blocks, bool anyMassiveOverlaps)

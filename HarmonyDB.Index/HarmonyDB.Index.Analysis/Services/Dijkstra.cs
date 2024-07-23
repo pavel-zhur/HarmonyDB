@@ -8,14 +8,13 @@ public class Dijkstra
 {
     public List<IIndexedBlock>? GetShortestPath(BlockGraph graph)
     {
-        var startBlock = graph.Environments.Single(x => x.Block.Type == IndexedBlockType.SequenceStart).Block; // Assuming the start is the first block in environments
-        var targetBlock = graph.Environments.Single(x => x.Block.Type == IndexedBlockType.SequenceEnd).Block; // Assuming the target is the last block in environments
+        var startBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceStart).Block; // Assuming the start is the first block in environments
+        var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == IndexedBlockType.SequenceEnd).Block; // Assuming the target is the last block in environments
 
         var distances = new Dictionary<IIndexedBlock, float>();
         var previousBlocks = new Dictionary<IIndexedBlock, IIndexedBlock?>();
-        var allBlocks = graph.Environments.Select(env => env.Block).Distinct().ToList();
 
-        foreach (var block in allBlocks)
+        foreach (var block in graph.Environments.Keys)
         {
             distances[block] = float.MaxValue; // Initialize all distances to infinity
             previousBlocks[block] = null; // Initialize all previous blocks to null
@@ -33,7 +32,7 @@ public class Dijkstra
             if (currentBlock == targetBlock)
                 break;
 
-            var currentEnvironment = graph.EnvironmentsByBlock[currentBlock];
+            var currentEnvironment = graph.Environments[currentBlock];
             var neighbors = currentEnvironment.LeftJoints.Select(joint => joint.Block2.Block)
                 .Concat(currentEnvironment.RightJoints.Select(joint => joint.Block2.Block))
                 .Distinct();
