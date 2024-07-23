@@ -55,16 +55,59 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
 
         return (left, right);
     }
-    
-    public List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
+
+    private List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
     {
         var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, parameters.TypesToo);
 
         var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
 
         var shortestPathBlocks = shortestPath.SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToHashSet();
+
+        var lines = new List<(Text left, Text right)>
+        {
+            (rootsTrace.AsText(), " ".AsText()) // a fix for linux
+        };
         
-        var lines = blocks
+        lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace, shortestPathBlocks, gridPositions));
+        
+        var jointLines = CreateJointsLines(graph, positions, rootsTrace);
+
+        if (jointLines.Any())
+        {
+            lines.Add((" ".AsText(), " ".AsText()));
+            lines.AddRange(jointLines);
+        }
+
+        return lines;
+    }
+
+    private static List<(Text left, Text right)> CreateJointsLines(BlockGraph graph, List<int> positions, string rootsTrace)
+    {
+        var jointTitles = graph.Joints
+            .Where(x => !x.IsEdge)
+            .GroupBy(x => x.Normalization)
+            .SelectMany((g, i) =>
+                g.Select(j => (title: (char)('a' + i), positionIndex: positions[j.Block2.Block.StartIndex])))
+            .GroupBy(x => x.positionIndex)
+            .ToDictionary(x => x.Key, x => x.Select(x => x.title).OrderBy(x => x).ToList());
+
+        return Enumerable
+            .Range(0, jointTitles.Max(x => x.Value.Count))
+            .Reverse()
+            .Select(lineIndex => (
+                new string(
+                        Enumerable
+                            .Range(0, rootsTrace.Length)
+                            .Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ')
+                            .ToArray())
+                    .AsText(),
+                lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty))
+            .ToList();
+    }
+
+    private static List<(Text left, Text right)> CreateBlocksLines(IReadOnlyList<IBlock> blocks, BlockGraph graph, BlocksChartParameters parameters, List<int> positions, string rootsTrace, HashSet<IIndexedBlock> shortestPathBlocks, List<int> gridPositions)
+        => blocks
             .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
             {
@@ -79,8 +122,8 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                 foreach (var loop in grouping.OfType<LoopBlock>())
                 {
                     periodPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
-                            .Select(x => x * loop.LoopLength + loop.StartIndex)
-                            .Select(x => positions[x]));
+                        .Select(x => x * loop.LoopLength + loop.StartIndex)
+                        .Select(x => positions[x]));
 
                     if (loop.EachChordCoveredTimesWhole)
                     {
@@ -129,30 +172,6 @@ public class ProgressionsVisualizer(Dijkstra dijkstra, IndexExtractor indexExtra
                     right: $"{(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} \u00d7{grouping.Count()}")}".AsText());
             })
             .ToList();
-
-        lines.Insert(0, (rootsTrace.AsText(), " ".AsText())); // a fix for linux
-
-        var jointTitles = graph.Joints
-            .Where(x => !x.IsEdge)
-            .GroupBy(x => x.Normalization)
-            .SelectMany((g, i) =>
-                g.Select(j => (title: (char)('a' + i), positionIndex: positions[j.Block2.Block.StartIndex])))
-            .GroupBy(x => x.positionIndex)
-            .ToDictionary(x => x.Key, x => x.Select(x => x.title).OrderBy(x => x).ToList());
-
-        if (jointTitles.Any())
-        {
-            lines.Add((" ".AsText(), " ".AsText()));
-            foreach (var lineIndex in Enumerable.Range(0, jointTitles.Max(x => x.Value.Count)).Reverse())
-            {
-                lines.Add((
-                    new string(Enumerable.Range(0, rootsTrace.Length).Select(i => jointTitles.GetValueOrDefault(i)?.SelectSingle(t => lineIndex < t.Count ? t[lineIndex] : ' ') ?? ' ').ToArray()).AsText(),
-                    lineIndex == 0 ? $"joints: {graph.Joints.Count}".AsText() : Text.Empty));
-            }
-        }
-
-        return lines;
-    }
 
     public string CreateRootsTraceByIndices(
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
