@@ -740,6 +740,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
 
+        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), sequence.Length));
         var graph = indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All), sequence.Length);
         TraceAndTest(graph);
 
