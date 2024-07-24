@@ -39,7 +39,7 @@ public class PathsSearcher
             foreach (var joint in neighbors)
             {
                 var neighborBlock = joint.Block2.Block;
-                var alt = distances[currentBlock] + neighborBlock.Score;
+                var alt = distances[currentBlock] + neighborBlock.Score + joint.Score;
                 if (alt < distances[neighborBlock])
                 {
                     distances[neighborBlock] = alt;

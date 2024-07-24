@@ -8,6 +8,7 @@ public interface IIndexedBlock : IBlock
     
     string Normalized { get; }
 
+    [Obsolete]
     float Score => 1;
     
     byte NormalizationRoot { get; }

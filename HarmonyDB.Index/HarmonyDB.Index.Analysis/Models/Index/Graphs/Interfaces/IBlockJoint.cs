@@ -7,4 +7,7 @@ public interface IBlockJoint
     int OverlapLength { get; }
     string Normalization { get; }
     bool IsEdge { get; }
+
+    [Obsolete]
+    float Score => 1;
 }
