@@ -39,14 +39,14 @@ public abstract class LoopBlockBase : IIndexedBlock
     /// </summary>
     public float Occurrences => (float)BlockLength / LoopLength;
 
+    public bool OccurrencesWhole => BlockLength % LoopLength == 0;
+
     /// <summary>
     /// Is a whole number of and only if edge chords are the same. Min = 0.
     /// Greater than 0 if at least one movement repeats twice.
     /// Equals 0 if all chords repeat once except the edge ones.
     /// </summary>
     public float Successions => (float)BlockLength / LoopLength - 1;
-
-    public bool SuccessionsWhole => BlockLength % LoopLength == 0;
     
     public bool SuccessionsSignificant => BlockLength >= LoopLength * 2;
 

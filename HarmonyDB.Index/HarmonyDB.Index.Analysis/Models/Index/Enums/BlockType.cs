@@ -5,8 +5,6 @@ public enum BlockType : byte
     Loop,
     Sequence,
 
-    [Obsolete]
-    PolyLoop,
     PingPong,
     SequenceStart,
     SequenceEnd,
@@ -14,4 +12,7 @@ public enum BlockType : byte
     MassiveOverlaps,
     LoopSelfJump,
     LoopSelfMultiJump,
+    
+    PolySequence,
+    PolyLoop,
 }

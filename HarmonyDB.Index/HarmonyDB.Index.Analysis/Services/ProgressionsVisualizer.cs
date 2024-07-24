@@ -72,12 +72,15 @@ public class ProgressionsVisualizer
         };
         
         lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace.Length, shortestPathBlocks, gridPositions, out var blockGroups));
-        
-        var jointLines = CreateJointsLines(graph, positions, rootsTrace.Length);
-        if (jointLines.Any())
+
+        if (parameters.ShowJoints)
         {
-            lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
-            lines.AddRange(jointLines);
+            var jointLines = CreateJointsLines(graph, positions, rootsTrace.Length);
+            if (jointLines.Any())
+            {
+                lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
+                lines.AddRange(jointLines);
+            }
         }
 
         lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
@@ -152,9 +155,10 @@ public class ProgressionsVisualizer
             .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
             {
-                LoopBlock loopBlock when parameters.GroupNormalized => loopBlock.Normalized,
-                SequenceBlock sequenceBlock when parameters.GroupNormalized => sequenceBlock.Normalized,
-                PingPongBlock pingPongBlock when parameters.GroupNormalized => pingPongBlock.Normalized,
+                LoopBlockBase block when parameters.GroupNormalized => block.Type + block.Normalized,
+                SequenceBlock sequenceBlock when parameters.GroupNormalized => "S" + sequenceBlock.Normalized,
+                PingPongBlock pingPongBlock when parameters.GroupNormalized => "PP" + pingPongBlock.Normalized,
+                PolySequenceBlock polySequenceBlock when parameters.GroupNormalized => "PS" + polySequenceBlock.Normalized,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
             .ToList();
@@ -167,8 +171,14 @@ public class ProgressionsVisualizer
             {
                 var (grouping, i) = pair;
                 
-                List<int> periodPositions = new(), almostPeriodPositions = new();
-                foreach (var loop in grouping.OfType<LoopBlock>())
+                List<int> startPeriodPositions = new(), endPeriodPositions = new(), periodPositions = new(1), almostPeriodPositions = new(), polyPeriodPositions = new();
+                foreach (var polySequenceBlock in grouping.OfType<PolySequenceBlock>())
+                {
+                    polyPeriodPositions.Add(positions[polySequenceBlock.StartIndex]);
+                    polyPeriodPositions.Add(positions[polySequenceBlock.EndIndex + 1]);
+                }
+                
+                foreach (var loop in grouping.OfType<LoopBlockBase>())
                 {
                     periodPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
                         .Select(x => x * loop.LoopLength + loop.StartIndex)
@@ -188,37 +198,42 @@ public class ProgressionsVisualizer
                             {
                                 var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
 
-                                if (found.Count > 2) throw new("Could not have happened.");
-
                                 var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
                                 var shortestPathLoop = found.Any(shortestPathBlocks.Contains);
 
                                 var isModulation = found.FirstOrDefault() switch
                                 {
-                                    LoopBlock loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlock>().First().NormalizationRoot,
+                                    LoopBlockBase loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlockBase>().First().NormalizationRoot,
                                     SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
+                                    PolySequenceBlock polySequenceBlock => polySequenceBlock.NormalizationRoot != grouping.Cast<PolySequenceBlock>().First().NormalizationRoot,
                                     _ => false,
                                 };
+                                
+                                var selfOverlapsDetected = grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected);
 
                                 var css = uselessLoop
                                     ? Text.CssTextLightYellow
-                                    : null;
+                                    : selfOverlapsDetected
+                                        ? Text.CssTextRed
+                                        : null;
 
                                 return found.Any()
                                     ? (periodPositions.Contains(j)
                                         ? '|'
-                                        : almostPeriodPositions.Contains(j)
-                                            ? Bullet
-                                            : isModulation
-                                                ? '~'
-                                                : shortestPathLoop
-                                                    ? '='
-                                                    : '-').AsText(css)
+                                        : polyPeriodPositions.Contains(j)
+                                            ? '+'
+                                            : almostPeriodPositions.Contains(j)
+                                                ? Bullet
+                                                : isModulation
+                                                    ? '~'
+                                                    : shortestPathLoop
+                                                        ? '='
+                                                        : '-').AsText(css)
                                     : gridPositions.Contains(j)
                                         ? '+'.AsText(Text.CssTextLightGray)
                                         : ' '.AsText();
                             })),
-                    right: $"{i + 1}: {(grouping.Count() == 1 || grouping.First() is PingPongBlock ? grouping.First().GetType().Name : $"{grouping.Key} {Times}{grouping.Count()}")}".AsText());
+                    right: $"{i + 1}: {(grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText());
             })
             .ToList();
     }

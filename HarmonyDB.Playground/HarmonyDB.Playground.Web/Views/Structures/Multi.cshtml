@@ -1,5 +1,7 @@
-﻿@using HarmonyDB.Index.Analysis.Models.TextGraphics
+﻿@using HarmonyDB.Index.Analysis.Models.Index.Enums
+@using HarmonyDB.Index.Analysis.Models.TextGraphics
 @using HarmonyDB.Playground.Web.Models.Home
+@using HarmonyDB.Playground.Web.Models.Structures
 @using HarmonyDB.Playground.Web.Tools
 @using HarmonyDB.Source.Api.Model.V1
 @using Microsoft.AspNetCore.Mvc.Localization
@@ -35,21 +37,91 @@
             @Html.ActionLink(ViewLocalizer["Include the Index API trace for developers"].Value, "Multi", Model with { IncludeTrace = true })
         }
     </li>
+    
+    <li>
+        @using (Html.BeginForm("Multi", "Structures", Model, FormMethod.Get))
+        {
+            @foreach (var value in Model.ExternalIds)
+            {
+                <input type="hidden" name="@nameof(Model.ExternalIds)" value="@value" />
+            }
+            @foreach (var value in Model.BlockTypes)
+            {
+                <input type="hidden" name="@nameof(Model.BlockTypes)" value="@value" />
+            }
+
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfOverLoops)" value="@Model.SequencesExcludeIfOverLoops.ToString()" />
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfOverLoopsWithTails)" value="@Model.SequencesExcludeIfOverLoopsWithTails.ToString()" />
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences)" value="@Model.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences.ToString()" />
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself)" value="@Model.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself.ToString()" />
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfContainsAllChordsMoreThanOnce)" value="@Model.SequencesExcludeIfContainsAllChordsMoreThanOnce.ToString()" />
+            <input type="hidden" name="@nameof(Model.SequencesExcludeIfContainsSuccessiveLoopsBreak)" value="@Model.SequencesExcludeIfContainsSuccessiveLoopsBreak.ToString()" />
+            <input type="hidden" name="@nameof(Model.LoopsExcludeIfContainsAllChordsMoreThanOnce)" value="@Model.LoopsExcludeIfContainsAllChordsMoreThanOnce.ToString()" />
+            <input type="hidden" name="@nameof(Model.LoopsExcludeIfContainsSuccessiveLoopsBreak)" value="@Model.LoopsExcludeIfContainsSuccessiveLoopsBreak.ToString()" />
+
+            <span>Add: </span>
+            <input type="text" name="@nameof(Model.ExternalIds)" />
+
+            <input type="submit" value="Add" />
+        }
+    </li>
+    
+    <li>
+        Block types:
+        <ul>
+            @foreach (var blockType in Enum.GetValues<BlockType>())
+            {
+                <li>
+                    @if (Model.BlockTypes.Contains(blockType))
+                    {
+                        <b>@blockType:</b>
+                        <span>included. </span>
+                        @if (blockType is not (BlockType.SequenceEnd or BlockType.SequenceStart or BlockType.Sequence))
+                        {
+                            @Html.ActionLink("Exclude", "Multi", Model with { BlockTypes = Model.BlockTypes.Where(x => x != blockType).ToList(), })
+                        }
+                    }
+                    else
+                    {
+                        <span>@blockType:</span>
+                        <span>excluded. </span>
+                        @Html.ActionLink("Include", "Multi", Model with { BlockTypes = Model.BlockTypes.Append(blockType).ToList(), })
+                    }
+                </li>
+            }
+        </ul>
+    </li>
+    
+    <li>
+        Poly blocks:
+        <ul>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfOverLoops" /> @nameof(Model.SequencesExcludeIfOverLoops) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfOverLoops = !Model.SequencesExcludeIfOverLoops })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfOverLoopsWithTails" /> @nameof(Model.SequencesExcludeIfOverLoopsWithTails) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfOverLoopsWithTails = !Model.SequencesExcludeIfOverLoopsWithTails })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences" /> @nameof(Model.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfExtendsLeftWithoutLosingOccurrences = !Model.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself" /> @nameof(Model.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself = !Model.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfContainsAllChordsMoreThanOnce" /> @nameof(Model.SequencesExcludeIfContainsAllChordsMoreThanOnce) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfContainsAllChordsMoreThanOnce = !Model.SequencesExcludeIfContainsAllChordsMoreThanOnce })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.SequencesExcludeIfContainsSuccessiveLoopsBreak" /> @nameof(Model.SequencesExcludeIfContainsSuccessiveLoopsBreak) @Html.ActionLink("switch", "Multi", Model with { SequencesExcludeIfContainsSuccessiveLoopsBreak = !Model.SequencesExcludeIfContainsSuccessiveLoopsBreak })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.LoopsExcludeIfContainsAllChordsMoreThanOnce" /> @nameof(Model.LoopsExcludeIfContainsAllChordsMoreThanOnce) @Html.ActionLink("switch", "Multi", Model with { LoopsExcludeIfContainsAllChordsMoreThanOnce = !Model.LoopsExcludeIfContainsAllChordsMoreThanOnce })
+            </li>
+            <li>
+                <input disabled="disabled" type="checkbox" checked="@Model.LoopsExcludeIfContainsSuccessiveLoopsBreak" /> @nameof(Model.LoopsExcludeIfContainsSuccessiveLoopsBreak) @Html.ActionLink("switch", "Multi", Model with { LoopsExcludeIfContainsSuccessiveLoopsBreak = !Model.LoopsExcludeIfContainsSuccessiveLoopsBreak })
+            </li>
+        </ul>
+    </li>
 </ul>
-
-
-@using (Html.BeginForm("Multi", "Structures", Model, FormMethod.Get))
-{
-    @foreach (var value in Model.ExternalIds)
-    {
-        <input type="hidden" name="@nameof(Model.ExternalIds)" value="@value" />
-    }
-
-    <span>Add: </span>
-    <input type="text" name="@nameof(Model.ExternalIds)" />
-
-    <input type="submit" value="Add" />
-}
 
 <script>
     function copyToClipboard(text) {
@@ -70,7 +142,10 @@
     <ul>
         <li>@Html.ActionLink("Remove", "Multi", Model with { ToRemove = i })</li>
         <li>@Html.ActionLink("Go to the song page", "Song", "Home", new SongModel { ExternalId = song.ExternalId, })</li>
-        <li><a href="javascript:void(0)" onclick="copyToClipboard('@song.ExternalId')">Copy @song.ExternalId 📋</a></li>
+        <li>
+            @Html.ActionLink("Just this", "Multi", Model with { ExternalIds = song.ExternalId.Once().ToList(), })
+            (<a href="javascript:void(0)" onclick="copyToClipboard('@song.ExternalId')">copy 📋</a>)
+        </li>
     </ul>
 
     @foreach (var (left, right) in visualizations)

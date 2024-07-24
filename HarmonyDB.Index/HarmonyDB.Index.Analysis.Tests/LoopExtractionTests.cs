@@ -789,7 +789,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         Assert.All(loops, l => Assert.Equal(
             l.Successions == Math.Round(l.Successions),
-            l.SuccessionsWhole));
+            l.OccurrencesWhole));
 
         Assert.All(loops, l => Assert.Equal(
             l.Successions >= 1,
