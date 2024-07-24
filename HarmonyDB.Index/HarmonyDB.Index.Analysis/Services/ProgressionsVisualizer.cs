@@ -167,17 +167,17 @@ public class ProgressionsVisualizer
         
         return groups
             .WithIndices()
-            .Select(pair =>
+            .SelectMany(pair =>
             {
                 var (grouping, i) = pair;
                 
-                List<int> startPeriodPositions = new(), endPeriodPositions = new(), periodPositions = new(1), almostPeriodPositions = new(), polyPeriodPositions = new();
+                List<int> periodPositions = new(1), almostPeriodPositions = new(), polySequencePeriodPositions = new();
                 foreach (var polySequenceBlock in grouping.OfType<PolySequenceBlock>())
                 {
-                    polyPeriodPositions.Add(positions[polySequenceBlock.StartIndex]);
-                    polyPeriodPositions.Add(positions[polySequenceBlock.EndIndex + 1]);
+                    polySequencePeriodPositions.Add(positions[polySequenceBlock.StartIndex]);
+                    polySequencePeriodPositions.Add(positions[polySequenceBlock.EndIndex + 1]);
                 }
-                
+
                 foreach (var loop in grouping.OfType<LoopBlockBase>())
                 {
                     periodPositions.AddRange(Enumerable.Range(0, loop.BlockLength / loop.LoopLength + 1)
@@ -190,37 +190,57 @@ public class ProgressionsVisualizer
                     }
                 }
 
-                return (left: Text.Join(
-                        Text.Empty,
-                        Enumerable
-                            .Range(0, rootsTraceLength)
-                            .Select(j =>
+                var left = Text.Join(
+                    Text.Empty,
+                    Enumerable
+                        .Range(0, rootsTraceLength)
+                        .Select(j =>
+                        {
+                            var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
+
+                            var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
+                            var shortestPathLoop = found.Any(shortestPathBlocks.Contains);
+
+                            var isModulation = found.FirstOrDefault() switch
                             {
-                                var found = grouping.Where(b => positions[b.StartIndex] <= j && positions[b.EndIndex + 1] >= j).ToList();
-
-                                var uselessLoop = found.All(x => x is IIndexedBlock indexedBlock && graph.Environments[indexedBlock].Detections.HasFlag(BlockDetections.UselessLoop));
-                                var shortestPathLoop = found.Any(shortestPathBlocks.Contains);
-
-                                var isModulation = found.FirstOrDefault() switch
-                                {
-                                    LoopBlockBase loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlockBase>().First().NormalizationRoot,
-                                    SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
-                                    PolySequenceBlock polySequenceBlock => polySequenceBlock.NormalizationRoot != grouping.Cast<PolySequenceBlock>().First().NormalizationRoot,
-                                    _ => false,
-                                };
+                                LoopBlockBase loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlockBase>().First().NormalizationRoot,
+                                SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
+                                PolySequenceBlock polySequenceBlock => polySequenceBlock.NormalizationRoot != grouping.Cast<PolySequenceBlock>().First().NormalizationRoot,
+                                _ => false,
+                            };
                                 
-                                var selfOverlapsDetected = grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected);
+                            var selfOverlapsDetected = grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected);
 
-                                var css = uselessLoop
-                                    ? Text.CssTextLightYellow
-                                    : selfOverlapsDetected
-                                        ? Text.CssTextRed
-                                        : null;
+                            var css = uselessLoop
+                                ? Text.CssTextLightYellow
+                                : selfOverlapsDetected
+                                    ? Text.CssTextRed
+                                    : null;
 
-                                return found.Any()
-                                    ? (periodPositions.Contains(j)
+                            if (!found.Any())
+                                return gridPositions.Contains(j)
+                                    ? '+'.AsText(Text.CssTextLightGray)
+                                    : ' '.AsText();
+
+                            char? @char = null;
+                            if (found.Count > 1)
+                            {
+                                var starts = found.Any(x => positions[x.StartIndex] == j);
+                                var ends = found.Any(x => positions[x.EndIndex + 1] == j);
+                                var middles = found.Any(x => positions[x.StartIndex] != j && positions[x.EndIndex + 1] != j);
+                                @char = starts && ends
+                                    ? 'X'
+                                    : starts && middles
+                                        ? '<'
+                                        : ends && middles
+                                            ? '>'
+                                            : null;
+                            }
+
+                            return (@char
+                                    ?? (periodPositions.Contains(j)
                                         ? '|'
-                                        : polyPeriodPositions.Contains(j)
+                                        : polySequencePeriodPositions.Contains(j)
                                             ? '+'
                                             : almostPeriodPositions.Contains(j)
                                                 ? Bullet
@@ -228,12 +248,12 @@ public class ProgressionsVisualizer
                                                     ? '~'
                                                     : shortestPathLoop
                                                         ? '='
-                                                        : '-').AsText(css)
-                                    : gridPositions.Contains(j)
-                                        ? '+'.AsText(Text.CssTextLightGray)
-                                        : ' '.AsText();
-                            })),
-                    right: $"{i + 1}: {(grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText());
+                                                        : '-')).AsText(css);
+                        }));
+
+                var right = $"{i + 1}: {(grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
+                
+                return (left, right).Once();
             })
             .ToList();
     }
