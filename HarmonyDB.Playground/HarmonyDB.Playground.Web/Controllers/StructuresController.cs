@@ -22,9 +22,9 @@ public class StructuresController : PlaygroundControllerBase
     private readonly ProgressionsBuilder _progressionsBuilder;
     private readonly ChordDataParser _chordDataParser;
     private readonly ProgressionsVisualizer _progressionsVisualizer;
-    private readonly Dijkstra _dijkstra;
+    private readonly PathsSearcher _pathsSearcher;
 
-    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer, Dijkstra dijkstra)
+    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer, PathsSearcher pathsSearcher)
     {
         _logger = logger;
         _sourceApiClient = sourceApiClient;
@@ -32,7 +32,7 @@ public class StructuresController : PlaygroundControllerBase
         _progressionsBuilder = progressionsBuilder;
         _chordDataParser = chordDataParser;
         _progressionsVisualizer = progressionsVisualizer;
-        _dijkstra = dijkstra;
+        _pathsSearcher = pathsSearcher;
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -73,7 +73,7 @@ public class StructuresController : PlaygroundControllerBase
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
                 var blocks = _indexExtractor.FindBlocks(sequence, roots, model.BlockTypes, model);
                 var graph = _indexExtractor.CreateGraph(blocks);
-                var shortestPath = _dijkstra.GetShortestPath(graph);
+                var shortestPath = _pathsSearcher.Dijkstra(graph);
                 return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new() { ShowJoints = false, });
             }).ToList();
         }).ToList();

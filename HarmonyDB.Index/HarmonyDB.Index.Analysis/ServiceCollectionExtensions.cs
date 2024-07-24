@@ -13,6 +13,6 @@ public static class ServiceCollectionExtensions
         .AddSingleton<IndexExtractor>()
         .AddSingleton<InputParser>()
         .AddSingleton<ProgressionsSearch>()
-        .AddSingleton<Dijkstra>()
+        .AddSingleton<PathsSearcher>()
         .AddIndexAnalysisEm();
 }

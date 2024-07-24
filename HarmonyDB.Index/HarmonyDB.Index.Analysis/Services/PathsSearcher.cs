@@ -5,9 +5,9 @@ using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class Dijkstra
+public class PathsSearcher
 {
-    public List<IBlockJoint> GetShortestPath(BlockGraph graph)
+    public List<IBlockJoint> Dijkstra(BlockGraph graph)
     {
         var startBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceStart).Block;
         var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceEnd).Block;

@@ -16,7 +16,7 @@ using static System.Reflection.Metadata.BlobBuilder;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
-public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer, Dijkstra dijkstra)
+public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer, PathsSearcher pathsSearcher)
 {
     [InlineData("Am D G E Am D G E Am D G E Am D G E", 5)] // normalized start of Am-D-G-E is D.
     [InlineData("Gm C F D Gm C F D Gm C F D Gm C F D", 3)]
@@ -746,7 +746,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         
         var all = indexExtractor.FindBlocks(sequence, roots, BlockTypes.All);
         var graph = indexExtractor.CreateGraph(all);
-        var shortestPath = dijkstra.GetShortestPath(graph);
+        var shortestPath = pathsSearcher.Dijkstra(graph);
         TraceAndTest(graph);
 
         // sequence integrity test
