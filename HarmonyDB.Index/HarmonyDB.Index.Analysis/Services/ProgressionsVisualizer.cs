@@ -209,7 +209,7 @@ public class ProgressionsVisualizer
                                 _ => false,
                             };
                                 
-                            var selfOverlapsDetected = grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected);
+                            var selfOverlapsDetected = grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected);
 
                             var css = uselessLoop
                                 ? Text.CssTextLightYellow
@@ -251,7 +251,7 @@ public class ProgressionsVisualizer
                                                         : '-')).AsText(css);
                         }));
 
-                var right = $"{i + 1}: {(grouping.OfType<PolySequenceBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
+                var right = $"{i + 1}: {(grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
                 
                 return (left, right).Once();
             })

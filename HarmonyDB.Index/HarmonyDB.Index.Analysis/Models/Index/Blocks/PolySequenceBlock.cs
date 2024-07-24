@@ -4,7 +4,7 @@ using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
 namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
-public class PolySequenceBlock : IIndexedBlock
+public class PolySequenceBlock : IPolyBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Sequence { get; init; }
 

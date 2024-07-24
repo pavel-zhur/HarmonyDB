@@ -228,7 +228,7 @@ public class IndexExtractor
                 .ToDictionary(x => x.p);
 
         // Detect self overlaps
-        foreach (var group in polySequences.Select(x => x.Value.s).GroupBy(x => (x.Normalized, x.NormalizationRoot)))
+        foreach (var group in polySequences.Select(x => x.Value.s).Concat(polyLoops.Cast<IPolyBlock>()).GroupBy(x => (x.Normalized, x.NormalizationRoot)))
         {
             var open = 0;
             if (group
@@ -244,8 +244,6 @@ public class IndexExtractor
                 {
                     polySequenceBlock.SelfOverlapsDetected = true;
                 }
-                
-                break;
             }
         }
 
