@@ -158,6 +158,7 @@ public class ProgressionsVisualizer
                 LoopBlockBase block when parameters.GroupNormalized => block.Type + block.Normalized,
                 SequenceBlock sequenceBlock when parameters.GroupNormalized => "S" + sequenceBlock.Normalized,
                 PingPongBlock pingPongBlock when parameters.GroupNormalized => "PP" + pingPongBlock.Normalized,
+                RoundRobinBlock roundRobinBlock when parameters.GroupNormalized => "RR" + roundRobinBlock.Normalized,
                 PolySequenceBlock polySequenceBlock when parameters.GroupNormalized => "PS" + polySequenceBlock.Normalized,
                 _ => Random.Shared.NextDouble().ToString(CultureInfo.InvariantCulture),
             })
@@ -251,7 +252,7 @@ public class ProgressionsVisualizer
                                                         : '-')).AsText(css);
                         }));
 
-                var right = $"{i + 1}: {(grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
+                var right = $"{i + 1}: {(grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock or RoundRobinBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
                 
                 return (left, right).Once();
             })

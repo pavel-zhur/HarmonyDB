@@ -8,4 +8,6 @@ public class BlockGraph
     public required IReadOnlyDictionary<IIndexedBlock, IBlockEnvironment> Environments { get; init; }
     
     public required IReadOnlyList<IBlockJoint> Joints { get; init; }
+    
+    public required ILookup<int, IIndexedBlock> BlocksAt { get; init; }
 }

@@ -7,10 +7,10 @@ namespace HarmonyDB.Index.Analysis.Services;
 
 public class PathsSearcher
 {
-    public List<IBlockJoint> Dijkstra(BlockGraph graph)
+    public List<IBlockJoint> Dijkstra(BlockGraph graph, IIndexedBlock? startBlock = null, IIndexedBlock? targetBlock = null)
     {
-        var startBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceStart).Block;
-        var targetBlock = graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceEnd).Block;
+        startBlock ??= graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceStart).Block;
+        targetBlock ??= graph.Environments.Values.Single(x => x.Block.Type == BlockType.SequenceEnd).Block;
 
         var distances = new Dictionary<IIndexedBlock, float>();
         var previousJoints = new Dictionary<IIndexedBlock, IBlockJoint?>();

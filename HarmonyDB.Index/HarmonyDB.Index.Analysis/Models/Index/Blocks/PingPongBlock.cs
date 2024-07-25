@@ -7,15 +7,17 @@ namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 public class PingPongBlock : IIndexedBlock
 {
-    public IReadOnlyList<IIndexedBlock> Children { get; init; }
+    public required IReadOnlyList<IIndexedBlock> Children { get; init; }
 
     IEnumerable<IIndexedBlock> IIndexedBlock.Children => Children;
 
     public BlockType Type => BlockType.PingPong;
     
     public string Normalized =>
-        string.Join(", ", BlockJoint.GetNormalization(Children[0], Children[1]).Once()
-            .Append(BlockJoint.GetNormalization(Children[1], Children[2])).OrderBy(x => x));
+        string.Join(", ", 
+            BlockJoint.GetNormalization(Children[0], Children[1]).Once()
+                .Append(BlockJoint.GetNormalization(Children[1], Children[2]))
+                .OrderBy(x => x));
 
     public byte NormalizationRoot => throw new InvalidOperationException(
         "The ping pong block does not currently participate in other higher level blocks, and probably will not. So this property is not implemented.");

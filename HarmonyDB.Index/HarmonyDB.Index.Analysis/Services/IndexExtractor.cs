@@ -14,7 +14,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class IndexExtractor
+public class IndexExtractor(PathsSearcher pathsSearcher)
 {
     public (List<PolySequenceBlock> polySequences, List<PolyLoopBlock> polyLoops) FindPolyBlocks(
         ReadOnlyMemory<CompactHarmonyMovement> sequence, 
@@ -282,6 +282,50 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
+    public List<RoundRobinBlock> FindRoundRobins(BlockGraph graph) 
+        => graph.Environments // for each indexed block
+            .Where(x => !x.Value.Parents.Any()) // without parents (top-level)
+            .Where(x => x.Key is not IPolyBlock) // not compatible with poly blocks
+            .Select(x => x.Value.Block)
+            .GroupBy(x => (x.Normalized, x.NormalizationRoot, x.Type)) // find all groups of the same blocks
+            .SelectMany(g => g // and each group will return all paths for every consecutive pair in it
+                .OrderBy(x => x.StartIndex)
+                .AsPairs() // get pairs
+                .Where(p => pathsSearcher
+                    .Dijkstra(graph, p.previous, p.current)
+                    .SelectSingle(p => 
+                        p.Count > 1
+                        && !p
+                        .Select(j => j.Block2.Block)
+                        .Select(b => (b.Normalized, b.NormalizationRoot))
+                        .AnyDuplicates()))
+                .Select(p => Enumerable.Range(p.previous.StartIndex, p.current.EndIndex - p.previous.StartIndex + 1) // at every position between the blocks
+                    .SelectMany(i => graph.BlocksAt[i]) // get all distinct blocks
+                    .Where(x => x is not IPolyBlock) // not compatible with poly blocks
+                    .Distinct()
+                    .Where(x => x.StartIndex >= p.previous.StartIndex && x.EndIndex <= p.current.EndIndex) // only blocks fully within the current segment
+                    .Where(x => !graph.Environments[x].Parents.Any()) // top-level
+                    .OrderBy(x => x == p.previous ? 0 : 1) // let the from-block go first
+                    .ThenBy(x => x == p.current ? 1 : 0) // and the to-block go next
+                    .ThenBy(x => x.StartIndex) // rest everything is in order
+                    .ThenBy(x => x.EndIndex)
+                    .ThenBy(x => x.Normalized) // any order works ok for the purpose of invariant normalizations
+                    .ToList())
+                .Where(p => p.Count > 2 ? true : throw new("Could never have happened.")))
+            // now we've got all different paths, many of them are overlapping (they should turn to the same round-robin block)
+            .GroupBy(p => RoundRobinBlock.GetNormalization(p, p.Count - 1)) // find groups of the same normalization
+            .SelectMany(g => g // for each group, split to chunks of non-overlapping paths
+                .OrderBy(x => x[0].StartIndex)
+                .WithPrevious()
+                .ToChunksByShouldStartNew(p => p.previous?[^1].StartIndex < p.current[0].StartIndex) // if there's a gap between the last of the previous and the first of the current, it's a new block
+                .Select(c => new RoundRobinBlock
+                {
+                    Children = c.SelectMany(x => x.current).Distinct().ToList(),
+                    ChildrenPeriodLength = c.First().current.Count - 1,
+                })
+            )
+            .ToList();
+
     public List<PingPongBlock> FindPingPongs(BlockGraph graph)
         => graph.Joints
             .SelectMany(l => l.Block2.RightJoints.Select(r => (l, r)))
@@ -311,7 +355,7 @@ public class IndexExtractor
             })
             .ToList();
 
-    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
+    public List<LoopBlock> FindLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
     {
         Dictionary<(byte root, ChordType chordType), int> indices = new()
         {
@@ -446,7 +490,10 @@ public class IndexExtractor
     public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
         => Enumerable
             .Range(0, sequence.Length)
-            .Except(existingBlocks.OfType<IIndexedBlock>().SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
+            .Except(existingBlocks
+                .OfType<IIndexedBlock>()
+                .Where(x => x is not IPolyBlock) // the sequences search (to make the graph connected) will not notice the poly blocks because some algorithms (like the round-robin search) ignore poly blocks but require sequences.
+                .SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
             .OrderBy(x => x)
             .WithPrevious()
             .ToChunksByShouldStartNew(x => x.previous + 1 != x.current)
@@ -535,7 +582,7 @@ public class IndexExtractor
 
         if (blockTypes.Contains(BlockType.Loop))
         {
-            var loops = FindSimpleLoops(sequence, roots);
+            var loops = FindLoops(sequence, roots);
             blocks.AddRange(loops);
 
             if (blockTypes.Contains(BlockType.LoopSelfJump) || blockTypes.Contains(BlockType.LoopSelfMultiJump))
@@ -579,10 +626,19 @@ public class IndexExtractor
             blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
         }
 
-        if (blockTypes.Contains(BlockType.PingPong))
+        if (blockTypes.Contains(BlockType.PingPong) || blockTypes.Contains(BlockType.RoundRobin))
         {
             var graph = CreateGraph(blocks);
-            blocks.AddRange(FindPingPongs(graph));
+
+            if (blockTypes.Contains(BlockType.RoundRobin))
+            {
+                blocks.AddRange(FindRoundRobins(graph));
+            }
+            
+            if (blockTypes.Contains(BlockType.PingPong))
+            {
+                blocks.AddRange(FindPingPongs(graph));
+            }
         }
 
         if (blockTypes.Contains(BlockType.SequenceStart))
@@ -673,10 +729,15 @@ public class IndexExtractor
             environment.Detections |= BlockDetections.UselessLoop;
         }
 
+        var blocksAt = environments.Keys
+            .SelectMany(b => Enumerable.Range(b.StartIndex, b.EndIndex - b.StartIndex + 1).Select(i => (b, i)))
+            .ToLookup(x => x.i, x => x.b);
+        
         return new()
         {
             Environments = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
             Joints = joints,
+            BlocksAt = blocksAt,
         };
     }
 
@@ -754,7 +815,7 @@ public class IndexExtractor
         foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
         {
             var roots = CreateRoots(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
-            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, roots);
+            var loops = FindLoops(extendedHarmonyMovementsSequence.Movements, roots);
 
             foreach (var loop in loops)
             {

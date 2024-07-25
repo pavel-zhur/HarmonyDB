@@ -6,6 +6,8 @@ public enum BlockType : byte
     Sequence,
 
     PingPong,
+    RoundRobin,
+    
     SequenceStart,
     SequenceEnd,
     
