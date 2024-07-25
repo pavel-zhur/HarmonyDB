@@ -205,6 +205,7 @@ public class ProgressionsVisualizer
                             var isModulation = found.FirstOrDefault() switch
                             {
                                 LoopBlockBase loopBlock => loopBlock.NormalizationRoot != grouping.Cast<LoopBlockBase>().First().NormalizationRoot,
+                                RoundRobinBlock roundRobinBlock => roundRobinBlock.NormalizationRoot != grouping.Cast<RoundRobinBlock>().First().NormalizationRoot,
                                 SequenceBlock sequenceBlock => sequenceBlock.NormalizationRoot != grouping.Cast<SequenceBlock>().First().NormalizationRoot,
                                 PolySequenceBlock polySequenceBlock => polySequenceBlock.NormalizationRoot != grouping.Cast<PolySequenceBlock>().First().NormalizationRoot,
                                 _ => false,

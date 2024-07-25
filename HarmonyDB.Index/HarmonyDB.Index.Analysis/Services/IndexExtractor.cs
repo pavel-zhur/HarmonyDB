@@ -313,16 +313,14 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
                     .ToList())
                 .Where(p => p.Count > 2 ? true : throw new("Could never have happened.")))
             // now we've got all different paths, many of them are overlapping (they should turn to the same round-robin block)
-            .GroupBy(p => RoundRobinBlock.GetNormalization(p, p.Count - 1)) // find groups of the same normalization
+            .GroupBy(p => (RoundRobinBlock.GetNormalization(p, p.Count - 1, out var normalizationRoot), normalizationRoot)) // find groups of the same normalization
             .SelectMany(g => g // for each group, split to chunks of non-overlapping paths
                 .OrderBy(x => x[0].StartIndex)
                 .WithPrevious()
                 .ToChunksByShouldStartNew(p => p.previous?[^1].StartIndex < p.current[0].StartIndex) // if there's a gap between the last of the previous and the first of the current, it's a new block
-                .Select(c => new RoundRobinBlock
-                {
-                    Children = c.SelectMany(x => x.current).Distinct().ToList(),
-                    ChildrenPeriodLength = c.First().current.Count - 1,
-                })
+                .Select(c => new RoundRobinBlock(
+                    c.SelectMany(x => x.current).Distinct().ToList(),
+                    c.First().current.Count - 1))
             )
             .ToList();
 
