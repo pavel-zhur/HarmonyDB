@@ -15,6 +15,8 @@ public record MultiModel : PolyBlocksExtractionParameters
     [
         BlockType.Sequence,
         BlockType.SequenceStart,
-        BlockType.SequenceEnd
+        BlockType.SequenceEnd,
+        BlockType.Loop,
+        BlockType.RoundRobin,
     ];
 }
