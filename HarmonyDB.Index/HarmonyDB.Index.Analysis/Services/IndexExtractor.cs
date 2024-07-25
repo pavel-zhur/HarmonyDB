@@ -626,15 +626,24 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
 
         if (blockTypes.Contains(BlockType.PingPong) || blockTypes.Contains(BlockType.RoundRobin))
         {
-            var graph = CreateGraph(blocks);
-
             if (blockTypes.Contains(BlockType.RoundRobin))
             {
-                blocks.AddRange(FindRoundRobins(graph));
+                while (true)
+                {
+                    var graph = CreateGraph(blocks);
+                    var roundRobins = FindRoundRobins(graph);
+                    if (!roundRobins.Any())
+                    {
+                        break;
+                    }
+
+                    blocks.AddRange(roundRobins);
+                }
             }
             
             if (blockTypes.Contains(BlockType.PingPong))
             {
+                var graph = CreateGraph(blocks);
                 blocks.AddRange(FindPingPongs(graph));
             }
         }
