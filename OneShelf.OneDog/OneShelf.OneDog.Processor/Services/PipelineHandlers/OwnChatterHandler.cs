@@ -71,19 +71,9 @@ public class OwnChatterHandler : ChatterHandlerBase
                 .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
                 .ToList();
 
-            var available = ScopeAwareness.Domain.ImagesLimit.Limit - images.Sum(x => x.count);
-            if (available <= 0)
+            if (images.Sum(x => x.count) >= ScopeAwareness.Domain.ImagesLimit.Limit)
             {
-                imagesUnavailableUntil = images
-                    // Sort images by creation date
-                    .OrderBy(x => x.CreatedOn)
-                    // Iterate through images, adjusting the available count
-                    .TakeWhile(x => (available += x.count) <= 0)
-                    // Get the last image in the sequence
-                    .Last()
-                    // Calculate when images will be available again
-                    .CreatedOn
-                    .Add(ScopeAwareness.Domain.ImagesLimit.Window);
+                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(ScopeAwareness.Domain.ImagesLimit.Window);
             }
         }
 
