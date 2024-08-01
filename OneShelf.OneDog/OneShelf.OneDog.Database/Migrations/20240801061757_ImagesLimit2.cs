@@ -11,14 +11,14 @@ namespace OneShelf.OneDog.Database.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<long>(
+            migrationBuilder.DropColumn(
+                name: "ImagesLimit_Window",
+                table: "Domains");
+            migrationBuilder.AddColumn<long>(
                 name: "ImagesLimit_Window",
                 table: "Domains",
                 type: "bigint",
-                nullable: true,
-                oldClrType: typeof(TimeSpan),
-                oldType: "time",
-                oldNullable: true);
+                nullable: true);
         }
 
         /// <inheritdoc />
