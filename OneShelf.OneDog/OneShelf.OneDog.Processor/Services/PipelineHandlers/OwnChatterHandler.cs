@@ -184,7 +184,7 @@ public class OwnChatterHandler : ChatterHandlerBase
             text = $"⟳ {text}";
         }
 
-        if (result.Images.Any())
+        if (result.Images.Any() && !imagesUnavailableUntil.HasValue)
         {
             try
             {
