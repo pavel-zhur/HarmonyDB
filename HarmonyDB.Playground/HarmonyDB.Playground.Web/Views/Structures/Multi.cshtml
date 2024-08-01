@@ -39,6 +39,16 @@
     </li>
     
     <li>
+        <span>Timers:</span>
+        <ul>
+            @foreach (var timer in (Dictionary<string, TimeSpan>)ViewBag.Timers)
+            {
+                <li>@timer.Key: @timer.Value.TotalMilliseconds.ToString("N0") ms</li>
+            }
+        </ul>
+    </li>
+
+    <li>
         @using (Html.BeginForm("Multi", "Structures", Model, FormMethod.Get))
         {
             @foreach (var value in Model.ExternalIds)

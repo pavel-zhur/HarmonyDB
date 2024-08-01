@@ -2,20 +2,14 @@ using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Globalization;
-using HarmonyDB.Index.Analysis.Models.V1;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1;
-using HarmonyDB.Source.Api.Model.V1.Api;
-using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Api.Client;
 using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Index.Analysis.Models;
-using HarmonyDB.Index.Analysis.Models.CompactV1;
 using Microsoft.AspNetCore.Localization;
-using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Playground.Web.Models.Home;
 using OneShelf.Common.Api.Common;
@@ -28,13 +22,12 @@ public class HomeController : PlaygroundControllerBase
     private readonly IndexApiClient _indexApiClient;
     private readonly SourceApiClient _sourceApiClient;
     private readonly ProgressionsSearch _progressionsSearch;
-    private readonly IndexExtractor _indexExtractor;
     private readonly ProgressionsBuilder _progressionsBuilder;
     private readonly ChordDataParser _chordDataParser;
     private readonly InputParser _inputParser;
     private readonly ProgressionsVisualizer _progressionsVisualizer;
 
-    public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer, IndexExtractor indexExtractor)
+    public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer)
     {
         _logger = logger;
         _indexApiClient = indexApiClient;
@@ -44,7 +37,6 @@ public class HomeController : PlaygroundControllerBase
         _chordDataParser = chordDataParser;
         _inputParser = inputParser;
         _progressionsVisualizer = progressionsVisualizer;
-        _indexExtractor = indexExtractor;
     }
 
     public IActionResult MyIp()
