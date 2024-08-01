@@ -253,7 +253,13 @@ public class ProgressionsVisualizer
                                                         : '-')).AsText(css);
                         }));
 
-                var right = $"{i + 1}: {(grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : "")}{(grouping.Count() == 1 ? grouping.First().GetType().Name : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock or RoundRobinBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}")}".AsText();
+                var selfOverlap = grouping.OfType<IPolyBlock>().Any(x => x.SelfOverlapsDetected) ? "SOLP " : null;
+                var roundRobinLevel = grouping.OfType<RoundRobinBlock>().Select(x => x.Level).FirstOrDefault().SelectSingle(x => x > 0 ? $"L{x} " : null);
+                var title = grouping.Count() == 1 
+                    ? grouping.First().GetType().Name 
+                    : $"{(grouping.First() is PingPongBlock or PolySequenceBlock or PolyLoopBlock or RoundRobinBlock ? grouping.First().GetType().Name : grouping.Key)} {Times}{grouping.Count()}";
+                
+                var right = $"{i + 1}: {selfOverlap}{roundRobinLevel}{title}".AsText();
                 
                 return (left, right).Once();
             })

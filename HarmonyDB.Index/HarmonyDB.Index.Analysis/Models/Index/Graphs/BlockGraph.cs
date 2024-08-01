@@ -10,4 +10,6 @@ public class BlockGraph
     public required IReadOnlyList<IBlockJoint> Joints { get; init; }
     
     public required ILookup<int, IIndexedBlock> BlocksAt { get; init; }
+
+    public required ILookup<(int startIndex, int endIndex), IIndexedBlock> BlocksByPositions { get; init; }
 }

@@ -306,7 +306,7 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
                     .Where(x => x.StartIndex >= p.previous.StartIndex && x.EndIndex <= p.current.EndIndex) // only blocks fully within the current segment
                     .Where(x => !graph.Environments[x].Parents.Any()) // top-level
                     .OrderBy(x => x == p.previous ? 0 : 1) // let the from-block go first
-                    .ThenBy(x => x == p.current ? 1 : 0) // and the to-block go next
+                    .ThenBy(x => x == p.current ? 1 : 0) // and the to-block go last
                     .ThenBy(x => x.StartIndex) // rest everything is in order
                     .ThenBy(x => x.EndIndex)
                     .ThenBy(x => x.Normalized) // any order works ok for the purpose of invariant normalizations
@@ -321,7 +321,8 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
                 .Select(c => new RoundRobinBlock(
                     c.SelectMany(x => x.current).Distinct().ToList(),
                     c.First().current.Count - 1))
-            )
+                // quick testing showed that this condition is not needed, the segments previously covered by existing blocks are now not found (probably due to the top-level requirement)
+                .Where(b => graph.BlocksByPositions[(b.StartIndex, b.EndIndex)].All(x => x.Type != BlockType.RoundRobin)))
             .ToList();
 
     public List<PingPongBlock> FindPingPongs(BlockGraph graph)
@@ -736,15 +737,15 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
             environment.Detections |= BlockDetections.UselessLoop;
         }
 
-        var blocksAt = environments.Keys
-            .SelectMany(b => Enumerable.Range(b.StartIndex, b.EndIndex - b.StartIndex + 1).Select(i => (b, i)))
-            .ToLookup(x => x.i, x => x.b);
-        
         return new()
         {
             Environments = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
             Joints = joints,
-            BlocksAt = blocksAt,
+            BlocksAt = environments.Keys
+                .SelectMany(b => Enumerable.Range(b.StartIndex, b.EndIndex - b.StartIndex + 1).Select(i => (b, i)))
+                .ToLookup(x => x.i, x => x.b),
+            BlocksByPositions = environments.Keys
+                .ToLookup(x => (x.StartIndex, x.EndIndex)),
         };
     }
 

@@ -12,7 +12,9 @@ public class RoundRobinBlock : IIndexedBlock
         Children = children;
         ChildrenPeriodLength = childrenPeriodLength;
 
-        Normalized = GetNormalization(Children, ChildrenPeriodLength, out var normalizationRoot);
+        Level = children.Select(x => x is RoundRobinBlock roundRobinBlock ? roundRobinBlock.Level : 0).Max() + 1;
+
+        Normalized = GetNormalization(Children, ChildrenPeriodLength, out var normalizationRoot, Level);
         NormalizationRoot = normalizationRoot;
     }
 
@@ -33,6 +35,8 @@ public class RoundRobinBlock : IIndexedBlock
     public int BlockLength => EndIndex - StartIndex + 1;
     
     public int ChildrenPeriodLength { get; }
+    
+    public int Level { get; }
 
     public string? GetNormalizedCoordinate(int index)
     {
@@ -47,7 +51,7 @@ public class RoundRobinBlock : IIndexedBlock
     /// <param name="children"></param>
     /// <param name="distinctCount"></param>
     /// <returns></returns>
-    public static string GetNormalization(IReadOnlyList<IIndexedBlock> children, int distinctCount, out byte normalizationRoot)
+    public static string GetNormalization(IReadOnlyList<IIndexedBlock> children, int distinctCount, out byte normalizationRoot, int? level = null)
     {
         string GetNormalizationAt(int i) => BlockJoint.GetNormalization(children[i], children[i + 1]);
 
@@ -64,6 +68,7 @@ public class RoundRobinBlock : IIndexedBlock
                 minChild,
                 distinctCount)
             .Select(i => i % distinctCount)
-            .Select(GetNormalizationAt));
+            .Select(GetNormalizationAt)
+            .Prepend(level?.ToString()));
     }
 }
