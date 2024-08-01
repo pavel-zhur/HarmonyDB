@@ -330,7 +330,7 @@ public class DialogRunner
         {
             if (imagesUnavailableUntil.HasValue)
             {
-                messages.Add(new(Role.System, string.Format(DialogConstants.ImagesLimitMessage, imagesUnavailableUntil)));
+                messages.Add(new(Role.System, string.Format(DialogConstants.ImagesLimitMessage, imagesUnavailableUntil.Value.ToString("f"))));
             }
             else
             {
