@@ -31,6 +31,14 @@ namespace OneShelf.Billing.Api.Functions
             {
                 Usages = (await _songsDatabase.BillingUsages
                         .SelectSingle(x => allRequest.DomainId.HasValue ? x.Where(x => x.DomainId == allRequest.DomainId) : x)
+                        .SelectSingle(x =>
+                        {
+                            if (!allRequest.Window.HasValue) 
+                                return x;
+
+                            var from = DateTime.Now.Add(-allRequest.Window.Value);
+                            return x.Where(x => x.CreatedOn >= from);
+                        })
                         .ToListAsync())
                     .Select(x => new Usage
                     {

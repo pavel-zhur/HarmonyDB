@@ -20,10 +20,11 @@ public class BillingApiClient : ApiClientBase<BillingApiClient>
         _options = options.Value;
     }
 
-    public async Task<AllResponse> All(int? domainId = null)
+    public async Task<AllResponse> All(int? domainId = null, TimeSpan? window = null)
         => await PostWithCode<AllRequest, AllResponse>(BillingApiUrls.All, new()
         {
             DomainId = domainId,
+            Window = window,
         });
 
     public async Task Add(Usage usage)

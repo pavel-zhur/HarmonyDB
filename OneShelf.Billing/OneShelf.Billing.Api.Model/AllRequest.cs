@@ -2,5 +2,7 @@
 
 public class AllRequest
 {
-    public int? DomainId { get; set; }
+    public int? DomainId { get; init; }
+    
+    public TimeSpan? Window { get; init; }
 }
