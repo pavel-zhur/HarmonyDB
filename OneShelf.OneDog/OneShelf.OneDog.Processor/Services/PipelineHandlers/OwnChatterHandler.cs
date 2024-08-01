@@ -125,7 +125,7 @@ public class OwnChatterHandler : ChatterHandlerBase
                 UseCase = "own chatter",
                 AdditionalBillingInfo = "one dog",
                 DomainId = ScopeAwareness.DomainId,
-            }, checkingIsStillLast.Token);
+            }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)
             {
