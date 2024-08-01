@@ -47,7 +47,8 @@ public class OwnChatterHandler : ChatterHandlerBase
 
     private async Task Respond(Update update)
     {
-        var since = DateTime.Now.AddDays(-1);
+        var now = DateTime.Now;
+        var since = now.AddDays(-1);
 
         var interactions = await DogDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterMessage ||
@@ -58,6 +59,23 @@ public class OwnChatterHandler : ChatterHandlerBase
             .OrderByDescending(x => x.CreatedOn)
             .Take(20)
             .ToListAsync();
+
+        DateTime? imagesUnavailableUntil = null;
+        if (ScopeAwareness.Domain.ImagesLimit != null)
+        {
+            var imagesSince = now.Add(-ScopeAwareness.Domain.ImagesLimit.Window);
+            var images = (await DogDatabase.Interactions
+                .Where(x => x.InteractionType == InteractionType.ImagesSuccess)
+                .Where(x => x.CreatedOn >= imagesSince)
+                .ToListAsync())
+                .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
+                .ToList();
+
+            if (images.Sum(x => x.count) >= ScopeAwareness.Domain.ImagesLimit.Limit)
+            {
+                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(ScopeAwareness.Domain.ImagesLimit.Window);
+            }
+        }
 
         interactions = interactions.AsEnumerable().Reverse().ToList();
 
@@ -107,7 +125,7 @@ public class OwnChatterHandler : ChatterHandlerBase
                 UseCase = "own chatter",
                 AdditionalBillingInfo = "one dog",
                 DomainId = ScopeAwareness.DomainId,
-            }, checkingIsStillLast.Token);
+            }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)
             {
@@ -138,13 +156,26 @@ public class OwnChatterHandler : ChatterHandlerBase
 
         DogDatabase.Interactions.Add(new()
         {
-            CreatedOn = DateTime.Now,
+            CreatedOn = now,
             InteractionType = InteractionType.OwnChatterMemoryPoint,
             Serialized = JsonSerializer.Serialize(newMessagePoint),
             ShortInfoSerialized = JsonSerializer.Serialize(result),
             UserId = TelegramOptions.AdminId,
             DomainId = ScopeAwareness.DomainId,
         });
+
+        if (result.Images.Any())
+        {
+            DogDatabase.Interactions.Add(new()
+            {
+                CreatedOn = now,
+                InteractionType = imagesUnavailableUntil.HasValue ? InteractionType.ImagesLimit : InteractionType.ImagesSuccess,
+                DomainId = ScopeAwareness.DomainId,
+                Serialized = result.Images.Count.ToString(),
+                UserId = TelegramOptions.AdminId,
+            });
+        }
+        
         await DogDatabase.SaveChangesAsync(cancellationToken: default);
 
         var text = result.Text;
