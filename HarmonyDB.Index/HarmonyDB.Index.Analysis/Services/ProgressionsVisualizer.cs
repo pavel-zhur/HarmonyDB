@@ -83,9 +83,12 @@ public class ProgressionsVisualizer
             }
         }
 
-        lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
-        var pathLines = CreatePathLines(shortestPath, blockGroups);
-        lines.AddRange(pathLines);
+        if (parameters.ShowPath)
+        {
+            lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
+            var pathLines = CreatePathLines(shortestPath, blockGroups);
+            lines.AddRange(pathLines);
+        }
 
         return lines;
     }

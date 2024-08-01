@@ -93,7 +93,7 @@ public class StructuresController : PlaygroundControllerBase
                 dijkstraTime += stopwatch.Elapsed;
 
                 stopwatch.Restart();
-                var visualization = _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new() { ShowJoints = false, });
+                var visualization = _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new() { ShowJoints = false, ShowPath = false, });
                 visualizationTime += stopwatch.Elapsed;
 
                 return visualization;
