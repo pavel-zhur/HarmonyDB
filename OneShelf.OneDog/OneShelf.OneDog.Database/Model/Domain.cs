@@ -34,4 +34,6 @@ public class Domain
     public required bool IsEnabled { get; set; }
 
     public float? BillingRatio { get; set; }
+    
+    public ImagesLimit? ImagesLimit { get; set; }
 }

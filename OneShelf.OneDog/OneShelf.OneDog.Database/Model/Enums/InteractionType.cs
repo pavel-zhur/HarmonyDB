@@ -9,4 +9,8 @@ public enum InteractionType
     OwnChatterMemoryPoint,
 
     OwnChatterResetDialog,
+    
+    ImagesSuccess,
+    
+    ImagesLimit,
 }

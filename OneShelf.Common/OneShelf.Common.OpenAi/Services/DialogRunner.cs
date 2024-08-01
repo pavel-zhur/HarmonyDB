@@ -30,7 +30,7 @@ public class DialogRunner
     }
 
     public async Task<(DialogResult result, ChatBotMemoryPointWithTraces newMessagePoint)> Execute(
-        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default)
+        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default, DateTime? imagesUnavailableUntil = null)
     {
         var lastTopicChange = existingMemory.WithIndices().LastOrDefault(x => x.x is ChatBotMemoryPoint
         {
@@ -75,7 +75,7 @@ public class DialogRunner
         messages.Add(message);
         newMessagePoint.Messages.Add(message);
 
-        var (images, newMessages) = LookForImages(message);
+        var (images, newMessages) = LookForImages(message, imagesUnavailableUntil);
         newMessagePoint.Messages.AddRange(newMessages);
         messages.AddRange(newMessages);
 
@@ -87,7 +87,7 @@ public class DialogRunner
             newMessagePoint.ImageTraces.AddRange(imagesDeserialized);
 
             if (cancellationToken.IsCancellationRequested) throw new TaskCanceledException();
-            if (imagesDeserialized.Any())
+            if (imagesDeserialized.Any() && !imagesUnavailableUntil.HasValue)
             {
                 urlsTask = GenerateImages(imagesDeserialized, configuration, cancellationToken);
             }
@@ -96,8 +96,8 @@ public class DialogRunner
 
             if (string.IsNullOrWhiteSpace(message?.Content?.ToString()))
             {
-                (message, _) = await Request(messages, configuration, cancellationToken, "after images detected", newMessagePoint, false);
-                if (LookForImages(message).images.Any())
+                (message, _) = await Request(messages, configuration, cancellationToken, "after images detected" + (imagesUnavailableUntil.HasValue ? " but unavailable" : null), newMessagePoint, false);
+                if (LookForImages(message, imagesUnavailableUntil).images.Any())
                 {
                     _logger.LogError("More images returned. Could not have happened. {message}",
                         JsonSerializer.Serialize(message));
@@ -151,7 +151,7 @@ public class DialogRunner
 
         var prompts = responses.Select(r =>
         {
-            var (images, _) = LookForImages(r);
+            var (images, _) = LookForImages(r, null);
             if (!images.Any())
             {
                 return new();
@@ -299,7 +299,7 @@ public class DialogRunner
         return imagesDeserialized;
     }
 
-    private (List<JsonNode> images, List<Message> newMessages) LookForImages(Message message)
+    private (List<JsonNode> images, List<Message> newMessages) LookForImages(Message message, DateTime? imagesUnavailableUntil)
     {
         var messages = new List<Message>();
         var images = new List<JsonNode>();
@@ -313,14 +313,29 @@ public class DialogRunner
                 throw new("Unexpected function call.");
             }
 
-            messages.Add(new(tool, "status = SUCCESS"));
+            if (imagesUnavailableUntil.HasValue)
+            {
+                messages.Add(new(tool, "status = LIMIT EXCEEDED"));
+            }
+            else
+            {
+                messages.Add(new(tool, "status = SUCCESS"));
+            }
+
             images.Add(tool.Function.Arguments);
             any = true;
         }
 
         if (any)
         {
-            messages.Add(new(Role.System, DialogConstants.ImagesDisplayedMessage));
+            if (imagesUnavailableUntil.HasValue)
+            {
+                messages.Add(new(Role.System, string.Format(DialogConstants.ImagesLimitMessage, imagesUnavailableUntil)));
+            }
+            else
+            {
+                messages.Add(new(Role.System, DialogConstants.ImagesDisplayedMessage));
+            }
         }
 
         return (images, messages);
