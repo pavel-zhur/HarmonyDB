@@ -3,4 +3,5 @@
 public class PlaygroundOptions
 {
     public string? GoogleTagId { get; init; }
+    public string? YandexMetricsId { get; init; }
 }

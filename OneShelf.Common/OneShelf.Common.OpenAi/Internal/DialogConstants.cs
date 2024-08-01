@@ -9,6 +9,7 @@ internal static class DialogConstants
     public const string IncludeImageFunctionName = "include_image";
 
     public const string ImagesDisplayedMessage = "The images have been displayed.";
+    public const string ImagesLimitMessage = "The images generation limit is exceeded until {0}.";
     public const string TopicChangeDetectionMessage =
         $"If the next user message has no relation to the previous conversation, immediately call the '{UserChangedTopicFunctionName}' function.";
 
