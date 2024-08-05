@@ -42,6 +42,12 @@ namespace HarmonyDB.Playground.Web
                 .AddScoped<Limiter>()
                 .Configure<PlaygroundOptions>(o => builder.Configuration.GetSection(nameof(PlaygroundOptions)).Bind(o));
 
+            builder.Services.AddAuthentication().AddGoogle(googleOptions =>
+            {
+                googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+                googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+            });
+
             const string defaultCulture = "en";
 
             builder.Services.Configure<RequestLocalizationOptions>(options =>
