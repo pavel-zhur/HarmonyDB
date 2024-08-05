@@ -108,8 +108,14 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table class="table table-bordered table-sm">
-        <thead>
+    @if (ViewBag.Limit != null)
+    {
+        @await Html.PartialAsync("Limit", (int)ViewBag.Limit)
+    }
+    else
+    {
+        <table class="table table-bordered table-sm">
+            <thead>
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Progression"]</td>
                 @if (Model.ViewMode == StructureViewMode.Interpreted)
@@ -128,52 +134,53 @@
                 <td class="my-vertical">@ViewLocalizer["Tonic Score"]</td>
                 <td class="my-vertical">@ViewLocalizer["Scale Score"]</td>
             </tr>
-        </thead>
-        @foreach (var loop in response.Loops)
-        {
-            <tr>
-                @{
-                    var predicted = loop.Probabilities.GetPredictedTonality();
-                    var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-                    var relativeToPredicted = predicted.GetRelativeScale(false);
-                    var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
-                }
+            </thead>
+            @foreach (var loop in response.Loops)
+            {
+                <tr>
+                    @{
+                        var predicted = loop.Probabilities.GetPredictedTonality();
+                        var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
+                        var relativeToPredicted = predicted.GetRelativeScale(false);
+                        var predictedViewMode = Model.ViewMode == StructureViewMode.Interpreted ? predicted.OnceAsNullable() : null;
+                    }
 
-                <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "Loop", new StructureLoopModel { Normalized = loop.Normalized })</td>
-                @if (Model.ViewMode == StructureViewMode.Interpreted)
-                {
-                    <td>@loop.Normalized.GetFunctionsTitle(predicted)</td>
-                }
-                <td class="fw-bold">@predicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
-                <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                <td class="text-end">@secondConfidence.ToString("P0")</td>
-                @if (Model.ViewMode == StructureViewMode.Interpreted)
-                {
-                    <td>@loop.Normalized.GetTitle(secondPredicted)</td>
-                    <td>@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
-                }
-                @if (secondPredicted != relativeToPredicted)
-                {
-                    <td class="fw-bold">@relativeToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
-                    <td class="text-end">@loop.Probabilities[relativeToPredicted.ToIndex()].ToString("P0")</td>
-                }
-                else
-                {
-                    <td></td>
-                    <td></td>
-                }
-                <td class="text-end">@loop.TonicScore.ToString("P0")</td>
-                <td class="text-end">@loop.Length</td>
-                <td class="text-end">@loop.TotalSongs.ToString("N0")</td>
-                <td class="text-end">@loop.TotalOccurrences.ToString("N0")</td>
-                <td class="text-end">@loop.TotalSuccessions.ToString("N0")</td>
-                <td class="text-end">@loop.AverageCoverage.ToString("P0")</td>
-                <td class="text-end">@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
-                <td class="text-end">@loop.ScaleScore.ToString("P0")</td>
-            </tr>
-        }
-    </table>
+                    <td>@Html.ActionLink(loop.Normalized.GetTitle(predictedViewMode), "Loop", new StructureLoopModel { Normalized = loop.Normalized })</td>
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        <td>@loop.Normalized.GetFunctionsTitle(predicted)</td>
+                    }
+                    <td class="fw-bold">@predicted.ToLoopTonalityTitle(predictedViewMode)</td>
+                    <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+                    <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
+                    <td class="text-end">@secondConfidence.ToString("P0")</td>
+                    @if (Model.ViewMode == StructureViewMode.Interpreted)
+                    {
+                        <td>@loop.Normalized.GetTitle(secondPredicted)</td>
+                        <td>@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
+                    }
+                    @if (secondPredicted != relativeToPredicted)
+                    {
+                        <td class="fw-bold">@relativeToPredicted.ToLoopTonalityTitle(predictedViewMode)</td>
+                        <td class="text-end">@loop.Probabilities[relativeToPredicted.ToIndex()].ToString("P0")</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                        <td></td>
+                    }
+                    <td class="text-end">@loop.TonicScore.ToString("P0")</td>
+                    <td class="text-end">@loop.Length</td>
+                    <td class="text-end">@loop.TotalSongs.ToString("N0")</td>
+                    <td class="text-end">@loop.TotalOccurrences.ToString("N0")</td>
+                    <td class="text-end">@loop.TotalSuccessions.ToString("N0")</td>
+                    <td class="text-end">@loop.AverageCoverage.ToString("P0")</td>
+                    <td class="text-end">@loop.Probabilities.TonicConfidence(false).ToString("P0")</td>
+                    <td class="text-end">@loop.ScaleScore.ToString("P0")</td>
+                </tr>
+            }
+        </table>
+    }
 
     @await Html.PartialAsync("Paging", Model)
 }

@@ -2,6 +2,7 @@ using System.Globalization;
 using HarmonyDB.Index.Analysis;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Playground.Web.Models;
+using HarmonyDB.Playground.Web.Services;
 using HarmonyDB.Source.Api.Client;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,7 @@ namespace HarmonyDB.Playground.Web
                 .AddIndexApiClient(builder.Configuration)
                 .AddSourceApiClient(builder.Configuration)
                 .AddIndexAnalysis()
+                .AddScoped<Limiter>()
                 .Configure<PlaygroundOptions>(o => builder.Configuration.GetSection(nameof(PlaygroundOptions)).Bind(o));
 
             const string defaultCulture = "en";

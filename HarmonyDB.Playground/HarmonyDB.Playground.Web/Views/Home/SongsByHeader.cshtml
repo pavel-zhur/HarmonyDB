@@ -51,8 +51,14 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table class="table table-bordered table-sm">
-        <thead>
+    @if (ViewBag.Limit != null)
+    {
+        @await Html.PartialAsync("Limit", (int)ViewBag.Limit)
+    }
+    else
+    {
+        <table class="table table-bordered table-sm">
+            <thead>
             <tr class="fw-bold">
                 <td rowspan="2">@ViewLocalizer["Song"]</td>
                 <td rowspan="2">@ViewLocalizer["Source"]</td>
@@ -66,26 +72,27 @@
                     @await Html.PartialAsync("Badge", BadgeModel.Beta)
                 </td>
             </tr>
-        </thead>
-        @foreach (var (song, predictedTonalityIndex) in response.Songs)
-        {
-            <tr>
-                <td>
-                    @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, string.Join(", ", song.Artists ?? Enumerable.Empty<string>())))
-                    {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
-                    <span> – </span>
-                    <a href="@Url.Action("Song", new SongModel { ExternalId = song.ExternalId })">
-                        @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, song.Title!))
+            </thead>
+            @foreach (var (song, predictedTonalityIndex) in response.Songs)
+            {
+                <tr>
+                    <td>
+                        @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, string.Join(", ", song.Artists ?? Enumerable.Empty<string>())))
                         {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
-                    </a>
-                </td>
-                <td>@song.Source</td>
-                <td>@song.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
-                <td>@predictedTonalityIndex?.ToSongTonalityTitle()</td>
-                <td class="text-end">@((int)(song.Rating ?? 0))%</td>
-            </tr>
-        }
-    </table>
+                        <span> – </span>
+                        <a href="@Url.Action("Song", new SongModel { ExternalId = song.ExternalId })">
+                            @foreach (var (fragment, isHighlighted) in SearchHighlightingTools.GetFragments(Model.Query, song.Title!))
+                            {<span class="@(isHighlighted ? "search-highlighted" : null)">@fragment</span>}
+                        </a>
+                    </td>
+                    <td>@song.Source</td>
+                    <td>@song.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
+                    <td>@predictedTonalityIndex?.ToSongTonalityTitle()</td>
+                    <td class="text-end">@((int)(song.Rating ?? 0))%</td>
+                </tr>
+            }
+        </table>
+    }
 
     @await Html.PartialAsync("Paging", Model)
 }

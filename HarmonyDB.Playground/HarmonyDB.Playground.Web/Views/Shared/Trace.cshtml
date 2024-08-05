@@ -6,7 +6,7 @@
     ApiTraceBag? trace = ViewBag.Trace;
 }
 
-@if (trace != null)
+@if (trace != null && ViewBag.Limit == null)
 {
     <h3 class="mt-4">@ViewLocalizer["Trace"]</h3>
     @foreach (var request in trace.Requests)
