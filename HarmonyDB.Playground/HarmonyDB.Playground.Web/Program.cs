@@ -1,11 +1,14 @@
 using System.Globalization;
 using HarmonyDB.Index.Analysis;
 using HarmonyDB.Index.Api.Client;
+using HarmonyDB.Playground.Web.Identity;
 using HarmonyDB.Playground.Web.Models;
 using HarmonyDB.Playground.Web.Services;
 using HarmonyDB.Source.Api.Client;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HarmonyDB.Playground.Web
 {
@@ -15,7 +18,16 @@ namespace HarmonyDB.Playground.Web
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Configuration.AddJsonFile("appsettings.Secrets.json", true);
+
             // Add services to the container.
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services
                 .AddControllersWithViews(o => 
                     o.Filters.Add<MiddlewareFilterAttribute<LocalizationPipeline>>())
@@ -70,6 +82,7 @@ namespace HarmonyDB.Playground.Web
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{ui-culture?}/{controller=Home}/{action=Index}/{id?}");
+            app.MapRazorPages();
 
             app.Run();
         }
