@@ -31,8 +31,6 @@ public record SongsRequest : PagedRequestBase
     public SongsRequestCorrectDetectionFilter CorrectDetectionFilter { get; init; } = SongsRequestCorrectDetectionFilter.Any;
 
     public SongsRequestKnownTonalityFilter KnownTonalityFilter { get; init; } = SongsRequestKnownTonalityFilter.Any;
-    
-    public int SongsPerPage { get; init; } = 100;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public SongsRequestOrdering Ordering { get; init; } = SongsRequestOrdering.TonalityConfidenceDesc;

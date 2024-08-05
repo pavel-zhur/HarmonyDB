@@ -70,7 +70,7 @@
         @Html.DropDownListFor(x => x.DetectedScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
-        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)
+        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.ItemsPerPage)
     </p>
     <p>
         <label>

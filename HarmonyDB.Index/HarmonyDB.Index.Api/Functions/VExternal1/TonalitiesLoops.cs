@@ -129,9 +129,9 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
         return new()
         {
             Total = loops.Count,
-            TotalPages = loops.Count / request.LoopsPerPage + (loops.Count % request.LoopsPerPage == 0 ? 0 : 1),
+            TotalPages = loops.Count / request.ItemsPerPage + (loops.Count % request.ItemsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,
-            Loops = orderedLoops.Skip((request.PageNumber - 1) * request.LoopsPerPage).Take(request.LoopsPerPage).ToList(),
+            Loops = orderedLoops.Skip((request.PageNumber - 1) * request.ItemsPerPage).Take(request.ItemsPerPage).ToList(),
             Distributions = new()
             {
                 TotalSongs = loops.GetPercentiles(x => x.TotalSongs),

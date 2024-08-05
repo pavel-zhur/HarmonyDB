@@ -76,7 +76,7 @@
         @Html.DropDownListFor(x => x.KnownScaleFilter, Enum.GetValues<RequestScaleFilter>().Select(x => new SelectListItem(x.ToString(), x.ToString())))
     </p>
     <p>
-        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)
+        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.ItemsPerPage)
     </p>
     <p>
         <label>
