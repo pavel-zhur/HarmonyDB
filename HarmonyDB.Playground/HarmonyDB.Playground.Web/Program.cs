@@ -88,9 +88,6 @@ namespace HarmonyDB.Playground.Web
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{ui-culture?}/{controller=Home}/{action=Index}/{id?}");
-            app.MapControllerRoute(
-                name: "default2",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
             app.MapRazorPages();
 
             app.Run();
