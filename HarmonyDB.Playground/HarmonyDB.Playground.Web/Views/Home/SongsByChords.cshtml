@@ -47,7 +47,7 @@
         @ViewLocalizer["Min rating (whole, 0–100)"]: @Html.TextBoxFor(x => x.MinRating)
     </p>
     <p>
-        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.SongsPerPage)
+        @ViewLocalizer["Songs Per Page"]: @Html.TextBoxFor(x => x.ItemsPerPage)
     </p>
     <p>
         <label>
@@ -67,37 +67,44 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table class="table table-bordered table-sm">
-        <thead>
-        <tr class="fw-bold">
-            <td rowspan="2">@ViewLocalizer["Song"]</td>
-            <td rowspan="2">@ViewLocalizer["Source"]</td>
-            <td colspan="2">@ViewLocalizer["Tonality"]</td>
-            <td rowspan="2">@ViewLocalizer["Rating"]</td>
-            <td rowspan="2">@ViewLocalizer["Coverage"]</td>
-        </tr>
-        <tr>
-            <td>@ViewLocalizer["Metadata"]</td>
-            <td>
-                @ViewLocalizer["Predicted"]
-                @await Html.PartialAsync("Badge", BadgeModel.Beta)
-            </td>
-        </tr>
-        </thead>
-        @foreach (var song in response.Songs)
-        {
-            <tr>
-                <td>
-                    @string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.Header.Title, "Song", "Home", new SongModel { ExternalId = song.Header.ExternalId, Highlight = Model.Query })
-                </td>
-                <td>@song.Header.Source</td>
-                <td>@song.Header.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
-                <td>@song.PredictedTonalityIndex?.ToSongTonalityTitle()</td>
-                <td class="text-end">@((int)(song.Header.Rating ?? 0))%</td>
-                <td class="text-end">@song.Coverage.ToString("P0")</td>
+    @if (ViewBag.Limit != null)
+    {
+        @await Html.PartialAsync("Limit", (int)ViewBag.Limit)
+    }
+    else
+    {
+        <table class="table table-bordered table-sm">
+            <thead>
+            <tr class="fw-bold">
+                <td rowspan="2">@ViewLocalizer["Song"]</td>
+                <td rowspan="2">@ViewLocalizer["Source"]</td>
+                <td colspan="2">@ViewLocalizer["Tonality"]</td>
+                <td rowspan="2">@ViewLocalizer["Rating"]</td>
+                <td rowspan="2">@ViewLocalizer["Coverage"]</td>
             </tr>
-        }
-    </table>
+            <tr>
+                <td>@ViewLocalizer["Metadata"]</td>
+                <td>
+                    @ViewLocalizer["Predicted"]
+                    @await Html.PartialAsync("Badge", BadgeModel.Beta)
+                </td>
+            </tr>
+            </thead>
+            @foreach (var song in response.Songs)
+            {
+                <tr>
+                    <td>
+                        @string.Join(", ", song.Header.Artists ?? Enumerable.Empty<string>()) – @Html.ActionLink(song.Header.Title, "Song", "Home", new SongModel { ExternalId = song.Header.ExternalId, Highlight = Model.Query })
+                    </td>
+                    <td>@song.Header.Source</td>
+                    <td>@song.Header.BestTonality?.Tonality.TryParseBestTonality()?.ToSongTonalityTitle()</td>
+                    <td>@song.PredictedTonalityIndex?.ToSongTonalityTitle()</td>
+                    <td class="text-end">@((int)(song.Header.Rating ?? 0))%</td>
+                    <td class="text-end">@song.Coverage.ToString("P0")</td>
+                </tr>
+            }
+        </table>
+    }
 
     @await Html.PartialAsync("Paging", Model)
 }

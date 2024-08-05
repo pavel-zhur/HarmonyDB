@@ -156,9 +156,9 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
         return new()
         {
             Total = songs.Count,
-            TotalPages = songs.Count / request.SongsPerPage + (songs.Count % request.SongsPerPage == 0 ? 0 : 1),
+            TotalPages = songs.Count / request.ItemsPerPage + (songs.Count % request.ItemsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,
-            Songs = orderedSongs.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).ToList(),
+            Songs = orderedSongs.Skip((request.PageNumber - 1) * request.ItemsPerPage).Take(request.ItemsPerPage).ToList(),
             Distributions = new()
             {
                 Rating = songs.GetPercentiles(x => x.IndexHeader.Rating),

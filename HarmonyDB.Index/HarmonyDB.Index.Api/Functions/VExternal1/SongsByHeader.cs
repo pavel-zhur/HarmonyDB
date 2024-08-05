@@ -63,12 +63,12 @@ public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHe
         return new()
         {
             Songs = results
-                .Skip((request.PageNumber - 1) * request.SongsPerPage)
-                .Take(request.SongsPerPage)
+                .Skip((request.PageNumber - 1) * request.ItemsPerPage)
+                .Take(request.ItemsPerPage)
                 .Select(x => new SongsByHeaderResponseSong(x, tonalitiesCache.Songs.GetValueOrDefault(x.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex()))
                 .ToList(),
             Total = results.Count,
-            TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),
+            TotalPages = results.Count / request.ItemsPerPage + (results.Count % request.ItemsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,
         };
     }

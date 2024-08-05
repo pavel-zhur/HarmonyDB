@@ -10,8 +10,6 @@ public record SongsByChordsRequest : PagedRequestBase
 
     public int MinRating { get; init; } = 70;
 
-    public int SongsPerPage { get; init; } = 100;
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public SongsByChordsRequestOrdering Ordering { get; init; } = SongsByChordsRequestOrdering.ByRating;
 }

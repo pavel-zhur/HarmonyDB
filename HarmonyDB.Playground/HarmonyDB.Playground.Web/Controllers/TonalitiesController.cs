@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
 using HarmonyDB.Playground.Web.Models.Tonalities;
 using OneShelf.Common.Api.Common;
+using HarmonyDB.Playground.Web.Models.Home;
+using HarmonyDB.Playground.Web.Services;
 
 namespace HarmonyDB.Playground.Web.Controllers;
 
@@ -23,11 +25,13 @@ public class TonalitiesController : PlaygroundControllerBase
 {
     private readonly ILogger<TonalitiesController> _logger;
     private readonly IndexApiClient _indexApiClient;
+    private readonly Limiter _limiter;
 
-    public TonalitiesController(ILogger<TonalitiesController> logger, IndexApiClient indexApiClient)
+    public TonalitiesController(ILogger<TonalitiesController> logger, IndexApiClient indexApiClient, Limiter limiter)
     {
         _logger = logger;
         _indexApiClient = indexApiClient;
+        _limiter = limiter;
     }
 
     public IActionResult Index()
@@ -53,7 +57,9 @@ public class TonalitiesController : PlaygroundControllerBase
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.TonalitiesLoops(model, ViewBag.Trace);
+                var response = await _indexApiClient.TonalitiesLoops(model, ViewBag.Trace);
+                ViewBag.Response = response;
+                ViewBag.Limit = _limiter.CheckLimit(model, response, Limiter.MaxProgressions);
             }
 
             model.JustForm = false;
@@ -78,7 +84,9 @@ public class TonalitiesController : PlaygroundControllerBase
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.TonalitiesSongs(model, ViewBag.Trace);
+                var response = await _indexApiClient.TonalitiesSongs(model, ViewBag.Trace);
+                ViewBag.Response = response;
+                ViewBag.Limit = _limiter.CheckLimit(model, response, Limiter.MaxSongs);
             }
 
             model.JustForm = false;

@@ -30,8 +30,6 @@ public record LoopsRequest : PagedRequestBase
 
     public RequestScaleFilter DetectedScaleFilter { get; init; } = RequestScaleFilter.Any;
 
-    public int LoopsPerPage { get; init; } = 100;
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public LoopsRequestOrdering Ordering { get; init; } = LoopsRequestOrdering.SuccessionsDesc;
 }
