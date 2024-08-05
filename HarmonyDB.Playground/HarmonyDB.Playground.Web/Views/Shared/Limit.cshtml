@@ -1,0 +1,9 @@
+﻿@model int
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer ViewLocalizer
+
+<div class="alert alert-warning" role="alert">
+    <p>
+        @ViewLocalizer["Only the first and the last {0} results are available in the playground. To access more, please contact the developers.", Model]
+    </p>
+</div>

@@ -90,14 +90,14 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
 
         return new()
         {
-            Songs = results.Skip((request.PageNumber - 1) * request.SongsPerPage).Take(request.SongsPerPage).Select(x => new SongsByChordsResponseSong
+            Songs = results.Skip((request.PageNumber - 1) * request.ItemsPerPage).Take(request.ItemsPerPage).Select(x => new SongsByChordsResponseSong
             {
                 Header = x.h,
                 Coverage = x.coverage,
                 PredictedTonalityIndex = tonalitiesCache.Songs.GetValueOrDefault(x.h.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
             }).ToList(),
             Total = results.Count,
-            TotalPages = results.Count / request.SongsPerPage + (results.Count % request.SongsPerPage == 0 ? 0 : 1),
+            TotalPages = results.Count / request.ItemsPerPage + (results.Count % request.ItemsPerPage == 0 ? 0 : 1),
             CurrentPageNumber = request.PageNumber,
         };
     }

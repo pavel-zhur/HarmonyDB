@@ -42,7 +42,7 @@
         @ViewLocalizer["Min total successions"]: @Html.TextBoxFor(x => x.MinTotalSuccessions)
     </p>
     <p>
-        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.LoopsPerPage)
+        @ViewLocalizer["Loops Per Page"]: @Html.TextBoxFor(x => x.ItemsPerPage)
     </p>
     <p>
         @ViewLocalizer["Scale"]:
@@ -66,8 +66,14 @@
 
     @await Html.PartialAsync("Paging", Model)
 
-    <table class="table table-bordered table-sm">
-        <thead>
+    @if (ViewBag.Limit != null)
+    {
+        @await Html.PartialAsync("Limit", (int)ViewBag.Limit)
+    }
+    else
+    {
+        <table class="table table-bordered table-sm">
+            <thead>
             <tr class="fw-bold">
                 <td>@ViewLocalizer["Progression"]</td>
                 <td>@ViewLocalizer["Degrees"]</td>
@@ -78,27 +84,28 @@
                 <td class="my-vertical">@ViewLocalizer["Total Occurrences"]</td>
                 <td class="my-vertical">@ViewLocalizer["Total Successions"]</td>
             </tr>
-        </thead>
-        @foreach (var loop in response.Loops)
-        {
-            var predicted = loop.Probabilities.GetPredictedTonality();
-            var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
-            <tr>
-                <td>@Html.ActionLink(loop.Normalized.GetTitle(predicted), "SongsByChords", new SongsByChordsModel { Query = loop.Normalized.GetTitle(predicted, true), JustForm = true })</td>
-                <td>@loop.Normalized.GetFunctionsTitle(predicted)</td>
-                <td class="fw-bold">@predicted.ToLoopTonalityTitle(predicted)</td>
-                <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
-                <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predicted)</td>
-                <td class="text-end">@secondConfidence.ToString("P0")</td>
-                <td>@loop.Normalized.GetTitle(secondPredicted)</td>
-                <td>@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
-                <td class="text-end">@loop.Length</td>
-                <td class="text-end">@loop.TotalSongs.ToString("N0")</td>
-                <td class="text-end">@loop.TotalOccurrences.ToString("N0")</td>
-                <td class="text-end">@loop.TotalSuccessions.ToString("N0")</td>
-            </tr>
-        }
-    </table>
+            </thead>
+            @foreach (var loop in response.Loops)
+            {
+                var predicted = loop.Probabilities.GetPredictedTonality();
+                var secondPredicted = loop.Probabilities.GetSecondPredictedTonality(out var secondConfidence);
+                <tr>
+                    <td>@Html.ActionLink(loop.Normalized.GetTitle(predicted), "SongsByChords", new SongsByChordsModel { Query = loop.Normalized.GetTitle(predicted, true), JustForm = true })</td>
+                    <td>@loop.Normalized.GetFunctionsTitle(predicted)</td>
+                    <td class="fw-bold">@predicted.ToLoopTonalityTitle(predicted)</td>
+                    <td class="text-end">@loop.Probabilities.TonalityConfidence().ToString("P0")</td>
+                    <td class="fw-bold">@secondPredicted.ToLoopTonalityTitle(predicted)</td>
+                    <td class="text-end">@secondConfidence.ToString("P0")</td>
+                    <td>@loop.Normalized.GetTitle(secondPredicted)</td>
+                    <td>@loop.Normalized.GetFunctionsTitle(secondPredicted)</td>
+                    <td class="text-end">@loop.Length</td>
+                    <td class="text-end">@loop.TotalSongs.ToString("N0")</td>
+                    <td class="text-end">@loop.TotalOccurrences.ToString("N0")</td>
+                    <td class="text-end">@loop.TotalSuccessions.ToString("N0")</td>
+                </tr>
+            }
+        </table>
+    }
 
     @await Html.PartialAsync("Paging", Model)
 }

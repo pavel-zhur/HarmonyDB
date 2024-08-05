@@ -16,8 +16,10 @@ using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using Microsoft.AspNetCore.Localization;
 using HarmonyDB.Index.Api.Model.VExternal1;
+using HarmonyDB.Index.Api.Model.VExternal1.Main;
 using HarmonyDB.Index.Api.Model.VExternal1.Tonalities;
 using HarmonyDB.Playground.Web.Models.Home;
+using HarmonyDB.Playground.Web.Services;
 using OneShelf.Common.Api.Common;
 
 namespace HarmonyDB.Playground.Web.Controllers;
@@ -33,8 +35,9 @@ public class HomeController : PlaygroundControllerBase
     private readonly ChordDataParser _chordDataParser;
     private readonly InputParser _inputParser;
     private readonly ProgressionsVisualizer _progressionsVisualizer;
+    private readonly Limiter _limiter;
 
-    public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer, IndexExtractor indexExtractor)
+    public HomeController(ILogger<HomeController> logger, IndexApiClient indexApiClient, SourceApiClient sourceApiClient, ProgressionsSearch progressionsSearch, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, InputParser inputParser, ProgressionsVisualizer progressionsVisualizer, IndexExtractor indexExtractor, Limiter limiter)
     {
         _logger = logger;
         _indexApiClient = indexApiClient;
@@ -45,6 +48,7 @@ public class HomeController : PlaygroundControllerBase
         _inputParser = inputParser;
         _progressionsVisualizer = progressionsVisualizer;
         _indexExtractor = indexExtractor;
+        _limiter = limiter;
     }
 
     public IActionResult MyIp()
@@ -157,7 +161,9 @@ public class HomeController : PlaygroundControllerBase
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.SongsByChords(songsByChordsModel, ViewBag.Trace);
+                var response = await _indexApiClient.SongsByChords(songsByChordsModel, ViewBag.Trace);
+                ViewBag.Response = response;
+                ViewBag.Limit = _limiter.CheckLimit(songsByChordsModel, response, Limiter.MaxSongs);
             }
 
             songsByChordsModel.JustForm = false;
@@ -183,7 +189,9 @@ public class HomeController : PlaygroundControllerBase
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.SongsByHeader(songsByHeaderModel, ViewBag.Trace);
+                var response = await _indexApiClient.SongsByHeader(songsByHeaderModel, ViewBag.Trace);
+                ViewBag.Response = response;
+                ViewBag.Limit = _limiter.CheckLimit(songsByHeaderModel, response, Limiter.MaxSongs);
             }
 
             songsByHeaderModel.JustForm = false;
@@ -208,7 +216,9 @@ public class HomeController : PlaygroundControllerBase
                     ViewBag.Trace = new ApiTraceBag();
                 }
 
-                ViewBag.Response = await _indexApiClient.TonalitiesLoops(loopsModel, ViewBag.Trace);
+                var response = await _indexApiClient.TonalitiesLoops(loopsModel, ViewBag.Trace);
+                ViewBag.Response = response;
+                ViewBag.Limit = _limiter.CheckLimit(loopsModel, response, Limiter.MaxProgressions);
             }
 
             loopsModel.JustForm = false;
