@@ -3,14 +3,278 @@ using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
 
 namespace HarmonyDB.Index.Analysis.Services;
 
-public class IndexExtractor
+public class IndexExtractor(PathsSearcher pathsSearcher)
 {
+    public (List<PolySequenceBlock> polySequences, List<PolyLoopBlock> polyLoops) FindPolyBlocks(
+        ReadOnlyMemory<CompactHarmonyMovement> sequence, 
+        IReadOnlyList<byte> roots, 
+        IReadOnlyList<LoopBlock> loops,
+        bool extractPolySequences,
+        bool extractPolyLoops,
+        PolyBlocksExtractionParameters extractionParameters)
+    {
+        if (!extractPolySequences && !extractPolyLoops) throw new ArgumentException();
+
+        var successiveBreaksForSequences = new bool[sequence.Length + 1];
+        if (extractionParameters.SequencesExcludeIfContainsSuccessiveLoopsBreak)
+        {
+            foreach (var i in loops
+                         .Where(x => x.SuccessionsSignificant)
+                         .SelectMany(l => Enumerable.Range(l.StartIndex + l.LoopLength, l.EndIndex - l.StartIndex - 2 * l.LoopLength + 2)))
+            {
+                successiveBreaksForSequences[i] = true;
+            }
+        }
+
+        var successiveBreaksForLoops = new List<(int startIndex, int endIndex)>();
+        if (extractionParameters.LoopsExcludeIfContainsSuccessiveLoopsBreak)
+        {
+            foreach (var loop in loops
+                         .Where(x => x.SuccessionsSignificant))
+            {
+                if (loop.Successions == 2)
+                {
+                    successiveBreaksForLoops.Add((loop.StartIndex, loop.EndIndex));
+                }
+                else
+                {
+                    successiveBreaksForLoops.Add((loop.StartIndex, loop.StartIndex + loop.LoopLength - 1));
+                    successiveBreaksForLoops.Add((loop.EndIndex - loop.LoopLength + 1, loop.EndIndex));
+                }
+            }
+        }
+
+        var sequenceLength = sequence.Length;
+        var subsequencePositions = new Dictionary<string, List<(int StartIndex, int EndIndex)>>();
+        var subsequenceNormalizations = new Dictionary<(int StartIndex, int EndIndex), string>();
+        var subsequenceOverLoops = new Dictionary<string, (int length, int sublength)>();
+        var subsequenceOverLoopsWithTails = new Dictionary<string, (int length, int sublength)>();
+        var subsequenceLoops = new HashSet<string>();
+
+        // Identify all possible subsequences
+        for (var length = 1; length <= sequenceLength; length++)
+        {
+            for (var startIndex = 0; startIndex <= sequenceLength - length; startIndex++)
+            {
+                var endIndex = startIndex + length - 1;
+                var subsequence = sequence.Slice(startIndex, length);
+                var normalized = subsequence.SerializeLoop();
+                var position = (startIndex, endIndex);
+
+                // find perfect loops (A, A, ... A), with and without tails
+                for (var subLength = 2; subLength < length; subLength++)
+                {
+                    if (roots[startIndex] != roots[startIndex + subLength]
+                        || sequence.Span[startIndex].FromType != sequence.Span[startIndex + subLength - 1].ToType)
+                    {
+                        continue;
+                    }
+                    
+                    if (Enumerable
+                            .Range(0, length / subLength)
+                            .Select(i => roots[startIndex + i * subLength])
+                            .Distinct()
+                            .Count() != 1
+                        || Enumerable
+                            .Range(0, length / subLength)
+                            .Select(i => subsequenceNormalizations[(startIndex + i * subLength, startIndex + (i + 1) * subLength - 1)])
+                            .Distinct()
+                            .Count() != 1)
+                    {
+                        continue;
+                    }
+
+                    var modulus = length % subLength;
+                    
+                    if (modulus == 0)
+                    {
+                        subsequenceOverLoops[normalized] = (length, subLength);
+                        break;
+                    }
+
+                    if (roots[startIndex] == roots[endIndex - modulus + 1]
+                        && subsequenceNormalizations[(startIndex, startIndex + modulus - 1)] == subsequenceNormalizations[(endIndex - modulus + 1, endIndex)])
+                    {
+                        subsequenceOverLoopsWithTails[normalized] = (length, subLength);
+                        break;
+                    }
+                }
+                
+                // find loops
+                if (roots[position.startIndex] == roots[position.endIndex + 1] && sequence.Span[position.startIndex].FromType == sequence.Span[position.endIndex].ToType)
+                {
+                    subsequenceLoops.Add(normalized);
+                }
+                
+                if (!subsequencePositions.ContainsKey(normalized))
+                {
+                    subsequencePositions[normalized] = new();
+                }
+
+                subsequencePositions[normalized].Add(position);
+
+                subsequenceNormalizations[position] = normalized;
+            }
+        }
+
+        // Find poly loops
+        var loopNormalizations = new Dictionary<string, (string normalized, int normalizationShift)>();
+        var polyLoops = !extractPolyLoops
+            ? new()
+            : subsequenceOverLoops
+                .Concat(subsequenceOverLoopsWithTails)
+                .SelectMany(x => subsequencePositions[x.Key].Select(p => (n: x.Key, p, x.Value.length, x.Value.sublength)))
+                .Concat(subsequenceLoops.Except(subsequenceOverLoops.Keys.Concat(subsequenceOverLoopsWithTails.Keys)).SelectMany(n => subsequencePositions[n].Select(p =>
+                {
+                    var length = p.EndIndex - p.StartIndex + 1;
+                    return (n, p, length, sublength: length);
+                })))
+                .Where(p => !extractionParameters.LoopsExcludeIfContainsSuccessiveLoopsBreak
+                    || !successiveBreaksForLoops.Any(b => b.startIndex.IsBetween(p.p.StartIndex, p.p.EndIndex) && b.endIndex.IsBetween(p.p.StartIndex, p.p.EndIndex))
+                    && !loops.Any(l => p.p.StartIndex.IsBetween(l.StartIndex, l.EndIndex) && p.p.EndIndex.IsBetween(l.StartIndex, l.EndIndex)))
+                .GroupBy(x => 
+                    (loopNormalizations.TryGetValue(x.n, out var normalization)
+                        ? normalization
+                        : loopNormalizations[x.n] = (
+                        GetNormalizedProgression(sequence.Slice(x.p.StartIndex, x.sublength), out var normalizationShift).SerializeLoop(), 
+                        normalizationShift)).normalized)
+                .Where(g => !extractionParameters.LoopsExcludeIfContainsAllChordsMoreThanOnce
+                    || !ContainsAllChordsMoreThanOnce(sequence.Slice(g.First().p.StartIndex, g.First().sublength)))
+                .Select(g => g
+                    .Where(x => x.length == x.sublength)
+                    .GroupBy(x => x.p.StartIndex)
+                    .OrderBy(g => g.Key)
+                    .WithPrevious()
+                    .Where(x => x.previous?.Key + 1 != x.current.Key)
+                    .SelectMany(x => x.current)
+                    .Select(x => (start: x, max: g.Where(y => y.p.StartIndex == x.p.StartIndex).MaxBy(x => x.length)))
+                    .Select(x => new PolyLoopBlock
+                    {
+                        Normalized = g.Key,
+                        NormalizationShift = loopNormalizations[x.start.n].normalizationShift,
+                        NormalizationRoot = GetLoopNormalizationRoot(roots, x.start.p.StartIndex, loopNormalizations[x.start.n].normalizationShift, x.start.length),
+                        StartIndex = x.start.p.StartIndex,
+                        EndIndex = x.max.p.EndIndex,
+                        Loop = sequence.Slice(x.start.p.StartIndex, x.start.sublength),
+                    })
+                    .ToList())
+                .Where(g => g.Count > 1 || g is [ { SuccessionsSignificant: true } ])
+                .SelectMany(x => x)
+                .ToList();
+
+        if (extractionParameters.SequencesExcludeIfContainsSuccessiveLoopsBreak)
+        {
+            subsequencePositions = subsequencePositions.ToDictionary(
+                x => x.Key,
+                x => x.Value
+                    .Where(p =>
+                        Enumerable
+                            .Range(p.StartIndex + 1, p.EndIndex - p.StartIndex)
+                            .All(i => !successiveBreaksForSequences[i]))
+                    .ToList());
+        }
+        
+        // Create poly sequences
+        var polySequences = !extractPolySequences
+            ? new()
+            : subsequencePositions
+                .Where(x => x.Value.Count > 1) // occurs more than once
+                .Where(x => !extractionParameters.SequencesExcludeIfOverLoops || !subsequenceOverLoops.ContainsKey(x.Key))
+                .Where(x => !extractionParameters.SequencesExcludeIfOverLoopsWithTails || !subsequenceOverLoopsWithTails.ContainsKey(x.Key))
+                .Where(x => !extractionParameters.SequencesExcludeIfContainsAllChordsMoreThanOnce
+                            || !ContainsAllChordsMoreThanOnce(sequence[x.Value.First().StartIndex..(x.Value.First().EndIndex + 1)]))
+                .Select(x => x.Key)
+                .Where(
+                    x => // may not be extended without losing occurrences (unless it overlaps with itself when steps right)
+                    {
+                        var positions = subsequencePositions[x];
+                        var position = positions[0];
+
+                        if (extractionParameters.SequencesExcludeIfExtendsLeftWithoutLosingOccurrences
+                            && positions.All(p => p.StartIndex > 0 && (!extractionParameters.SequencesExcludeIfContainsSuccessiveLoopsBreak || !successiveBreaksForSequences[p.StartIndex]))
+                            && subsequencePositions[subsequenceNormalizations[(position.StartIndex - 1, position.EndIndex)]].Count == positions.Count)
+                            return false;
+
+                        if (extractionParameters.SequencesExcludeIfExtendsRightWithoutLosingOccurrencesOrOverlappingWithItself
+                            && positions.All(p => p.EndIndex < sequenceLength - 1 && (!extractionParameters.SequencesExcludeIfContainsSuccessiveLoopsBreak || !successiveBreaksForSequences[p.EndIndex]))
+                            && !positions.Any(x => (position.EndIndex + 1).IsBetween(x.StartIndex, x.EndIndex))
+                            && subsequencePositions[subsequenceNormalizations[(position.StartIndex, position.EndIndex + 1)]].Count == positions.Count)
+                            return false;
+
+                        return true;
+                    })
+                .SelectMany(n => subsequencePositions[n]
+                    .Select(p => (p, c: new List<PolySequenceBlock>()))
+                    .Select(p => (n, p.c, p.p, s: new PolySequenceBlock
+                    {
+                        StartIndex = p.p.StartIndex,
+                        EndIndex = p.p.EndIndex,
+                        Normalized = n,
+                        NormalizationRoot = roots[p.p.StartIndex],
+                        Sequence = sequence.Slice(p.p.StartIndex, p.p.EndIndex - p.p.StartIndex + 1),
+                        Children = new List<PolySequenceBlock>(),
+                    })))
+                .ToDictionary(x => x.p);
+
+        // Detect self overlaps
+        foreach (var group in polySequences.Select(x => x.Value.s).Concat(polyLoops.Cast<IPolyBlock>()).GroupBy(x => (x.Normalized, x.NormalizationRoot)))
+        {
+            var open = 0;
+            if (group
+                .SelectMany(x =>
+                    (x: x.StartIndex, isStart: true)
+                    .Once()
+                    .Append((x: x.EndIndex, isStart: false)))
+                .OrderBy(x => x.x)
+                .ThenByDescending(x => x.isStart)
+                .Any(p => (open += (p.isStart ? 1 : -1)) > 1))
+            {
+                foreach (var polySequenceBlock in group)
+                {
+                    polySequenceBlock.SelfOverlapsDetected = true;
+                }
+            }
+        }
+
+        // Fill poly sequences children
+        foreach (var (_, children, position, _) in polySequences.Values)
+        {
+            children.AddRange(polySequences
+                .Where(x => x.Key.StartIndex.IsBetween(position.StartIndex, position.EndIndex) && x.Key.EndIndex.IsBetween(position.StartIndex, position.EndIndex))
+                .Select(x => x.Value.s));
+        }
+
+        return (polySequences.Select(x => x.Value.s).ToList(), polyLoops);
+    }
+
+    private bool ContainsAllChordsMoreThanOnce(ReadOnlyMemory<CompactHarmonyMovement> sequence)
+    {
+        byte root = 0;
+        var chords = new Dictionary<(byte root, ChordType chordType), int>
+        {
+            { (root, sequence.Span[0].FromType), 1 },
+        };
+
+        foreach (var movement in MemoryMarshal.ToEnumerable(sequence))
+        {
+            var chord = (root = Note.Normalize(root + movement.RootDelta), movement.ToType);
+            chords[chord] = chords.GetValueOrDefault(chord, 0) + 1;
+        }
+
+        return chords.Any(x => x.Value == 1);
+    }
+
     public List<byte> CreateRoots(ReadOnlyMemory<CompactHarmonyMovement> sequence, byte firstRoot)
         => firstRoot
             .Once()
@@ -18,7 +282,79 @@ public class IndexExtractor
                 .Select(d => firstRoot = Note.Normalize(d.RootDelta + firstRoot)))
             .ToList();
 
-    public List<LoopBlock> FindSimpleLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
+    public List<RoundRobinBlock> FindRoundRobins(BlockGraph graph) 
+        => graph.Environments // for each indexed block
+            .Where(x => !x.Value.Parents.Any()) // without parents (top-level)
+            .Where(x => x.Key is not IPolyBlock) // not compatible with poly blocks
+            .Select(x => x.Value.Block)
+            .GroupBy(x => (x.Normalized, x.NormalizationRoot, x.Type)) // find all groups of the same blocks
+            .SelectMany(g => g // and each group will return all paths for every consecutive pair in it
+                .OrderBy(x => x.StartIndex)
+                .AsPairs() // get pairs
+                .Where(p => pathsSearcher
+                    .Dijkstra(graph, p.previous, p.current)
+                    .SelectSingle(p => 
+                        p.Count > 1
+                        && !p
+                        .Select(j => j.Block2.Block)
+                        .Select(b => (b.Normalized, b.NormalizationRoot))
+                        .AnyDuplicates()))
+                .Select(p => Enumerable.Range(p.previous.StartIndex, p.current.EndIndex - p.previous.StartIndex + 1) // at every position between the blocks
+                    .SelectMany(i => graph.BlocksAt[i]) // get all distinct blocks
+                    .Where(x => x is not IPolyBlock) // not compatible with poly blocks
+                    .Distinct()
+                    .Where(x => x.StartIndex >= p.previous.StartIndex && x.EndIndex <= p.current.EndIndex) // only blocks fully within the current segment
+                    .Where(x => !graph.Environments[x].Parents.Any()) // top-level
+                    .OrderBy(x => x == p.previous ? 0 : 1) // let the from-block go first
+                    .ThenBy(x => x == p.current ? 1 : 0) // and the to-block go last
+                    .ThenBy(x => x.StartIndex) // rest everything is in order
+                    .ThenBy(x => x.EndIndex)
+                    .ThenBy(x => x.Normalized) // any order works ok for the purpose of invariant normalizations
+                    .ToList())
+                .Where(p => p.Count > 2 ? true : throw new("Could never have happened.")))
+            // now we've got all different paths, many of them are overlapping (they should turn to the same round-robin block)
+            .GroupBy(p => (RoundRobinBlock.GetNormalization(p, p.Count - 1, out var normalizationRoot), normalizationRoot)) // find groups of the same normalization
+            .SelectMany(g => g // for each group, split to chunks of non-overlapping paths
+                .OrderBy(x => x[0].StartIndex)
+                .WithPrevious()
+                .ToChunksByShouldStartNew(p => p.previous?[^1].StartIndex < p.current[0].StartIndex) // if there's a gap between the last of the previous and the first of the current, it's a new block
+                .Select(c => new RoundRobinBlock(
+                    c.SelectMany(x => x.current).Distinct().ToList(),
+                    c.First().current.Count - 1))
+                // quick testing showed that this condition is not needed, the segments previously covered by existing blocks are now not found (probably due to the top-level requirement)
+                .Where(b => graph.BlocksByPositions[(b.StartIndex, b.EndIndex)].All(x => x.Type != BlockType.RoundRobin)))
+            .ToList();
+
+    public List<PingPongBlock> FindPingPongs(BlockGraph graph)
+        => graph.Joints
+            .SelectMany(l => l.Block2.RightJoints.Select(r => (l, r)))
+            .Where(x => x.l.Block1.Block.Type == x.r.Block2.Block.Type
+                        && x.l.Block1.Block.Normalized == x.r.Block2.Block.Normalized
+                        && x.l.Block1.Block.NormalizationRoot == x.r.Block2.Block.NormalizationRoot)
+            .GroupBy(x =>
+            {
+                var normalizations = x.l.Normalization.Once().Append(x.r.Normalization).OrderBy(x => x).ToList();
+                return normalizations[0] + normalizations[1];
+            })
+            .SelectMany(pingPongsOfTheNormalization => pingPongsOfTheNormalization
+                // find consecutive joints, each subgroup will become a ping pong
+                .WithPrevious()
+                .ToChunksByShouldStartNew(p => p.current.l != p.previous?.r)
+                .Select(c => c.Select(p => p.current)))
+            .Select(x =>
+            {
+                var children = x.SelectMany(x => x.l.Block1.Block.Once().Append(x.r.Block1.Block).Append(x.r.Block2.Block)).Distinct().OrderBy(x => x.StartIndex).ToList();
+                if (children.Select(x => x.StartIndex).AnyDuplicates()
+                    || children.Select(x => x.EndIndex).AnyDuplicates())
+                    throw new("Unique blocks start indices expected.");
+                return new PingPongBlock
+                {
+                    Children = children,
+                };
+            })
+            .ToList();
+
+    public List<LoopBlock> FindLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
     {
         Dictionary<(byte root, ChordType chordType), int> indices = new()
         {
@@ -69,7 +405,7 @@ public class IndexExtractor
                 Loop = foundLoop,
                 Normalized = normalized,
                 NormalizationShift = normalizationShift,
-                NormalizationRoot = roots[movementIndexToLoopStart + 1 + InvertNormalizationShift(normalizationShift, foundLoop.Length)],
+                NormalizationRoot = GetLoopNormalizationRoot(roots, movementIndexToLoopStart + 1, normalizationShift, foundLoop.Length),
                 StartIndex = movementIndexToLoopStart + 1,
                 EndIndex = movementIndex,
             });
@@ -80,6 +416,9 @@ public class IndexExtractor
 
         return loops;
     }
+    
+    private byte GetLoopNormalizationRoot(IReadOnlyList<byte> roots, int startIndex, int normalizationShift, int loopLength)
+        => roots[startIndex + InvertNormalizationShift(normalizationShift, loopLength)];
 
     public List<LoopSelfMultiJumpBlock> FindSelfJumps(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<LoopBlock> loops)
         => loops
@@ -147,63 +486,13 @@ public class IndexExtractor
             })
             .ToList();
 
-    public List<IBlock> FindAnyLoops(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
-    {
-        var loops = FindSimpleLoops(sequence, roots);
-
-        List<IBlock> blocks;
-        switch (blocksExtractionLogic)
-        {
-            case BlocksExtractionLogic.Loops:
-                blocks = loops.Cast<IBlock>().ToList();
-                break;
-                
-            case BlocksExtractionLogic.ReplaceWithSelfJumps:
-            {
-                var jumps = FindSelfJumps(sequence, loops).SelectMany(x => x.ChildJumps).ToList();
-                var involvedLoops = jumps
-                    .SelectMany(x => new[] { x.Loop1, x.Loop2, x.JointLoop, })
-                    .Where(x => x != null)
-                    .Distinct();
-
-                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                break;
-            }
-
-            case BlocksExtractionLogic.ReplaceWithSelfMultiJumps:
-            {
-                var jumps = FindSelfJumps(sequence, loops);
-                var involvedLoops = jumps
-                    .SelectMany(x => x.ChildLoops)
-                    .Distinct();
-
-                blocks = loops.Except(involvedLoops).Cast<IBlock>().Concat(jumps).ToList();
-                break;
-            }
-
-            case BlocksExtractionLogic.All:
-            {
-                var jumps = FindSelfJumps(sequence, loops);
-                var massiveOverlaps = FindMassiveOverlapsBlocks(loops);
-                blocks = jumps.Cast<IBlock>()
-                    .Concat(jumps.SelectMany(x => x.ChildJumps))
-                    .Concat(loops)
-                    .Concat(massiveOverlaps)
-                    .ToList();
-                break;
-            }
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(blocksExtractionLogic), blocksExtractionLogic, null);
-        }
-
-        return blocks;
-    }
-
     public List<SequenceBlock> FindSequenceBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<IBlock> existingBlocks, IReadOnlyList<byte> roots)
         => Enumerable
             .Range(0, sequence.Length)
-            .Except(existingBlocks.SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
+            .Except(existingBlocks
+                .OfType<IIndexedBlock>()
+                .Where(x => x is not IPolyBlock) // the sequences search (to make the graph connected) will not notice the poly blocks because some algorithms (like the round-robin search) ignore poly blocks but require sequences.
+                .SelectMany(b => Enumerable.Range(b.StartIndex, b.BlockLength)))
             .OrderBy(x => x)
             .WithPrevious()
             .ToChunksByShouldStartNew(x => x.previous + 1 != x.current)
@@ -220,7 +509,7 @@ public class IndexExtractor
                     EndIndex = endIndex,
                     Sequence = subsequence,
                     Normalized = subsequence.SerializeLoop(),
-                    NormalizationRoot = roots[startIndex + 1],
+                    NormalizationRoot = roots[startIndex],
                 };
             })
             .ToList();
@@ -286,31 +575,106 @@ public class IndexExtractor
         return result;
     }
 
-    public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, BlocksExtractionLogic blocksExtractionLogic)
+    public List<IBlock> FindBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<BlockType> blockTypes, PolyBlocksExtractionParameters? polyBlocksExtractionParameters = null)
     {
-        var blocks = FindAnyLoops(sequence, roots, blocksExtractionLogic);
+        List<IBlock> blocks = new();
 
-        var sequences = FindSequenceBlocks(sequence, blocks, roots);
+        if (blockTypes.Contains(BlockType.Loop))
+        {
+            var loops = FindLoops(sequence, roots);
+            blocks.AddRange(loops);
 
-        blocks.AddRange(sequences);
+            if (blockTypes.Contains(BlockType.LoopSelfJump) || blockTypes.Contains(BlockType.LoopSelfMultiJump))
+            {
+                var jumps = FindSelfJumps(sequence, loops);
+                if (blockTypes.Contains(BlockType.LoopSelfMultiJump))
+                {
+                    blocks.AddRange(jumps);
+                }
+
+                if (blockTypes.Contains(BlockType.LoopSelfJump))
+                {
+                    blocks.AddRange(jumps.SelectMany(x => x.ChildJumps));
+                }
+            }
+
+            if (blockTypes.Contains(BlockType.MassiveOverlaps))
+            {
+                blocks.AddRange(FindMassiveOverlapsBlocks(loops));
+            }
+
+            var extractPolySequences = blockTypes.Contains(BlockType.PolySequence);
+            var extractPolyLoops = blockTypes.Contains(BlockType.PolyLoop);
+            if (extractPolySequences || extractPolyLoops)
+            {
+                var (polySequences, polyLoops) = FindPolyBlocks(sequence, roots, loops, extractPolySequences, extractPolyLoops, polyBlocksExtractionParameters ?? new());
+                if (extractPolySequences)
+                {
+                    blocks.AddRange(polySequences);
+                }
+
+                if (extractPolyLoops)
+                {
+                    blocks.AddRange(polyLoops);
+                }
+            }
+        }
+
+        if (blockTypes.Contains(BlockType.Sequence))
+        {
+            blocks.AddRange(FindSequenceBlocks(sequence, blocks, roots));
+        }
+
+        if (blockTypes.Contains(BlockType.PingPong) || blockTypes.Contains(BlockType.RoundRobin))
+        {
+            if (blockTypes.Contains(BlockType.RoundRobin))
+            {
+                while (true)
+                {
+                    var graph = CreateGraph(blocks);
+                    var roundRobins = FindRoundRobins(graph);
+                    if (!roundRobins.Any())
+                    {
+                        break;
+                    }
+
+                    blocks.AddRange(roundRobins);
+                }
+            }
+            
+            if (blockTypes.Contains(BlockType.PingPong))
+            {
+                var graph = CreateGraph(blocks);
+                blocks.AddRange(FindPingPongs(graph));
+            }
+        }
+
+        if (blockTypes.Contains(BlockType.SequenceStart))
+        {
+            blocks.Add(new EdgeBlock(BlockType.SequenceStart, sequence.Length));
+        }
+
+        if (blockTypes.Contains(BlockType.SequenceEnd))
+        {
+            blocks.Add(new EdgeBlock(BlockType.SequenceEnd, sequence.Length));
+        }
 
         blocks.Sort((block1, block2) => block1.StartIndex.CompareTo(block2.StartIndex) switch
         {
             var x when x != 0 => x,
             _ when block1 == block2 => 0,
-            _ when blocksExtractionLogic == BlocksExtractionLogic.All => -block1.EndIndex.CompareTo(block2.EndIndex),
-            _ => throw new("Duplicate start indices could not have happened."),
+            _ => -block1.EndIndex.CompareTo(block2.EndIndex),
         });
 
         return blocks;
     }
 
-    private static IEnumerable<IBlock> GetChildBlocksSubtree(IBlock block) =>
+    private static IEnumerable<IIndexedBlock> GetChildBlocksSubtree(IIndexedBlock block) =>
         block.Children.SelectMany(b => GetChildBlocksSubtree(b).Prepend(b));
 
-    public BlockGraph FindGraph(IReadOnlyList<IBlock> blocks)
+    public BlockGraph CreateGraph(IReadOnlyList<IBlock> blocks)
     {
-        var environments = blocks.Select(b => new BlockEnvironment
+        var environments = blocks.OfType<IIndexedBlock>().Select(b => new BlockEnvironment
         {
             Block = b,
         }).ToDictionary(x => x.Block);
@@ -328,8 +692,14 @@ public class IndexExtractor
         
         var joints = environments.Values.SelectMany((b1, i1) => environments.Values
                 .Where((b2, i2) =>
-                    i2 > i1 && !(b1.Block.StartIndex > b2.Block.EndIndex + 1 || b2.Block.StartIndex > b1.Block.EndIndex + 1) &&
-                    !b1.ChildrenSubtree.Contains(b2) && !b2.ChildrenSubtree.Contains(b1))
+                    i2 > i1 
+                    && !(b1.Block.StartIndex > b2.Block.EndIndex + 1 || b2.Block.StartIndex > b1.Block.EndIndex + 1) 
+                    && !b1.ChildrenSubtree.Contains(b2) 
+                    && !b2.ChildrenSubtree.Contains(b1)
+                    
+                    // neither of them is fully within another
+                    && new[] { b1.Block.StartIndex, b1.Block.EndIndex, }.Any(x => !x.IsBetween(b2.Block.StartIndex, b2.Block.EndIndex))
+                    && new[] { b2.Block.StartIndex, b2.Block.EndIndex, }.Any(x => !x.IsBetween(b1.Block.StartIndex, b1.Block.EndIndex)))
                 .Select(b2 => b1.Block.StartIndex.CompareTo(b2.Block.StartIndex) switch
                 {
                     -1 => (b1, b2),
@@ -343,18 +713,39 @@ public class IndexExtractor
                 Block2 = x.b2,
             })
             .ToList();
-
+        
         foreach (var joint in joints)
         {
             joint.Block1.RightJoints.Add(joint);
             joint.Block2.LeftJoints.Add(joint);
         }
 
+        var uselessLoops = environments.Values.Where(e =>
+        {
+            if (e.Block is not LoopBlock)
+                return false;
+
+            var left = e.LeftJoints.Select(x => x.Block1.Block).OfType<LoopBlock>().ToList();
+            var right = e.RightJoints.Select(x => x.Block2.Block).OfType<LoopBlock>().ToList();
+            return left.Count == 1
+                   && right.Count == 1
+                   && left.Single().EndIndex + 1 >= right.Single().StartIndex;
+        });
+        
+        foreach (var environment in uselessLoops)
+        {
+            environment.Detections |= BlockDetections.UselessLoop;
+        }
+
         return new()
         {
-            EnvironmentsByBlock = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
-            Environments = environments.Values.ToList(),
+            Environments = environments.ToDictionary(x => x.Key, x => (IBlockEnvironment)x.Value),
             Joints = joints,
+            BlocksAt = environments.Keys
+                .SelectMany(b => Enumerable.Range(b.StartIndex, b.EndIndex - b.StartIndex + 1).Select(i => (b, i)))
+                .ToLookup(x => x.i, x => x.b),
+            BlocksByPositions = environments.Keys
+                .ToLookup(x => (x.StartIndex, x.EndIndex)),
         };
     }
 
@@ -432,7 +823,7 @@ public class IndexExtractor
         foreach (var extendedHarmonyMovementsSequence in compactChordsProgression.ExtendedHarmonyMovementsSequences)
         {
             var roots = CreateRoots(extendedHarmonyMovementsSequence.Movements, extendedHarmonyMovementsSequence.FirstRoot);
-            var loops = FindSimpleLoops(extendedHarmonyMovementsSequence.Movements, roots);
+            var loops = FindLoops(extendedHarmonyMovementsSequence.Movements, roots);
 
             foreach (var loop in loops)
             {

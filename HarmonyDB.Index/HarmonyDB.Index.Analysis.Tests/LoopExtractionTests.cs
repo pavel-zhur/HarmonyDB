@@ -4,14 +4,19 @@ using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
 using HarmonyDB.Index.Analysis.Models.Index;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
+using HarmonyDB.Index.Analysis.Models.Index.Graphs;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Analysis.Tools;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace HarmonyDB.Index.Analysis.Tests;
 
-public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer)
+public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataParser chordDataParser, ProgressionsBuilder progressionsBuilder, IndexExtractor indexExtractor, ProgressionsVisualizer progressionsVisualizer, PathsSearcher pathsSearcher)
 {
     [InlineData("Am D G E Am D G E Am D G E Am D G E", 5)] // normalized start of Am-D-G-E is D.
     [InlineData("Gm C F D Gm C F D Gm C F D Gm C F D", 3)]
@@ -22,7 +27,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void NormalizationRootInterpretationCorrect(string chordsInput, byte expectedNormalizedRoot)
     {
         var (sequence, firstRoot) = InputChords(chordsInput);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
@@ -71,7 +76,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                     }).ToArray();
 
                 var firstRoot = (byte)Random.Shared.Next(0, 12);
-                var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+                var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
                 var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
                 if (loopSelfJumpsBlocks.Count > 1)
@@ -95,7 +100,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void SelfJumpsDifferentDeltasNotFound()
     {
         var (sequence, firstRoot) = InputChords("C A C D C A C D C A C D C A C");
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
@@ -110,7 +115,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             " C G C F C G C F C G C F C G C F C G C F C G C Bm" +
             " F C G C F C G C F C G C F C G C F C G C Bm" +
             " G C F C G C F C G C F C G C F C G C F C G C");
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
@@ -124,7 +129,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void NoneShort()
     {
         var (sequence, firstRoot) = InputDeltas(1);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
 
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
@@ -136,7 +141,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void NoneLong()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Repeat(7, 11));
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -158,7 +163,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }).ToArray();
 
         byte firstRoot = 0;
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -180,7 +185,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         }).ToArray();
 
         byte firstRoot = 0;
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -192,7 +197,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void OneLong()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Repeat(7, 12), 0);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -204,7 +209,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void EndingPlusOne()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7, 1]));
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -216,7 +221,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void Ending()
     {
         var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)).Concat([5, 7, 5, 7]));
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -228,7 +233,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void Beginning()
     {
         var (sequence, firstRoot) = InputDeltas(new[] { 5, 7, 5, 7, 5 }.Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))));
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -245,7 +250,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             .Concat(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12))), 
             0);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -260,7 +265,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         for (var i = 0; i < 100; i++)
         {
             var (sequence, firstRoot) = InputDeltas(Enumerable.Range(0, 100).Select(_ => Random.Shared.Next(1, 12)));
-            var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+            var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
             var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, false);
         }
@@ -271,7 +276,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "C# F# C# F# C# G# C# G# C# G# C# G# F# C# F# C# F# C# F#";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -289,7 +294,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 4, 6,
             8, 4, 8, 4);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -306,7 +311,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             13,
             8, 4, 8, 4);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -325,7 +330,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             2, 2, 1, 1, 2, 1, 2, 1,
             2, 2, 1, 1, 2, 1, 2, 1);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -351,7 +356,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         string sequenceChords)
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -388,7 +393,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         //                            4 1 4 1 4 1 4 1
         var sequenceChords = "C F C F C G C G C G C G F C F C F C F";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -430,7 +435,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         string sequenceChords)
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -454,7 +459,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "C F C F D G D G D G A E A E A E";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -479,7 +484,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var sequenceChords = "Am Dm F E Am Dm F E Am E Am Dm F E Am Dm F E Am E Am Dm F E";
         var (sequence, firstRoot) = InputChords(sequenceChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -504,7 +509,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 3, 6,
             3, 3, 6);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -524,7 +529,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             3, 3, 6,
             3, 3, 6);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -544,7 +549,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -562,7 +567,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     {
         var (sequence, firstRoot) = InputChords(sequenceChords);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -582,7 +587,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -607,7 +612,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             1, 2, 1, 2, 6,
             1, 2, 1, 2, 6);
 
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -635,7 +640,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         {
             var (sequence, firstRoot) = InputChords(chords);
 
-            var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+            var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
             var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -667,7 +672,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                 }).Where(m => m.FromType != m.ToType || m.RootDelta != 0).ToArray();
 
             var firstRoot = (byte)Random.Shared.Next(0, 12);
-            var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+            var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
             var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
             TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks, false);
         }
@@ -680,7 +685,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void JointLoopIndicesCheck(int fromNormalizationRoot, int toNormalizationRoot, string inputChords)
     {
         var (sequence, firstRoot) = InputChords(inputChords);
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -696,7 +701,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void MassiveOverlapsCheck()
     {
         var (sequence, firstRoot) = InputChords("A F A B C D A Bm B C Cm D Dm A F D Dm A F");
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfJumpsBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);
 
@@ -711,7 +716,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
     public void MultipleJumpsBlocks()
     {
         var (sequence, firstRoot) = InputChords("Am C D Am C D Am D Am C D E C D E C E C D E C D E");
-        var loops = indexExtractor.FindSimpleLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
+        var loops = indexExtractor.FindLoops(sequence, indexExtractor.CreateRoots(sequence, firstRoot));
         var loopSelfMultiJumpBlocks = indexExtractor.FindSelfJumps(sequence, loops);
         Assert.Equal(2, loopSelfMultiJumpBlocks.Count);
     }
@@ -735,11 +740,13 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         var roots = indexExtractor.CreateRoots(sequence, firstRoot);
 
-        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops), anyMassiveOverlaps);
-        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfJumps), anyMassiveOverlaps);
-        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.ReplaceWithSelfMultiJumps), anyMassiveOverlaps);
+        TraceAndTest(indexExtractor.FindBlocks(sequence, roots, BlockTypes.Loop), anyMassiveOverlaps);
 
-        var graph = indexExtractor.FindGraph(indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All));
+        TraceAndTest(indexExtractor.CreateGraph(indexExtractor.FindBlocks(sequence, roots, BlockTypes.Loop)));
+        
+        var all = indexExtractor.FindBlocks(sequence, roots, BlockTypes.All);
+        var graph = indexExtractor.CreateGraph(all);
+        var shortestPath = pathsSearcher.Dijkstra(graph);
         TraceAndTest(graph);
 
         // sequence integrity test
@@ -782,7 +789,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
         Assert.All(loops, l => Assert.Equal(
             l.Successions == Math.Round(l.Successions),
-            l.SuccessionsWhole));
+            l.OccurrencesWhole));
 
         Assert.All(loops, l => Assert.Equal(
             l.Successions >= 1,
@@ -796,17 +803,16 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
             l.Successions,
             l.Occurrences - 1));
 
-        string CreateRootsTrace(IBlock block) => progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, block.StartIndex, block.EndIndex, out _);
+        string CreateRootsTrace(IBlock block) => progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, out _, block: block);
 
         if (trace)
         {
             logger.LogInformation(
-                $"loops: {loops.Count}, self jumps: {loopSelfJumpsBlocks.Count}, roots: {(visualize ? null : progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, 0, sequence.Length - 1, out _))}");
+                $"loops: {loops.Count}, self jumps: {loopSelfJumpsBlocks.Count}, roots: {(visualize ? null : progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, out _))}");
 
             if (visualize)
             {
-                var all = indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.All);
-                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, false);
+                var result = progressionsVisualizer.VisualizeBlocksAsOne(sequence, roots, all, graph, shortestPath, new() { TypesToo = false });
                 logger.LogInformation(Environment.NewLine + result + Environment.NewLine);
             }
         }
@@ -1045,11 +1051,11 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
 
     private void TraceAndTest(BlockGraph graph)
     {
-        Assert.All(graph.Environments, e => Assert.Distinct(e.ChildrenSubtree));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.Children));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.Parents));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.LeftJoints));
-        Assert.All(graph.Environments, e => Assert.Distinct(e.RightJoints));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.ChildrenSubtree));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Children));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.Parents));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.LeftJoints));
+        Assert.All(graph.Environments.Values, e => Assert.Distinct(e.RightJoints));
     }
 
     private void TraceAndTest(List<IBlock> blocks, bool anyMassiveOverlaps)
@@ -1057,13 +1063,15 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
         AssertLoopsSequencePossible(blocks, anyMassiveOverlaps);
 
         // sequences do not overlap with anything else
-        Assert.False(blocks.OfType<SequenceBlock>().Cast<IBlock>().Any(s => blocks.Any(l => l != s && (
+        Assert.False(blocks.OfType<SequenceBlock>().Cast<IBlock>().Any(s => blocks.Where(b => b is not PingPongBlock).Any(l => l != s && (
             l.StartIndex >= s.StartIndex && l.StartIndex <= s.EndIndex // l.StartIndex within the sequence
             || l.EndIndex >= s.StartIndex && l.EndIndex <= s.EndIndex)))); // l.EndIndex within the sequence
     }
 
     private void AssertLoopsSequencePossible(IReadOnlyList<IBlock> blocks, bool anyMassiveOverlaps)
     {
+        blocks = blocks.Where(x => x is not PingPongBlock).ToList();
+        
         // there's no such block that contains another block
         Assert.False(blocks.Any(x => blocks.Where(y => y != x)
             .Any(y => x.StartIndex <= y.StartIndex && x.EndIndex >= y.EndIndex)));

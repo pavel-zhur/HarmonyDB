@@ -1,8 +1,10 @@
 ﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
-namespace HarmonyDB.Index.Analysis.Models.Index;
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
-public class SequenceBlock : IBlock
+public class SequenceBlock : IIndexedBlock
 {
     public required ReadOnlyMemory<CompactHarmonyMovement> Sequence { get; init; }
 
@@ -20,5 +22,12 @@ public class SequenceBlock : IBlock
 
     public int BlockLength => EndIndex - StartIndex + 1;
 
-    public IEnumerable<IBlock> Children => [];
+    public IEnumerable<IIndexedBlock> Children => [];
+
+    public string? GetNormalizedCoordinate(int index)
+        => index < StartIndex || index > EndIndex
+            ? throw new ArgumentOutOfRangeException(nameof(index))
+            : null; // sequence blocks do not have normalization shifts
+
+    public BlockType Type => BlockType.Sequence;
 }

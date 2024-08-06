@@ -48,4 +48,6 @@ public static class Extensions
             yield return first!;
         }
     }
+    
+    public static bool IsBetween(this int value, int start, int end) => value >= start && value <= end;
 }

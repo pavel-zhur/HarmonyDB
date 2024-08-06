@@ -13,4 +13,26 @@ public static class ExtensionStructOverloads
             previous = x;
         }
     }
+
+    public static List<(List<T> chunk, TCriterium criterium)> ToChunks<T, TCriterium>(this IEnumerable<T> source, Func<T, TCriterium> criteriumGetter)
+        where TCriterium : struct
+    {
+        TCriterium? previous = null;
+        var counter = 0;
+
+        return source
+            .GroupBy(x =>
+            {
+                var criterium = criteriumGetter(x);
+                if (previous.HasValue && !previous.Equals(criterium))
+                {
+                    counter++;
+                }
+
+                previous = criterium;
+                return (criterium, counter);
+            })
+            .Select(g => (g.ToList(), g.Key.criterium))
+            .ToList();
+    }
 }

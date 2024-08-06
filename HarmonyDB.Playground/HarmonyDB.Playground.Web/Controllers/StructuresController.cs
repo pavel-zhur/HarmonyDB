@@ -1,16 +1,11 @@
 using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Playground.Web.Models.Structures;
 using HarmonyDB.Source.Api.Client;
-using HarmonyDB.Playground.Web.Models.Home;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using OneShelf.Common.Api.Client;
-using HarmonyDB.Index.Analysis.Models.Index;
 using HarmonyDB.Index.Analysis.Services;
-using HarmonyDB.Common.Representations.OneShelf;
-using HarmonyDB.Source.Api.Model.V1;
 
 namespace HarmonyDB.Playground.Web.Controllers;
 
@@ -22,8 +17,9 @@ public class StructuresController : PlaygroundControllerBase
     private readonly ProgressionsBuilder _progressionsBuilder;
     private readonly ChordDataParser _chordDataParser;
     private readonly ProgressionsVisualizer _progressionsVisualizer;
+    private readonly PathsSearcher _pathsSearcher;
 
-    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer)
+    public StructuresController(ILogger<StructuresController> logger, SourceApiClient sourceApiClient, IndexExtractor indexExtractor, ProgressionsBuilder progressionsBuilder, ChordDataParser chordDataParser, ProgressionsVisualizer progressionsVisualizer, PathsSearcher pathsSearcher)
     {
         _logger = logger;
         _sourceApiClient = sourceApiClient;
@@ -31,6 +27,7 @@ public class StructuresController : PlaygroundControllerBase
         _progressionsBuilder = progressionsBuilder;
         _chordDataParser = chordDataParser;
         _progressionsVisualizer = progressionsVisualizer;
+        _pathsSearcher = pathsSearcher;
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -48,34 +45,72 @@ public class StructuresController : PlaygroundControllerBase
             model.ToRemove = null;
             return RedirectToAction("Multi", model);
         }
-        
+
         model.ExternalIds = model.ExternalIds.Distinct().ToList();
-        
+
         if (model.IncludeTrace)
         {
             ViewBag.Trace = new ApiTraceBag();
         }
 
         var songs = ((GetSongsResponse)await _sourceApiClient.V1GetSongs(_sourceApiClient.GetServiceIdentity(), model.ExternalIds, ViewBag.Trace)).Songs.Values.ToList();
-        
+
+        var stopwatch = new Stopwatch();
+        TimeSpan
+            compactTime = TimeSpan.Zero,
+            rootsTime = TimeSpan.Zero,
+            blocksTime = TimeSpan.Zero,
+            graphTime = TimeSpan.Zero,
+            dijkstraTime = TimeSpan.Zero,
+            visualizationTime = TimeSpan.Zero;
+
         ViewBag.Visualizations = songs.Select(x =>
         {
             var chordsData = x.Output.AsChords(new());
-            var progression =
-                _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
+            var progression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
 
             return progression.ExtendedHarmonyMovementsSequences.Select(s =>
             {
+                stopwatch.Restart();
                 var compact = s.Compact();
+                compactTime += stopwatch.Elapsed;
+
+                stopwatch.Restart();
                 var sequence = compact.Movements;
                 var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
-                var blocks = _indexExtractor.FindBlocks(sequence, roots, BlocksExtractionLogic.Loops);
-                return _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks);
+                rootsTime += stopwatch.Elapsed;
+
+                stopwatch.Restart();
+                var blocks = _indexExtractor.FindBlocks(sequence, roots, model.BlockTypes, model);
+                blocksTime += stopwatch.Elapsed;
+
+                stopwatch.Restart();
+                var graph = _indexExtractor.CreateGraph(blocks);
+                graphTime += stopwatch.Elapsed;
+
+                stopwatch.Restart();
+                var shortestPath = _pathsSearcher.Dijkstra(graph);
+                dijkstraTime += stopwatch.Elapsed;
+
+                stopwatch.Restart();
+                var visualization = _progressionsVisualizer.VisualizeBlocksAsTwo(sequence, roots, blocks, graph, shortestPath, new() { ShowJoints = false, ShowPath = false, });
+                visualizationTime += stopwatch.Elapsed;
+
+                return visualization;
             }).ToList();
         }).ToList();
-        
+
         ViewBag.Songs = songs;
-        
+        ViewBag.Timers = new Dictionary<string, TimeSpan>
+        {
+            { nameof(compactTime), compactTime },
+            { nameof(rootsTime), rootsTime },
+            { nameof(blocksTime), blocksTime },
+            { nameof(graphTime), graphTime },
+            { nameof(dijkstraTime), dijkstraTime },
+            { nameof(visualizationTime), visualizationTime }
+        };
+
         return View(model);
     }
 }

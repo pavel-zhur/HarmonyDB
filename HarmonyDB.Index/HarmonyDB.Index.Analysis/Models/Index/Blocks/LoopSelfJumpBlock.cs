@@ -1,7 +1,9 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
+using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Enums;
 
-namespace HarmonyDB.Index.Analysis.Models.Index;
+namespace HarmonyDB.Index.Analysis.Models.Index.Blocks;
 
 public class LoopSelfJumpBlock : IBlock
 {
@@ -26,6 +28,8 @@ public class LoopSelfJumpBlock : IBlock
     public int BlockLength => EndIndex - StartIndex + 1;
 
     public IEnumerable<IBlock> Children => JointLoop == null ? [Loop1, Loop2] : [Loop1, JointLoop!, Loop2];
+
+    BlockType IBlock.Type => BlockType.LoopSelfJump;
 
     public LoopSelfJumpType Type
     {
