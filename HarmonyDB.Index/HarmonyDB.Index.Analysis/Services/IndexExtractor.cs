@@ -322,7 +322,7 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
                     c.SelectMany(x => x.current).Distinct().ToList(),
                     c.First().current.Count - 1))
                 // quick testing showed that this condition is not needed, the segments previously covered by existing blocks are now not found (probably due to the top-level requirement)
-                .Where(b => graph.BlocksByPositions[(b.StartIndex, b.EndIndex)].All(x => x.Type != BlockType.RoundRobin)))
+                .Where(b => graph.BlocksByPositions[(b.StartIndex, b.EndIndex)].All(x => x.Type is not (BlockType.RoundRobin or BlockType.RoundRobinLx))))
             .ToList();
 
     public List<PingPongBlock> FindPingPongs(BlockGraph graph)
@@ -639,6 +639,10 @@ public class IndexExtractor(PathsSearcher pathsSearcher)
                     }
 
                     blocks.AddRange(roundRobins);
+                    if (!blockTypes.Contains(BlockType.RoundRobinLx))
+                    {
+                        break;
+                    }
                 }
             }
             

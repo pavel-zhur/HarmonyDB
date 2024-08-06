@@ -17,4 +17,6 @@ public enum BlockType : byte
     
     PolySequence,
     PolyLoop,
+
+    RoundRobinLx,
 }
