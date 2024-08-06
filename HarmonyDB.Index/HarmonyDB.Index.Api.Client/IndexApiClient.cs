@@ -49,7 +49,7 @@ public class IndexApiClient : ApiClientBase<IndexApiClient>
         => await PostWithCode<LoopsRequest, LoopsResponse>(IndexApiUrls.VExternal1TonalitiesLoops, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
 
     public async Task<SongsResponse> TonalitiesSongs(SongsRequest request, ApiTraceBag? apiTraceBag = null)
-        => await PostWithCode<SongsRequest, SongsResponse>(IndexApiUrls.VExternal1TonalitiesSongs, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
+        => await PostWithCode<SongsRequest, SongsResponse>(IndexApiUrls.VExternal1TonalitiesSongs, request, apiTraceBag: apiTraceBag, conditionalStreamId: "C");
 
     public async Task<LoopResponse> TonalitiesLoop(LoopRequest request, ApiTraceBag? apiTraceBag = null)
         => await PostWithCode<LoopRequest, LoopResponse>(IndexApiUrls.VExternal1TonalitiesLoop, request, apiTraceBag: apiTraceBag, conditionalStreamId: "A");
