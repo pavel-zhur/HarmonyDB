@@ -13,6 +13,7 @@ public class RoundRobinBlock : IIndexedBlock
         ChildrenPeriodLength = childrenPeriodLength;
 
         Level = children.Select(x => x is RoundRobinBlock roundRobinBlock ? roundRobinBlock.Level : 0).Max() + 1;
+        Type = Level == 1 ? BlockType.RoundRobin : BlockType.RoundRobinLx;
 
         Normalized = GetNormalization(Children, ChildrenPeriodLength, out var normalizationRoot, Level);
         NormalizationRoot = normalizationRoot;
@@ -22,7 +23,7 @@ public class RoundRobinBlock : IIndexedBlock
 
     IEnumerable<IIndexedBlock> IIndexedBlock.Children => Children;
 
-    public BlockType Type => BlockType.RoundRobin;
+    public BlockType Type { get; }
 
     public string Normalized { get; }
 
