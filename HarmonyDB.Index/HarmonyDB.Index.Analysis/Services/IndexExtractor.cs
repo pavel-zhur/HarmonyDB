@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Index.Analysis.Models;
 using HarmonyDB.Index.Analysis.Models.CompactV1;
@@ -8,6 +9,7 @@ using HarmonyDB.Index.Analysis.Models.Index.Blocks.Interfaces;
 using HarmonyDB.Index.Analysis.Models.Index.Enums;
 using HarmonyDB.Index.Analysis.Models.Index.Graphs;
 using HarmonyDB.Index.Analysis.Models.Index.Graphs.Interfaces;
+using HarmonyDB.Index.Analysis.Models.Index.Matrix;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Tools;
 using OneShelf.Common;
@@ -16,6 +18,38 @@ namespace HarmonyDB.Index.Analysis.Services;
 
 public class IndexExtractor(PathsSearcher pathsSearcher)
 {
+    public Matrix CreateMatrix(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots)
+    {
+        Dictionary<string, List<(int i, int j)>> occurrences = new();
+        var matrix = new Matrix
+        {
+            Length = sequence.Length,
+            Segments = new Segment?[sequence.Length, sequence.Length],
+            Occurrences = occurrences,
+        };
+
+        var serializations = new string?[sequence.Length, sequence.Length];
+        for (var i = 0; i < sequence.Length; i++)
+        {
+            for (var j = i; j < sequence.Length; j++)
+            {
+                var serialized = sequence.Slice(i, j - i + 1).SerializeLoop();
+                serializations[i, j] = serialized;
+                (occurrences.TryGetValue(serialized, out var list) ? list : occurrences[serialized] = new()).Add((i, j));
+            }
+        }
+
+        for (var i = 0; i < sequence.Length; i++)
+        {
+            for (var j = i; j < sequence.Length; j++)
+            {
+                matrix.Segments[i, j] = new Segment(serializations[i, j]!, occurrences[serializations[i, j]!].Count, occurrences[serializations[i, j]!].Count(x => roots[x.i] == roots[i]), 0);
+            }
+        }
+
+        return matrix;
+    }
+
     public (List<PolySequenceBlock> polySequences, List<PolyLoopBlock> polyLoops) FindPolyBlocks(
         ReadOnlyMemory<CompactHarmonyMovement> sequence, 
         IReadOnlyList<byte> roots, 

@@ -60,9 +60,7 @@ public class ProgressionsVisualizer
 
     private List<(Text left, Text right)> VisualizeBlocks(ReadOnlyMemory<CompactHarmonyMovement> sequence, IReadOnlyList<byte> roots, IReadOnlyList<IBlock> blocks, BlockGraph graph, IReadOnlyList<IBlockJoint> shortestPath, BlocksChartParameters parameters)
     {
-        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, parameters.TypesToo);
-
-        var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
+        var rootsTrace = CreateRootsTraceByIndices(sequence, roots, out var positions, out var representations, parameters.TypesToo);
 
         var shortestPathBlocks = shortestPath.SelectSingle(x => x[0].Block1.Once().Concat(x.Select(x => x.Block2))).Select(x => x.Block).ToHashSet();
 
@@ -71,7 +69,7 @@ public class ProgressionsVisualizer
             (rootsTrace.AsText(), Text.EmptyLineContent)
         };
         
-        lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace.Length, shortestPathBlocks, gridPositions, out var blockGroups));
+        lines.AddRange(CreateBlocksLines(blocks, graph, parameters, positions, rootsTrace.Length, shortestPathBlocks, out var blockGroups));
 
         if (parameters.ShowJoints)
         {
@@ -86,8 +84,7 @@ public class ProgressionsVisualizer
         if (parameters.ShowPath)
         {
             lines.Add((Text.EmptyLineContent, Text.EmptyLineContent));
-            var pathLines = CreatePathLines(shortestPath, blockGroups);
-            lines.AddRange(pathLines);
+            lines.AddRange(CreatePathLines(shortestPath, blockGroups));
         }
 
         return lines;
@@ -151,9 +148,10 @@ public class ProgressionsVisualizer
         List<int> positions, 
         int rootsTraceLength,
         HashSet<IIndexedBlock> shortestPathBlocks, 
-        List<int> gridPositions,
         out Dictionary<IIndexedBlock, int> blockGroups)
     {
+        var gridPositions = positions.Where((_, i) => i % 6 == 5).ToList();
+
         var groups = blocks
             .Where(x => x is not EdgeBlock)
             .GroupBy(x => x switch
@@ -273,22 +271,26 @@ public class ProgressionsVisualizer
         ReadOnlyMemory<CompactHarmonyMovement> sequence,
         IReadOnlyList<byte> roots,
         out List<int> positions,
+        out List<string> representations,
         bool typesToo = true,
         IBlock? block = null)
     {
         var startIndex = block?.StartIndex ?? 0;
         var endIndex = block?.EndIndex ?? (sequence.Length - 1);
-        
+
+        representations = new();
+
+        string GetRepresentation(int i) => typesToo 
+            ? new Note(roots[i]).Representation(new()) 
+              + (i == 0
+                ? sequence.Span[i].FromType.ChordTypeToString()
+                : sequence.Span[i - 1].ToType.ChordTypeToString())
+            : roots[i].ToString();
+
         var builder = new StringBuilder();
-        if (typesToo)
-        {
-            builder.Append(new Note(roots[startIndex]).Representation(new()));
-            builder.Append(sequence.Span[startIndex].FromType.ChordTypeToString());
-        }
-        else
-        {
-            builder.Append(roots[startIndex]);
-        }
+        var representation = GetRepresentation(startIndex);
+        builder.Append(representation);
+        representations.Add(representation);
 
         positions =
         [
@@ -299,18 +301,12 @@ public class ProgressionsVisualizer
         {
             builder.Append(' ');
 
-            var startPosition = builder.Length;
-            if (typesToo)
-            {
-                builder.Append(new Note(roots[i + 1]).Representation(new()));
-                builder.Append(sequence.Span[i].ToType.ChordTypeToString());
-            }
-            else
-            {
-                builder.Append(roots[i + 1]);
-            }
+            positions.Add(builder.Length);
+            
+            representation = GetRepresentation(i + 1);
 
-            positions.Add(startPosition);
+            builder.Append(representation);
+            representations.Add(representation);
         }
 
         return builder.ToString();

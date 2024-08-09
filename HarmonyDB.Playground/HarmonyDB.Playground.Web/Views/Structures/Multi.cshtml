@@ -156,6 +156,10 @@
             @Html.ActionLink("Just this", "Multi", Model with { ExternalIds = song.ExternalId.Once().ToList(), })
             (<a href="javascript:void(0)" onclick="copyToClipboard('@song.ExternalId')">copy 📋</a>)
         </li>
+        @for (var j = 0; j < visualizations.Count; j++)
+        {
+            <li>@Html.ActionLink($"View the matrix {j + 1}", "Matrix", new MatrixModel { ExternalId = song.ExternalId, ProgressionIndex = j, }, new { target = "_new" })</li>
+        }
     </ul>
 
     @foreach (var (left, right) in visualizations)

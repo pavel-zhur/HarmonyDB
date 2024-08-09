@@ -1,6 +1,9 @@
 using HarmonyDB.Playground.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Globalization;
+using CsvHelper;
+using HarmonyDB.Index.Analysis.Models.Index.Matrix;
 using HarmonyDB.Playground.Web.Models.Structures;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model.V1.Api;
@@ -112,5 +115,62 @@ public class StructuresController : PlaygroundControllerBase
         };
 
         return View(model);
+    }
+
+    public async Task<IActionResult> Matrix(MatrixModel model)
+    {
+        using var memoryStream = new MemoryStream();
+        await using var textWriter = new StreamWriter(memoryStream);
+        await using var csvWriter = new CsvWriter(textWriter, CultureInfo.InvariantCulture);
+
+        var song = await _sourceApiClient.V1GetSong(_sourceApiClient.GetServiceIdentity(), model.ExternalId);
+
+        var chordsData = song.Song.Output.AsChords(new());
+        var progression = _progressionsBuilder.BuildProgression(chordsData.Select(_chordDataParser.GetProgressionData).ToList());
+        var compact = progression.ExtendedHarmonyMovementsSequences[model.ProgressionIndex].Compact();
+        var sequence = compact.Movements;
+        var roots = _indexExtractor.CreateRoots(sequence, compact.FirstRoot);
+        var matrix = _indexExtractor.CreateMatrix(sequence, roots);
+        _progressionsVisualizer.CreateRootsTraceByIndices(sequence, roots, out _, out var representations);
+
+        var rows = CreateMatrix(representations, matrix);
+        foreach (var cells in rows)
+        {
+            foreach (var cell in cells)
+            {
+                csvWriter.WriteField(cell);
+            }
+
+            await csvWriter.NextRecordAsync();
+        }
+
+        await csvWriter.FlushAsync();
+        await textWriter.FlushAsync();
+        return File(memoryStream.ToArray(), "text/csv", $"{model.ExternalId}_{model.ProgressionIndex}.csv");
+    }
+
+    private List<List<string?>> CreateMatrix(IReadOnlyList<string> representations, Matrix matrix)
+    {
+        var result = Enumerable.Range(0, representations.Count + 1)
+            .Select(i => Enumerable.Range(0, representations.Count + 1)
+                .Select(j => (string?)null)
+                .ToList())
+            .ToList();
+
+        for (var i = 0; i < representations.Count; i++)
+        {
+            result[0][i + 1] = representations[i];
+            result[i + 1][0] = representations[i];
+        }
+
+        for (var i = 0; i < representations.Count; i++)
+        {
+            for (var j = i + 1; j < representations.Count; j++)
+            {
+                result[i + 1][j + 1] = matrix.Segments[i, j - 1]!.Value.Occurrences.ToString();
+            }
+        }
+
+        return result;
     }
 }
