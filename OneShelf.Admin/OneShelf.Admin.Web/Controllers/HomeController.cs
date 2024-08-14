@@ -8,7 +8,9 @@ using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
 
 namespace OneShelf.Admin.Web.Controllers
 {
@@ -131,9 +133,22 @@ namespace OneShelf.Admin.Web.Controllers
             using var httpClient = _httpClientFactory.CreateClient();
             await using var stream = await httpClient.GetStreamAsync(pngModel.Url1024);
             using var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
-            await using var pngStream = new MemoryStream();
-            await image.SaveAsync(pngStream, new PngEncoder());
-            return File(pngStream.ToArray(), "image/png", $"{Path.GetInvalidFileNameChars().Aggregate(pngModel.Title, (x, c) => x.Replace(c, '_'))}.png");
+
+            var size = 400;
+
+            while (true)
+            {
+                image.Mutate(x => x.Resize(new Size(size)));
+                await using var pngStream = new MemoryStream();
+                await image.SaveAsync(pngStream, new PngEncoder());
+
+                if (pngStream.Length < 510 * 1024)
+                {
+                    return File(pngStream.ToArray(), "image/png", $"{Path.GetInvalidFileNameChars().Aggregate(pngModel.Title, (x, c) => x.Replace(c, '_'))}.png");
+                }
+
+                size -= 50;
+            }
         }
     }
 }
