@@ -134,7 +134,7 @@ namespace OneShelf.Admin.Web.Controllers
             await using var stream = await httpClient.GetStreamAsync(pngModel.Url1024);
             using var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
 
-            var size = 400;
+            var size = 512;
 
             while (true)
             {
