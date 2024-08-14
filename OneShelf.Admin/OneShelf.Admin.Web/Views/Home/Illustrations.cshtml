@@ -222,7 +222,13 @@
                         {
                             <div class="img-box my-list-e">
                                 <img src="@(publicUrl.Url256?.ToString() ?? Url.Action("Illustration", new { publicUrl.Id }))" onclick=" clicked(this, '@publicUrl.Url1024') " />
-                                <span class="@($"v{Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v}")">v @(Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v) @Model.Results.AlteredVersions.GetValueOrDefault(v)?.Key.SelectSingle(x => Model.Results.Alterations[x].Title) @($"i{i + 1} j{j + 1} #{k}")</span>
+                                <span class="@($"v{Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v}")">
+                                    v @(Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v) @Model.Results.AlteredVersions.GetValueOrDefault(v)?.Key.SelectSingle(x => Model.Results.Alterations[x].Title) @($"i{i + 1} j{j + 1} #{k}")
+                                    @if (publicUrl.Url1024 != null)
+                                    {
+                                        @Html.ActionLink("PNG", "Png", new PngModel { Url1024 = publicUrl.Url1024, Title = Model.UrlsToTitles.TryGetValue(url, out var title2) ? title2 : url, })
+                                    }
+                                </span>
                             </div>
                         }
                     }

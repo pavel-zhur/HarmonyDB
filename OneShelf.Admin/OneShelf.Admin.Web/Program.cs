@@ -17,7 +17,8 @@ builder.Services
     .AddSongsDatabase()
     .AddIllustrationsApiClient(builder.Configuration)
     .AddBillingApiClient(builder.Configuration)
-    .Configure<AdminOptions>(o => builder.Configuration.GetSection(nameof(AdminOptions)).Bind(o));
+    .Configure<AdminOptions>(o => builder.Configuration.GetSection(nameof(AdminOptions)).Bind(o))
+    .AddHttpClient();
 
 var app = builder.Build();
 

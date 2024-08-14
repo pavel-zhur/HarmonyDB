@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +8,7 @@ using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace OneShelf.Admin.Web.Controllers
 {
@@ -23,13 +22,15 @@ namespace OneShelf.Admin.Web.Controllers
         private readonly BillingApiClient _billingApiClient;
         private readonly SongsDatabase _songsDatabase;
         private readonly AdminOptions _adminOptions;
-
-        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, IConfiguration configuration, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions)
+        private readonly IHttpClientFactory _httpClientFactory;
+        
+        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, IConfiguration configuration, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _illustrationsApiClient = illustrationsApiClient;
             _billingApiClient = billingApiClient;
             _songsDatabase = songsDatabase;
+            _httpClientFactory = httpClientFactory;
             _adminOptions = adminOptions.Value;
         }
 
@@ -123,6 +124,16 @@ namespace OneShelf.Admin.Web.Controllers
             {
                 All = all,
             });
+        }
+
+        public async Task<IActionResult> Png(PngModel pngModel)
+        {
+            using var httpClient = _httpClientFactory.CreateClient();
+            await using var stream = await httpClient.GetStreamAsync(pngModel.Url1024);
+            using var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
+            await using var pngStream = new MemoryStream();
+            await image.SaveAsync(pngStream, new PngEncoder());
+            return File(pngStream.ToArray(), "image/png", $"{Path.GetInvalidFileNameChars().Aggregate(pngModel.Title, (x, c) => x.Replace(c, '_'))}.png");
         }
     }
 }
