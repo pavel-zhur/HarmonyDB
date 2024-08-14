@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Admin.Web.Authorization;
 using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
+using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
 using SixLabors.ImageSharp;
@@ -132,23 +133,28 @@ namespace OneShelf.Admin.Web.Controllers
         {
             using var httpClient = _httpClientFactory.CreateClient();
             await using var stream = await httpClient.GetStreamAsync(pngModel.Url1024);
-            using var image = await SixLabors.ImageSharp.Image.LoadAsync(stream);
+            using var image = await Image.LoadAsync(stream);
 
-            var size = 512;
-
-            while (true)
+            foreach (var (compressionLevel, isLast) in new List<PngCompressionLevel> {
+                         PngCompressionLevel.Level6,
+                         PngCompressionLevel.Level7,
+                         PngCompressionLevel.Level8,
+                         PngCompressionLevel.Level9 }.WithIsLast())
             {
-                image.Mutate(x => x.Resize(new Size(size)));
+                image.Mutate(x => x.Resize(new Size(512)));
                 await using var pngStream = new MemoryStream();
-                await image.SaveAsync(pngStream, new PngEncoder());
+                await image.SaveAsync(pngStream, new PngEncoder
+                {
+                    CompressionLevel = compressionLevel
+                });
 
-                if (pngStream.Length < 510 * 1024)
+                if (pngStream.Length < 510 * 1024 || isLast)
                 {
                     return File(pngStream.ToArray(), "image/png", $"{Path.GetInvalidFileNameChars().Aggregate(pngModel.Title, (x, c) => x.Replace(c, '_'))}.png");
                 }
-
-                size -= 50;
             }
+
+            throw new("Could not have happened.");
         }
     }
 }
