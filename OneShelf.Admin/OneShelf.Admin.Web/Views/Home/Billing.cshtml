@@ -1,0 +1,85 @@
+﻿@model BillingModel
+
+@{
+    ViewBag.Title = "Billing";
+    Layout = "_Layout";
+}
+
+<h2>Billing</h2>
+
+<style>
+    td {
+        padding-right: 40px;
+    }
+    h4 {
+        margin-top: 20px;
+    }
+</style>
+
+<h4>By date</h4>
+<table>
+    <thead>
+    <tr>
+        <td>Date</td>
+        <td>Price</td>
+        <td>Requests</td>
+    </tr>
+    </thead>
+    @foreach (var grouping in Model.All.Usages.GroupBy(x => x.CreatedOn!.Value.Date).OrderByDescending(x => x.Key.Date))
+    {
+        <tr>
+            <td>@grouping.Key.Date.ToShortDateString()</td>
+            <td>@grouping.Sum(x => x.Price ?? 0).ToString("C")</td>
+            <td>@grouping.Sum(x => x.Count)</td>
+        </tr>
+    }
+</table>
+
+<h4>By date and category</h4>
+<table>
+    <thead>
+    <tr>
+        <td>Date</td>
+        <td>Category</td>
+            <td>Price</td>
+            <td>Requests</td>
+    </tr>
+    </thead>
+    @foreach (var grouping in Model.All.Usages.GroupBy(x => (x.Category, x.CreatedOn!.Value.Date)).OrderByDescending(x => x.Key.Date))
+    {
+        <tr>
+            <td>@grouping.Key.Date.ToShortDateString()</td>
+            <td>@grouping.Key.Category</td>
+            <td>@grouping.Sum(x => x.Price ?? 0).ToString("C")</td>
+            <td>@grouping.Sum(x => x.Count)</td>
+        </tr>
+    }
+</table>
+
+<partial name="BillingData" model="@(new BillingDataModel(Model, null, "All"))" />
+<partial name="BillingData" model="@(new BillingDataModel(Model, 24, "24h"))" />
+<partial name="BillingData" model="@(new BillingDataModel(Model, 4, "4h"))" />
+<partial name="BillingData" model="@(new BillingDataModel(Model, 24*7, "Week"))" />
+
+<h4>Detailed last 100</h4>
+<table>
+    <thead>
+    <tr>
+        <td>User</td>
+        <td>Created On</td>
+        <td>Category</td>
+            <td>Price</td>
+            <td>Requests</td>
+    </tr>
+    </thead>
+    @foreach (var usage in Model.All.Usages.Take(100))
+    {
+        <tr>
+            <td>@(Model.All.UserTitles.TryGetValue(usage.UserId ?? 0L, out var user) ? user : "Неизвестно")</td>
+            <td>@usage.CreatedOn</td>
+            <td>@usage.Category</td>
+            <td>@usage.Price?.ToString("C")</td>
+            <td>@usage.Count</td>
+        </tr>
+    }
+</table>
