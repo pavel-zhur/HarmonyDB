@@ -1,3 +1,4 @@
+using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
@@ -15,7 +16,8 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services
     .AddSongsDatabase()
     .AddIllustrationsApiClient(builder.Configuration)
-    .AddBillingApiClient(builder.Configuration);
+    .AddBillingApiClient(builder.Configuration)
+    .Configure<AdminOptions>(o => builder.Configuration.GetSection(nameof(AdminOptions)).Bind(o));
 
 var app = builder.Build();
 

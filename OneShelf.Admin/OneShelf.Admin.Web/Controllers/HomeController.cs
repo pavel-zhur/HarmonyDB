@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OneShelf.Admin.Web.Authorization;
 using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
@@ -21,13 +22,15 @@ namespace OneShelf.Admin.Web.Controllers
         private readonly IllustrationsApiClient _illustrationsApiClient;
         private readonly BillingApiClient _billingApiClient;
         private readonly SongsDatabase _songsDatabase;
+        private readonly AdminOptions _adminOptions;
 
-        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, IConfiguration configuration, SongsDatabase songsDatabase)
+        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, IConfiguration configuration, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions)
         {
             _logger = logger;
             _illustrationsApiClient = illustrationsApiClient;
             _billingApiClient = billingApiClient;
             _songsDatabase = songsDatabase;
+            _adminOptions = adminOptions.Value;
         }
 
         [AllowAnonymous]
@@ -83,8 +86,12 @@ namespace OneShelf.Admin.Web.Controllers
             all.Responses = all.Responses.Where(x => x.Value.LatestCreatedOn < DateTime.Now.AddHours(-h))
                 .ToDictionary(x => x.Key, x => x.Value);
             hidden -= all.Responses.Count;
-
-            var urlsToTitles = (await _songsDatabase.Versions.Include(x => x.Song).ThenInclude(x => x.Artists).ToListAsync())
+            
+            var urlsToTitles = (await _songsDatabase.Versions
+                    .Where(x => x.Song.TenantId == _adminOptions.TenantId)
+                    .Include(x => x.Song)
+                    .ThenInclude(x => x.Artists)
+                    .ToListAsync())
                 .GroupBy(x => x.Uri)
                 .ToDictionary(x => x.Key.ToString(), x =>
                 {
