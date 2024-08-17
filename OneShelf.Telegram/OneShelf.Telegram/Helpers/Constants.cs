@@ -1,4 +1,4 @@
-﻿namespace OneShelf.OneDog.Processor.Helpers;
+﻿namespace OneShelf.Telegram.Helpers;
 
 public static class Constants
 {

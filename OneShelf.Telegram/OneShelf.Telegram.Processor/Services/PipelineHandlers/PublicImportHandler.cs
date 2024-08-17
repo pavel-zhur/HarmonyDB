@@ -14,6 +14,7 @@ using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
+using Constants = OneShelf.Telegram.Helpers.Constants;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;

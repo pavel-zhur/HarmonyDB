@@ -14,8 +14,6 @@ public static class Constants
 
     public static IReadOnlyDictionary<MessageType, int> MessageVersions { get; }
 
-    public const string MarkdownV2 = "MarkdownV2";
-
     public const string ImproveCommandName = "chords";
 
     public const string IconGreenHeart = "💚";

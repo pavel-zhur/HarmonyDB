@@ -15,6 +15,7 @@ using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
+using Constants = OneShelf.Telegram.Helpers.Constants;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
@@ -182,7 +183,7 @@ public class DialogHandler : PipelineHandler
                             {
                                 IsDisabled = true,
                             },
-                            ParseMode = Constants.MarkdownV2,
+                            ParseMode = Telegram.Helpers.Constants.MarkdownV2,
                             ReplyMarkup = finish.ReplyMessageMarkup,
                         });
                     }
@@ -260,7 +261,7 @@ public class DialogHandler : PipelineHandler
                         {
                             IsDisabled = true,
                         },
-                        ParseMode = Constants.MarkdownV2,
+                        ParseMode = Telegram.Helpers.Constants.MarkdownV2,
                         ReplyMarkup = inlineKeyboardMarkup,
                     });
                 }

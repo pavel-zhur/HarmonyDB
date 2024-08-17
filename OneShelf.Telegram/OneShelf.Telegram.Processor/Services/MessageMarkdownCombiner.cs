@@ -15,6 +15,7 @@ using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.InlineMode;
+using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;
@@ -610,7 +611,7 @@ public class MessageMarkdownCombiner
             Id = song.Index.ToString(),
             InputMessageContent = new InputTextMessageContent(message.ToString())
             {
-                ParseMode = Constants.MarkdownV2,
+                ParseMode = Telegram.Helpers.Constants.MarkdownV2,
                 LinkPreviewOptions = new()
                 {
                     IsDisabled = true,

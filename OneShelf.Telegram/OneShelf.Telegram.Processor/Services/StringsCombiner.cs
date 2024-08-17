@@ -3,6 +3,7 @@ using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
+using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;

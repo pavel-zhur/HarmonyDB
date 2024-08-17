@@ -9,6 +9,7 @@ using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
+using Constants = OneShelf.Telegram.Helpers.Constants;
 
 namespace OneShelf.Telegram.Processor.Services
 {
