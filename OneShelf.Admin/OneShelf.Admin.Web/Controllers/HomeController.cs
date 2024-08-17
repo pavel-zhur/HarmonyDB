@@ -27,7 +27,7 @@ namespace OneShelf.Admin.Web.Controllers
         private readonly AdminOptions _adminOptions;
         private readonly IHttpClientFactory _httpClientFactory;
         
-        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, IConfiguration configuration, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions, IHttpClientFactory httpClientFactory)
+        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _illustrationsApiClient = illustrationsApiClient;

@@ -5,7 +5,7 @@ using OneShelf.Telegram.Polling.Model;
 using OneShelf.Telegram.Polling.Services;
 
 var host = Host.CreateDefaultBuilder(args)
-    .UseDefaultServiceProvider((x, y) =>
+    .UseDefaultServiceProvider((_, y) =>
     {
         y.ValidateOnBuild = true;
         y.ValidateScopes = true;

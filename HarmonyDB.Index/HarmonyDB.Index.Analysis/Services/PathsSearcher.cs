@@ -49,10 +49,10 @@ public class PathsSearcher
             }
         }
 
-        return ReconstructPath(previousJoints, startBlock, targetBlock);
+        return ReconstructPath(previousJoints, targetBlock);
     }
 
-    private List<IBlockJoint> ReconstructPath(Dictionary<IIndexedBlock, IBlockJoint?> previousJoints, IIndexedBlock startBlock, IIndexedBlock targetBlock)
+    private List<IBlockJoint> ReconstructPath(Dictionary<IIndexedBlock, IBlockJoint?> previousJoints, IIndexedBlock targetBlock)
     {
         var pathJoints = new List<IBlockJoint>();
         var current = targetBlock;

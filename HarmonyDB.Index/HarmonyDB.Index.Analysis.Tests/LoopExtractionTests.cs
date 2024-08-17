@@ -83,7 +83,7 @@ public class LoopExtractionTests(ILogger<LoopExtractionTests> logger, ChordDataP
                 {
                     logger.LogInformation($"{i}: {loopSelfJumpsBlocks.Count}");
                     if (loopSelfJumpsBlocks
-                        .SelectMany((x, i) => x.ChildLoops.Select(x => (x.StartIndex, x.EndIndex)))
+                        .SelectMany(x => x.ChildLoops.Select(x => (x.StartIndex, x.EndIndex)))
                         .AnyDuplicates())
                     {
                         TraceAndTest(sequence, firstRoot, loops, loopSelfJumpsBlocks);

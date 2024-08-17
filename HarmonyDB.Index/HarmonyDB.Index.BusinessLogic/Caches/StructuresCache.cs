@@ -36,7 +36,7 @@ public class StructuresCache : BytesFileCacheBase<Structures>
         var cf = 0;
         List<StructureLink> result = new();
 
-        await Parallel.ForEachAsync(progressions, (x, __) =>
+        await Parallel.ForEachAsync(progressions, (x, _) =>
         {
             var (externalId, compactChordsProgression) = x;
             try

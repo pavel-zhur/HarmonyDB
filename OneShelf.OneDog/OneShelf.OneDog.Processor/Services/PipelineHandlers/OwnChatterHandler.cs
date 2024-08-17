@@ -94,7 +94,7 @@ public class OwnChatterHandler : ChatterHandlerBase
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
-        LongTyping(ScopeAwareness.DomainId, update, callingApis.Token);
+        LongTyping(update, callingApis.Token);
         var checking = CheckNoUpdates(checkingIsStillLast, callingApis.Token, interactions.Last(x => x.InteractionType == InteractionType.OwnChatterMessage).Id);
 
         ChatBotMemoryPointWithTraces newMessagePoint;
@@ -237,7 +237,7 @@ public class OwnChatterHandler : ChatterHandlerBase
         }
     }
 
-    private async void LongTyping(int domainId, Update update, CancellationToken cancellationToken)
+    private async void LongTyping(Update update, CancellationToken cancellationToken)
     {
         try
         {

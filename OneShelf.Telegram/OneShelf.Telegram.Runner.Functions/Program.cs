@@ -5,7 +5,7 @@ using OneShelf.Telegram.Processor;
 
 var host = new HostBuilder()
     .ConfigureApi()
-    .UseDefaultServiceProvider((x, y) =>
+    .UseDefaultServiceProvider((_, y) =>
     {
         y.ValidateOnBuild = true;
         y.ValidateScopes = true;

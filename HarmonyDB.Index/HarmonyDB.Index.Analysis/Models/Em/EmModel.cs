@@ -29,7 +29,7 @@ public record EmModel : IEmModel
 
         var loops = Enumerable
             .Range(0, reader.ReadInt32())
-            .Select(i =>
+            .Select(_ =>
             {
                 var id = reader.ReadString();
                 var loop = new Loop
@@ -45,7 +45,7 @@ public record EmModel : IEmModel
 
         var songs = Enumerable
             .Range(0, reader.ReadInt32())
-            .Select(i =>
+            .Select(_ =>
             {
                 var id = reader.ReadString();
 

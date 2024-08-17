@@ -7,7 +7,7 @@ public static class Constants
     static Constants()
     {
         HeartsCallbacks = new[] { "h0", "h1", "h2", "h3", "h4" };
-        MessageVersions = Enum.GetValues<MessageType>().ToDictionary(x => x, x => 1);
+        MessageVersions = Enum.GetValues<MessageType>().ToDictionary(x => x, _ => 1);
     }
 
     public static IReadOnlyList<string> HeartsCallbacks { get; }
