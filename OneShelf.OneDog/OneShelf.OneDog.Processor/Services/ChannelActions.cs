@@ -26,7 +26,7 @@ public class ChannelActions
     {
         var domain = await _dogDatabase.Domains.Include(x => x.Administrators).SingleAsync(x => x.Id == domainId);
 
-        var api = new BotClient(domain.BotToken);
+        var api = new TelegramBotClient(domain.BotToken);
 
         await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(_telegramOptions.AdminId)));
 

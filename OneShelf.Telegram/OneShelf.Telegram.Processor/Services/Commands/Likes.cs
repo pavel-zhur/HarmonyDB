@@ -51,7 +51,7 @@ public class Likes : Command
     {
         var pdfFile = await _inspirationGeneration.Inspiration(_telegramOptions.TenantId, Io.UserId);
 
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
         await api.SendDocumentAsync(Io.UserId, new InputFile(pdfFile, "Likes.pdf"), caption: "Inspiration");
     }
 }

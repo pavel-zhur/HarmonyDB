@@ -15,7 +15,7 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
 public abstract class ChatterHandlerBase : PipelineHandler
 {
-    private readonly BotClient _api;
+    private readonly TelegramBotClient _api;
 
     protected ChatterHandlerBase(
         IOptions<TelegramOptions> telegramOptions,

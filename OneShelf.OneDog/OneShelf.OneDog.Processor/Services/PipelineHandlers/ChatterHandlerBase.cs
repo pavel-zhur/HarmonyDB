@@ -59,7 +59,7 @@ public abstract class ChatterHandlerBase : PipelineHandler
             });
     }
 
-    private async Task<BotClient> CreateApi()
+    private async Task<TelegramBotClient> CreateApi()
     {
         return new(ScopeAwareness.Domain.BotToken);
     }

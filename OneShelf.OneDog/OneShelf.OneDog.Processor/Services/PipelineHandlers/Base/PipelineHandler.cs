@@ -35,7 +35,7 @@ public abstract class PipelineHandler
 
     protected bool IsPrivate(Chat? chat) => chat?.Type == ChatType.Private;
 
-    protected void QueueApi(string? queueKey, Func<BotClient, Task> task)
+    protected void QueueApi(string? queueKey, Func<TelegramBotClient, Task> task)
     {
         lock (_tasks)
         {

@@ -82,7 +82,7 @@ namespace OneShelf.Telegram.Processor.Services
         {
             try
             {
-                var botClient = new BotClient(_options.Token);
+                var botClient = new TelegramBotClient(_options.Token);
 
                 var message = $@"
 

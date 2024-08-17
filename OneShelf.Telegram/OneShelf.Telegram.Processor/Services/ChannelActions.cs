@@ -27,7 +27,7 @@ public class ChannelActions
 
     public async Task<bool> Delete(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -56,7 +56,7 @@ public class ChannelActions
 
     public async Task<int> PublishTextMessage(Markdown markdownV2, InlineKeyboardMarkup? inlineKeyboardMarkup, bool inAnnouncementsTopic = false)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -88,7 +88,7 @@ public class ChannelActions
         if (string.IsNullOrWhiteSpace(fileId)) throw new ArgumentNullException(nameof(fileId));
         if (Markdown.IsNullOrWhiteSpace(markdownV2)) throw new ArgumentNullException(nameof(markdownV2));
 
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -107,7 +107,7 @@ public class ChannelActions
 
     public async Task<bool> UpdateTextMessage(Markdown markdownV2, int messageId, InlineKeyboardMarkup? inlineKeyboardMarkup)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -143,7 +143,7 @@ public class ChannelActions
 
     public async Task<bool> UpdateFileMessage(Markdown markdownV2, int messageId, InlineKeyboardMarkup? inlineKeyboardMarkup)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -172,7 +172,7 @@ public class ChannelActions
 
     public async Task Pin(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         await _exponentialBackOff.WithRetry(async () =>
         {
@@ -185,7 +185,7 @@ public class ChannelActions
 
     public async Task Unpin(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         await _exponentialBackOff.WithRetry(async () =>
         {
@@ -199,7 +199,7 @@ public class ChannelActions
     {
         try
         {
-            var api = new BotClient(_telegramOptions.Token);
+            var api = new TelegramBotClient(_telegramOptions.Token);
 
             await api.SendMessageAsync(_telegramOptions.AdminId, message.ToString(), parseMode: Constants.MarkdownV2);
         }
@@ -214,7 +214,7 @@ public class ChannelActions
 
     public async Task UpdateCommands(List<CommandAttribute> commands)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(_telegramOptions.AdminId)));
 

@@ -45,7 +45,7 @@ public class Inspiration : Command
         bool onlyPublished)
     {
         var pdfFile = await _inspirationGeneration.Inspiration(_telegramOptions.TenantId, dataOrdering, withChords, compactArtists, onlyPublished);
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
         await api.SendDocumentAsync(_telegramOptions.AdminId, new InputFile(pdfFile, $"Inspiration {dataOrdering}{(withChords ? " with chords" : null)}{(compactArtists ? " compact" : null)}.pdf"), caption: "Inspiration");
     }
 }

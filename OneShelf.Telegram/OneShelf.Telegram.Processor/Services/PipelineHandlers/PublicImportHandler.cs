@@ -20,7 +20,7 @@ public class PublicImportHandler : ChatterHandlerBase
 {
     private readonly ILogger<PublicImportHandler> _logger;
     private readonly SongsOperations _songsOperations;
-    private readonly BotClient _botClient;
+    private readonly TelegramBotClient _botClient;
     private readonly RegenerationQueue _registrationQueue;
     private readonly IndexApiClient _indexApiClient;
 

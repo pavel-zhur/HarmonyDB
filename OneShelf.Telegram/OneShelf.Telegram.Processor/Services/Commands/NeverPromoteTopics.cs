@@ -21,7 +21,7 @@ public class NeverPromoteTopics : Command
     private readonly SongsDatabase _songsDatabase;
     private readonly IllustrationsApiClient _illustrationsApiClient;
     private readonly FullTextSearch _fullTextSearch;
-    private readonly BotClient _botClient;
+    private readonly TelegramBotClient _botClient;
     private readonly TelegramOptions _options;
 
     public NeverPromoteTopics(ILogger<NeverPromoteTopics> logger, Io io,

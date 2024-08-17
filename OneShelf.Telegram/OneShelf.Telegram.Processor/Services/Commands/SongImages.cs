@@ -32,7 +32,7 @@ public class SongImages : Command
     private readonly SongsDatabase _songsDatabase;
     private readonly IllustrationsApiClient _illustrationsApiClient;
     private readonly FullTextSearch _fullTextSearch;
-    private readonly BotClient _botClient;
+    private readonly TelegramBotClient _botClient;
 
     public SongImages(ILogger<SongImages> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner,
         SongsDatabase songsDatabase, IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options,

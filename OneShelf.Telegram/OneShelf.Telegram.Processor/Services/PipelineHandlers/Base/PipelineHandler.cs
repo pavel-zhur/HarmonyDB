@@ -9,7 +9,7 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 
 public abstract class PipelineHandler
 {
-    private readonly BotClient _api;
+    private readonly TelegramBotClient _api;
     private readonly List<(string? queueKey, Func<Task> task)> _tasks = new();
     protected TelegramOptions TelegramOptions { get; }
     protected SongsDatabase SongsDatabase { get; }
@@ -34,7 +34,7 @@ public abstract class PipelineHandler
 
     protected bool IsPrivate(Chat? chat) => chat?.Type == ChatType.Private;
 
-    protected void QueueApi(string? queueKey, Func<BotClient, Task> task)
+    protected void QueueApi(string? queueKey, Func<TelegramBotClient, Task> task)
     {
         lock (_tasks)
         {

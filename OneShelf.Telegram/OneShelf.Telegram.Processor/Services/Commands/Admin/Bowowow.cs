@@ -14,7 +14,7 @@ public class Bowowow : Command
 {
     private readonly ILogger<Bowowow> _logger;
     private readonly TelegramOptions _telegramOptions;
-    private readonly BotClient _api;
+    private readonly TelegramBotClient _api;
 
     public Bowowow(ILogger<Bowowow> logger, Io io, IOptions<TelegramOptions> telegramOptions,
         IOptions<TelegramOptions> options)
