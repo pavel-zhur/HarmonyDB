@@ -8,7 +8,7 @@ using OneShelf.OneDog.Processor.Services.Commands.Admin;
 using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram;
-using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Commands;
 using OneShelf.Telegram.Options;
 
 namespace OneShelf.OneDog.Processor;
@@ -42,8 +42,6 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<ChannelActions>()
 
-            .AddScoped<TelegramContext>()
-            
             .AddOpenAi(configuration);
 
         return services;

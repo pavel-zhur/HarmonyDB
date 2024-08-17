@@ -5,6 +5,7 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Common.OpenAi;
 using OneShelf.Illustrations.Api.Client;
 using OneShelf.Pdfs.Generation.Inspiration;
+using OneShelf.Telegram.Commands;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services;
 using OneShelf.Telegram.Processor.Services.Commands;

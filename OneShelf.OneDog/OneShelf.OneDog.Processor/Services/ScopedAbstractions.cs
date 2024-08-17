@@ -14,7 +14,7 @@ public class ScopedAbstractions : IScopedAbstractions
 
     public async Task Initialize(int domainId) => await _dogContext.Initialize(domainId);
 
-    public Role GetNonAdminRole(long userId) => _dogContext.GetRole(userId);
+    public Role GetNonAdminRole(long userId) => _dogContext.GetNonAdminRole(userId);
 
     public string GetBotToken() => _dogContext.GetBotToken();
 }

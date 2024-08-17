@@ -27,9 +27,10 @@ public class DogContext
         _domain = await _dogDatabase.Domains.Include(x => x.Administrators).SingleAsync(x => x.Id == domainId);
     }
 
-    public Role GetRole(long userId) => _domain?.Administrators.Any(x => x.Id == userId) ?? throw new("Not initialized.")
-        ? Role.DomainAdmin
-        : Role.Regular;
+    public Role GetNonAdminRole(long userId)
+        => _domain?.Administrators.Any(x => x.Id == userId) ?? throw new("Not initialized.")
+            ? Role.DomainAdmin
+            : Role.Regular;
 
     public string GetBotToken() => Domain.BotToken;
 }
