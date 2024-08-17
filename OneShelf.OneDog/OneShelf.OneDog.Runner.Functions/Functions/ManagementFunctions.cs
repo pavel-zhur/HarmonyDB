@@ -110,7 +110,7 @@ namespace OneShelf.OneDog.Runner.Functions.Functions
             return response;
         }
 
-        private async Task<(BotClient api, Domain domain)> CreateDomainClient(int domainId)
+        private async Task<(TelegramBotClient api, Domain domain)> CreateDomainClient(int domainId)
         {
             var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == domainId);
             return (new(domain.BotToken), domain);

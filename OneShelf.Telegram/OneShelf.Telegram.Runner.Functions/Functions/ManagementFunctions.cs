@@ -17,7 +17,7 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
         private readonly SongsDatabase _songsDatabase;
         private readonly ILogger<ManagementFunctions> _logger;
         private readonly TelegramOptions _telegramOptions;
-        private readonly BotClient _api;
+        private readonly TelegramBotClient _api;
 
         public ManagementFunctions(ILogger<ManagementFunctions> logger, SongsDatabase songsDatabase, IOptions<TelegramOptions> telegramOptions)
         {
