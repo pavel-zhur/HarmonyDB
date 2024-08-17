@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Services;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Runner.Functions.Functions;

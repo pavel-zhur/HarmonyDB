@@ -1,11 +1,11 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Runner.Functions.Functions;
@@ -44,7 +44,7 @@ public class BotFunctions
         [QueueTrigger(QueueNameUpdates)] string myQueueItem)
     {
         var update = JsonSerializer.Deserialize<Update>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update);
+        await await _pipeline.ProcessSyncSafeAndDispose(update, 0);
     }
 
     [Function(nameof(Regenerate))]

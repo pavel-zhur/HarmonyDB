@@ -82,7 +82,6 @@ public static class ServiceCollectionExtensions
             .AddScoped<ChannelActions>()
             .AddScoped<Regeneration>()
             .AddScoped<ExponentialBackOff>()
-            .AddScoped<Pipeline>()
             .AddScoped<DailySelection>()
             .AddScoped<MessageMarkdownCombiner>()
             .AddScoped<StringsCombiner>()

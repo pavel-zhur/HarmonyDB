@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IoFactory>()
             .AddScoped<IScopedAbstractions, TScopedAbstractions>()
             .AddSingleton<ISingletonAbstractions, TSingletonAbstractions>()
+            .AddScoped<Pipeline>()
             .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io);
 
         return services;

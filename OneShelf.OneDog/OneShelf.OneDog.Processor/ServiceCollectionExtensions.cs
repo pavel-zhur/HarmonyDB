@@ -41,7 +41,6 @@ public static class ServiceCollectionExtensions
 
         services
             .AddScoped<ChannelActions>()
-            .AddScoped<Pipeline>()
 
             .AddSingleton<AvailableCommands>()
             
