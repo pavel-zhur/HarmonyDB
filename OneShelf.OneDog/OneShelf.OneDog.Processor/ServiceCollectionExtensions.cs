@@ -40,8 +40,6 @@ public static class ServiceCollectionExtensions
                 );
 
         services
-            .AddScoped<ChannelActions>()
-
             .AddOpenAi(configuration);
 
         return services;
