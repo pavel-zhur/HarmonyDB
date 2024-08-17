@@ -6,6 +6,7 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.Ios;

@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using OneShelf.Pdfs.Generation.Inspiration.Models;
 
 namespace OneShelf.Pdfs.Generation.Inspiration.Helpers;
 

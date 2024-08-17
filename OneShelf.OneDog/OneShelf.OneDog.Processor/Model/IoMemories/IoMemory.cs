@@ -1,4 +1,6 @@
-﻿namespace OneShelf.OneDog.Processor.Model.IoMemories;
+﻿using OneShelf.Telegram.Model;
+
+namespace OneShelf.OneDog.Processor.Model.IoMemories;
 
 public class IoMemory
 {

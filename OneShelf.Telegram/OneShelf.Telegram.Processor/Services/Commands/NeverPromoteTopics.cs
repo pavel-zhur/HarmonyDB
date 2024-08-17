@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Illustrations.Api.Client;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Processor.Model.Ios;

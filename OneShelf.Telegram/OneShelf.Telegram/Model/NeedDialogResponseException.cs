@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Telegram.Processor.Model;
+﻿namespace OneShelf.Telegram.Model;
 
 public class NeedDialogResponseException : Exception
 {

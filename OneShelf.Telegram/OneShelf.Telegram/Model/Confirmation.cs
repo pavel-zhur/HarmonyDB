@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace OneShelf.Telegram.Processor.Model;
+namespace OneShelf.Telegram.Model;
 
 public enum Confirmation
 {

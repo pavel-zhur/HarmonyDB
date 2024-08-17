@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
 using OneShelf.Pdfs.Generation.Inspiration.Services;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Processor.Model.Ios;
