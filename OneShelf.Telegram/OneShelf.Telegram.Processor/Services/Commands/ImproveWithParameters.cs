@@ -19,7 +19,7 @@ using Version = OneShelf.Common.Database.Songs.Model.Version;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
-[Command(Constants.ImproveCommandName, true, false, "Улучшить песню", "Улучшить песню", true, true)]
+[BothCommand(Constants.ImproveCommandName, "Улучшить песню", SupportsParameters = true, SupportsNoParameters = false)]
 public class ImproveWithParameters : Command
 {
     private readonly ILogger<ImproveWithParameters> _logger;

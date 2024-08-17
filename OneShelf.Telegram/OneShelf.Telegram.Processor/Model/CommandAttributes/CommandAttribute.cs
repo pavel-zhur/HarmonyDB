@@ -19,8 +19,8 @@ public class CommandAttribute : Attribute
     }
 
     public string Alias { get; }
-    public bool SupportsParameters { get; }
-    public bool SupportsNoParameters { get; }
+    public bool SupportsParameters { get; init; }
+    public bool SupportsNoParameters { get; init; }
     public string ButtonDescription { get; }
     public string HelpDescription { get; }
     public bool AppliesToAdmins { get; }
