@@ -5,6 +5,7 @@ using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.OneDog.Processor.Model;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
+using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
@@ -24,18 +25,14 @@ public class UsersCollector : PipelineHandler
         var users = new[]
             {
                 update.Message?.From,
-                update.Message?.ForwardFrom,
                 update.Message?.ReplyToMessage?.From,
-                update.Message?.ReplyToMessage?.ForwardFrom,
                 update.InlineQuery?.From,
                 update.CallbackQuery?.From,
-                update.CallbackQuery?.Message?.From,
-                update.CallbackQuery?.Message?.ForwardFrom,
-                update.CallbackQuery?.Message?.ReplyToMessage?.From,
-                update.CallbackQuery?.Message?.ReplyToMessage?.ForwardFrom,
             }
             .Where(x => x != null)
             .Select(x => (x.Id, x.FirstName, x.LastName, x.Username))
+            .Concat((update.Message?.UsersShared?.Users ?? Enumerable.Empty<SharedUser>())
+                .Select(x => (Id: x.UserId, x.FirstName, x.LastName, x.Username)))
             .GroupBy(x => x.Id)
             .Select(g => g.First())
             .Select(u => (

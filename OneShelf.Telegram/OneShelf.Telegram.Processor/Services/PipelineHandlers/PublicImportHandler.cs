@@ -115,9 +115,12 @@ public class PublicImportHandler : ChatterHandlerBase
         await _botClient.SendMessageAsync(
             update.Message!.Chat.Id,
             markdown.ToString(),
-            update.Message.MessageThreadId,
-            Constants.MarkdownV2,
+            messageThreadId: update.Message.MessageThreadId,
+            parseMode: Constants.MarkdownV2,
             disableNotification: true,
-            replyToMessageId: update.Message.MessageId);
+            replyParameters: new()
+            {
+                MessageId = update.Message.MessageId,
+            });
     }
 }
