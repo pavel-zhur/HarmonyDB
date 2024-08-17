@@ -19,10 +19,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Database\OneShelf.OneDog.Database.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Update="appsettings.Secrets.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

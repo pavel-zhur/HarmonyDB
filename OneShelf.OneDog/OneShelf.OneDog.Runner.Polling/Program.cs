@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Runner.Polling.Model;
 using OneShelf.OneDog.Runner.Polling.Services;
 
@@ -17,7 +16,6 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services
             .AddHostedService<ApiPoller>()
-            .AddDogDatabase()
             .Configure<PollerOptions>(pollerOptions => context.Configuration.GetSection(nameof(PollerOptions)).Bind(pollerOptions))
             .AddHttpClient();
     })
