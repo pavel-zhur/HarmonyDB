@@ -7,7 +7,7 @@ using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Services;

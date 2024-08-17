@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
 
@@ -17,13 +17,15 @@ public class Help : Command
     private readonly AvailableCommands _availableCommands;
     private readonly DogDatabase _dogDatabase;
     private readonly TelegramOptions _telegramOptions;
+    private readonly ScopeAwareness _scopeAwareness;
 
     public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+        : base(io)
     {
         _logger = logger;
         _availableCommands = availableCommands;
         _dogDatabase = dogDatabase;
+        _scopeAwareness = scopeAwareness;
         _telegramOptions = telegramOptions.Value;
     }
 
@@ -47,7 +49,7 @@ public class Help : Command
 
         var role = Io.IsAdmin
             ? Role.Admin
-            : ScopeAwareness.Domain.Administrators.Any(x => x.Id == Io.UserId)
+            : _scopeAwareness.Domain.Administrators.Any(x => x.Id == Io.UserId)
                 ? Role.DomainAdmin
                 : Role.Regular;
 

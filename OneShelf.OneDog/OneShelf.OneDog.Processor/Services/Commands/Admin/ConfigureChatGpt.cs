@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.Admin;
 
@@ -12,12 +12,14 @@ public class ConfigureChatGpt : Command
 {
     private readonly ILogger<ConfigureChatGpt> _logger;
     private readonly DogDatabase _dogDatabase;
+    private readonly ScopeAwareness _scopeAwareness;
 
     public ConfigureChatGpt(ILogger<ConfigureChatGpt> logger, Io io, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+        : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
+        _scopeAwareness = scopeAwareness;
     }
 
     private enum ConfigType
@@ -27,7 +29,7 @@ public class ConfigureChatGpt : Command
         OwnChatterFrequencyPenalty,
         OwnChatterPresencePenalty,
     }
-
+    
     protected override async Task ExecuteQuickly()
     {
         var setting = Io.StrictChoice<ConfigType>("Тип");
@@ -36,10 +38,10 @@ public class ConfigureChatGpt : Command
         Io.WriteLine();
         Io.WriteLine(setting switch
         {
-            ConfigType.OwnChatterVersion => ScopeAwareness.Domain.GptVersion,
-            ConfigType.OwnChatterImagesVersion => ScopeAwareness.Domain.DalleVersion.ToString(),
-            ConfigType.OwnChatterFrequencyPenalty => ScopeAwareness.Domain.FrequencyPenalty?.ToString() ?? "нету",
-            ConfigType.OwnChatterPresencePenalty => ScopeAwareness.Domain.PresencePenalty?.ToString() ?? "нету",
+            ConfigType.OwnChatterVersion => _scopeAwareness.Domain.GptVersion,
+            ConfigType.OwnChatterImagesVersion => _scopeAwareness.Domain.DalleVersion.ToString(),
+            ConfigType.OwnChatterFrequencyPenalty => _scopeAwareness.Domain.FrequencyPenalty?.ToString() ?? "нету",
+            ConfigType.OwnChatterPresencePenalty => _scopeAwareness.Domain.PresencePenalty?.ToString() ?? "нету",
             _ => throw new ArgumentOutOfRangeException(),
         });
         Io.WriteLine();
@@ -49,16 +51,16 @@ public class ConfigureChatGpt : Command
         switch (setting)
         {
             case ConfigType.OwnChatterVersion:
-                ScopeAwareness.Domain.GptVersion = newMessage;
+                _scopeAwareness.Domain.GptVersion = newMessage;
                 break;
             case ConfigType.OwnChatterImagesVersion:
-                ScopeAwareness.Domain.DalleVersion = int.Parse(newMessage);
+                _scopeAwareness.Domain.DalleVersion = int.Parse(newMessage);
                 break;
             case ConfigType.OwnChatterFrequencyPenalty:
-                ScopeAwareness.Domain.FrequencyPenalty = float.Parse(newMessage);
+                _scopeAwareness.Domain.FrequencyPenalty = float.Parse(newMessage);
                 break;
             case ConfigType.OwnChatterPresencePenalty:
-                ScopeAwareness.Domain.PresencePenalty = float.Parse(newMessage);
+                _scopeAwareness.Domain.PresencePenalty = float.Parse(newMessage);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

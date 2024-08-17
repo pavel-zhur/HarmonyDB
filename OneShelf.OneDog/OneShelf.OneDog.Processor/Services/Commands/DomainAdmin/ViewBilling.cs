@@ -4,7 +4,7 @@ using OneShelf.Billing.Api.Client;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 
@@ -14,13 +14,15 @@ public class ViewBilling : Command
     private readonly ILogger<ViewBilling> _logger;
     private readonly DogDatabase _dogDatabase;
     private readonly BillingApiClient _billingApiClient;
+    private readonly ScopeAwareness _scopeAwareness;
 
     public ViewBilling(ILogger<ViewBilling> logger, Io io, DogDatabase dogDatabase, BillingApiClient billingApiClient, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+        : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
         _billingApiClient = billingApiClient;
+        _scopeAwareness = scopeAwareness;
     }
 
     protected override async Task ExecuteQuickly()
@@ -30,7 +32,7 @@ public class ViewBilling : Command
 
     private async Task ExecuteBackground()
     {
-        var all = await _billingApiClient.All(ScopeAwareness.DomainId);
+        var all = await _billingApiClient.All(_scopeAwareness.DomainId);
         var totals = all.Usages
             .Where(x => x.Price > 0)
             .GroupBy(x => x.Category ?? "unknown")
@@ -42,7 +44,7 @@ public class ViewBilling : Command
             return;
         }
 
-        var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == ScopeAwareness.DomainId);
+        var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == _scopeAwareness.DomainId);
 
         foreach (var total in totals)
         {

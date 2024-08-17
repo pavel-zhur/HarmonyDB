@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Services;
@@ -16,8 +16,8 @@ public class Nothing : Command
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly TelegramOptions _telegramOptions;
 
-    public Nothing(ILogger<Nothing> logger, Io io, DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> telegramOptions, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public Nothing(ILogger<Nothing> logger, Io io, DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> telegramOptions)
+        : base(io)
     {
         _logger = logger;
         _dialogHandlerMemory = dialogHandlerMemory;

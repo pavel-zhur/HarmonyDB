@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 
@@ -16,9 +16,8 @@ public class Bowowow : Command
     private readonly TelegramOptions _telegramOptions;
     private readonly TelegramBotClient _api;
 
-    public Bowowow(ILogger<Bowowow> logger, Io io, IOptions<TelegramOptions> telegramOptions,
-        IOptions<TelegramOptions> options)
-        : base(io, options)
+    public Bowowow(ILogger<Bowowow> logger, Io io, IOptions<TelegramOptions> telegramOptions)
+        : base(io)
     {
         _logger = logger;
         _telegramOptions = telegramOptions.Value;

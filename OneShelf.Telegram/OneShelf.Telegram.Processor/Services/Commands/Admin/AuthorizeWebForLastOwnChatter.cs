@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using iText.Kernel.XMP.Options;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
@@ -8,7 +9,7 @@ using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
@@ -17,10 +18,12 @@ namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 public class AuthorizeWebForLastOwnChatter : Command
 {
     private readonly SongsDatabase _songsDatabase;
+    private readonly TelegramOptions _options;
 
-    public AuthorizeWebForLastOwnChatter(Io io, SongsDatabase songsDatabase, IOptions<TelegramOptions> options) : base(io, options)
+    public AuthorizeWebForLastOwnChatter(Io io, SongsDatabase songsDatabase, IOptions<TelegramOptions> options) : base(io)
     {
         _songsDatabase = songsDatabase;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteQuickly()
@@ -28,12 +31,12 @@ public class AuthorizeWebForLastOwnChatter : Command
         var choice = Io.StrictChoice<Confirmation>("Речь о шкафе (да) или об иллюстрациях (не совсем)?");
 
         bool Get(User user) => choice == Confirmation.Yes
-            ? user.TenantId == Options.TenantId : user.IsAuthorizedToUseIllustrations;
+            ? user.TenantId == _options.TenantId : user.IsAuthorizedToUseIllustrations;
 
         void Set(User user)
         {
             if (choice == Confirmation.Yes)
-                user.TenantId = Options.TenantId;
+                user.TenantId = _options.TenantId;
             else
                 user.IsAuthorizedToUseIllustrations = true;
         }
@@ -55,7 +58,7 @@ public class AuthorizeWebForLastOwnChatter : Command
         }
 
         var also = await _songsDatabase.Interactions
-            .Where(x => x.InteractionType == InteractionType.AskWeb && x.Serialized == Options.TenantId.ToString())
+            .Where(x => x.InteractionType == InteractionType.AskWeb && x.Serialized == _options.TenantId.ToString())
             .GroupBy(x => x.User)
             .Select(g => new
             {

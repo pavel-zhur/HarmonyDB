@@ -4,7 +4,7 @@ using OneShelf.Pdfs.Generation.Inspiration.Services;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -17,17 +17,16 @@ public class Likes : Command
     private readonly ILogger<Likes> _logger;
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
     private readonly InspirationGeneration _inspirationGeneration;
-    private readonly TelegramOptions _telegramOptions;
+    private readonly TelegramOptions _options;
 
     public Likes(ILogger<Likes> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner,
-        InspirationGeneration inspirationGeneration, IOptions<TelegramOptions> telegramOptions,
-        IOptions<TelegramOptions> options)
-        : base(io, options)
+        InspirationGeneration inspirationGeneration, IOptions<TelegramOptions> options)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;
         _inspirationGeneration = inspirationGeneration;
-        _telegramOptions = telegramOptions.Value;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteQuickly()
@@ -49,9 +48,9 @@ public class Likes : Command
 
     private async Task Background()
     {
-        var pdfFile = await _inspirationGeneration.Inspiration(_telegramOptions.TenantId, Io.UserId);
+        var pdfFile = await _inspirationGeneration.Inspiration(_options.TenantId, Io.UserId);
 
-        var api = new TelegramBotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_options.Token);
         await api.SendDocumentAsync(Io.UserId, new InputFile(pdfFile, "Likes.pdf"), caption: "Inspiration");
     }
 }

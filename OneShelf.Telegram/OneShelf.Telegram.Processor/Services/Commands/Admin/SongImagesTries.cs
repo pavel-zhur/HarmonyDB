@@ -16,7 +16,7 @@ using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -32,18 +32,20 @@ public class SongImagesTries : Command
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
     private readonly SongsDatabase _songsDatabase;
     private readonly IllustrationsApiClient _illustrationsApiClient;
+    private readonly TelegramOptions _options;
     private readonly FullTextSearch _fullTextSearch;
     private readonly TelegramBotClient _botClient;
 
     public SongImagesTries(ILogger<SongImagesTries> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner,
         SongsDatabase songsDatabase, IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options,
         FullTextSearch fullTextSearch)
-        : base(io, options)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;
         _songsDatabase = songsDatabase;
         _illustrationsApiClient = illustrationsApiClient;
+        _options = options.Value;
         _fullTextSearch = fullTextSearch;
         _botClient = new(options.Value.Token);
     }
@@ -69,7 +71,7 @@ public class SongImagesTries : Command
     protected override async Task ExecuteQuickly()
     {
         var user = await _songsDatabase.Users
-            .Where(x => x.TenantId == Options.TenantId)
+            .Where(x => x.TenantId == _options.TenantId)
             .SingleAsync(x => x.Id == Io.UserId);
 
         Song? song = null;

@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
-using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 
@@ -16,8 +14,8 @@ public class UpdateCommands : Command
     private readonly AvailableCommands _availableCommands;
 
     public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions,
-        AvailableCommands availableCommands, IOptions<TelegramOptions> options)
-        : base(io, options)
+        AvailableCommands availableCommands)
+        : base(io)
     {
         _logger = logger;
         _channelActions = channelActions;

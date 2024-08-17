@@ -5,7 +5,7 @@ using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 
@@ -14,12 +14,14 @@ public class ConfigureDog : Command
 {
     private readonly ILogger<ConfigureDog> _logger;
     private readonly DogDatabase _dogDatabase;
+    private readonly ScopeAwareness _scopeAwareness;
 
     public ConfigureDog(ILogger<ConfigureDog> logger, Io io, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+        : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
+        _scopeAwareness = scopeAwareness;
     }
 
     private enum ConfigType
@@ -43,7 +45,7 @@ public class ConfigureDog : Command
                 InteractionType = InteractionType.OwnChatterResetDialog,
                 UserId = Io.UserId,
                 Serialized = "reset",
-                DomainId = ScopeAwareness.DomainId,
+                DomainId = _scopeAwareness.DomainId,
             });
 
             await _dogDatabase.SaveChangesAsync();
@@ -56,7 +58,7 @@ public class ConfigureDog : Command
         Io.WriteLine();
         Io.WriteLine(setting switch
         {
-            ConfigType.OwnChatterSystemMessage => ScopeAwareness.Domain.SystemMessage,
+            ConfigType.OwnChatterSystemMessage => _scopeAwareness.Domain.SystemMessage,
             ConfigType.OwnChatterResetDialog or _ => throw new ArgumentOutOfRangeException(),
         });
         Io.WriteLine();
@@ -66,7 +68,7 @@ public class ConfigureDog : Command
         switch (setting)
         {
             case ConfigType.OwnChatterSystemMessage:
-                ScopeAwareness.Domain.SystemMessage = newMessage;
+                _scopeAwareness.Domain.SystemMessage = newMessage;
                 break;
             case ConfigType.OwnChatterResetDialog:
             default:

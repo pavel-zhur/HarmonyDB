@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Services;
 
@@ -13,8 +13,8 @@ public class Start : Command
     private readonly ILogger<Start> _logger;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
 
-    public Start(ILogger<Start> logger, Io io, DialogHandlerMemory dialogHandlerMemory, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public Start(ILogger<Start> logger, Io io, DialogHandlerMemory dialogHandlerMemory)
+        : base(io)
     {
         _logger = logger;
         _dialogHandlerMemory = dialogHandlerMemory;

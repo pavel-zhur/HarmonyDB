@@ -2,11 +2,11 @@
 
 namespace OneShelf.Telegram.Services.Base;
 
-public abstract class CommandBase
+public abstract class Command
 {
     private readonly List<Task> _scheduled = new();
 
-    protected CommandBase(Io io)
+    protected Command(Io io)
     {
         Io = io;
     }

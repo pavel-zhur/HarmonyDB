@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 
@@ -13,8 +13,8 @@ public class MergeSongs : Command
     private readonly ILogger<MergeSongs> _logger;
     private readonly SimpleActions _simpleActions;
 
-    public MergeSongs(ILogger<MergeSongs> logger, Io io, SimpleActions simpleActions, IOptions<TelegramOptions> options)
-        : base(io, options)
+    public MergeSongs(ILogger<MergeSongs> logger, Io io, SimpleActions simpleActions)
+        : base(io)
     {
         _logger = logger;
         _simpleActions = simpleActions;

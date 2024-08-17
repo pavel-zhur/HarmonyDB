@@ -12,7 +12,7 @@ using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 using Version = OneShelf.Common.Database.Songs.Model.Version;
@@ -26,17 +26,19 @@ public class ImproveWithParameters : Command
     private readonly SongsDatabase _songsDatabase;
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
     private readonly RegenerationQueue _regenerationQueue;
+    private readonly TelegramOptions _options;
     private readonly TelegramOptions _telegramOptions;
 
     public ImproveWithParameters(Io io, ILogger<ImproveWithParameters> logger, SongsDatabase songsDatabase,
         IOptions<TelegramOptions> telegramOptions, MessageMarkdownCombiner messageMarkdownCombiner,
         RegenerationQueue regenerationQueue, IOptions<TelegramOptions> options)
-        : base(io, options)
+        : base(io)
     {
         _logger = logger;
         _songsDatabase = songsDatabase;
         _messageMarkdownCombiner = messageMarkdownCombiner;
         _regenerationQueue = regenerationQueue;
+        _options = options.Value;
         _telegramOptions = telegramOptions.Value;
     }
 
@@ -53,7 +55,7 @@ public class ImproveWithParameters : Command
     public async Task Go(int index)
     {
         var song = await _songsDatabase.Songs
-            .Where(x => x.TenantId == Options.TenantId)
+            .Where(x => x.TenantId == _options.TenantId)
             .Include(x => x.Artists)
             .Include(x => x.Versions)
             .ThenInclude(x => x.User)

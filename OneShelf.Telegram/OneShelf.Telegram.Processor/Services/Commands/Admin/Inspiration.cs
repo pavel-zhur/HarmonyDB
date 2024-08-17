@@ -6,7 +6,7 @@ using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -22,8 +22,8 @@ public class Inspiration : Command
     private readonly TelegramOptions _telegramOptions;
 
     public Inspiration(ILogger<Inspiration> logger, Io io, InspirationGeneration inspirationGeneration,
-        IOptions<TelegramOptions> telegramOptions, IOptions<TelegramOptions> options)
-        : base(io, options)
+        IOptions<TelegramOptions> telegramOptions)
+        : base(io)
     {
         _logger = logger;
         _inspirationGeneration = inspirationGeneration;

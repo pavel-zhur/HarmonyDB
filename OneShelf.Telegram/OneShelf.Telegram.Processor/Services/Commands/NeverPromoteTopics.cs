@@ -8,7 +8,7 @@ using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.Stickers;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
@@ -28,9 +28,8 @@ public class NeverPromoteTopics : Command
 
     public NeverPromoteTopics(ILogger<NeverPromoteTopics> logger, Io io,
         MessageMarkdownCombiner messageMarkdownCombiner, SongsDatabase songsDatabase,
-        IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options, FullTextSearch fullTextSearch,
-        IOptions<TelegramOptions> options1)
-        : base(io, options1)
+        IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options, FullTextSearch fullTextSearch)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;

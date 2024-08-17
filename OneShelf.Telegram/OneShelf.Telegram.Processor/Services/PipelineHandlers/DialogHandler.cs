@@ -9,7 +9,7 @@ using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.Commands;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 using OneShelf.Telegram.Services;
 using Telegram.BotAPI;
