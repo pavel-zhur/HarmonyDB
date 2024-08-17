@@ -65,15 +65,15 @@ public static class ServiceCollectionExtensions
                     .AddCommand<UploadReadyOnesAll>()
                     .AddCommand<Inspiration>()
 
-                    .AddPipelineHandler<DialogHandler>()
-                    .AddPipelineHandler<LikesHandler>()
-                    .AddPipelineHandler<InlineQueryHandler>()
-                    .AddPipelineHandler<PublicChatterHandler>()
-                    .AddPipelineHandler<PublicImportHandler>()
-                    .AddPipelineHandler<OwnChatterHandler>()
-                    .AddPipelineHandler<ChosenInlineResultCollector>()
-                    .AddPipelineHandler<UsersCollector>()
-                    .AddPipelineHandler<PinsRemover>()
+                    .AddPipelineHandlerInOrder<UsersCollector>()
+                    .AddPipelineHandlerInOrder<LikesHandler>()
+                    .AddPipelineHandlerInOrder<InlineQueryHandler>()
+                    .AddPipelineHandlerInOrder<ChosenInlineResultCollector>()
+                    .AddPipelineHandlerInOrder<PinsRemover>()
+                    .AddPipelineHandlerInOrder<DialogHandler>()
+                    .AddPipelineHandlerInOrder<OwnChatterHandler>()
+                    .AddPipelineHandlerInOrder<PublicChatterHandler>()
+                    .AddPipelineHandlerInOrder<PublicImportHandler>()
                 );
 
         services

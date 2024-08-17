@@ -18,7 +18,7 @@ public class TelegramOptionsBuilder
         return this;
     }
 
-    public TelegramOptionsBuilder AddPipelineHandler<TPipelineHandler>()
+    public TelegramOptionsBuilder AddPipelineHandlerInOrder<TPipelineHandler>()
         where TPipelineHandler : PipelineHandler
     {
         _types.MutablePipelineHandlers.Add(typeof(TPipelineHandler));

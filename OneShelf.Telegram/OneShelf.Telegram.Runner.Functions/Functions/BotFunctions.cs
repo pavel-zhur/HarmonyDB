@@ -20,12 +20,14 @@ public class BotFunctions
     private readonly Pipeline _pipeline;
     private readonly DailySelection _dailySelection;
     private readonly TelegramOptions _telegramOptions;
+    private readonly RegenerationQueue _regenerationQueue;
 
-    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, Pipeline pipeline, DailySelection dailySelection)
+    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, Pipeline pipeline, DailySelection dailySelection, RegenerationQueue regenerationQueue)
     {
         _logger = logger;
         _pipeline = pipeline;
         _dailySelection = dailySelection;
+        _regenerationQueue = regenerationQueue;
         _telegramOptions = telegramOptions.Value;
     }
 
@@ -34,7 +36,7 @@ public class BotFunctions
         [QueueTrigger(QueueNameRegenerations)] string myQueueItem)
     {
         if (!bool.Parse(myQueueItem)) return;
-        await _pipeline.Regenerate();
+        await _regenerationQueue.QueueUpdateAllSync();
     }
 
     [Function("UpdatesQueueTrigger")]

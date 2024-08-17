@@ -33,10 +33,10 @@ public static class ServiceCollectionExtensions
                     .AddCommand<ConfigureChatGpt>()
                     .AddCommand<ConfigureDog>()
 
-                    .AddPipelineHandler<DialogHandler>()
-                    .AddPipelineHandler<OwnChatterHandler>()
-                    .AddPipelineHandler<UsersCollector>()
-                    .AddPipelineHandler<ChatsCollector>()
+                    .AddPipelineHandlerInOrder<UsersCollector>()
+                    .AddPipelineHandlerInOrder<ChatsCollector>()
+                    .AddPipelineHandlerInOrder<DialogHandler>()
+                    .AddPipelineHandlerInOrder<OwnChatterHandler>()
                 );
 
         services

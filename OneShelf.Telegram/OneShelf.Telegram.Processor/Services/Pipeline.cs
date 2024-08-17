@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using OneShelf.Telegram.Processor.Services.PipelineHandlers;
-using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using Microsoft.Extensions.Options;
+using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.GettingUpdates;
@@ -17,34 +16,16 @@ public class Pipeline
     private readonly RegenerationQueue _regenerationQueue;
 
     public Pipeline(
+        IServiceProvider serviceProvider,
+        IOptions<TelegramTypes> telegramTypes,
         PipelineMemory pipelineMemory,
-        PinsRemover pinsRemover,
         ILogger<Pipeline> logger,
-        LikesHandler likesHandler,
-        UsersCollector usersCollector,
-        InlineQueryHandler inlineQueryHandler,
-        ChosenInlineResultCollector chosenInlineResultCollector,
-        DialogHandler dialogHandler,
-        RegenerationQueue regenerationQueue,
-        OwnChatterHandler ownChatterHandler,
-        PublicChatterHandler publicChatterHandler,
-        PublicImportHandler publicImportHandler)
+        RegenerationQueue regenerationQueue)
     {
         _pipelineMemory = pipelineMemory;
         _logger = logger;
         _regenerationQueue = regenerationQueue;
-        _pipeline = new List<PipelineHandler>
-        {
-            usersCollector,
-            likesHandler,
-            inlineQueryHandler,
-            chosenInlineResultCollector,
-            pinsRemover,
-            dialogHandler,
-            ownChatterHandler,
-            publicChatterHandler,
-            publicImportHandler,
-        };
+        _pipeline = telegramTypes.Value.PipelineHandlers.Select(serviceProvider.GetService).Cast<PipelineHandler>().ToList();
     }
 
     /// <summary>
@@ -82,11 +63,6 @@ public class Pipeline
         }
 
         return DisposeOnFinish(running);
-    }
-
-    public async Task Regenerate()
-    {
-        await _regenerationQueue.QueueUpdateAllSync();
     }
 
     /// <remarks>It's async void on purpose. We don't await it.</remarks>
