@@ -7,7 +7,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Telegram.BotAPI" Version="6.9.2" />
+		<PackageReference Include="Telegram.BotAPI" Version="7.9.0" />
 	</ItemGroup>
 
 </Project>
