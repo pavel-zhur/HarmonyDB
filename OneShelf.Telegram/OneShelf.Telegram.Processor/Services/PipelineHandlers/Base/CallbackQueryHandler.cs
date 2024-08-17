@@ -30,9 +30,7 @@ public abstract class CallbackQueryHandler : PipelineHandler
     {
         if (update.CallbackQuery?.Data == null) return false;
 
-        var chatFound =
-            TelegramOptions.PublicTopicId == update.CallbackQuery?.Message?.MessageThreadId
-            && TelegramOptions.PublicChatId.Substring(1) == update.CallbackQuery.Message.Chat.Username;
+        var chatFound = TelegramOptions.PublicChatId.Substring(1) == update.CallbackQuery?.Message?.Chat.Username;
 
         if (!chatFound) return false;
 

@@ -116,7 +116,7 @@ public class ChannelActions
         {
             try
             {
-                await api.EditMessageTextAsync(new(markdownV2.ToString())
+                await api.EditMessageTextAsync<object>(new(markdownV2.ToString())
                 {
                     ChatId = _telegramOptions.PublicChatId,
                     ParseMode = Constants.MarkdownV2,
