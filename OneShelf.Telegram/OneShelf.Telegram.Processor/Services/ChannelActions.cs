@@ -221,19 +221,4 @@ public class ChannelActions
 
     public async Task AdminPrivateMessageSafe(string message) =>
         await AdminPrivateMessageSafe(message.ToMarkdown());
-
-    public async Task UpdateCommands(List<CommandAttribute> commands)
-    {
-        var api = new TelegramBotClient(_telegramOptions.Token);
-
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
-        {
-            Scope = new BotCommandScopeChat(_telegramOptions.AdminId),
-        });
-
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role == Role.Regular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
-        {
-            Scope = new BotCommandScopeDefault(),
-        });
-    }
 }

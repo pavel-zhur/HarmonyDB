@@ -9,4 +9,6 @@ public interface IScopedAbstractions
     Role GetNonAdminRole(long userId);
 
     string GetBotToken();
+    
+    IEnumerable<long> GetDomainAdministratorIds();
 }

@@ -21,4 +21,6 @@ public class ScopedAbstractions : IScopedAbstractions
     public Role GetNonAdminRole(long userId) => Role.Regular;
 
     public string GetBotToken() => _options.Token;
+
+    public IEnumerable<long> GetDomainAdministratorIds() => [];
 }

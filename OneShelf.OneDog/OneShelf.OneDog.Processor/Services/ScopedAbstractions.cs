@@ -17,4 +17,6 @@ public class ScopedAbstractions : IScopedAbstractions
     public Role GetNonAdminRole(long userId) => _dogContext.GetNonAdminRole(userId);
 
     public string GetBotToken() => _dogContext.GetBotToken();
+
+    public IEnumerable<long> GetDomainAdministratorIds() => _dogContext.GetDomainAdministratorIds();
 }
