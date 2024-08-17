@@ -1,11 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Newtonsoft.Json;
 using OneShelf.OneDog.Processor.Helpers;
 
 namespace OneShelf.OneDog.Processor.Model;
 
-[JsonConverter(typeof(MarkdownConverter))]
 public class Markdown
 {
     private readonly StringBuilder _builder = new();
