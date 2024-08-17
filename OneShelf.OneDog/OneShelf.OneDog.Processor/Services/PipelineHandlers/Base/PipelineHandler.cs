@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using OneShelf.Telegram.Model;
+﻿using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableTypes;
