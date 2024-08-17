@@ -8,6 +8,7 @@ using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.GettingUpdates;
 using DateTime = System.DateTime;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -17,25 +18,30 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public class OwnChatterHandler : ChatterHandlerBase
 {
     private readonly ILogger<OwnChatterHandler> _logger;
+    private readonly TelegramOptions _telegramOptions;
     private readonly DialogRunner _dialogRunner;
+    private readonly DogContext _dogContext;
 
     public OwnChatterHandler(
         ILogger<OwnChatterHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
         DialogRunner dialogRunner, 
-        TelegramContext telegramContext)
-        : base(telegramOptions, dogDatabase, telegramContext)
+        IScopedAbstractions scopedAbstractions,
+        DogContext dogContext)
+        : base(dogDatabase, scopedAbstractions)
     {
         _logger = logger;
+        _telegramOptions = telegramOptions.Value;
         _dialogRunner = dialogRunner;
+        _dogContext = dogContext;
     }
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (!CheckTopicId(update, TelegramContext.Domain.TopicId, TelegramContext.Domain.ChatId)) return false;
+        if (!CheckTopicId(update, _dogContext.Domain.TopicId, _dogContext.Domain.ChatId)) return false;
 
-        await Log(update, TelegramContext.DomainId, InteractionType.OwnChatterMessage);
+        await Log(update, _dogContext.DomainId, InteractionType.OwnChatterMessage);
 
         if (update.Message?.Text?.Length > 2)
         {
@@ -62,9 +68,9 @@ public class OwnChatterHandler : ChatterHandlerBase
             .ToListAsync();
 
         DateTime? imagesUnavailableUntil = null;
-        if (TelegramContext.Domain.ImagesLimit != null)
+        if (_dogContext.Domain.ImagesLimit != null)
         {
-            var imagesSince = now.Add(-TelegramContext.Domain.ImagesLimit.Window);
+            var imagesSince = now.Add(-_dogContext.Domain.ImagesLimit.Window);
             var images = (await DogDatabase.Interactions
                 .Where(x => x.InteractionType == InteractionType.ImagesSuccess)
                 .Where(x => x.CreatedOn >= imagesSince)
@@ -72,9 +78,9 @@ public class OwnChatterHandler : ChatterHandlerBase
                 .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
                 .ToList();
 
-            if (images.Sum(x => x.count) >= TelegramContext.Domain.ImagesLimit.Limit)
+            if (images.Sum(x => x.count) >= _dogContext.Domain.ImagesLimit.Limit)
             {
-                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(TelegramContext.Domain.ImagesLimit.Window);
+                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(_dogContext.Domain.ImagesLimit.Window);
             }
         }
 
@@ -86,11 +92,11 @@ public class OwnChatterHandler : ChatterHandlerBase
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var system = TelegramContext.Domain.SystemMessage;
-        var version = TelegramContext.Domain.GptVersion;
-        var frequencyPenalty = TelegramContext.Domain.FrequencyPenalty;
-        var presencePenalty = TelegramContext.Domain.PresencePenalty;
-        var imagesVersion = TelegramContext.Domain.DalleVersion;
+        var system = _dogContext.Domain.SystemMessage;
+        var version = _dogContext.Domain.GptVersion;
+        var frequencyPenalty = _dogContext.Domain.FrequencyPenalty;
+        var presencePenalty = _dogContext.Domain.PresencePenalty;
+        var imagesVersion = _dogContext.Domain.DalleVersion;
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
@@ -125,7 +131,7 @@ public class OwnChatterHandler : ChatterHandlerBase
                 UserId = update.Message?.From?.Id,
                 UseCase = "own chatter",
                 AdditionalBillingInfo = "one dog",
-                DomainId = TelegramContext.DomainId,
+                DomainId = _dogContext.DomainId,
             }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)
@@ -161,8 +167,8 @@ public class OwnChatterHandler : ChatterHandlerBase
             InteractionType = InteractionType.OwnChatterMemoryPoint,
             Serialized = JsonSerializer.Serialize(newMessagePoint),
             ShortInfoSerialized = JsonSerializer.Serialize(result),
-            UserId = TelegramOptions.AdminId,
-            DomainId = TelegramContext.DomainId,
+            UserId = _telegramOptions.AdminId,
+            DomainId = _dogContext.DomainId,
         });
 
         if (result.Images.Any())
@@ -171,9 +177,9 @@ public class OwnChatterHandler : ChatterHandlerBase
             {
                 CreatedOn = now,
                 InteractionType = imagesUnavailableUntil.HasValue ? InteractionType.ImagesLimit : InteractionType.ImagesSuccess,
-                DomainId = TelegramContext.DomainId,
+                DomainId = _dogContext.DomainId,
                 Serialized = result.Images.Count.ToString(),
-                UserId = TelegramOptions.AdminId,
+                UserId = _telegramOptions.AdminId,
             });
         }
         

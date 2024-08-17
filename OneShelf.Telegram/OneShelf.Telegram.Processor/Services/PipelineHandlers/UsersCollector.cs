@@ -7,6 +7,7 @@ using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 
@@ -17,8 +18,8 @@ public class UsersCollector : PipelineHandler
     private readonly ILogger<UsersCollector> _logger;
     private readonly SongsDatabase _songsDatabase;
 
-    public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, SongsDatabase songsDatabase) 
-        : base(telegramOptions)
+    public UsersCollector(ILogger<UsersCollector> logger, SongsDatabase songsDatabase, IScopedAbstractions scopedAbstractions) 
+        : base(scopedAbstractions)
     {
         _logger = logger;
         _songsDatabase = songsDatabase;

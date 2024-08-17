@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Processor.Model;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
@@ -11,13 +12,16 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 
 public abstract class CallbackQueryHandler : PipelineHandler
 {
-    protected SongsDatabase SongsDatabase { get; }
-
-    protected CallbackQueryHandler(IOptions<TelegramOptions> telegramOptions, SongsDatabase songsDatabase) 
-        : base(telegramOptions)
+    protected CallbackQueryHandler(IOptions<TelegramOptions> telegramOptions, SongsDatabase songsDatabase, IScopedAbstractions scopedAbstractions) 
+        : base(scopedAbstractions)
     {
+        TelegramOptions = telegramOptions.Value;
         SongsDatabase = songsDatabase;
     }
+
+    protected TelegramOptions TelegramOptions { get; }
+
+    protected SongsDatabase SongsDatabase { get; }
 
     protected abstract IReadOnlyList<string> Catch { get; }
 

@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
-using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using System.Text.Json;
 using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Processor.Services;
@@ -12,6 +13,7 @@ public class Pipeline
     private readonly PipelineMemory _pipelineMemory;
     private readonly ILogger<Pipeline> _logger;
     private readonly TelegramContext _telegramContext;
+    private readonly IScopedAbstractions _scopedAbstractions;
     private readonly IReadOnlyList<PipelineHandler> _pipeline;
 
     public Pipeline(
@@ -21,11 +23,13 @@ public class Pipeline
         ChatsCollector chatsCollector,
         DialogHandler dialogHandler,
         OwnChatterHandler ownChatterHandler,
-        TelegramContext telegramContext)
+        TelegramContext telegramContext,
+        IScopedAbstractions scopedAbstractions)
     {
         _pipelineMemory = pipelineMemory;
         _logger = logger;
         _telegramContext = telegramContext;
+        _scopedAbstractions = scopedAbstractions;
         _pipeline = new List<PipelineHandler>
         {
             usersCollector,
@@ -42,7 +46,8 @@ public class Pipeline
     {
         List<Task> running = new();
 
-        await _telegramContext.Initialize(domainId);
+        _telegramContext.Initialize(domainId);
+        await _scopedAbstractions.Initialize(domainId);
 
         try
         {

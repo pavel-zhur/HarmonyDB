@@ -11,6 +11,7 @@ using OneShelf.Common.Database.Songs.Services;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
@@ -32,8 +33,10 @@ public class PublicImportHandler : ChatterHandlerBase
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase,
         SongsOperations songsOperations, 
-        RegenerationQueue registrationQueue, IndexApiClient indexApiClient)
-        : base(telegramOptions, songsDatabase)
+        RegenerationQueue registrationQueue, 
+        IndexApiClient indexApiClient, 
+        IScopedAbstractions scopedAbstractions)
+        : base(telegramOptions, songsDatabase, scopedAbstractions)
     {
         _logger = logger;
         _songsOperations = songsOperations;

@@ -1,10 +1,9 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
-using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.GettingUpdates;
 using Telegram.BotAPI.InlineMode;
@@ -20,8 +19,8 @@ public class InlineQueryHandler : PipelineHandler
     private readonly SongsDatabase _songsDatabase;
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
 
-    public InlineQueryHandler(IOptions<TelegramOptions> telegramOptions, ILogger<InlineQueryHandler> logger, FullTextSearch fullTextSearch, SongsDatabase songsDatabase, MessageMarkdownCombiner messageMarkdownCombiner)
-        : base(telegramOptions)
+    public InlineQueryHandler(ILogger<InlineQueryHandler> logger, FullTextSearch fullTextSearch, SongsDatabase songsDatabase, MessageMarkdownCombiner messageMarkdownCombiner, IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
         _logger = logger;
         _fullTextSearch = fullTextSearch;

@@ -24,6 +24,7 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
+    private readonly TelegramOptions _telegramOptions;
     private readonly SongsDatabase _songsDatabase;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly AvailableCommands _availableCommands;
@@ -36,10 +37,13 @@ public class DialogHandler : PipelineHandler
         SongsDatabase songsDatabase,
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
-        IServiceProvider serviceProvider, AvailableCommands availableCommands)
-        : base(telegramOptions)
+        IServiceProvider serviceProvider, 
+        AvailableCommands availableCommands, 
+        IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
         _logger = logger;
+        _telegramOptions = telegramOptions.Value;
         _songsDatabase = songsDatabase;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
@@ -52,7 +56,7 @@ public class DialogHandler : PipelineHandler
         if (!IsPrivate(update.Message?.Chat)) return false;
 
         var userId = update.Message!.Chat.Id;
-        var isAdmin = TelegramOptions.IsAdmin(userId);
+        var isAdmin = _telegramOptions.IsAdmin(userId);
         var text = update.Message.Text?.Trim();
 
         _songsDatabase.Interactions.Add(new()

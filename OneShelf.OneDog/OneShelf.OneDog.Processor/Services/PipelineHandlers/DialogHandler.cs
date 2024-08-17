@@ -8,7 +8,7 @@ using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.Telegram.Services.Base;
-using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Services;
 using Telegram.BotAPI;
@@ -22,11 +22,13 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
+    private readonly TelegramOptions _telegramOptions;
     private readonly DogDatabase _dogDatabase;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly AvailableCommands _availableCommands;
     private readonly IoFactory _ioFactory;
     private readonly IServiceProvider _serviceProvider;
+    private readonly TelegramContext _telegramContext;
 
     public DialogHandler(
         ILogger<DialogHandler> logger, 
@@ -35,14 +37,18 @@ public class DialogHandler : PipelineHandler
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
         IServiceProvider serviceProvider,
-        TelegramContext telegramContext, AvailableCommands availableCommands)
-        : base(telegramOptions, telegramContext)
+        TelegramContext telegramContext, 
+        AvailableCommands availableCommands, 
+        IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
         _logger = logger;
+        _telegramOptions = telegramOptions.Value;
         _dogDatabase = dogDatabase;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
         _serviceProvider = serviceProvider;
+        _telegramContext = telegramContext;
         _availableCommands = availableCommands;
     }
 
@@ -51,7 +57,7 @@ public class DialogHandler : PipelineHandler
         if (!IsPrivate(update.Message?.Chat)) return false;
 
         var userId = update.Message!.Chat.Id;
-        var isAdmin = TelegramOptions.IsAdmin(userId);
+        var isAdmin = _telegramOptions.IsAdmin(userId);
         var text = update.Message.Text?.Trim();
 
         _dogDatabase.Interactions.Add(new()
@@ -61,7 +67,7 @@ public class DialogHandler : PipelineHandler
             CreatedOn = DateTime.Now,
             Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = text,
-            DomainId = TelegramContext.DomainId,
+            DomainId = _telegramContext.DomainId,
         });
         await _dogDatabase.SaveChangesAsync();
 
@@ -115,7 +121,7 @@ public class DialogHandler : PipelineHandler
             {
                 memory.NewInput(text);
                 _ioFactory.InitDialog(memory);
-                command = _availableCommands.GetCommands(TelegramContext.GetRole(userId)).Single(x =>
+                command = _availableCommands.GetCommands(_telegramContext.GetRole(userId)).Single(x =>
                     x.attribute.Alias == memory.Alias && (memory.Parameters == null
                         ? x.attribute.SupportsNoParameters
                         : x.attribute.SupportsParameters)).commandType;
@@ -129,7 +135,7 @@ public class DialogHandler : PipelineHandler
         }
         else // new command
         {
-            command = _availableCommands.GetCommands(TelegramContext.GetRole(userId)).SingleOrDefault(x =>
+            command = _availableCommands.GetCommands(_telegramContext.GetRole(userId)).SingleOrDefault(x =>
                 x.attribute.Alias == alias &&
                 (parameters != null ? x.attribute.SupportsParameters : x.attribute.SupportsNoParameters)).commandType;
             if (command == null)
@@ -234,7 +240,7 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(TelegramContext.GetRole(userId))
+            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(_telegramContext.GetRole(userId))
                 .Select(x => x
                     .Where(x => x.SupportsNoParameters)
                     .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))

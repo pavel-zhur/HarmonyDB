@@ -4,6 +4,7 @@ using OneShelf.Billing.Api.Client;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;

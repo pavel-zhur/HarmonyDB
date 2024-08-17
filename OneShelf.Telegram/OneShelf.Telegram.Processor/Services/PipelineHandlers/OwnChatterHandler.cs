@@ -8,6 +8,7 @@ using OneShelf.Common.OpenAi.Models;
 using OneShelf.Common.OpenAi.Models.Memory;
 using OneShelf.Common.OpenAi.Services;
 using OneShelf.Telegram.Processor.Model;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.GettingUpdates;
 using DateTime = System.DateTime;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -23,8 +24,9 @@ public class OwnChatterHandler : ChatterHandlerBase
         ILogger<OwnChatterHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase,
-        DialogRunner dialogRunner)
-        : base(telegramOptions, songsDatabase)
+        DialogRunner dialogRunner, 
+        IScopedAbstractions scopedAbstractions)
+        : base(telegramOptions, songsDatabase, scopedAbstractions)
     {
         _logger = logger;
         _dialogRunner = dialogRunner;

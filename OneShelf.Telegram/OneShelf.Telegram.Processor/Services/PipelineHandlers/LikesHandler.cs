@@ -7,6 +7,7 @@ using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI.AvailableMethods;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
@@ -21,8 +22,8 @@ public class LikesHandler : CallbackQueryHandler
     private IReadOnlyList<Like> _likes = null!;
     private bool _need;
 
-    public LikesHandler(IOptions<TelegramOptions> telegramOptions, ILogger<LikesHandler> logger, SongsDatabase songsDatabase, RegenerationQueue regenerationQueue, IoFactory ioFactory) 
-        : base(telegramOptions, songsDatabase)
+    public LikesHandler(IOptions<TelegramOptions> telegramOptions, ILogger<LikesHandler> logger, SongsDatabase songsDatabase, RegenerationQueue regenerationQueue, IoFactory ioFactory, IScopedAbstractions scopedAbstractions) 
+        : base(telegramOptions, songsDatabase, scopedAbstractions)
     {
         _logger = logger;
         _regenerationQueue = regenerationQueue;

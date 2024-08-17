@@ -1,13 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
-using OneShelf.Telegram.Model;
-using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
-using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -18,10 +14,9 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public abstract class ChatterHandlerBase : PipelineHandler
 {
     protected ChatterHandlerBase(
-        IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
-        TelegramContext telegramContext)
-        : base(telegramOptions, telegramContext)
+        IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
         DogDatabase = dogDatabase;
     }
@@ -68,7 +63,7 @@ public abstract class ChatterHandlerBase : PipelineHandler
 
     private async Task<TelegramBotClient> CreateApi()
     {
-        return new(TelegramContext.Domain.BotToken);
+        return new(ScopedAbstractions.GetBotToken());
     }
 
     protected async Task SendMessage(Update respondTo, string text, IReadOnlyList<string> images, bool reply)

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
-using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
 using Telegram.BotAPI.AvailableTypes;
@@ -16,8 +16,8 @@ public class UsersCollector : PipelineHandler
     private readonly ILogger<UsersCollector> _logger;
     private readonly DogDatabase _dogDatabase;
 
-    public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, DogDatabase dogDatabase, TelegramContext telegramContext) 
-        : base(telegramOptions, telegramContext)
+    public UsersCollector(ILogger<UsersCollector> logger, DogDatabase dogDatabase, IScopedAbstractions scopedAbstractions) 
+        : base(scopedAbstractions)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;

@@ -5,7 +5,7 @@ using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -19,14 +19,18 @@ public abstract class ChatterHandlerBase : PipelineHandler
 
     protected ChatterHandlerBase(
         IOptions<TelegramOptions> telegramOptions,
-        SongsDatabase songsDatabase)
-        : base(telegramOptions)
+        SongsDatabase songsDatabase,
+        IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
+        TelegramOptions = telegramOptions.Value;
         SongsDatabase = songsDatabase;
         _api = new(TelegramOptions.Token);
     }
 
     protected SongsDatabase SongsDatabase { get; }
+
+    protected TelegramOptions TelegramOptions { get; }
 
     protected bool CheckTopicId(Update update, int topicId)
     {
