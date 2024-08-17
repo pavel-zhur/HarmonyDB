@@ -126,9 +126,9 @@ public class DialogHandler : PipelineHandler
             }
             else
             {
-                _ioFactory.InitDialog(userId, _availableCommands.Search.attribute.Alias, null);
+                _ioFactory.InitDialog(userId, _availableCommands.Default.attribute.Alias, null);
                 _ioFactory.Io.GetMemory().NewInput(text);
-                command = _availableCommands.Search.commandType;
+                command = _availableCommands.Default.commandType;
             }
         }
         else // new command

@@ -42,8 +42,6 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<ChannelActions>()
 
-            .AddSingleton<AvailableCommands>()
-            
             .AddScoped<TelegramContext>()
             
             .AddOpenAi(configuration);

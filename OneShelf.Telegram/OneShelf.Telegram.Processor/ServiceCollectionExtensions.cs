@@ -90,7 +90,6 @@ public static class ServiceCollectionExtensions
 
             .AddSingleton<RegenerationQueue>()
             .AddSingleton<FullTextSearch>()
-            .AddSingleton<AvailableCommands>()
 
             .AddIndexApiClient(configuration)
             .AddIllustrationsApiClient(configuration)

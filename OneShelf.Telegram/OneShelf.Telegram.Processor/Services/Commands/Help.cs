@@ -5,6 +5,7 @@ using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
+using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;
 using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 

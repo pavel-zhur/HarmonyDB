@@ -2,4 +2,7 @@
 
 public interface ISingletonAbstractions
 {
+    List<List<Type>> GetCommandsGrid();
+    Type GetDefaultCommand();
+    Type GetHelpCommand();
 }
