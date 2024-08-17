@@ -100,7 +100,10 @@ public abstract class ChatterHandlerBase : PipelineHandler
             ReplyToMessageId = reply ? respondTo.Message.MessageId : null,
             AllowSendingWithoutReply = false,
             DisableNotification = true,
-            DisableWebPagePreview = true,
+            LinkPreviewOptions = new()
+            {
+                IsDisabled = true,
+            },
             Entities = messageEntities
         });
     }
