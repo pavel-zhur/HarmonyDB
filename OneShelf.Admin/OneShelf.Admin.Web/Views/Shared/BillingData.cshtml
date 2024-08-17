@@ -1,0 +1,67 @@
+﻿@model BillingDataModel
+
+@{
+    var allUsages = Model.Model.All.Usages.Where(x => !Model.Last.HasValue || (DateTime.Now.AddHours(3) - x.CreatedOn!).Value.TotalHours < Model.Last).ToList();
+}
+
+<h4>@Model.Title = @allUsages.Sum(x => x.Price ?? 0).ToString("C")</h4>
+Unparsed: @allUsages.Count(x => x.Price is 0 or null)
+
+<h4>@Model.Title by category</h4>
+<table>
+    <thead>
+        <tr>
+            <td>Category</td>
+            <td>Price</td>
+            <td>Requests</td>
+        </tr>
+    </thead>
+    @foreach (var grouping in allUsages.GroupBy(x => x.Category).OrderByDescending(x => x.Sum(x => x.Price)))
+    {
+        <tr>
+            <td>@grouping.Key</td>
+            <td>@grouping.Sum(x => x.Price ?? 0).ToString("C")</td>
+            <td>@grouping.Sum(x => x.Count)</td>
+        </tr>
+    }
+</table>
+
+<h4>@Model.Title by user</h4>
+<table>
+    <thead>
+        <tr>
+            <td>User</td>
+            <td>Price</td>
+            <td>Requests</td>
+        </tr>
+    </thead>
+    @foreach (var grouping in allUsages.GroupBy(x => x.UserId).OrderByDescending(x => x.Sum(x => x.Price)))
+    {
+        <tr>
+            <td>@(Model.Model.All.UserTitles.TryGetValue(grouping.Key ?? 0L, out var user) ? user : "Неизвестно")</td>
+            <td>@grouping.Sum(x => x.Price ?? 0).ToString("C")</td>
+            <td>@grouping.Sum(x => x.Count)</td>
+        </tr>
+    }
+</table>
+
+<h4>@Model.Title by user and category</h4>
+<table>
+    <thead>
+        <tr>
+            <td>User</td>
+            <td>Category</td>
+            <td>Price</td>
+            <td>Requests</td>
+        </tr>
+    </thead>
+    @foreach (var grouping in allUsages.GroupBy(x => (x.UserId, x.Category)).OrderByDescending(x => x.Sum(x => x.Price)))
+    {
+        <tr>
+            <td>@(Model.Model.All.UserTitles.TryGetValue(grouping.Key.UserId ?? 0L, out var user) ? user : "Неизвестно")</td>
+            <td>@grouping.Key.Category</td>
+            <td>@grouping.Sum(x => x.Price ?? 0).ToString("C")</td>
+            <td>@grouping.Sum(x => x.Count)</td>
+        </tr>
+    }
+</table>

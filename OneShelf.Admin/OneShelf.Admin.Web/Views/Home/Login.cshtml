@@ -1,0 +1,10 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using (Html.BeginForm("SetCookie", "Home", FormMethod.Post))
+{
+    @Html.TextBox("cookie")
+    <button type="submit">Submit</button>
+}

@@ -1,0 +1,239 @@
+﻿@using OneShelf.Common
+@model IllustrationsModel
+
+@{
+    ViewBag.Title = "Illustrations";
+    Layout = "_Layout";
+}
+
+<style>
+    img {
+        width: 29vmin; 
+        cursor: pointer;
+    }
+
+    .my-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .my-list-e {
+        margin: 5px;
+        margin-bottom: 10px;
+    }
+
+/* ReSharper disable once InvalidValue */
+    pre { text-wrap: wrap; }
+
+    h4 { margin-top:30px; overflow-wrap: break-word; }
+    div.container { max-width: inherit; }
+    table td { padding-right: 15px; }
+    table { margin-bottom: 25px; }
+    table td { border: 2px solid lightgray; }
+    table.t1 td { border: 2px solid lightskyblue; }
+    table.t2 td { border: 2px solid lightgreen; }
+    table.t3 td { border: 2px solid lightpink; }
+    table.t4 td { border: 2px solid lightseagreen; }
+    table .tdp { width: 50vmin; }
+    table.it { display: inline-table; }
+
+    td.tdc {
+        font-style: italic;
+        font-size: 75%;
+        width: 50vmin;
+        padding-bottom: 20px;
+    }
+
+    .img-box {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .img-box span.v1 { background: lightskyblue; }
+    .img-box span.v2 { background: lightgreen; }
+    .img-box span.v3 { background: lightpink; }
+    .img-box span.v4 { background: lightseagreen; }
+
+    .empty-image {
+        min-width: 29vmin;
+        min-height: 29vmin;
+    }
+    .break {
+        flex-basis: 100%;
+        height: 0;
+        border: 1px solid lightgray;
+    }
+</style>
+
+<script>
+
+    function clicked(el, url1024) {
+        if (!document.fullscreen) {
+            el.saved = el.getAttribute('src');
+            el.setAttribute('src', url1024);
+            el.requestFullscreen();
+        } else {
+            el.setAttribute('src', el.saved);
+            document.exitFullscreen();
+        }
+    }
+
+</script>
+
+<ul>
+    <li>@Html.ActionLink("None", "Illustrations", new { mode = IllustrationsModel.Mode.None })</li>
+    <li>@Html.ActionLink("Brief", "Illustrations", new { mode = IllustrationsModel.Mode.Brief })</li>
+    <li>@Html.ActionLink("Brief with prompts", "Illustrations", new { mode = IllustrationsModel.Mode.BriefWithPrompts })</li>
+    <li>@Html.ActionLink("Full", "Illustrations", new { mode = IllustrationsModel.Mode.Full })</li>
+    <li>@Html.ActionLink("v1", "Illustrations", new { justVersion = 1 })</li>
+    <li>@Html.ActionLink("v2", "Illustrations", new { justVersion = 2 })</li>
+    <li>@Html.ActionLink("v3", "Illustrations", new { justVersion = 3 })</li>
+    <li>@Html.ActionLink("v4", "Illustrations", new { justVersion = 4 })</li>
+    <li>@Html.ActionLink("v5", "Illustrations", new { justVersion = 5 })</li>
+</ul>
+
+<h2>Illustrations (@Model.Hidden hidden, @Model.Results.Responses.Count available, @Model.CountPhotos photos)</h2>
+
+@if (Model.CurrentMode is IllustrationsModel.Mode.BriefWithPrompts or IllustrationsModel.Mode.Full || Model.JustVersion.HasValue)
+{
+    @foreach (var (v, m) in Model.Results.SystemMessages.Where(x => x.Key == (Model.JustVersion ?? x.Key)))
+    {
+        <h4>Version @v</h4>
+        <pre>@m</pre>
+    }
+}
+
+@foreach (var (url, result) in Model.Results.Responses
+    .OrderByDescending(x => x.Value.LatestCreatedOn)
+    .Where(x => !Model.JustVersion.HasValue || x.Value.ImagePublicUrls.GetValueOrDefault(Model.JustVersion.Value)?.Any(x => x.Any(x => x.Any())) == true))
+{
+    <h4>
+        @if (Model.UrlsToTitles.TryGetValue(url, out var title))
+        {
+            @title
+        }
+        else
+        {
+            @url
+        }
+    </h4>
+
+    <div class="my-list">
+        @if (Model.CurrentMode != IllustrationsModel.Mode.None)
+        {
+            @foreach (var (v, attempts) in result.Prompts.OrderBy(x => x.Key).Where(x => Model.CurrentMode == IllustrationsModel.Mode.Full || result.ImageIds.GetValueOrDefault(x.Key)?.SelectMany(x => x.SelectMany(x => x)).Any() == true))
+            {
+                <table class="my-list-e @($"t{v}") @(Model.CurrentMode == IllustrationsModel.Mode.Brief ? "it" : "")">
+                    <tr class="trv">
+                        <td class="tdv" colspan="5">v @(Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v) @Model.Results.AlteredVersions.GetValueOrDefault(v)?.Key.SelectSingle(x => Model.Results.Alterations[x].Title)</td>
+                    </tr>
+                    @if (v < 1)
+                    {
+                        <tr>
+                            <td class="tdc" colspan="5"><pre>@result.CustomSystemMessages[v]</pre></td>
+                        </tr>
+                    }
+                    @foreach (var (prompts, i) in attempts.WithIndices())
+                    {
+                        @if (Model.CurrentMode == IllustrationsModel.Mode.Full || result.ImageIds.GetValueOrDefault(v)?[i].SelectMany(x => x).Any() == true)
+                        {
+                            @foreach (var (prompt, j) in prompts.WithIndices())
+                            {
+                                <tr class="trp">
+                                    <td class="vn"></td>
+                                    <td class="tdi">
+                                        @if (j == 0)
+                                        {
+                                            <span>i @(i + 1)</span>
+                                        }
+                                    </td>
+                                    <td class="tdj">j @(j + 1)</td>
+                                    @if (Model.CurrentMode is IllustrationsModel.Mode.BriefWithPrompts or IllustrationsModel.Mode.Full)
+                                    {
+                                        <td class="tdp">
+                                            @prompt
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td class="tdpn"></td>
+                                    }
+                                    <td class="tdx">@string.Join(" ", Enumerable.Repeat("x", result.ImageIds.GetValueOrDefault(v)?[i][j].Count ?? 0))</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="trp trpe">
+                                <td class="vn vne"></td>
+                                <td class="tdi tdie">i @(i + 1)</td>
+                                <td colspan="3">@prompts.Count</td>
+                            </tr>
+                        }
+                    }
+                </table>
+            }
+        }
+        
+        @if (Model.JustVersion.HasValue)
+        {
+            foreach (var (grouping, isLast) in result.ImagePublicUrls[Model.JustVersion.Value]
+                .SelectMany((x, i) => x.SelectMany((y, j) => y.Select((z, k) => (i, j, k, x: z))))
+                .GroupBy(x => (x.i, x.k))
+                .OrderBy(x => x.Key.i)
+                .ThenBy(x => x.Key.k)
+                .WithIsLast())
+            {
+                for (var j = 0; j <= grouping.Max(x => x.j); j++)
+                {
+                    var publicUrl = grouping.SingleOrDefault(x => x.j == j).x;
+                    if (publicUrl != null)
+                    {
+                        <div class="img-box my-list-e">
+                            <img src="@(publicUrl.Url256?.ToString() ?? Url.Action("Illustration", new { publicUrl.Id }))" onclick=" clicked(this, '@publicUrl.Url1024') "/>
+                            <span class="@($"v{Model.JustVersion.Value}")">@($"v{Model.JustVersion.Value} i{grouping.Key.i + 1} j{j + 1} #{grouping.Key.k}")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="img-box my-list-e">
+                            <div class="empty-image"></div>
+                        </div>
+                    }
+                }
+
+                if (!isLast)
+                {
+                    <div class="break"></div>
+                }
+            }
+        }
+        else
+        {
+            foreach (var (v, attempts) in result.ImagePublicUrls.Where(x => (Model.JustVersion ?? x.Key) == x.Key).OrderBy(x => x.Key))
+            {
+                foreach (var (prompts, i) in attempts.WithIndices())
+                {
+                    foreach (var (ids, j) in prompts.WithIndices())
+                    {
+                        foreach (var (publicUrl, k) in ids.WithIndices())
+                        {
+                            <div class="img-box my-list-e">
+                                <img src="@(publicUrl.Url256?.ToString() ?? Url.Action("Illustration", new { publicUrl.Id }))" onclick=" clicked(this, '@publicUrl.Url1024') " />
+                                <span class="@($"v{Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v}")">
+                                    v @(Model.Results.AlteredVersions.GetValueOrDefault(v)?.BaseVersion ?? v) @Model.Results.AlteredVersions.GetValueOrDefault(v)?.Key.SelectSingle(x => Model.Results.Alterations[x].Title) @($"i{i + 1} j{j + 1} #{k}")
+                                    @if (publicUrl.Url1024 != null)
+                                    {
+                                        @Html.ActionLink("PNG", "Png", new PngModel { Url1024 = publicUrl.Url1024, Title = Model.UrlsToTitles.TryGetValue(url, out var title2) ? title2 : url, })
+                                    }
+                                </span>
+                            </div>
+                        }
+                    }
+                }
+            }
+        }
+    </div>
+}
