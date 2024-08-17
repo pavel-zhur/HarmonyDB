@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Model.IoMemories;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
 
-namespace OneShelf.Telegram.Processor.Services;
+namespace OneShelf.Telegram.Services;
 
 public class DialogHandlerMemory
 {

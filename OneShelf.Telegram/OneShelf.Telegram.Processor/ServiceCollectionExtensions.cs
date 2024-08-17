@@ -20,7 +20,8 @@ public static class ServiceCollectionExtensions
         services.Configure<TelegramOptions>(options => configuration.Bind(nameof(TelegramOptions), options));
 
         services
-            .AddSongsDatabase();
+            .AddSongsDatabase()
+            .AddTelegram(configuration);
 
         services
             .AddScoped<FilesUploader>()
@@ -40,7 +41,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<RegenerationQueue>()
             .AddSingleton<FullTextSearch>()
             .AddSingleton<PipelineMemory>()
-            .AddSingleton<DialogHandlerMemory>()
             .AddSingleton<AvailableCommands>()
 
             .AddScoped<PinsRemover>()

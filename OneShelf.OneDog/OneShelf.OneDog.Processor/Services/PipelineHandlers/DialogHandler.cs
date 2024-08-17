@@ -10,6 +10,7 @@ using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.OneDog.Processor.Services.Commands.Base;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;

@@ -6,6 +6,7 @@ using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
