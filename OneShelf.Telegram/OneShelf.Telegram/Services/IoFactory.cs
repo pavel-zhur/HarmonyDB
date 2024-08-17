@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Model;
-using OneShelf.Telegram.Model.Ios;
-using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.IoMemories;
+using OneShelf.Telegram.Model.Ios;
 
-namespace OneShelf.OneDog.Processor.Services;
+namespace OneShelf.Telegram.Services;
 
 public class IoFactory
 {

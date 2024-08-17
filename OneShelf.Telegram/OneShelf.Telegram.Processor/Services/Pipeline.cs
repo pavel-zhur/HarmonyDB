@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Processor.Services;

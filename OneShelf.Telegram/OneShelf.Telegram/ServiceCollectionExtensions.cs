@@ -9,7 +9,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddTelegram(this IServiceCollection services, IConfiguration configuration)
     {
         services
-            .AddSingleton<DialogHandlerMemory>();
+            .AddSingleton<DialogHandlerMemory>()
+            .AddSingleton<PipelineMemory>()
+            .AddScoped<IoFactory>();
 
         return services;
     }

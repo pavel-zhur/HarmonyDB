@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace OneShelf.Telegram.Processor.Services;
+namespace OneShelf.Telegram.Services;
 
 public class PipelineMemory
 {

@@ -10,6 +10,7 @@ using OneShelf.Telegram.Processor.Services;
 using OneShelf.Telegram.Processor.Services.Commands;
 using OneShelf.Telegram.Processor.Services.Commands.Admin;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers;
+using OneShelf.Telegram.Services;
 
 namespace OneShelf.Telegram.Processor;
 
@@ -31,7 +32,6 @@ public static class ServiceCollectionExtensions
             .AddScoped<ExponentialBackOff>()
             .AddScoped<Pipeline>()
             .AddScoped<DailySelection>()
-            .AddScoped<IoFactory>()
             .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io)
             .AddScoped<MessageMarkdownCombiner>()
             .AddScoped<StringsCombiner>()
@@ -40,7 +40,6 @@ public static class ServiceCollectionExtensions
 
             .AddSingleton<RegenerationQueue>()
             .AddSingleton<FullTextSearch>()
-            .AddSingleton<PipelineMemory>()
             .AddSingleton<AvailableCommands>()
 
             .AddScoped<PinsRemover>()

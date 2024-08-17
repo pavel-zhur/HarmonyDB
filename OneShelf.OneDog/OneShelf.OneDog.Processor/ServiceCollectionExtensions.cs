@@ -10,6 +10,7 @@ using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Services;
 
 namespace OneShelf.OneDog.Processor;
 
@@ -26,10 +27,8 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<ChannelActions>()
             .AddScoped<Pipeline>()
-            .AddScoped<IoFactory>()
             .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io)
 
-            .AddSingleton<PipelineMemory>()
             .AddSingleton<AvailableCommands>()
 
             .AddScoped<DialogHandler>()

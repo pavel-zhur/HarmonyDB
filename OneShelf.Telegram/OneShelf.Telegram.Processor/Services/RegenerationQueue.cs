@@ -6,6 +6,7 @@ using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
+using OneShelf.Telegram.Services;
 
 namespace OneShelf.Telegram.Processor.Services;
 

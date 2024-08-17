@@ -2,6 +2,7 @@
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
 using System.Text.Json;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Processor.Services;

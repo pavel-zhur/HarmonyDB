@@ -6,6 +6,7 @@ using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.AvailableMethods;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
