@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model;
 using OneShelf.Telegram.Model;
-using OneShelf.Telegram.Model;
 
 namespace OneShelf.OneDog.Processor.Services;
 

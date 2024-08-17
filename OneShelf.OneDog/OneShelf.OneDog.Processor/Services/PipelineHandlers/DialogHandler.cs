@@ -176,16 +176,16 @@ public class DialogHandler : PipelineHandler
                     {
                         await api.SendMessageAsync(new(userId, finish.ReplyMessageBody.ToString())
                         {
-                            ReplyParameters = new()
-                            {
-                                MessageId = update.Message.MessageId,
-                                AllowSendingWithoutReply = true,
-                            },
                             LinkPreviewOptions = new()
                             {
                                 IsDisabled = true,
                             },
                             ParseMode = Telegram.Helpers.Constants.MarkdownV2,
+                            ReplyParameters = new()
+                            {
+                                MessageId = update.Message.MessageId,
+                                AllowSendingWithoutReply = true,
+                            },
                             ReplyMarkup = finish.ReplyMessageMarkup,
                         });
                     }
