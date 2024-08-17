@@ -181,15 +181,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Common.Api.Common"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Experimental", "HarmonyDB.Experimental", "{9D5C2940-DDAC-4598-8DE1-E731C8BC03A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Experimental.ShortestStructureFinder", "HarmonyDB.Experimental\HarmonyDB.Experimental.ShortestStructureFinder\HarmonyDB.Experimental.ShortestStructureFinder.csproj", "{AB7421D9-7C2C-4AA8-83E3-C066F3EBCE4B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.ShortestStructureFinder", "HarmonyDB.Experimental\HarmonyDB.Experimental.ShortestStructureFinder\HarmonyDB.Experimental.ShortestStructureFinder.csproj", "{AB7421D9-7C2C-4AA8-83E3-C066F3EBCE4B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Experimental.ExpectationMaximization", "HarmonyDB.Experimental\HarmonyDB.Experimental.ExpectationMaximization\HarmonyDB.Experimental.ExpectationMaximization.csproj", "{8D028303-370C-432D-BCBB-2DD13D88F49A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.ExpectationMaximization", "HarmonyDB.Experimental\HarmonyDB.Experimental.ExpectationMaximization\HarmonyDB.Experimental.ExpectationMaximization.csproj", "{8D028303-370C-432D-BCBB-2DD13D88F49A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.Trie", "HarmonyDB.Experimental\HarmonyDB.Experimental.Trie\HarmonyDB.Experimental.Trie.csproj", "{B4838FFC-A200-4E0F-BE3A-13AB2923FCE5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Admin", "OneShelf.Admin", "{762CB558-A104-4BD6-B691-0B2DA8D08742}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Admin.Web", "OneShelf.Admin\OneShelf.Admin.Web\OneShelf.Admin.Web.csproj", "{23460330-6EE8-4531-B680-4D7B172A6597}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram", "OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj", "{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -473,6 +475,10 @@ Global
 		{23460330-6EE8-4531-B680-4D7B172A6597}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23460330-6EE8-4531-B680-4D7B172A6597}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23460330-6EE8-4531-B680-4D7B172A6597}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -548,6 +554,7 @@ Global
 		{8D028303-370C-432D-BCBB-2DD13D88F49A} = {9D5C2940-DDAC-4598-8DE1-E731C8BC03A8}
 		{B4838FFC-A200-4E0F-BE3A-13AB2923FCE5} = {9D5C2940-DDAC-4598-8DE1-E731C8BC03A8}
 		{23460330-6EE8-4531-B680-4D7B172A6597} = {762CB558-A104-4BD6-B691-0B2DA8D08742}
+		{5A23F5CE-EB5F-4D5C-A588-39F8C206D4B0} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}
