@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Processor.Services.Commands.Base;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
@@ -33,7 +34,7 @@ public class Help : Command
         Io.WriteLine();
         Io.WriteLine("Помимо этого, вот чем я могу помочь:");
         Io.WriteLine();
-        foreach (var command in _dialogHandlerMemory.GetCommands(Io.IsAdmin).Where(x => x.attribute.SupportsNoParameters))
+        foreach (var command in _dialogHandlerMemory.GetCommands(Io.IsAdmin ? Role.Admin : Role.Regular).Where(x => x.attribute.SupportsNoParameters))
         {
             Io.WriteLine($"/{command.attribute.Alias}: {command.attribute.HelpDescription}");
         }

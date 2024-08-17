@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Model;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands.Base;

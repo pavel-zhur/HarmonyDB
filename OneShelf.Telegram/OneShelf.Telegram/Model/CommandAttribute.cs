@@ -1,4 +1,4 @@
-﻿namespace OneShelf.OneDog.Processor.Model;
+﻿namespace OneShelf.Telegram.Model;
 
 public class CommandAttribute : Attribute
 {
@@ -18,8 +18,8 @@ public class CommandAttribute : Attribute
     }
 
     public string Alias { get; }
-    public bool SupportsParameters { get; }
-    public bool SupportsNoParameters { get; }
+    public bool SupportsParameters { get; init; }
+    public bool SupportsNoParameters { get; init; }
     public string ButtonDescription { get; }
     public string HelpDescription { get; }
     public Role Role { get; }

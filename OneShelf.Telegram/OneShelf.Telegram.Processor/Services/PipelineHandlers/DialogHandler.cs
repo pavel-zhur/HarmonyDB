@@ -110,7 +110,7 @@ public class DialogHandler : PipelineHandler
             {
                 memory.NewInput(text);
                 _ioFactory.InitDialog(memory);
-                command = _dialogHandlerMemory.GetCommands(isAdmin).Single(x =>
+                command = _dialogHandlerMemory.GetCommands(isAdmin ? Role.Admin : Role.Regular).Single(x =>
                     x.attribute.Alias == memory.Alias && (memory.Parameters == null
                         ? x.attribute.SupportsNoParameters
                         : x.attribute.SupportsParameters)).commandType;
@@ -124,7 +124,7 @@ public class DialogHandler : PipelineHandler
         }
         else // new command
         {
-            command = _dialogHandlerMemory.GetCommands(isAdmin).SingleOrDefault(x =>
+            command = _dialogHandlerMemory.GetCommands(isAdmin ? Role.Admin : Role.Regular).SingleOrDefault(x =>
                 x.attribute.Alias == alias &&
                 (parameters != null ? x.attribute.SupportsParameters : x.attribute.SupportsNoParameters)).commandType;
             if (command == null)
@@ -229,7 +229,7 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_dialogHandlerMemory.GetCommandsGrid(isAdmin)
+            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_dialogHandlerMemory.GetCommandsGrid(isAdmin ? Role.Admin : Role.Regular)
                 .Select(x => x
                     .Where(x => x.SupportsNoParameters)
                     .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))

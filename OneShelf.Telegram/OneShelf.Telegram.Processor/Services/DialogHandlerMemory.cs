@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.IoMemories;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Processor.Services.Commands;
@@ -159,23 +160,18 @@ public class DialogHandlerMemory
         _commands = commands.Select(x => x.Select(x => (x, attribute: x.GetCustomAttribute<CommandAttribute>())).ToList()).ToList();
     }
 
-    public IEnumerable<(Type commandType, CommandAttribute attribute)> GetCommands(bool? admin) => _commands
-        .SelectMany(x => x).Where(x => admin switch
-        {
-            null => true,
-            true => x.attribute.AppliesToAdmins,
-            false => x.attribute.AppliesToRegular
-        });
+    public IEnumerable<(Type commandType, CommandAttribute attribute)> GetCommands(Role availableTo) => _commands
+        .SelectMany(x => x).Where(x => availableTo >= x.attribute.Role);
 
-    public IEnumerable<IEnumerable<CommandAttribute>> GetCommandsGrid(bool isAdmin) => _commands
-        .Select(x => x.Where(x => x.attribute.SupportsNoParameters).Where(x => isAdmin ? x.attribute.AppliesToAdmins : x.attribute.AppliesToRegular)
+    public IEnumerable<IEnumerable<CommandAttribute>> GetCommandsGrid(Role availableTo) => _commands
+        .Select(x => x.Where(x => x.attribute.SupportsNoParameters).Where(x => availableTo >= x.attribute.Role)
             .Select(x => x.attribute).ToList())
         .Where(x => x.Any())
         .ToList();
 
 
-    public (Type commandType, CommandAttribute attribute) Help => GetCommands(true).Single(x => x.commandType == typeof(Help));
-    public (Type commandType, CommandAttribute attribute) Search => GetCommands(true).Single(x => x.commandType == typeof(Search));
+    public (Type commandType, CommandAttribute attribute) Help => GetCommands(Role.Regular).Single(x => x.commandType == typeof(Help));
+    public (Type commandType, CommandAttribute attribute) Search => GetCommands(Role.Regular).Single(x => x.commandType == typeof(Search));
 
     public IoMemory? Get(long userId)
     {

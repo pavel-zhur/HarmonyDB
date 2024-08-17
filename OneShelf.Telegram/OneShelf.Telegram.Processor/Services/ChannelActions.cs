@@ -231,7 +231,7 @@ public class ChannelActions
             Scope = new BotCommandScopeChat(_telegramOptions.AdminId),
         });
 
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.AppliesToRegular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role == Role.Regular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
         {
             Scope = new BotCommandScopeDefault(),
         });

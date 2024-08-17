@@ -1,4 +1,4 @@
-﻿namespace OneShelf.OneDog.Processor.Model;
+﻿namespace OneShelf.Telegram.Model;
 
 public enum Role
 {
