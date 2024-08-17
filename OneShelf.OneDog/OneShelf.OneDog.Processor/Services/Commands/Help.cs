@@ -14,15 +14,15 @@ namespace OneShelf.OneDog.Processor.Services.Commands;
 public class Help : Command
 {
     private readonly ILogger<Help> _logger;
-    private readonly DialogHandlerMemory _dialogHandlerMemory;
+    private readonly AvailableCommands _availableCommands;
     private readonly DogDatabase _dogDatabase;
     private readonly TelegramOptions _telegramOptions;
 
-    public Help(ILogger<Help> logger, Io io, DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
+    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
         : base(io, scopeAwareness)
     {
         _logger = logger;
-        _dialogHandlerMemory = dialogHandlerMemory;
+        _availableCommands = availableCommands;
         _dogDatabase = dogDatabase;
         _telegramOptions = telegramOptions.Value;
     }
@@ -51,7 +51,7 @@ public class Help : Command
                 ? Role.DomainAdmin
                 : Role.Regular;
 
-        foreach (var command in _dialogHandlerMemory.GetCommands(role).Where(x => x.attribute.SupportsNoParameters))
+        foreach (var command in _availableCommands.GetCommands(role).Where(x => x.attribute.SupportsNoParameters))
         {
             Io.WriteLine($"/{command.attribute.Alias}: {command.attribute.HelpDescription}");
         }

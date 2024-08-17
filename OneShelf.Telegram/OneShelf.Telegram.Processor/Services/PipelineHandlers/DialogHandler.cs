@@ -24,6 +24,7 @@ public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
+    private readonly AvailableCommands _availableCommands;
     private readonly IoFactory _ioFactory;
     private readonly IServiceProvider _serviceProvider;
 
@@ -33,13 +34,14 @@ public class DialogHandler : PipelineHandler
         SongsDatabase songsDatabase,
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider, AvailableCommands availableCommands)
         : base(telegramOptions, songsDatabase)
     {
         _logger = logger;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
         _serviceProvider = serviceProvider;
+        _availableCommands = availableCommands;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -110,32 +112,32 @@ public class DialogHandler : PipelineHandler
             {
                 memory.NewInput(text);
                 _ioFactory.InitDialog(memory);
-                command = _dialogHandlerMemory.GetCommands(isAdmin ? Role.Admin : Role.Regular).Single(x =>
+                command = _availableCommands.GetCommands(isAdmin ? Role.Admin : Role.Regular).Single(x =>
                     x.attribute.Alias == memory.Alias && (memory.Parameters == null
                         ? x.attribute.SupportsNoParameters
                         : x.attribute.SupportsParameters)).commandType;
             }
             else
             {
-                _ioFactory.InitDialog(userId, _dialogHandlerMemory.Search.attribute.Alias, null);
+                _ioFactory.InitDialog(userId, _availableCommands.Search.attribute.Alias, null);
                 _ioFactory.Io.GetMemory().NewInput(text);
-                command = _dialogHandlerMemory.Search.commandType;
+                command = _availableCommands.Search.commandType;
             }
         }
         else // new command
         {
-            command = _dialogHandlerMemory.GetCommands(isAdmin ? Role.Admin : Role.Regular).SingleOrDefault(x =>
+            command = _availableCommands.GetCommands(isAdmin ? Role.Admin : Role.Regular).SingleOrDefault(x =>
                 x.attribute.Alias == alias &&
                 (parameters != null ? x.attribute.SupportsParameters : x.attribute.SupportsNoParameters)).commandType;
             if (command == null)
             {
                 var wrongAlias = alias;
-                alias = _dialogHandlerMemory.Help.attribute.Alias;
+                alias = _availableCommands.Help.attribute.Alias;
                 parameters = null;
                 _ioFactory.InitDialog(userId, alias, parameters);
                 _ioFactory.Io.WriteLine("Такая команда не найдена.");
                 _ioFactory.Io.WriteLine();
-                command = _dialogHandlerMemory.Help.commandType;
+                command = _availableCommands.Help.commandType;
             }
             else
             {
@@ -229,7 +231,7 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_dialogHandlerMemory.GetCommandsGrid(isAdmin ? Role.Admin : Role.Regular)
+            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(isAdmin ? Role.Admin : Role.Regular)
                 .Select(x => x
                     .Where(x => x.SupportsNoParameters)
                     .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))

@@ -14,13 +14,13 @@ namespace OneShelf.Telegram.Processor.Services.Commands;
 public class Help : Command
 {
     private readonly ILogger<Help> _logger;
-    private readonly DialogHandlerMemory _dialogHandlerMemory;
+    private readonly AvailableCommands _availableCommands;
 
-    public Help(ILogger<Help> logger, Io io, DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> telegramOptions)
+    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions)
         : base(io, telegramOptions)
     {
         _logger = logger;
-        _dialogHandlerMemory = dialogHandlerMemory;
+        _availableCommands = availableCommands;
     }
 
     protected override async Task ExecuteQuickly()
@@ -34,7 +34,7 @@ public class Help : Command
         Io.WriteLine();
         Io.WriteLine("Помимо этого, вот чем я могу помочь:");
         Io.WriteLine();
-        foreach (var command in _dialogHandlerMemory.GetCommands(Io.IsAdmin ? Role.Admin : Role.Regular).Where(x => x.attribute.SupportsNoParameters))
+        foreach (var command in _availableCommands.GetCommands(Io.IsAdmin ? Role.Admin : Role.Regular).Where(x => x.attribute.SupportsNoParameters))
         {
             Io.WriteLine($"/{command.attribute.Alias}: {command.attribute.HelpDescription}");
         }

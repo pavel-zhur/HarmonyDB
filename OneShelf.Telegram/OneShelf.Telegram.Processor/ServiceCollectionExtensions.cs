@@ -41,6 +41,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<FullTextSearch>()
             .AddSingleton<PipelineMemory>()
             .AddSingleton<DialogHandlerMemory>()
+            .AddSingleton<AvailableCommands>()
 
             .AddScoped<PinsRemover>()
             .AddScoped<DialogHandler>()

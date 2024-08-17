@@ -10,14 +10,14 @@ public class UpdateCommands : Command
 {
     private readonly ILogger<UpdateCommands> _logger;
     private readonly ChannelActions _channelActions;
-    private readonly DialogHandlerMemory _dialogHandlerMemory;
+    private readonly AvailableCommands _availableCommands;
 
-    public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions, DialogHandlerMemory dialogHandlerMemory, ScopeAwareness scopeAwareness)
+    public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions, AvailableCommands availableCommands, ScopeAwareness scopeAwareness)
         : base(io, scopeAwareness)
     {
         _logger = logger;
         _channelActions = channelActions;
-        _dialogHandlerMemory = dialogHandlerMemory;
+        _availableCommands = availableCommands;
     }
 
     protected override async Task ExecuteQuickly()
@@ -29,7 +29,7 @@ public class UpdateCommands : Command
     {
         await _channelActions.UpdateCommands(
             ScopeAwareness.DomainId,
-            _dialogHandlerMemory
+            _availableCommands
                 .GetCommands(Role.Admin)
                 .Select(x => x.attribute)
                 .ToList());

@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
 
             .AddSingleton<PipelineMemory>()
             .AddSingleton<DialogHandlerMemory>()
+            .AddSingleton<AvailableCommands>()
 
             .AddScoped<DialogHandler>()
             .AddScoped<OwnChatterHandler>()

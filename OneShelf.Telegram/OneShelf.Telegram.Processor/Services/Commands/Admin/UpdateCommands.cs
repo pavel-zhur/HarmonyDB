@@ -13,15 +13,15 @@ public class UpdateCommands : Command
 {
     private readonly ILogger<UpdateCommands> _logger;
     private readonly ChannelActions _channelActions;
-    private readonly DialogHandlerMemory _dialogHandlerMemory;
+    private readonly AvailableCommands _availableCommands;
 
     public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions,
-        DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> options)
+        AvailableCommands availableCommands, IOptions<TelegramOptions> options)
         : base(io, options)
     {
         _logger = logger;
         _channelActions = channelActions;
-        _dialogHandlerMemory = dialogHandlerMemory;
+        _availableCommands = availableCommands;
     }
 
     protected override async Task ExecuteQuickly()
@@ -32,7 +32,7 @@ public class UpdateCommands : Command
     private async Task Update()
     {
         await _channelActions.UpdateCommands(
-            _dialogHandlerMemory
+            _availableCommands
                 .GetCommands(Role.Regular)
                 .Select(x => x.attribute)
                 .ToList());
