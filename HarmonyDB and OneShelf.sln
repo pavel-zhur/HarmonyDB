@@ -177,11 +177,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Common.Api.Common"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HarmonyDB.Experimental", "HarmonyDB.Experimental", "{9D5C2940-DDAC-4598-8DE1-E731C8BC03A8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.ShortestStructureFinder", "HarmonyDB.Experimental\HarmonyDB.Experimental.ShortestStructureFinder\HarmonyDB.Experimental.ShortestStructureFinder.csproj", "{AB7421D9-7C2C-4AA8-83E3-C066F3EBCE4B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Experimental.ShortestStructureFinder", "HarmonyDB.Experimental\HarmonyDB.Experimental.ShortestStructureFinder\HarmonyDB.Experimental.ShortestStructureFinder.csproj", "{AB7421D9-7C2C-4AA8-83E3-C066F3EBCE4B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.ExpectationMaximization", "HarmonyDB.Experimental\HarmonyDB.Experimental.ExpectationMaximization\HarmonyDB.Experimental.ExpectationMaximization.csproj", "{8D028303-370C-432D-BCBB-2DD13D88F49A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Experimental.ExpectationMaximization", "HarmonyDB.Experimental\HarmonyDB.Experimental.ExpectationMaximization\HarmonyDB.Experimental.ExpectationMaximization.csproj", "{8D028303-370C-432D-BCBB-2DD13D88F49A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyDB.Experimental.Trie", "HarmonyDB.Experimental\HarmonyDB.Experimental.Trie\HarmonyDB.Experimental.Trie.csproj", "{B4838FFC-A200-4E0F-BE3A-13AB2923FCE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Experimental.Trie", "HarmonyDB.Experimental\HarmonyDB.Experimental.Trie\HarmonyDB.Experimental.Trie.csproj", "{B4838FFC-A200-4E0F-BE3A-13AB2923FCE5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Admin", "OneShelf.Admin", "{762CB558-A104-4BD6-B691-0B2DA8D08742}"
 EndProject
@@ -191,13 +191,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram", "OneShe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.OneDragon", "OneShelf.OneDragon", "{950D96F8-860E-4EE6-A8EC-8ECCC6BE480F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Runner.Functions", "OneShelf.OneDragon\OneShelf.OneDragon.Runner.Functions\OneShelf.OneDragon.Runner.Functions.csproj", "{4A7E75E5-B345-4BF8-BFCC-788ADC1FA218}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Runner.Functions", "OneShelf.OneDragon\OneShelf.OneDragon.Runner.Functions\OneShelf.OneDragon.Runner.Functions.csproj", "{4A7E75E5-B345-4BF8-BFCC-788ADC1FA218}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Processor", "OneShelf.OneDragon\OneShelf.OneDragon.Processor\OneShelf.OneDragon.Processor.csproj", "{DF960A56-A097-4220-A8FE-B9714680F87D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Processor", "OneShelf.OneDragon\OneShelf.OneDragon.Processor\OneShelf.OneDragon.Processor.csproj", "{DF960A56-A097-4220-A8FE-B9714680F87D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Database", "OneShelf.OneDragon\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj", "{8DB5C0DC-C738-4CC4-A281-392A65ED4743}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Database", "OneShelf.OneDragon\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj", "{8DB5C0DC-C738-4CC4-A281-392A65ED4743}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Polling", "OneShelf.Telegram\OneShelf.Telegram.Polling\OneShelf.Telegram.Polling.csproj", "{76C5E207-6028-4083-84C5-DAC7839D1F85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram.Polling", "OneShelf.Telegram\OneShelf.Telegram.Polling\OneShelf.Telegram.Polling.csproj", "{76C5E207-6028-4083-84C5-DAC7839D1F85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
