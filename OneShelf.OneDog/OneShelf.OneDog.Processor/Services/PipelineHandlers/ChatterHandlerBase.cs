@@ -142,6 +142,6 @@ public abstract class ChatterHandlerBase : PipelineHandler
 
     protected async Task Typing(Update update)
     {
-        await (await CreateApi()).SendChatActionAsync(update.Message!.Chat.Id, "typing", update.Message.MessageThreadId);
+        await (await CreateApi()).SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
     }
 }
