@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.OneDog.Processor.Model;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;

@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
-using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands;

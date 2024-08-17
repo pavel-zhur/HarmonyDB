@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.Telegram.Model;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
 using OneShelf.Telegram.Helpers;
