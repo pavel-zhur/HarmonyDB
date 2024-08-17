@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Options;
 
 namespace OneShelf.Telegram.Model.Ios;
 

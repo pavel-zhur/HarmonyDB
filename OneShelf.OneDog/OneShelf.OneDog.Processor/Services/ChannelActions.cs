@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
-using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Options;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;

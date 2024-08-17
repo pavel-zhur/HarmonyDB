@@ -10,7 +10,6 @@ using OneShelf.Telegram.Processor.Services;
 using OneShelf.Telegram.Processor.Services.Commands;
 using OneShelf.Telegram.Processor.Services.Commands.Admin;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers;
-using OneShelf.Telegram.Services;
 
 namespace OneShelf.Telegram.Processor;
 
@@ -22,7 +21,60 @@ public static class ServiceCollectionExtensions
 
         services
             .AddSongsDatabase()
-            .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration);
+            .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration, o => 
+                o
+                    .AddCommand<Temp>()
+
+                    .AddCommand<Likes>()
+                    .AddCommand<FriendsLikes>()
+                    .AddCommand<SongImages>()
+                    .AddCommand<NeverPromoteTopics>()
+                    .AddCommand<AskWeb>()
+                    .AddCommand<SongImagesTries>()
+                    .AddCommand<Search>()
+                    .AddCommand<Help>()
+                    .AddCommand<Start>()
+                    .AddCommand<ImproveWithParameters>()
+                    
+                    .AddCommand<Bowowow>()
+                    .AddCommand<AddSong>()
+                    .AddCommand<MergeSongs>()
+                    .AddCommand<AdditionalKeywords>()
+                    .AddCommand<UpdateCommands>()
+                    .AddCommand<ChangeSongVersion>()
+                    .AddCommand<Rename>()
+                    .AddCommand<ChangeSongCategories>()
+                    .AddCommand<ChangeSongIsLive>()
+                    .AddCommand<ChangeArtistCategories>()
+                    .AddCommand<UpdateArtistSynonyms>()
+                    .AddCommand<RenameArtist>()
+                    .AddCommand<ConfigureChatGpt>()
+                    .AddCommand<AuthorizeWebForLastOwnChatter>()
+                    .AddCommand<SwapArtistAndSynonym>()
+                    .AddCommand<MergeArtists>()
+                    .AddCommand<QueueUpdateAll>()
+                    .AddCommand<MeasureAll>()
+                    .AddCommand<QueueDropLists>()
+                    .AddCommand<ListMultiArtistSongs>()
+                    .AddCommand<ListSongsWithAdditionalKeywordsOrComments>()
+                    .AddCommand<ListDraft>()
+                    .AddCommand<ListLiveNoChords>()
+                    .AddCommand<ListPostponed>()
+                    .AddCommand<ListArchived>()
+                    .AddCommand<UploadReadyOnes>()
+                    .AddCommand<UploadReadyOnesAll>()
+                    .AddCommand<Inspiration>()
+
+                    .AddPipelineHandler<DialogHandler>()
+                    .AddPipelineHandler<LikesHandler>()
+                    .AddPipelineHandler<InlineQueryHandler>()
+                    .AddPipelineHandler<PublicChatterHandler>()
+                    .AddPipelineHandler<PublicImportHandler>()
+                    .AddPipelineHandler<OwnChatterHandler>()
+                    .AddPipelineHandler<ChosenInlineResultCollector>()
+                    .AddPipelineHandler<UsersCollector>()
+                    .AddPipelineHandler<PinsRemover>()
+                );
 
         services
             .AddScoped<FilesUploader>()
@@ -32,7 +84,6 @@ public static class ServiceCollectionExtensions
             .AddScoped<ExponentialBackOff>()
             .AddScoped<Pipeline>()
             .AddScoped<DailySelection>()
-            .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io)
             .AddScoped<MessageMarkdownCombiner>()
             .AddScoped<StringsCombiner>()
 
@@ -42,59 +93,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<FullTextSearch>()
             .AddSingleton<AvailableCommands>()
 
-            .AddScoped<PinsRemover>()
-            .AddScoped<DialogHandler>()
-            .AddScoped<LikesHandler>()
-            .AddScoped<InlineQueryHandler>()
-            .AddScoped<PublicChatterHandler>()
-            .AddScoped<PublicImportHandler>()
-            .AddScoped<OwnChatterHandler>()
-            .AddScoped<ChosenInlineResultCollector>()
-            .AddScoped<UsersCollector>()
-
             .AddIndexApiClient(configuration)
             .AddIllustrationsApiClient(configuration)
-
-            .AddScoped<Likes>()
-            .AddScoped<FriendsLikes>()
-            .AddScoped<SongImages>()
-            .AddScoped<NeverPromoteTopics>()
-            .AddScoped<AskWeb>()
-            .AddScoped<SongImagesTries>()
-            .AddScoped<Search>()
-            .AddScoped<Help>()
-            .AddScoped<Start>()
-            .AddScoped<ImproveWithParameters>()
-
-            .AddScoped<Temp>()
-            .AddScoped<Bowowow>()
-            .AddScoped<AddSong>()
-            .AddScoped<MergeSongs>()
-            .AddScoped<AdditionalKeywords>()
-            .AddScoped<UpdateCommands>()
-            .AddScoped<ChangeSongVersion>()
-            .AddScoped<Rename>()
-            .AddScoped<ChangeSongCategories>()
-            .AddScoped<ChangeSongIsLive>()
-            .AddScoped<ChangeArtistCategories>()
-            .AddScoped<UpdateArtistSynonyms>()
-            .AddScoped<RenameArtist>()
-            .AddScoped<ConfigureChatGpt>()
-            .AddScoped<AuthorizeWebForLastOwnChatter>()
-            .AddScoped<SwapArtistAndSynonym>()
-            .AddScoped<MergeArtists>()
-            .AddScoped<QueueUpdateAll>()
-            .AddScoped<MeasureAll>()
-            .AddScoped<QueueDropLists>()
-            .AddScoped<ListMultiArtistSongs>()
-            .AddScoped<ListSongsWithAdditionalKeywordsOrComments>()
-            .AddScoped<ListDraft>()
-            .AddScoped<ListLiveNoChords>()
-            .AddScoped<ListPostponed>()
-            .AddScoped<ListArchived>()
-            .AddScoped<UploadReadyOnes>()
-            .AddScoped<UploadReadyOnesAll>()
-            .AddScoped<Inspiration>()
             
             .AddOpenAi(configuration);
 

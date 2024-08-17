@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Telegram.Model.IoMemories;
+using OneShelf.Telegram.Options;
 
 namespace OneShelf.Telegram.Model.Ios;
 

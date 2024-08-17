@@ -1,6 +1,6 @@
 ﻿namespace OneShelf.Telegram.Processor.Model;
 
-public record TelegramOptions : Telegram.Model.TelegramOptions
+public record TelegramOptions : Options.TelegramOptions
 {
     public string Token { get; set; } = null!;
 

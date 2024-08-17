@@ -2,15 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using OneShelf.Common.OpenAi;
 using OneShelf.OneDog.Database;
-using OneShelf.Telegram.Model;
 using OneShelf.OneDog.Processor.Services;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.OneDog.Processor.Services.Commands.Admin;
 using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram;
-using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Options;
 
 namespace OneShelf.OneDog.Processor;
 
@@ -22,30 +21,30 @@ public static class ServiceCollectionExtensions
 
         services
             .AddDogDatabase()
-            .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration);
+            .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration, o =>
+                o
+                    .AddCommand<UpdateCommands>()
+                    .AddCommand<Help>()
+                    .AddCommand<Nothing>()
+                    .AddCommand<Start>()
+                    
+                    .AddCommand<Temp>()
+                    .AddCommand<ViewBilling>()
+                    .AddCommand<ConfigureChatGpt>()
+                    .AddCommand<ConfigureDog>()
+
+                    .AddPipelineHandler<DialogHandler>()
+                    .AddPipelineHandler<OwnChatterHandler>()
+                    .AddPipelineHandler<UsersCollector>()
+                    .AddPipelineHandler<ChatsCollector>()
+                );
 
         services
             .AddScoped<ChannelActions>()
             .AddScoped<Pipeline>()
-            .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io)
 
             .AddSingleton<AvailableCommands>()
-
-            .AddScoped<DialogHandler>()
-            .AddScoped<OwnChatterHandler>()
-            .AddScoped<UsersCollector>()
-            .AddScoped<ChatsCollector>()
-
-            .AddScoped<Help>()
-            .AddScoped<Nothing>()
-            .AddScoped<Start>()
-
-            .AddScoped<Temp>()
-            .AddScoped<ViewBilling>()
-            .AddScoped<UpdateCommands>()
-            .AddScoped<ConfigureChatGpt>()
-            .AddScoped<ConfigureDog>()
-
+            
             .AddScoped<TelegramContext>()
             
             .AddOpenAi(configuration);

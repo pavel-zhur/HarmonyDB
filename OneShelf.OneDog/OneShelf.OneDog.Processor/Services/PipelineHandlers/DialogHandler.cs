@@ -9,13 +9,13 @@ using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Services.Base;
-using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Services;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 using Constants = OneShelf.Telegram.Helpers.Constants;
+using OneShelf.Telegram.Options;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
