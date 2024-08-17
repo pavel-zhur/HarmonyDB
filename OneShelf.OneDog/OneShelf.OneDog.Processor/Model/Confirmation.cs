@@ -1,10 +1,12 @@
-﻿namespace OneShelf.OneDog.Processor.Model;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace OneShelf.OneDog.Processor.Model;
 
 public enum Confirmation
 {
-    [StrictChoiceCaption("Да")]
+    [Display(Name = "Да")]
     Yes,
 
-    [StrictChoiceCaption("Не совсем")]
+    [Display(Name = "Не совсем")]
     No,
 }

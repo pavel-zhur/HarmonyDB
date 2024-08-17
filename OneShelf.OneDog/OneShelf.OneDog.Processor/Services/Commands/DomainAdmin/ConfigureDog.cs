@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
@@ -23,10 +24,10 @@ public class ConfigureDog : Command
 
     private enum ConfigType
     {
-        [StrictChoiceCaption("Личность")]
+        [Display(Name = "Личность")]
         OwnChatterSystemMessage,
 
-        [StrictChoiceCaption("Амнезия диалога")]
+        [Display(Name = "Амнезия диалога")]
         OwnChatterResetDialog,
     }
 

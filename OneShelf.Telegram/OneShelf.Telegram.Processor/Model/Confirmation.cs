@@ -1,12 +1,12 @@
-﻿using OneShelf.Pdfs.Generation.Inspiration.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace OneShelf.Telegram.Processor.Model;
 
 public enum Confirmation
 {
-    [StrictChoiceCaption("Да")]
+    [Display(Name = "Да")]
     Yes,
 
-    [StrictChoiceCaption("Не совсем")]
+    [Display(Name = "Не совсем")]
     No,
 }

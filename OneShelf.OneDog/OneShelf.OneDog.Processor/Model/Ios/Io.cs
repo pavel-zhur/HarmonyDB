@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
@@ -71,7 +72,7 @@ public abstract class Io
     {
         var map = typeof(T)
             .GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Select(x => (name: x.Name, caption: x.GetCustomAttribute<StrictChoiceCaptionAttribute>()?.Caption ?? x.Name, value: Enum.Parse<T>(x.Name)))
+            .Select(x => (name: x.Name, caption: x.GetCustomAttribute<DisplayAttribute>()?.Name ?? x.Name, value: Enum.Parse<T>(x.Name)))
             .Where(x => isActionAvailable?.Invoke(x.value) ?? true)
             .ToList();
 

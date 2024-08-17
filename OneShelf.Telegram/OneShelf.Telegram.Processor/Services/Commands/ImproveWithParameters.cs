@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
@@ -182,10 +183,10 @@ public class ImproveWithParameters : Command
 
     private enum ActionType
     {
-        [StrictChoiceCaption("Добавить аккорды")]
+        [Display(Name = "Добавить аккорды")]
         AddVersion,
 
-        [StrictChoiceCaption("Удалить мои аккорды")]
+        [Display(Name = "Удалить мои аккорды")]
         RemoveVersion,
     }
 }

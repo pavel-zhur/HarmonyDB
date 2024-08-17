@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
 
 namespace OneShelf.Pdfs.Generation.Inspiration.Helpers;
@@ -9,7 +10,7 @@ public static class Extensions
         where T : Enum
     {
         return typeof(T).GetField(value.ToString(), BindingFlags.Public | BindingFlags.Static)
-            !.GetCustomAttribute<StrictChoiceCaptionAttribute>()
-            ?.Caption;
+            !.GetCustomAttribute<DisplayAttribute>()
+            ?.Name;
     }
 }

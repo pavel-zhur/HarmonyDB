@@ -1,19 +1,21 @@
-﻿namespace OneShelf.Pdfs.Generation.Inspiration.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace OneShelf.Pdfs.Generation.Inspiration.Models;
 
 public enum InspirationDataOrdering
 {
-    [StrictChoiceCaption("Старые -> новые")]
+    [Display(Name = "Старые -> новые")]
     ByIndexAsc,
 
-    [StrictChoiceCaption("Новые -> старые")]
+    [Display(Name = "Новые -> старые")]
     ByIndexDesc,
 
-    [StrictChoiceCaption("По исполнителям (поисковик)")]
+    [Display(Name = "По исполнителям (поисковик)")]
     ByArtistWithSynonyms,
 
-    [StrictChoiceCaption("По исполнителям")]
+    [Display(Name = "По исполнителям")]
     ByArtist,
 
-    [StrictChoiceCaption("По названию")]
+    [Display(Name = "По названию")]
     ByTitle,
 }

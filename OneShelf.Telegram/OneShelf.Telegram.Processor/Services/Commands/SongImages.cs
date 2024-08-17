@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -51,28 +52,28 @@ public class SongImages : Command
 
     private enum SongImagesChoice
     {
-        [StrictChoiceCaption("v5 (ркмнд!)")]
+        [Display(Name = "v5 (ркмнд!)")]
         Look5,
 
-        [StrictChoiceCaption("v4 (ркмнд!)")]
+        [Display(Name = "v4 (ркмнд!)")]
         Look4,
 
-        [StrictChoiceCaption("v2")]
+        [Display(Name = "v2")]
         Look2,
 
-        [StrictChoiceCaption("v1")]
+        [Display(Name = "v1")]
         Look,
 
-        [StrictChoiceCaption("Что за v1 v2 v3 v4 v5?")]
+        [Display(Name = "Что за v1 v2 v3 v4 v5?")]
         Help,
 
-        [StrictChoiceCaption("Посмотреть исходные запросы")]
+        [Display(Name = "Посмотреть исходные запросы")]
         SeePrompts,
 
-        [StrictChoiceCaption("Посмотреть исходный текст")]
+        [Display(Name = "Посмотреть исходный текст")]
         SeeLyrics,
 
-        [StrictChoiceCaption("Догенерировать еще!")]
+        [Display(Name = "Догенерировать еще!")]
         AddMore,
     }
 
