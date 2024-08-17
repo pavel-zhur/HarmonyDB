@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
@@ -12,14 +11,14 @@ public class ConfigureChatGpt : Command
 {
     private readonly ILogger<ConfigureChatGpt> _logger;
     private readonly DogDatabase _dogDatabase;
-    private readonly TelegramContext _telegramContext;
+    private readonly DogContext _dogContext;
 
-    public ConfigureChatGpt(ILogger<ConfigureChatGpt> logger, Io io, DogDatabase dogDatabase, TelegramContext telegramContext)
+    public ConfigureChatGpt(ILogger<ConfigureChatGpt> logger, Io io, DogDatabase dogDatabase, DogContext dogContext)
         : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
-        _telegramContext = telegramContext;
+        _dogContext = dogContext;
     }
 
     private enum ConfigType
@@ -38,10 +37,10 @@ public class ConfigureChatGpt : Command
         Io.WriteLine();
         Io.WriteLine(setting switch
         {
-            ConfigType.OwnChatterVersion => _telegramContext.Domain.GptVersion,
-            ConfigType.OwnChatterImagesVersion => _telegramContext.Domain.DalleVersion.ToString(),
-            ConfigType.OwnChatterFrequencyPenalty => _telegramContext.Domain.FrequencyPenalty?.ToString() ?? "нету",
-            ConfigType.OwnChatterPresencePenalty => _telegramContext.Domain.PresencePenalty?.ToString() ?? "нету",
+            ConfigType.OwnChatterVersion => _dogContext.Domain.GptVersion,
+            ConfigType.OwnChatterImagesVersion => _dogContext.Domain.DalleVersion.ToString(),
+            ConfigType.OwnChatterFrequencyPenalty => _dogContext.Domain.FrequencyPenalty?.ToString() ?? "нету",
+            ConfigType.OwnChatterPresencePenalty => _dogContext.Domain.PresencePenalty?.ToString() ?? "нету",
             _ => throw new ArgumentOutOfRangeException(),
         });
         Io.WriteLine();
@@ -51,16 +50,16 @@ public class ConfigureChatGpt : Command
         switch (setting)
         {
             case ConfigType.OwnChatterVersion:
-                _telegramContext.Domain.GptVersion = newMessage;
+                _dogContext.Domain.GptVersion = newMessage;
                 break;
             case ConfigType.OwnChatterImagesVersion:
-                _telegramContext.Domain.DalleVersion = int.Parse(newMessage);
+                _dogContext.Domain.DalleVersion = int.Parse(newMessage);
                 break;
             case ConfigType.OwnChatterFrequencyPenalty:
-                _telegramContext.Domain.FrequencyPenalty = float.Parse(newMessage);
+                _dogContext.Domain.FrequencyPenalty = float.Parse(newMessage);
                 break;
             case ConfigType.OwnChatterPresencePenalty:
-                _telegramContext.Domain.PresencePenalty = float.Parse(newMessage);
+                _dogContext.Domain.PresencePenalty = float.Parse(newMessage);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

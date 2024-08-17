@@ -1,6 +1,5 @@
 ﻿namespace OneShelf.Telegram.Services.Base;
 
-public interface ITelegramAbstractions
+public interface ISingletonAbstractions
 {
-
 }

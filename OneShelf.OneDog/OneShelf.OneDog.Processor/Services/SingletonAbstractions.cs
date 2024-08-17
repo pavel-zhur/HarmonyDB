@@ -2,7 +2,7 @@
 
 namespace OneShelf.OneDog.Processor.Services;
 
-public class TelegramAbstractions : ITelegramAbstractions
+public class SingletonAbstractions : ISingletonAbstractions
 {
 
 }

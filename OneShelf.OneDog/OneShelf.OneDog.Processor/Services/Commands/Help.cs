@@ -1,12 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OneShelf.OneDog.Database;
+﻿using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Helpers;
-using OneShelf.Telegram.Model;
 
 namespace OneShelf.OneDog.Processor.Services.Commands;
 
@@ -15,18 +11,14 @@ public class Help : Command
 {
     private readonly ILogger<Help> _logger;
     private readonly AvailableCommands _availableCommands;
-    private readonly DogDatabase _dogDatabase;
-    private readonly TelegramOptions _telegramOptions;
-    private readonly TelegramContext _telegramContext;
+    private readonly DogContext _dogContext;
 
-    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, TelegramContext telegramContext)
+    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, DogContext dogContext)
         : base(io)
     {
         _logger = logger;
         _availableCommands = availableCommands;
-        _dogDatabase = dogDatabase;
-        _telegramContext = telegramContext;
-        _telegramOptions = telegramOptions.Value;
+        _dogContext = dogContext;
     }
 
     protected override async Task ExecuteQuickly()
@@ -49,7 +41,7 @@ public class Help : Command
 
         var role = Io.IsAdmin
             ? Role.Admin
-            : _telegramContext.Domain.Administrators.Any(x => x.Id == Io.UserId)
+            : _dogContext.Domain.Administrators.Any(x => x.Id == Io.UserId)
                 ? Role.DomainAdmin
                 : Role.Regular;
 

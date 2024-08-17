@@ -2,7 +2,7 @@
 
 namespace OneShelf.Telegram.Processor.Services;
 
-public class TelegramAbstractions : ITelegramAbstractions
+public class SingletonAbstractions : ISingletonAbstractions
 {
 
 }

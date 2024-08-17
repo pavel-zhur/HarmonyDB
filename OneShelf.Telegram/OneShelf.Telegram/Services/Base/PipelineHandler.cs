@@ -1,22 +1,19 @@
-﻿using Microsoft.Extensions.Options;
-using OneShelf.Telegram.Processor.Model;
-using Telegram.BotAPI;
+﻿using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 
-namespace OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+namespace OneShelf.Telegram.Services.Base;
 
 public abstract class PipelineHandler
 {
-    private readonly TelegramBotClient _api;
     private readonly List<(string? queueKey, Func<Task> task)> _tasks = new();
-    protected TelegramOptions TelegramOptions { get; }
 
-    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions)
+    protected PipelineHandler(IScopedAbstractions scopedAbstractions)
     {
-        TelegramOptions = telegramOptions.Value;
-        _api = new(TelegramOptions.Token);
+        ScopedAbstractions = scopedAbstractions;
     }
+    
+    protected IScopedAbstractions ScopedAbstractions { get; }
 
     public async Task<(bool handled, List<(string? queueKey, Func<Task> task)> tasks)> Handle(Update update)
     {
@@ -35,7 +32,7 @@ public abstract class PipelineHandler
     {
         lock (_tasks)
         {
-            _tasks.Add((queueKey == null ? null : $"{GetType().FullName}-{queueKey}", async () => await task(_api)));
+            _tasks.Add((queueKey == null ? null : $"{GetType().FullName}-{queueKey}", async () => await task(new(ScopedAbstractions.GetBotToken()))));
         }
     }
 
