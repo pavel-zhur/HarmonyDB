@@ -14,11 +14,13 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public class UsersCollector : PipelineHandler
 {
     private readonly ILogger<UsersCollector> _logger;
+    private readonly DogDatabase _dogDatabase;
 
     public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, DogDatabase dogDatabase, ScopeAwareness scopeAwareness) 
-        : base(telegramOptions, dogDatabase, scopeAwareness)
+        : base(telegramOptions, scopeAwareness)
     {
         _logger = logger;
+        _dogDatabase = dogDatabase;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -43,7 +45,7 @@ public class UsersCollector : PipelineHandler
 
         var ids = users.Select(x => x.Id).ToList();
 
-        var usersById = await DogDatabase.Users.Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id);
+        var usersById = await _dogDatabase.Users.Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id);
 
         foreach (var (id, title) in users)
         {
@@ -60,11 +62,11 @@ public class UsersCollector : PipelineHandler
                     CreatedOn = DateTime.Now,
                 };
 
-                DogDatabase.Users.Add(user);
+                _dogDatabase.Users.Add(user);
             }
         }
 
-        await DogDatabase.SaveChangesAsync();
+        await _dogDatabase.SaveChangesAsync();
 
         return false;
     }

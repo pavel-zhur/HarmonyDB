@@ -21,9 +21,12 @@ public abstract class ChatterHandlerBase : PipelineHandler
         IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
         ScopeAwareness scopeAwareness)
-        : base(telegramOptions, dogDatabase, scopeAwareness)
+        : base(telegramOptions, scopeAwareness)
     {
+        DogDatabase = dogDatabase;
     }
+
+    protected DogDatabase DogDatabase { get; }
 
     protected bool CheckTopicId(Update update, int topicId, long publicChatId)
     {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model;
 using Telegram.BotAPI;
@@ -13,13 +12,11 @@ public abstract class PipelineHandler
 {
     private readonly List<(string? queueKey, Func<Task> task)> _tasks = new();
     protected TelegramOptions TelegramOptions { get; }
-    protected DogDatabase DogDatabase { get; }
     protected ScopeAwareness ScopeAwareness { get; }
 
-    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
+    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions, ScopeAwareness scopeAwareness)
     {
         TelegramOptions = telegramOptions.Value;
-        DogDatabase = dogDatabase;
         ScopeAwareness = scopeAwareness;
     }
 

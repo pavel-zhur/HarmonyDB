@@ -22,6 +22,7 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
+    private readonly DogDatabase _dogDatabase;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly AvailableCommands _availableCommands;
     private readonly IoFactory _ioFactory;
@@ -35,9 +36,10 @@ public class DialogHandler : PipelineHandler
         IoFactory ioFactory,
         IServiceProvider serviceProvider,
         ScopeAwareness scopeAwareness, AvailableCommands availableCommands)
-        : base(telegramOptions, dogDatabase, scopeAwareness)
+        : base(telegramOptions, scopeAwareness)
     {
         _logger = logger;
+        _dogDatabase = dogDatabase;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
         _serviceProvider = serviceProvider;
@@ -52,7 +54,7 @@ public class DialogHandler : PipelineHandler
         var isAdmin = TelegramOptions.IsAdmin(userId);
         var text = update.Message.Text?.Trim();
 
-        DogDatabase.Interactions.Add(new()
+        _dogDatabase.Interactions.Add(new()
         {
             InteractionType = InteractionType.Dialog,
             UserId = userId,
@@ -61,7 +63,7 @@ public class DialogHandler : PipelineHandler
             ShortInfoSerialized = text,
             DomainId = ScopeAwareness.DomainId,
         });
-        await DogDatabase.SaveChangesAsync();
+        await _dogDatabase.SaveChangesAsync();
 
         if (string.IsNullOrWhiteSpace(update.Message!.Text)) return false;
 

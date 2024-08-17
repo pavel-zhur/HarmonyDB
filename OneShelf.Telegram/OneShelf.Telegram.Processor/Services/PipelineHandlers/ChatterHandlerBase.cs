@@ -20,10 +20,13 @@ public abstract class ChatterHandlerBase : PipelineHandler
     protected ChatterHandlerBase(
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase)
-        : base(telegramOptions, songsDatabase)
+        : base(telegramOptions)
     {
+        SongsDatabase = songsDatabase;
         _api = new(TelegramOptions.Token);
     }
+
+    protected SongsDatabase SongsDatabase { get; }
 
     protected bool CheckTopicId(Update update, int topicId)
     {

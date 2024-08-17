@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneShelf.Common.Database.Songs;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 using Telegram.BotAPI.GettingUpdates;
@@ -12,8 +11,8 @@ public class PinsRemover : PipelineHandler
 {
     private readonly ILogger<PinsRemover> _logger;
 
-    public PinsRemover(ILogger<PinsRemover> logger, IOptions<TelegramOptions> telegramOptions, SongsDatabase songsDatabase)
-        : base(telegramOptions, songsDatabase)
+    public PinsRemover(ILogger<PinsRemover> logger, IOptions<TelegramOptions> telegramOptions)
+        : base(telegramOptions)
     {
         _logger = logger;
     }

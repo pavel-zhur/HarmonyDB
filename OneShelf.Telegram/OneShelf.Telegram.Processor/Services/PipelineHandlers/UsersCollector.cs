@@ -15,11 +15,13 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 public class UsersCollector : PipelineHandler
 {
     private readonly ILogger<UsersCollector> _logger;
+    private readonly SongsDatabase _songsDatabase;
 
     public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, SongsDatabase songsDatabase) 
-        : base(telegramOptions, songsDatabase)
+        : base(telegramOptions)
     {
         _logger = logger;
+        _songsDatabase = songsDatabase;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -44,7 +46,7 @@ public class UsersCollector : PipelineHandler
 
         var ids = users.Select(x => x.Id).ToList();
 
-        var usersById = await SongsDatabase.Users
+        var usersById = await _songsDatabase.Users
             .Where(x => ids.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id);
 
@@ -67,11 +69,11 @@ public class UsersCollector : PipelineHandler
                     }
                 };
 
-                SongsDatabase.Users.Add(user);
+                _songsDatabase.Users.Add(user);
             }
         }
 
-        await SongsDatabase.SaveChangesAsyncX();
+        await _songsDatabase.SaveChangesAsyncX();
 
         return false;
     }

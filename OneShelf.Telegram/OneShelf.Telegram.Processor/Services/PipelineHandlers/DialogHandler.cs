@@ -24,6 +24,7 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
+    private readonly SongsDatabase _songsDatabase;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly AvailableCommands _availableCommands;
     private readonly IoFactory _ioFactory;
@@ -36,9 +37,10 @@ public class DialogHandler : PipelineHandler
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
         IServiceProvider serviceProvider, AvailableCommands availableCommands)
-        : base(telegramOptions, songsDatabase)
+        : base(telegramOptions)
     {
         _logger = logger;
+        _songsDatabase = songsDatabase;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
         _serviceProvider = serviceProvider;
@@ -53,7 +55,7 @@ public class DialogHandler : PipelineHandler
         var isAdmin = TelegramOptions.IsAdmin(userId);
         var text = update.Message.Text?.Trim();
 
-        SongsDatabase.Interactions.Add(new()
+        _songsDatabase.Interactions.Add(new()
         {
             InteractionType = InteractionType.Dialog,
             UserId = userId,
@@ -61,7 +63,7 @@ public class DialogHandler : PipelineHandler
             Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = text,
         });
-        await SongsDatabase.SaveChangesAsyncX();
+        await _songsDatabase.SaveChangesAsyncX();
 
         if (string.IsNullOrWhiteSpace(update.Message!.Text)) return false;
 

@@ -11,9 +11,12 @@ namespace OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 
 public abstract class CallbackQueryHandler : PipelineHandler
 {
+    protected SongsDatabase SongsDatabase { get; }
+
     protected CallbackQueryHandler(IOptions<TelegramOptions> telegramOptions, SongsDatabase songsDatabase) 
-        : base(telegramOptions, songsDatabase)
+        : base(telegramOptions)
     {
+        SongsDatabase = songsDatabase;
     }
 
     protected abstract IReadOnlyList<string> Catch { get; }

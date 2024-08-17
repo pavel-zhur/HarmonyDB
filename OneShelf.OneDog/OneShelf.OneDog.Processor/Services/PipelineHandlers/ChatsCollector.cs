@@ -12,11 +12,13 @@ namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 public class ChatsCollector : PipelineHandler
 {
     private readonly ILogger<ChatsCollector> _logger;
+    private readonly DogDatabase _dogDatabase;
 
     public ChatsCollector(IOptions<TelegramOptions> telegramOptions, ILogger<ChatsCollector> logger, DogDatabase dogDatabase, ScopeAwareness scopeAwareness) 
-        : base(telegramOptions, dogDatabase, scopeAwareness)
+        : base(telegramOptions, scopeAwareness)
     {
         _logger = logger;
+        _dogDatabase = dogDatabase;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -29,7 +31,7 @@ public class ChatsCollector : PipelineHandler
 
         if (chat == null) return false;
 
-        var dbChat = await DogDatabase.Chats.SingleOrDefaultAsync(x => x.ChatId == chat.Id && x.DomainId == ScopeAwareness.DomainId);
+        var dbChat = await _dogDatabase.Chats.SingleOrDefaultAsync(x => x.ChatId == chat.Id && x.DomainId == ScopeAwareness.DomainId);
         if (dbChat == null)
         {
             dbChat = new()
@@ -42,7 +44,7 @@ public class ChatsCollector : PipelineHandler
                 Type = chat.Type,
             };
 
-            DogDatabase.Chats.Add(dbChat);
+            _dogDatabase.Chats.Add(dbChat);
         }
 
         dbChat.UpdatesCount++;
@@ -50,7 +52,7 @@ public class ChatsCollector : PipelineHandler
         dbChat.Title = chat.Title;
         dbChat.Type = chat.Type;
         dbChat.IsForum = chat.IsForum;
-        await DogDatabase.SaveChangesAsync();
+        await _dogDatabase.SaveChangesAsync();
 
         return false;
     }

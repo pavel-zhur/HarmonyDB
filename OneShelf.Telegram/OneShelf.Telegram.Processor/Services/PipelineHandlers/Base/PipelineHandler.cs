@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using OneShelf.Common.Database.Songs;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableTypes;
@@ -12,13 +11,11 @@ public abstract class PipelineHandler
     private readonly TelegramBotClient _api;
     private readonly List<(string? queueKey, Func<Task> task)> _tasks = new();
     protected TelegramOptions TelegramOptions { get; }
-    protected SongsDatabase SongsDatabase { get; }
 
-    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions, SongsDatabase songsDatabase)
+    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions)
     {
         TelegramOptions = telegramOptions.Value;
         _api = new(TelegramOptions.Token);
-        SongsDatabase = songsDatabase;
     }
 
     public async Task<(bool handled, List<(string? queueKey, Func<Task> task)> tasks)> Handle(Update update)
