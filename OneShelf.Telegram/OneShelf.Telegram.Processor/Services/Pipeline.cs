@@ -69,7 +69,7 @@ public class Pipeline
 
             if (!anyHandled)
             {
-                _logger.LogInformation("Unhandled {}", JsonSerializer.Serialize(update));
+                _logger.LogInformation("Unhandled {}", JsonSerializer.Serialize(update, new JsonSerializerOptions { WriteIndented = true, }));
             }
         }
         catch (TaskCanceledException)
