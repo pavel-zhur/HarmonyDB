@@ -5,6 +5,7 @@ using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.OneDog.Processor.Model;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Helpers;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 

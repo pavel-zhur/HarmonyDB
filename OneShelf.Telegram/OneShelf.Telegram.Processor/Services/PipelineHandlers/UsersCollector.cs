@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
+using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;

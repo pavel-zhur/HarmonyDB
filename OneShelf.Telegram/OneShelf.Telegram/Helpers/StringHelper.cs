@@ -1,7 +1,7 @@
 ﻿using OneShelf.Common;
-using OneShelf.OneDog.Processor.Model;
+using OneShelf.Telegram.Model;
 
-namespace OneShelf.OneDog.Processor.Helpers;
+namespace OneShelf.Telegram.Helpers;
 
 public static class StringHelper
 {
@@ -14,8 +14,9 @@ public static class StringHelper
     public static Markdown BuildUrl(this string url, Markdown title) => Markdown.UnsafeFromMarkdownString($"[{title}]({url.Replace("(", "\\(").Replace(")", "\\)")})");
 
     public static Markdown Bold(this Markdown text) => Markdown.UnsafeFromMarkdownString($"*{text}*");
-    public static Markdown Bold(this string text) => text.ToMarkdown().Bold();
     
+    public static Markdown Bold(this string text) => text.ToMarkdown().Bold();
+
     public static string GetUserTitle(this (long Id, string FirstName, string? LastName, string? Username) user)
     {
         return string

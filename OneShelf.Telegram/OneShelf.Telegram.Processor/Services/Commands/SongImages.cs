@@ -10,6 +10,8 @@ using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Illustrations.Api.Client;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;

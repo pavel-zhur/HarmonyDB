@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Processor.Model.IoMemories;
+using OneShelf.Telegram.Model;
 using Telegram.BotAPI.AvailableTypes;
 
 namespace OneShelf.OneDog.Processor.Model.Ios;

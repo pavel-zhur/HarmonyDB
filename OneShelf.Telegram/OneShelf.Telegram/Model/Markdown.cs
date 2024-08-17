@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using OneShelf.OneDog.Processor.Helpers;
+using OneShelf.Telegram.Helpers;
 
-namespace OneShelf.OneDog.Processor.Model;
+namespace OneShelf.Telegram.Model;
 
 public class Markdown
 {

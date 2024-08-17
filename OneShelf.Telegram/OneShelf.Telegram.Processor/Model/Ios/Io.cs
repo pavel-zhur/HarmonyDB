@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Model.IoMemories;
 
 namespace OneShelf.Telegram.Processor.Model.Ios;

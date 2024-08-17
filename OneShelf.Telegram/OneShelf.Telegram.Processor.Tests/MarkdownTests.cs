@@ -1,4 +1,5 @@
-﻿using OneShelf.Telegram.Processor.Model;
+﻿using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Processor.Model;
 
 namespace OneShelf.Telegram.Processor.Tests;
 
