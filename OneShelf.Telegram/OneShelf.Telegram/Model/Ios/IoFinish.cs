@@ -1,7 +1,6 @@
-﻿using OneShelf.Telegram.Model;
-using Telegram.BotAPI.AvailableTypes;
+﻿using Telegram.BotAPI.AvailableTypes;
 
-namespace OneShelf.Telegram.Processor.Model.Ios;
+namespace OneShelf.Telegram.Model.Ios;
 
 public class IoFinish
 {

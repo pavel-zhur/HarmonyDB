@@ -4,9 +4,11 @@ using Microsoft.Extensions.Options;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Helpers;
 using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands.Base;
 using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
 
 namespace OneShelf.OneDog.Processor.Services.Commands;
 

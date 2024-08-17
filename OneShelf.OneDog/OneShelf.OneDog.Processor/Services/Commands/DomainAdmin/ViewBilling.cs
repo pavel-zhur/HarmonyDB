@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 using OneShelf.Billing.Api.Client;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;

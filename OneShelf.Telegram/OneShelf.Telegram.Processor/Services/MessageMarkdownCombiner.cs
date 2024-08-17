@@ -15,6 +15,7 @@ using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.InlineMode;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;
 

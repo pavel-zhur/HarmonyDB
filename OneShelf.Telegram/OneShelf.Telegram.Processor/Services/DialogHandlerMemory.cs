@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
+using OneShelf.Telegram.Model.IoMemories;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.IoMemories;
 using OneShelf.Telegram.Processor.Services.Commands;
 using OneShelf.Telegram.Processor.Services.Commands.Admin;
 

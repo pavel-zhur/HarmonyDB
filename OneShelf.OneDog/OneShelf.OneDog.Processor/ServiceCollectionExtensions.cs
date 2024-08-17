@@ -2,12 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using OneShelf.Common.OpenAi;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Model;
+using OneShelf.Telegram.Model;
 using OneShelf.OneDog.Processor.Services;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.OneDog.Processor.Services.Commands.Admin;
 using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
+using OneShelf.Telegram.Model;
 
 namespace OneShelf.OneDog.Processor;
 

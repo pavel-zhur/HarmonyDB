@@ -8,11 +8,12 @@ using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
 using OneShelf.Telegram.Processor.Services.Commands.Base;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 using Version = OneShelf.Common.Database.Songs.Model.Version;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;

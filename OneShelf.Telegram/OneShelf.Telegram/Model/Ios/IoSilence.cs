@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace OneShelf.Telegram.Processor.Model.Ios;
+namespace OneShelf.Telegram.Model.Ios;
 
 public class IoSilence : Io
 {

@@ -1,3 +1,3 @@
-﻿namespace OneShelf.Telegram.Processor.Model.IoMemories;
+﻿namespace OneShelf.Telegram.Model.IoMemories;
 
 public record IoMemoryItemWrite(string? Text) : IoMemoryItem;

@@ -9,6 +9,7 @@ using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.UpdatingMessages;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;
 

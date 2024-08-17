@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.IoMemories;
-using OneShelf.OneDog.Processor.Model.Ios;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.IoMemories;
 
 namespace OneShelf.OneDog.Processor.Services;
 

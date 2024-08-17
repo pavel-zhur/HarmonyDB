@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Helpers;
-using OneShelf.Telegram.Model;
-using OneShelf.Telegram.Processor.Helpers;
 
-namespace OneShelf.Telegram.Processor.Model.Ios;
+namespace OneShelf.Telegram.Model.Ios;
 
 public abstract class IoWithFinishBase : Io, IDisposable
 {

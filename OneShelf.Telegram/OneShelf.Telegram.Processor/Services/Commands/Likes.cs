@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Pdfs.Generation.Inspiration.Services;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
 using OneShelf.Telegram.Processor.Services.Commands.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;

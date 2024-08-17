@@ -3,10 +3,9 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
-using OneShelf.OneDog.Processor.Model.IoMemories;
-using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.IoMemories;
 
-namespace OneShelf.OneDog.Processor.Model.Ios;
+namespace OneShelf.Telegram.Model.Ios;
 
 public abstract class Io
 {

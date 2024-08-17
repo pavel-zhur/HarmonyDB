@@ -5,10 +5,11 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
 using OneShelf.Telegram.Processor.Services.Commands.Base;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 

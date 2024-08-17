@@ -1,4 +1,4 @@
-﻿using OneShelf.OneDog.Processor.Model.Ios;
+﻿using OneShelf.Telegram.Model.Ios;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.Base;
 

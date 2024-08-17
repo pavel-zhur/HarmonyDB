@@ -4,7 +4,8 @@ using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.OneDog.Processor.Services.Commands.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;

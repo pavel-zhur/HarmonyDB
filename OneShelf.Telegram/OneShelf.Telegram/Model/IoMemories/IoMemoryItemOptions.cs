@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Telegram.Processor.Model.IoMemories;
+﻿namespace OneShelf.Telegram.Model.IoMemories;
 
 public record IoMemoryItemOptions : IoMemoryItem
 {

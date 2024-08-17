@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.IoMemories;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.OneDog.Processor.Services.Commands.Admin;
 using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
+using OneShelf.Telegram.Model.IoMemories;
 
 namespace OneShelf.OneDog.Processor.Services;
 

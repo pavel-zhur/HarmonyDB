@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.Ios;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Base;
 
