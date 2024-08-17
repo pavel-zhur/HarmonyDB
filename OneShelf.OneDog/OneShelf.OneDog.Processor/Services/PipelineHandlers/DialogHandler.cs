@@ -35,8 +35,8 @@ public class DialogHandler : PipelineHandler
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
         IServiceProvider serviceProvider,
-        ScopeAwareness scopeAwareness, AvailableCommands availableCommands)
-        : base(telegramOptions, scopeAwareness)
+        TelegramContext telegramContext, AvailableCommands availableCommands)
+        : base(telegramOptions, telegramContext)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
@@ -61,7 +61,7 @@ public class DialogHandler : PipelineHandler
             CreatedOn = DateTime.Now,
             Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = text,
-            DomainId = ScopeAwareness.DomainId,
+            DomainId = TelegramContext.DomainId,
         });
         await _dogDatabase.SaveChangesAsync();
 
@@ -115,7 +115,7 @@ public class DialogHandler : PipelineHandler
             {
                 memory.NewInput(text);
                 _ioFactory.InitDialog(memory);
-                command = _availableCommands.GetCommands(ScopeAwareness.GetRole(userId)).Single(x =>
+                command = _availableCommands.GetCommands(TelegramContext.GetRole(userId)).Single(x =>
                     x.attribute.Alias == memory.Alias && (memory.Parameters == null
                         ? x.attribute.SupportsNoParameters
                         : x.attribute.SupportsParameters)).commandType;
@@ -129,7 +129,7 @@ public class DialogHandler : PipelineHandler
         }
         else // new command
         {
-            command = _availableCommands.GetCommands(ScopeAwareness.GetRole(userId)).SingleOrDefault(x =>
+            command = _availableCommands.GetCommands(TelegramContext.GetRole(userId)).SingleOrDefault(x =>
                 x.attribute.Alias == alias &&
                 (parameters != null ? x.attribute.SupportsParameters : x.attribute.SupportsNoParameters)).commandType;
             if (command == null)
@@ -234,7 +234,7 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(ScopeAwareness.GetRole(userId))
+            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(TelegramContext.GetRole(userId))
                 .Select(x => x
                     .Where(x => x.SupportsNoParameters)
                     .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))

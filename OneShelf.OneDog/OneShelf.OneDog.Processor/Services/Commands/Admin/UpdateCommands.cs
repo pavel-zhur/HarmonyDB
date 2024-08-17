@@ -11,15 +11,15 @@ public class UpdateCommands : Command
     private readonly ILogger<UpdateCommands> _logger;
     private readonly ChannelActions _channelActions;
     private readonly AvailableCommands _availableCommands;
-    private readonly ScopeAwareness _scopeAwareness;
+    private readonly TelegramContext _telegramContext;
 
-    public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions, AvailableCommands availableCommands, ScopeAwareness scopeAwareness)
+    public UpdateCommands(ILogger<UpdateCommands> logger, Io io, ChannelActions channelActions, AvailableCommands availableCommands, TelegramContext telegramContext)
         : base(io)
     {
         _logger = logger;
         _channelActions = channelActions;
         _availableCommands = availableCommands;
-        _scopeAwareness = scopeAwareness;
+        _telegramContext = telegramContext;
     }
 
     protected override async Task ExecuteQuickly()
@@ -30,7 +30,7 @@ public class UpdateCommands : Command
     private async Task Update()
     {
         await _channelActions.UpdateCommands(
-            _scopeAwareness.DomainId,
+            _telegramContext.DomainId,
             _availableCommands
                 .GetCommands(Role.Admin)
                 .Select(x => x.attribute)

@@ -11,7 +11,7 @@ public class Pipeline
 {
     private readonly PipelineMemory _pipelineMemory;
     private readonly ILogger<Pipeline> _logger;
-    private readonly ScopeAwareness _scopeAwareness;
+    private readonly TelegramContext _telegramContext;
     private readonly IReadOnlyList<PipelineHandler> _pipeline;
 
     public Pipeline(
@@ -21,11 +21,11 @@ public class Pipeline
         ChatsCollector chatsCollector,
         DialogHandler dialogHandler,
         OwnChatterHandler ownChatterHandler,
-        ScopeAwareness scopeAwareness)
+        TelegramContext telegramContext)
     {
         _pipelineMemory = pipelineMemory;
         _logger = logger;
-        _scopeAwareness = scopeAwareness;
+        _telegramContext = telegramContext;
         _pipeline = new List<PipelineHandler>
         {
             usersCollector,
@@ -42,7 +42,7 @@ public class Pipeline
     {
         List<Task> running = new();
 
-        await _scopeAwareness.Initialize(domainId);
+        await _telegramContext.Initialize(domainId);
 
         try
         {

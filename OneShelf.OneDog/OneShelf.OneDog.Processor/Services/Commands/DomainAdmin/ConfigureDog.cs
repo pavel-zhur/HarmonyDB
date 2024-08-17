@@ -14,14 +14,14 @@ public class ConfigureDog : Command
 {
     private readonly ILogger<ConfigureDog> _logger;
     private readonly DogDatabase _dogDatabase;
-    private readonly ScopeAwareness _scopeAwareness;
+    private readonly TelegramContext _telegramContext;
 
-    public ConfigureDog(ILogger<ConfigureDog> logger, Io io, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
+    public ConfigureDog(ILogger<ConfigureDog> logger, Io io, DogDatabase dogDatabase, TelegramContext telegramContext)
         : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
-        _scopeAwareness = scopeAwareness;
+        _telegramContext = telegramContext;
     }
 
     private enum ConfigType
@@ -45,7 +45,7 @@ public class ConfigureDog : Command
                 InteractionType = InteractionType.OwnChatterResetDialog,
                 UserId = Io.UserId,
                 Serialized = "reset",
-                DomainId = _scopeAwareness.DomainId,
+                DomainId = _telegramContext.DomainId,
             });
 
             await _dogDatabase.SaveChangesAsync();
@@ -58,7 +58,7 @@ public class ConfigureDog : Command
         Io.WriteLine();
         Io.WriteLine(setting switch
         {
-            ConfigType.OwnChatterSystemMessage => _scopeAwareness.Domain.SystemMessage,
+            ConfigType.OwnChatterSystemMessage => _telegramContext.Domain.SystemMessage,
             ConfigType.OwnChatterResetDialog or _ => throw new ArgumentOutOfRangeException(),
         });
         Io.WriteLine();
@@ -68,7 +68,7 @@ public class ConfigureDog : Command
         switch (setting)
         {
             case ConfigType.OwnChatterSystemMessage:
-                _scopeAwareness.Domain.SystemMessage = newMessage;
+                _telegramContext.Domain.SystemMessage = newMessage;
                 break;
             case ConfigType.OwnChatterResetDialog:
             default:

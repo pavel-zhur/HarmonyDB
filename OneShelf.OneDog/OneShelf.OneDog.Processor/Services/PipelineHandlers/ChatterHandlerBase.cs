@@ -20,8 +20,8 @@ public abstract class ChatterHandlerBase : PipelineHandler
     protected ChatterHandlerBase(
         IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
-        ScopeAwareness scopeAwareness)
-        : base(telegramOptions, scopeAwareness)
+        TelegramContext telegramContext)
+        : base(telegramOptions, telegramContext)
     {
         DogDatabase = dogDatabase;
     }
@@ -68,7 +68,7 @@ public abstract class ChatterHandlerBase : PipelineHandler
 
     private async Task<TelegramBotClient> CreateApi()
     {
-        return new(ScopeAwareness.Domain.BotToken);
+        return new(TelegramContext.Domain.BotToken);
     }
 
     protected async Task SendMessage(Update respondTo, string text, IReadOnlyList<string> images, bool reply)

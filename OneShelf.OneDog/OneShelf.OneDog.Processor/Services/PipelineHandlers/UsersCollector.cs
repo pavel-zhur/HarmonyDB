@@ -16,8 +16,8 @@ public class UsersCollector : PipelineHandler
     private readonly ILogger<UsersCollector> _logger;
     private readonly DogDatabase _dogDatabase;
 
-    public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, DogDatabase dogDatabase, ScopeAwareness scopeAwareness) 
-        : base(telegramOptions, scopeAwareness)
+    public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, DogDatabase dogDatabase, TelegramContext telegramContext) 
+        : base(telegramOptions, telegramContext)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;

@@ -24,8 +24,8 @@ public class OwnChatterHandler : ChatterHandlerBase
         IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
         DialogRunner dialogRunner, 
-        ScopeAwareness scopeAwareness)
-        : base(telegramOptions, dogDatabase, scopeAwareness)
+        TelegramContext telegramContext)
+        : base(telegramOptions, dogDatabase, telegramContext)
     {
         _logger = logger;
         _dialogRunner = dialogRunner;
@@ -33,9 +33,9 @@ public class OwnChatterHandler : ChatterHandlerBase
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (!CheckTopicId(update, ScopeAwareness.Domain.TopicId, ScopeAwareness.Domain.ChatId)) return false;
+        if (!CheckTopicId(update, TelegramContext.Domain.TopicId, TelegramContext.Domain.ChatId)) return false;
 
-        await Log(update, ScopeAwareness.DomainId, InteractionType.OwnChatterMessage);
+        await Log(update, TelegramContext.DomainId, InteractionType.OwnChatterMessage);
 
         if (update.Message?.Text?.Length > 2)
         {
@@ -62,9 +62,9 @@ public class OwnChatterHandler : ChatterHandlerBase
             .ToListAsync();
 
         DateTime? imagesUnavailableUntil = null;
-        if (ScopeAwareness.Domain.ImagesLimit != null)
+        if (TelegramContext.Domain.ImagesLimit != null)
         {
-            var imagesSince = now.Add(-ScopeAwareness.Domain.ImagesLimit.Window);
+            var imagesSince = now.Add(-TelegramContext.Domain.ImagesLimit.Window);
             var images = (await DogDatabase.Interactions
                 .Where(x => x.InteractionType == InteractionType.ImagesSuccess)
                 .Where(x => x.CreatedOn >= imagesSince)
@@ -72,9 +72,9 @@ public class OwnChatterHandler : ChatterHandlerBase
                 .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
                 .ToList();
 
-            if (images.Sum(x => x.count) >= ScopeAwareness.Domain.ImagesLimit.Limit)
+            if (images.Sum(x => x.count) >= TelegramContext.Domain.ImagesLimit.Limit)
             {
-                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(ScopeAwareness.Domain.ImagesLimit.Window);
+                imagesUnavailableUntil = images.Min(x => x.CreatedOn).Add(TelegramContext.Domain.ImagesLimit.Window);
             }
         }
 
@@ -86,11 +86,11 @@ public class OwnChatterHandler : ChatterHandlerBase
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var system = ScopeAwareness.Domain.SystemMessage;
-        var version = ScopeAwareness.Domain.GptVersion;
-        var frequencyPenalty = ScopeAwareness.Domain.FrequencyPenalty;
-        var presencePenalty = ScopeAwareness.Domain.PresencePenalty;
-        var imagesVersion = ScopeAwareness.Domain.DalleVersion;
+        var system = TelegramContext.Domain.SystemMessage;
+        var version = TelegramContext.Domain.GptVersion;
+        var frequencyPenalty = TelegramContext.Domain.FrequencyPenalty;
+        var presencePenalty = TelegramContext.Domain.PresencePenalty;
+        var imagesVersion = TelegramContext.Domain.DalleVersion;
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
@@ -125,7 +125,7 @@ public class OwnChatterHandler : ChatterHandlerBase
                 UserId = update.Message?.From?.Id,
                 UseCase = "own chatter",
                 AdditionalBillingInfo = "one dog",
-                DomainId = ScopeAwareness.DomainId,
+                DomainId = TelegramContext.DomainId,
             }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)
@@ -162,7 +162,7 @@ public class OwnChatterHandler : ChatterHandlerBase
             Serialized = JsonSerializer.Serialize(newMessagePoint),
             ShortInfoSerialized = JsonSerializer.Serialize(result),
             UserId = TelegramOptions.AdminId,
-            DomainId = ScopeAwareness.DomainId,
+            DomainId = TelegramContext.DomainId,
         });
 
         if (result.Images.Any())
@@ -171,7 +171,7 @@ public class OwnChatterHandler : ChatterHandlerBase
             {
                 CreatedOn = now,
                 InteractionType = imagesUnavailableUntil.HasValue ? InteractionType.ImagesLimit : InteractionType.ImagesSuccess,
-                DomainId = ScopeAwareness.DomainId,
+                DomainId = TelegramContext.DomainId,
                 Serialized = result.Images.Count.ToString(),
                 UserId = TelegramOptions.AdminId,
             });

@@ -17,15 +17,15 @@ public class Help : Command
     private readonly AvailableCommands _availableCommands;
     private readonly DogDatabase _dogDatabase;
     private readonly TelegramOptions _telegramOptions;
-    private readonly ScopeAwareness _scopeAwareness;
+    private readonly TelegramContext _telegramContext;
 
-    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
+    public Help(ILogger<Help> logger, Io io, AvailableCommands availableCommands, IOptions<TelegramOptions> telegramOptions, DogDatabase dogDatabase, TelegramContext telegramContext)
         : base(io)
     {
         _logger = logger;
         _availableCommands = availableCommands;
         _dogDatabase = dogDatabase;
-        _scopeAwareness = scopeAwareness;
+        _telegramContext = telegramContext;
         _telegramOptions = telegramOptions.Value;
     }
 
@@ -49,7 +49,7 @@ public class Help : Command
 
         var role = Io.IsAdmin
             ? Role.Admin
-            : _scopeAwareness.Domain.Administrators.Any(x => x.Id == Io.UserId)
+            : _telegramContext.Domain.Administrators.Any(x => x.Id == Io.UserId)
                 ? Role.DomainAdmin
                 : Role.Regular;
 

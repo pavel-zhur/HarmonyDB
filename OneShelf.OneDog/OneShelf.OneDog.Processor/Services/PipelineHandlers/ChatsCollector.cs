@@ -14,8 +14,8 @@ public class ChatsCollector : PipelineHandler
     private readonly ILogger<ChatsCollector> _logger;
     private readonly DogDatabase _dogDatabase;
 
-    public ChatsCollector(IOptions<TelegramOptions> telegramOptions, ILogger<ChatsCollector> logger, DogDatabase dogDatabase, ScopeAwareness scopeAwareness) 
-        : base(telegramOptions, scopeAwareness)
+    public ChatsCollector(IOptions<TelegramOptions> telegramOptions, ILogger<ChatsCollector> logger, DogDatabase dogDatabase, TelegramContext telegramContext) 
+        : base(telegramOptions, telegramContext)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
@@ -31,13 +31,13 @@ public class ChatsCollector : PipelineHandler
 
         if (chat == null) return false;
 
-        var dbChat = await _dogDatabase.Chats.SingleOrDefaultAsync(x => x.ChatId == chat.Id && x.DomainId == ScopeAwareness.DomainId);
+        var dbChat = await _dogDatabase.Chats.SingleOrDefaultAsync(x => x.ChatId == chat.Id && x.DomainId == TelegramContext.DomainId);
         if (dbChat == null)
         {
             dbChat = new()
             {
                 ChatId = chat.Id,
-                DomainId = ScopeAwareness.DomainId,
+                DomainId = TelegramContext.DomainId,
                 FirstUpdateReceivedOn = DateTime.Now,
                 LastUpdateReceivedOn = DateTime.Now,
                 UpdatesCount = 0,

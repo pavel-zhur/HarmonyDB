@@ -12,12 +12,12 @@ public abstract class PipelineHandler
 {
     private readonly List<(string? queueKey, Func<Task> task)> _tasks = new();
     protected TelegramOptions TelegramOptions { get; }
-    protected ScopeAwareness ScopeAwareness { get; }
+    protected TelegramContext TelegramContext { get; }
 
-    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions, ScopeAwareness scopeAwareness)
+    protected PipelineHandler(IOptions<TelegramOptions> telegramOptions, TelegramContext telegramContext)
     {
         TelegramOptions = telegramOptions.Value;
-        ScopeAwareness = scopeAwareness;
+        TelegramContext = telegramContext;
     }
 
     public async Task<(bool handled, List<(string? queueKey, Func<Task> task)> tasks)> Handle(Update update)
@@ -37,7 +37,7 @@ public abstract class PipelineHandler
     {
         lock (_tasks)
         {
-            _tasks.Add((queueKey == null ? null : $"{GetType().FullName}-{queueKey}", async () => await task(new(ScopeAwareness.Domain.BotToken))));
+            _tasks.Add((queueKey == null ? null : $"{GetType().FullName}-{queueKey}", async () => await task(new(TelegramContext.Domain.BotToken))));
         }
     }
 

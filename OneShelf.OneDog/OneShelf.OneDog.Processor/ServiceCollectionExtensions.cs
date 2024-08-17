@@ -46,7 +46,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<ConfigureChatGpt>()
             .AddScoped<ConfigureDog>()
 
-            .AddScoped<ScopeAwareness>()
+            .AddScoped<TelegramContext>()
             
             .AddOpenAi(configuration);
 

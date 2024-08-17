@@ -6,14 +6,14 @@ using OneShelf.Telegram.Model;
 
 namespace OneShelf.OneDog.Processor.Services;
 
-public class ScopeAwareness
+public class TelegramContext
 {
     private readonly DogDatabase _dogDatabase;
     private readonly TelegramOptions _options;
 
     private Domain? _domain;
 
-    public ScopeAwareness(DogDatabase dogDatabase, IOptions<TelegramOptions> options)
+    public TelegramContext(DogDatabase dogDatabase, IOptions<TelegramOptions> options)
     {
         _dogDatabase = dogDatabase;
         _options = options.Value;
