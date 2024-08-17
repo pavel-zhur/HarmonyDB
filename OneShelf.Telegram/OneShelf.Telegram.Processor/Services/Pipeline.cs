@@ -49,7 +49,7 @@ public class Pipeline
     /// <summary>
     /// Do not throw any exceptions, quickly process the update without waiting for all scheduled tasks to complete, schedule them, and dispose the scope when they are complete.
     /// </summary>
-    public async Task<Task> ProcessSyncSafeAndDispose(Update update, AsyncServiceScope? scopeMustDispose)
+    public async Task<Task> ProcessSyncSafeAndDispose(Update update)
     {
         List<Task> running = new();
 
@@ -80,7 +80,7 @@ public class Pipeline
             _logger.LogError(e, "Special catch error.");
         }
 
-        return DisposeOnFinish(scopeMustDispose, running);
+        return DisposeOnFinish(running);
     }
 
     public async Task Regenerate()
@@ -89,7 +89,7 @@ public class Pipeline
     }
 
     /// <remarks>It's async void on purpose. We don't await it.</remarks>
-    private async Task DisposeOnFinish(AsyncServiceScope? scopeMustDispose, List<Task> running)
+    private async Task DisposeOnFinish(List<Task> running)
     {
         try
         {
@@ -98,13 +98,6 @@ public class Pipeline
         catch (Exception e)
         {
             _logger.LogError(e, "Error in pipeline handlers continuations.");
-        }
-        finally
-        {
-            if (scopeMustDispose != null)
-            {
-                await scopeMustDispose.Value.DisposeAsync();
-            }
         }
     }
 }
