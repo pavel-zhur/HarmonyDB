@@ -1,9 +1,8 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model;
 using Telegram.BotAPI;
@@ -105,7 +104,7 @@ namespace OneShelf.OneDog.Runner.Functions.Functions
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
             var (domainClient, _) = await CreateDomainClient(GetDomainId(req));
-            await response.WriteStringAsync(JsonConvert.SerializeObject(await domainClient.GetWebhookInfoAsync()));
+            await response.WriteStringAsync(JsonSerializer.Serialize(await domainClient.GetWebhookInfoAsync()));
 
             return response;
         }
