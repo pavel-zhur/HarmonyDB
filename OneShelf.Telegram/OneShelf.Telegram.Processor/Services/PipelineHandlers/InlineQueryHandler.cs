@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Processor.Model;
@@ -41,7 +41,7 @@ public class InlineQueryHandler : PipelineHandler
             CreatedOn = DateTime.Now,
             UserId = update.InlineQuery.From.Id,
             InteractionType = InteractionType.InlineQuery,
-            Serialized = JsonConvert.SerializeObject(update),
+            Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = $"offset: {offset}; {update.InlineQuery.Query}",
         });
         await SongsDatabase.SaveChangesAsyncX();

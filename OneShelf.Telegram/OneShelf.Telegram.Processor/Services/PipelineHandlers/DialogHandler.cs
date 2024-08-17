@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Model;
@@ -53,7 +53,7 @@ public class DialogHandler : PipelineHandler
             InteractionType = InteractionType.Dialog,
             UserId = userId,
             CreatedOn = DateTime.Now,
-            Serialized = JsonConvert.SerializeObject(update),
+            Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = text,
         });
         await SongsDatabase.SaveChangesAsyncX();

@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
 using Telegram.BotAPI.GettingUpdates;
@@ -68,7 +68,7 @@ public class Pipeline
 
             if (!anyHandled)
             {
-                _logger.LogInformation("Unhandled {}", JsonConvert.SerializeObject(update, Formatting.Indented));
+                _logger.LogInformation("Unhandled {}", JsonSerializer.Serialize(update));
             }
         }
         catch (TaskCanceledException)

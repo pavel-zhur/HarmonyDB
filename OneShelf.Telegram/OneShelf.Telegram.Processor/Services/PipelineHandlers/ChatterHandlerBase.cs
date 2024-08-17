@@ -1,6 +1,6 @@
 ﻿using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
@@ -50,7 +50,7 @@ public abstract class ChatterHandlerBase : PipelineHandler
             InteractionType = interactionType,
             UserId = update.Message!.From!.Id,
             ShortInfoSerialized = update.Message.Text,
-            Serialized = JsonConvert.SerializeObject(update)
+            Serialized = JsonSerializer.Serialize(update)
         });
         await SongsDatabase.SaveChangesAsyncX();
     }

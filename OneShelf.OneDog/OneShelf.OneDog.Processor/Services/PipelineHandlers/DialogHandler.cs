@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.OneDog.Processor.Helpers;
@@ -54,7 +54,7 @@ public class DialogHandler : PipelineHandler
             InteractionType = InteractionType.Dialog,
             UserId = userId,
             CreatedOn = DateTime.Now,
-            Serialized = JsonConvert.SerializeObject(update),
+            Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = text,
             DomainId = ScopeAwareness.DomainId,
         });
