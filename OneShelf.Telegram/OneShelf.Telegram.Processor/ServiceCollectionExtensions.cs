@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
 
         services
             .AddSongsDatabase()
-            .AddTelegram(configuration);
+            .AddTelegram<TelegramAbstractions>(configuration);
 
         services
             .AddScoped<FilesUploader>()

@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
 
         services
             .AddDogDatabase()
-            .AddTelegram(configuration);
+            .AddTelegram<TelegramAbstractions>(configuration);
 
         services
             .AddScoped<ChannelActions>()
