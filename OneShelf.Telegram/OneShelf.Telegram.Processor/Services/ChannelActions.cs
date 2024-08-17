@@ -70,7 +70,10 @@ public class ChannelActions
                         ? _telegramOptions.AnnouncementsTopicId
                         : _telegramOptions.PublicTopicId,
                     ReplyMarkup = inlineKeyboardMarkup,
-                    DisableWebPagePreview = true,
+                    LinkPreviewOptions = new()
+                    {
+                        IsDisabled = true,
+                    },
                 });
 
                 return messageResult.MessageId;
@@ -119,7 +122,10 @@ public class ChannelActions
                     ParseMode = Constants.MarkdownV2,
                     MessageId = messageId,
                     ReplyMarkup = inlineKeyboardMarkup,
-                    DisableWebPagePreview = true,
+                    LinkPreviewOptions = new()
+                    {
+                        IsDisabled = true,
+                    },
                 });
             }
             catch (BotRequestException e) when (e.Message.Contains(
@@ -179,7 +185,7 @@ public class ChannelActions
             await api.PinChatMessageAsync(
                 _telegramOptions.PublicChatId,
                 messageId,
-                true);
+                disableNotification: true);
         });
     }
 
@@ -189,9 +195,9 @@ public class ChannelActions
 
         await _exponentialBackOff.WithRetry(async () =>
         {
-            await api.UnPinChatMessageAsync(
+            await api.UnpinChatMessageAsync(
                 _telegramOptions.PublicChatId,
-                messageId);
+                messageId: messageId);
         });
     }
 
@@ -216,8 +222,14 @@ public class ChannelActions
     {
         var api = new TelegramBotClient(_telegramOptions.Token);
 
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(_telegramOptions.AdminId)));
+        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+        {
+            Scope = new BotCommandScopeChat(_telegramOptions.AdminId),
+        });
 
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.AppliesToRegular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeDefault()));
+        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.AppliesToRegular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+        {
+            Scope = new BotCommandScopeDefault(),
+        });
     }
 }

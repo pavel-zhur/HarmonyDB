@@ -28,13 +28,22 @@ public class ChannelActions
 
         var api = new TelegramBotClient(domain.BotToken);
 
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(_telegramOptions.AdminId)));
+        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+        {
+            Scope = new BotCommandScopeChat(_telegramOptions.AdminId),
+        });
 
         foreach (var administrator in domain.Administrators.Where(a => a.Id != _telegramOptions.AdminId))
         {
-            await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role <= Role.DomainAdmin).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(administrator.Id)));
+            await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role <= Role.DomainAdmin).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+            {
+                Scope = new BotCommandScopeChat(administrator.Id),
+            });
         }
 
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role == Role.Regular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeDefault()));
+        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.Role == Role.Regular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)))
+        {
+            Scope = new BotCommandScopeDefault(),
+        });
     }
 }

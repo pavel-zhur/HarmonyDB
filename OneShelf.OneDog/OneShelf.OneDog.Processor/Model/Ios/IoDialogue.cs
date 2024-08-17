@@ -48,9 +48,10 @@ public class IoDialogue : IoWithFinishBase
                 buttons?.Any() == true
                     ? new ReplyKeyboardMarkup(
                         buttons.Select(x => new[] { new KeyboardButton(x) })
-                            .Append(new[] { new KeyboardButton("/start: В начало") }), inputFieldPlaceholder: request)
+                            .Append([new("/start: В начало")]))
                     {
                         ResizeKeyboard = true,
+                        InputFieldPlaceholder = request,
                     }
                     : new ForceReply
                     {

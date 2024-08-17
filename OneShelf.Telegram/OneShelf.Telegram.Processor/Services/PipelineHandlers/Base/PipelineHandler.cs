@@ -32,7 +32,7 @@ public abstract class PipelineHandler
 
     protected abstract Task<bool> HandleSync(Update update);
 
-    protected bool IsPrivate(Chat? chat) => chat?.Type == ChatType.Private;
+    protected bool IsPrivate(Chat? chat) => chat?.Type == ChatTypes.Private;
 
     protected void QueueApi(string? queueKey, Func<TelegramBotClient, Task> task)
     {
