@@ -53,8 +53,11 @@ public abstract class ChatterHandlerBase : PipelineHandler
             new(respondTo.Message!.Chat.Id, images.Select(x => new InputMediaPhoto(x.ToString())))
             {
                 MessageThreadId = respondTo.Message!.MessageThreadId,
-                ReplyToMessageId = reply ? respondTo.Message.MessageId : null,
-                AllowSendingWithoutReply = false,
+                ReplyParameters = !reply ? null : new()
+                {
+                    MessageId = respondTo.Message.MessageId,
+                    AllowSendingWithoutReply = false,
+                },
                 DisableNotification = true,
             });
     }
@@ -77,8 +80,11 @@ public abstract class ChatterHandlerBase : PipelineHandler
             }))
             {
                 MessageThreadId = respondTo.Message!.MessageThreadId,
-                ReplyToMessageId = reply ? respondTo.Message.MessageId : null,
-                AllowSendingWithoutReply = false,
+                ReplyParameters = !reply ? null : new()
+                {
+                    MessageId = respondTo.Message.MessageId,
+                    AllowSendingWithoutReply = false,
+                },
                 DisableNotification = true,
             });
         }
@@ -97,8 +103,11 @@ public abstract class ChatterHandlerBase : PipelineHandler
         await (await CreateApi()).SendMessageAsync(new(respondTo.Message!.Chat.Id, result)
         {
             MessageThreadId = respondTo.Message!.MessageThreadId,
-            ReplyToMessageId = reply ? respondTo.Message.MessageId : null,
-            AllowSendingWithoutReply = false,
+            ReplyParameters = !reply ? null : new()
+            {
+                MessageId = respondTo.Message.MessageId,
+                AllowSendingWithoutReply = false,
+            },
             DisableNotification = true,
             LinkPreviewOptions = new()
             {

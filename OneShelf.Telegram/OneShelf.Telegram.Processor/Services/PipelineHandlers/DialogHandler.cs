@@ -170,13 +170,16 @@ public class DialogHandler : PipelineHandler
                     {
                         await api.SendMessageAsync(new(userId, finish.ReplyMessageBody.ToString())
                         {
-                            AllowSendingWithoutReply = true,
                             LinkPreviewOptions = new()
                             {
                                 IsDisabled = true,
                             },
                             ParseMode = Constants.MarkdownV2,
-                            ReplyToMessageId = update.Message.MessageId,
+                            ReplyParameters = new()
+                            {
+                                MessageId = update.Message.MessageId,
+                                AllowSendingWithoutReply = true,
+                            },
                             ReplyMarkup = finish.ReplyMessageMarkup,
                         });
                     }
@@ -250,7 +253,6 @@ public class DialogHandler : PipelineHandler
                 {
                     await api.SendMessageAsync(new(userId, markup.ToString())
                     {
-                        AllowSendingWithoutReply = true,
                         LinkPreviewOptions = new()
                         {
                             IsDisabled = true,
@@ -270,13 +272,16 @@ public class DialogHandler : PipelineHandler
             {
                 await api.SendMessageAsync(new(userId, finish.ReplyMessageBody.ToString())
                 {
-                    AllowSendingWithoutReply = true,
+                    ReplyParameters = new()
+                    {
+                        MessageId = update.Message.MessageId,
+                        AllowSendingWithoutReply = true,
+                    },
                     LinkPreviewOptions = new()
                     {
                         IsDisabled = true,
                     },
                     ParseMode = Constants.MarkdownV2,
-                    ReplyToMessageId = update.Message.MessageId,
                     ReplyMarkup = finish.ReplyMessageMarkup ?? new ReplyKeyboardRemove(),
                 });
             }
