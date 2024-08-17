@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "OneShelf.OneDragon.Runner.Functions": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7261",
+      "launchBrowser": false
+    }
+  }
+}

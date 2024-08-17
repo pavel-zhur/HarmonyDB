@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OneShelf.OneDog.Runner.Polling.Model;
-using OneShelf.OneDog.Runner.Polling.Services;
+using OneShelf.Telegram.Polling.Model;
+using OneShelf.Telegram.Polling.Services;
 
 var host = Host.CreateDefaultBuilder(args)
     .UseDefaultServiceProvider((x, y) =>
@@ -11,7 +11,6 @@ var host = Host.CreateDefaultBuilder(args)
         y.ValidateScopes = true;
     })
     .UseConsoleLifetime()
-    .ConfigureHostConfiguration(configuration => configuration.AddJsonFile("appsettings.Secrets.json", true))
     .ConfigureServices((context, services) =>
     {
         services

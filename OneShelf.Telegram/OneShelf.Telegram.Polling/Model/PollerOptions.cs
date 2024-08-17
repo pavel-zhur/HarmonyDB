@@ -1,4 +1,4 @@
-﻿namespace OneShelf.OneDog.Runner.Polling.Model;
+﻿namespace OneShelf.Telegram.Polling.Model;
 
 public class PollerOptions
 {

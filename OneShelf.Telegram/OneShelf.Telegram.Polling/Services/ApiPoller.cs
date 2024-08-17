@@ -1,14 +1,14 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using OneShelf.Telegram.Runner.Polling.Model;
+using OneShelf.Telegram.Polling.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.GettingUpdates;
 
-namespace OneShelf.Telegram.Runner.Polling.Services;
+namespace OneShelf.Telegram.Polling.Services;
 
 public class ApiPoller : BackgroundService
 {
@@ -16,7 +16,7 @@ public class ApiPoller : BackgroundService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly PollerOptions _pollerOptions;
 
-    private readonly BotClient? _api;
+    private readonly TelegramBotClient? _api;
 
     public ApiPoller(IOptions<PollerOptions> pollerOptions, ILogger<ApiPoller> logger, IHttpClientFactory httpClientFactory)
     {
@@ -36,13 +36,13 @@ public class ApiPoller : BackgroundService
             {
                 foreach (var update in updates)
                 {
-                    Console.WriteLine(JsonConvert.SerializeObject(update, Formatting.Indented));
+                    Console.WriteLine(JsonSerializer.Serialize(update, new JsonSerializerOptions { WriteIndented = true, }));
                     try
                     {
                         using var httpClient = _httpClientFactory.CreateClient();
                         httpClient.DefaultRequestHeaders.Add(_pollerOptions.WebHooksSecretHeader, _pollerOptions.WebHooksSecretToken);
                         await httpClient.PostAsync(_pollerOptions.IncomingUpdateUrl, new StringContent(
-                            JsonConvert.SerializeObject(update), Encoding.UTF8), stoppingToken);
+                            JsonSerializer.Serialize(update), Encoding.UTF8), stoppingToken);
                         _logger.LogInformation("Successfully forwarded.");
                     }
                     catch (Exception e)
@@ -60,21 +60,21 @@ public class ApiPoller : BackgroundService
             }
         }
 
-        async Task<Update[]> GetUpdatesSafeAsync(
+        async Task<List<Update>> GetUpdatesSafeAsync(
             [Optional] int? offset)
         {
             try
             {
-                return await _api.GetUpdatesAsync(offset, timeout: 30, cancellationToken: stoppingToken);
+                return (await _api.GetUpdatesAsync(offset, timeout: 30, cancellationToken: stoppingToken)).ToList();
             }
             catch (TaskCanceledException)
             {
-                return Array.Empty<Update>();
+                return [];
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "GetUpdates");
-                return Array.Empty<Update>();
+                return [];
             }
         }
     }
