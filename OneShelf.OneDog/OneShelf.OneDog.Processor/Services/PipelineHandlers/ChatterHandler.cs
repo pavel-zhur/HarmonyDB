@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
@@ -11,17 +13,20 @@ using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
-public abstract class ChatterHandlerBase : PipelineHandler
+public abstract class ChatterHandler : PipelineHandler
 {
-    protected ChatterHandlerBase(
+    protected ChatterHandler(
         DogDatabase dogDatabase,
-        IScopedAbstractions scopedAbstractions)
+        IScopedAbstractions scopedAbstractions,
+        ILogger<ChatterHandler> logger)
         : base(scopedAbstractions)
     {
         DogDatabase = dogDatabase;
+        Logger = logger;
     }
 
     protected DogDatabase DogDatabase { get; }
+    protected ILogger<ChatterHandler> Logger { get; }
 
     protected bool CheckTopicId(Update update, int topicId, long publicChatId)
     {
@@ -151,5 +156,49 @@ public abstract class ChatterHandlerBase : PipelineHandler
     protected async Task Typing(Update update)
     {
         await (await CreateApi()).SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
+    }
+
+    protected async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var last = await DogDatabase.Interactions.Where(x => x.InteractionType == InteractionType.OwnChatterMessage).OrderBy(x => x.Id).LastAsync(cancellationToken);
+                if (last.Id != lastUpdateId)
+                {
+                    await cancellationTokenSource.CancelAsync();
+                    return;
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error checking for updates.");
+        }
+    }
+
+    protected async void LongTyping(Update update, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Typing(update);
+                await Task.Delay(3000, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error sending typing events.");
+        }
     }
 }

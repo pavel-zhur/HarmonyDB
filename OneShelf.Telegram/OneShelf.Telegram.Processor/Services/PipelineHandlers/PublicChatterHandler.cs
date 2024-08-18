@@ -8,18 +8,15 @@ using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public class PublicChatterHandler : ChatterHandlerBase
+public class PublicChatterHandler : ChatterHandler
 {
-    private readonly ILogger<PublicChatterHandler> _logger;
-
     public PublicChatterHandler(
         ILogger<PublicChatterHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase, 
         IScopedAbstractions scopedAbstractions)
-        : base(telegramOptions, songsDatabase, scopedAbstractions)
+        : base(telegramOptions, songsDatabase, scopedAbstractions, logger)
     {
-        _logger = logger;
     }
 
     protected override async Task<bool> HandleSync(Update update)

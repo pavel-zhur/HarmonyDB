@@ -1,9 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
@@ -13,18 +16,20 @@ using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public abstract class ChatterHandlerBase : PipelineHandler
+public abstract class ChatterHandler : PipelineHandler
 {
     private readonly TelegramBotClient _api;
 
-    protected ChatterHandlerBase(
+    protected ChatterHandler(
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase,
-        IScopedAbstractions scopedAbstractions)
+        IScopedAbstractions scopedAbstractions, 
+        ILogger<ChatterHandler> logger)
         : base(scopedAbstractions)
     {
         TelegramOptions = telegramOptions.Value;
         SongsDatabase = songsDatabase;
+        Logger = logger;
         _api = new(TelegramOptions.Token);
     }
 
@@ -32,18 +37,12 @@ public abstract class ChatterHandlerBase : PipelineHandler
 
     protected TelegramOptions TelegramOptions { get; }
 
+    protected ILogger<ChatterHandler> Logger { get; }
+
     protected bool CheckTopicId(Update update, int topicId)
     {
         if (update.Message?.Chat.Username != TelegramOptions.PublicChatId.Substring(1)) return false;
         if (update.Message.MessageThreadId != topicId) return false;
-        if (update.Message.From == null) return false;
-
-        return true;
-    }
-
-    protected bool CheckOurChat(Update update)
-    {
-        if (update.Message?.Chat.Username != TelegramOptions.PublicChatId.Substring(1)) return false;
         if (update.Message.From == null) return false;
 
         return true;
@@ -162,5 +161,49 @@ public abstract class ChatterHandlerBase : PipelineHandler
     protected async Task Typing(Update update)
     {
         await _api.SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
+    }
+
+    protected async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var last = await SongsDatabase.Interactions.Where(x => x.InteractionType == InteractionType.OwnChatterMessage).OrderBy(x => x.Id).LastAsync(cancellationToken);
+                if (last.Id != lastUpdateId)
+                {
+                    await cancellationTokenSource.CancelAsync();
+                    return;
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error checking for updates.");
+        }
+    }
+
+    protected async void LongTyping(Update update, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Typing(update);
+                await Task.Delay(3000, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error sending typing events.");
+        }
     }
 }

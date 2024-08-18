@@ -14,9 +14,8 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
-public class OwnChatterHandler : ChatterHandlerBase
+public class OwnChatterHandler : ChatterHandler
 {
-    private readonly ILogger<OwnChatterHandler> _logger;
     private readonly TelegramOptions _telegramOptions;
     private readonly DialogRunner _dialogRunner;
     private readonly DogContext _dogContext;
@@ -28,9 +27,8 @@ public class OwnChatterHandler : ChatterHandlerBase
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions,
         DogContext dogContext)
-        : base(dogDatabase, scopedAbstractions)
+        : base(dogDatabase, scopedAbstractions, logger)
     {
-        _logger = logger;
         _telegramOptions = telegramOptions.Value;
         _dialogRunner = dialogRunner;
         _dogContext = dogContext;
@@ -144,7 +142,7 @@ public class OwnChatterHandler : ChatterHandlerBase
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error requesting the data.");
+            Logger.LogError(e, "Error requesting the data.");
             await SendMessage(update, "Случилась ошибка. :(", true);
             return;
         }
@@ -207,57 +205,13 @@ public class OwnChatterHandler : ChatterHandlerBase
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error sending the image.");
+                Logger.LogError(e, "Error sending the image.");
             }
         }
 
         if (!string.IsNullOrWhiteSpace(text))
         {
             await SendMessage(update, text, false);
-        }
-    }
-
-    private async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var last = await DogDatabase.Interactions.Where(x => x.InteractionType == InteractionType.OwnChatterMessage).OrderBy(x => x.Id).LastAsync(cancellationToken);
-                if (last.Id != lastUpdateId)
-                {
-                    await cancellationTokenSource.CancelAsync();
-                    return;
-                }
-
-                await Task.Delay(500, cancellationToken);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error checking for updates.");
-        }
-    }
-
-    private async void LongTyping(Update update, CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Typing(update);
-                await Task.Delay(3000, cancellationToken);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error sending typing events.");
         }
     }
 }

@@ -9,8 +9,6 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
 using OneShelf.Telegram.Model;
-using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
@@ -20,29 +18,40 @@ using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public class PublicImportHandler : ChatterHandlerBase
+public class PublicImportHandler : PipelineHandler
 {
     private readonly ILogger<PublicImportHandler> _logger;
+    private readonly TelegramOptions _telegramOptions;
     private readonly SongsOperations _songsOperations;
     private readonly TelegramBotClient _botClient;
     private readonly RegenerationQueue _registrationQueue;
     private readonly IndexApiClient _indexApiClient;
+    private readonly SongsDatabase _songsDatabase;
 
     public PublicImportHandler(
         ILogger<PublicImportHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
-        SongsDatabase songsDatabase,
         SongsOperations songsOperations, 
         RegenerationQueue registrationQueue, 
         IndexApiClient indexApiClient, 
-        IScopedAbstractions scopedAbstractions)
-        : base(telegramOptions, songsDatabase, scopedAbstractions)
+        IScopedAbstractions scopedAbstractions, SongsDatabase songsDatabase)
+        : base(scopedAbstractions)
     {
         _logger = logger;
+        _telegramOptions = telegramOptions.Value;
         _songsOperations = songsOperations;
         _registrationQueue = registrationQueue;
         _indexApiClient = indexApiClient;
+        _songsDatabase = songsDatabase;
         _botClient = new(telegramOptions.Value.Token);
+    }
+
+    private bool CheckOurChat(Update update)
+    {
+        if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
+        if (update.Message.From == null) return false;
+
+        return true;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -63,9 +72,9 @@ public class PublicImportHandler : ChatterHandlerBase
 
         try
         {
-            var existing = await SongsDatabase.Versions
+            var existing = await _songsDatabase.Versions
                 .Where(x => x.Song.Status == SongStatus.Live)
-                .Where(x => x.Song.TenantId == TelegramOptions.TenantId)
+                .Where(x => x.Song.TenantId == _telegramOptions.TenantId)
                 .Include(x => x.Song)
                 .ThenInclude(x => x.Artists)
                 .Where(x => x.Uri == new Uri(url))
@@ -86,7 +95,7 @@ public class PublicImportHandler : ChatterHandlerBase
                 throw new("Could not get the header.");
             }
 
-            var (songExisted, versionExisted, song) = await _songsOperations.VersionImport(TelegramOptions.TenantId, new(url), result.Data.Artist.Once().ToList(), result.Data.Title,
+            var (songExisted, versionExisted, song) = await _songsOperations.VersionImport(_telegramOptions.TenantId, new(url), result.Data.Artist.Once().ToList(), result.Data.Title,
                 userId.Value, 1);
 
             _registrationQueue.QueueUpdateAll(false);
@@ -107,7 +116,7 @@ public class PublicImportHandler : ChatterHandlerBase
         {
             _logger.LogError(e, "Could not import the url {url}.", url);
 
-            if (result?.Data?.Source != null || TelegramOptions.ReactToUrls.Any(url.Contains))
+            if (result?.Data?.Source != null || _telegramOptions.ReactToUrls.Any(url.Contains))
             {
                 await Respond(update, "Не получилось добавить :( Что-то пошло не так. Попробуйте через шкаф, пожалуйста.");
             }
