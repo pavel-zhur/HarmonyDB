@@ -27,13 +27,15 @@ public static class ServiceCollectionExtensions
                     .AddCommand<UpdateCommands>()
                     .AddCommand<Default>()
 
+                    .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<UsersCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                 );
 
         services
             .AddDragonDatabase()
-            .AddOpenAi(configuration);
+            .AddOpenAi(configuration)
+            .AddScoped<DragonScope>();
 
         return services;
     }

@@ -14,6 +14,8 @@ public class DragonDatabase : DbContext
     public required DbSet<Interaction> Interactions { get; set; }
 
     public required DbSet<Chat> Chats { get; set; }
+    
+    public required DbSet<Update> Updates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

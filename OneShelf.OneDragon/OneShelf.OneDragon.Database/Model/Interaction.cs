@@ -23,4 +23,8 @@ public class Interaction
 
     [Column(TypeName = "nvarchar(50)")]
     public InteractionType InteractionType { get; set; }
+
+    public int UpdateId { get; set; }
+
+    public Update Update { get; set; } = null!;
 }
