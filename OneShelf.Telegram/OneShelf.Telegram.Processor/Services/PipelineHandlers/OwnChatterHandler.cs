@@ -9,15 +9,23 @@ using OneShelf.Common.OpenAi.Models.Memory;
 using OneShelf.Common.OpenAi.Services;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Services.Base;
+using System.Text;
+using Telegram.BotAPI;
+using Telegram.BotAPI.AvailableMethods;
+using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 using DateTime = System.DateTime;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public class OwnChatterHandler : ChatterHandler
+public class OwnChatterHandler : PipelineHandler
 {
+    private readonly TelegramBotClient _api;
     private readonly DialogRunner _dialogRunner;
+    private readonly SongsDatabase _songsDatabase;
+    private readonly TelegramOptions _telegramOptions;
+    private readonly ILogger<OwnChatterHandler> _logger;
 
     public OwnChatterHandler(
         ILogger<OwnChatterHandler> logger,
@@ -25,14 +33,186 @@ public class OwnChatterHandler : ChatterHandler
         SongsDatabase songsDatabase,
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions)
-        : base(telegramOptions, songsDatabase, scopedAbstractions, logger)
+        : base(scopedAbstractions)
     {
+        _logger = logger;
+        _songsDatabase = songsDatabase;
         _dialogRunner = dialogRunner;
+        _telegramOptions = telegramOptions.Value;
+        _api = new(_telegramOptions.Token);
+    }
+    
+    private bool CheckTopicId(Update update, int topicId)
+    {
+        if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
+        if (update.Message.MessageThreadId != topicId) return false;
+        if (update.Message.From == null) return false;
+
+        return true;
+    }
+
+    private async Task Log(Update update, InteractionType interactionType)
+    {
+        _songsDatabase.Interactions.Add(new()
+        {
+            CreatedOn = DateTime.Now,
+            InteractionType = interactionType,
+            UserId = update.Message!.From!.Id,
+            ShortInfoSerialized = update.Message.Text,
+            Serialized = JsonSerializer.Serialize(update)
+        });
+        await _songsDatabase.SaveChangesAsyncX();
+    }
+
+    private async Task SendMessage(Update respondTo, IReadOnlyList<string> images, bool reply)
+    {
+        await _api.SendMediaGroupAsync(
+            new(respondTo.Message!.Chat.Id, images.Select(x => new InputMediaPhoto(x.ToString())))
+            {
+                MessageThreadId = respondTo.Message!.MessageThreadId,
+                ReplyParameters = !reply ? null : new()
+                {
+                    MessageId = respondTo.Message.MessageId,
+                    AllowSendingWithoutReply = false,
+                },
+                DisableNotification = true,
+            });
+    }
+
+    private async Task SendMessage(Update respondTo, string text, IReadOnlyList<string> images, bool reply)
+    {
+        var (messageEntities, result) = GetMessageEntities(text);
+
+        try
+        {
+            await _api.SendMediaGroupAsync(new(respondTo.Message!.Chat.Id, images.WithIndices().Select(x => new InputMediaPhoto(x.x.ToString())
+            {
+                Caption = x.i == 0 ? result : null,
+                CaptionEntities = x.i == 0 ? messageEntities : null,
+            }))
+            {
+                MessageThreadId = respondTo.Message!.MessageThreadId,
+                ReplyParameters = !reply ? null : new()
+                {
+                    MessageId = respondTo.Message.MessageId,
+                    AllowSendingWithoutReply = false,
+                },
+                DisableNotification = true,
+            });
+        }
+        catch (BotRequestException e) when (e.Message.Contains("message caption is too long"))
+        {
+            await SendMessage(respondTo, images, reply);
+
+            await SendMessage(respondTo, text, reply);
+        }
+    }
+
+    private async Task SendMessage(Update respondTo, string text, bool reply)
+    {
+        var (messageEntities, result) = GetMessageEntities(text);
+
+        await _api.SendMessageAsync(new(respondTo.Message!.Chat.Id, result)
+        {
+            MessageThreadId = respondTo.Message!.MessageThreadId,
+            ReplyParameters = !reply ? null : new()
+            {
+                MessageId = respondTo.Message.MessageId,
+                AllowSendingWithoutReply = false,
+            },
+            DisableNotification = true,
+            LinkPreviewOptions = new()
+            {
+                IsDisabled = true,
+            },
+            Entities = messageEntities
+        });
+    }
+
+    private static (List<MessageEntity> messageEntities, string result) GetMessageEntities(string text)
+    {
+        var split = text.Split("**");
+        var messageEntities = new List<MessageEntity>();
+
+        StringBuilder builder = new StringBuilder();
+
+        var isBold = false;
+        foreach (var part in split)
+        {
+            if (isBold)
+            {
+                if (part.Length > 0)
+                {
+                    messageEntities.Add(new()
+                    {
+                        Type = "bold",
+                        Offset = builder.Length,
+                        Length = part.Length
+                    });
+                }
+            }
+
+            builder.Append(part);
+
+            isBold = !isBold;
+        }
+
+        var result = builder.ToString();
+        return (messageEntities, result);
+    }
+
+    private async Task Typing(Update update)
+    {
+        await _api.SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
+    }
+
+    private async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var last = await _songsDatabase.Interactions.Where(x => x.InteractionType == InteractionType.OwnChatterMessage).OrderBy(x => x.Id).LastAsync(cancellationToken);
+                if (last.Id != lastUpdateId)
+                {
+                    await cancellationTokenSource.CancelAsync();
+                    return;
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error checking for updates.");
+        }
+    }
+
+    private async void LongTyping(Update update, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Typing(update);
+                await Task.Delay(3000, cancellationToken);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error sending typing events.");
+        }
     }
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (!CheckTopicId(update, TelegramOptions.OwnChatterTopicId)) return false;
+        if (!CheckTopicId(update, _telegramOptions.OwnChatterTopicId)) return false;
 
         await Log(update, InteractionType.OwnChatterMessage);
 
@@ -49,7 +229,7 @@ public class OwnChatterHandler : ChatterHandler
     {
         var since = DateTime.Now.AddDays(-1);
 
-        var interactions = await SongsDatabase.Interactions
+        var interactions = await _songsDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterMessage ||
                         x.InteractionType == InteractionType.OwnChatterMemoryPoint ||
                         x.InteractionType == InteractionType.OwnChatterResetDialog)
@@ -67,7 +247,7 @@ public class OwnChatterHandler : ChatterHandler
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var parameters = await SongsDatabase.Interactions
+        var parameters = await _songsDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterSystemMessage
                         || x.InteractionType == InteractionType.OwnChatterVersion
                         || x.InteractionType == InteractionType.OwnChatterImagesVersion
@@ -130,7 +310,7 @@ public class OwnChatterHandler : ChatterHandler
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "Error requesting the data.");
+            _logger.LogError(e, "Error requesting the data.");
             await SendMessage(update, "Случилась ошибка. :(", true);
             return;
         }
@@ -146,15 +326,15 @@ public class OwnChatterHandler : ChatterHandler
             return;
         }
 
-        SongsDatabase.Interactions.Add(new()
+        _songsDatabase.Interactions.Add(new()
         {
             CreatedOn = DateTime.Now,
             InteractionType = InteractionType.OwnChatterMemoryPoint,
             Serialized = JsonSerializer.Serialize(newMessagePoint),
             ShortInfoSerialized = JsonSerializer.Serialize(result),
-            UserId = TelegramOptions.BotId,
+            UserId = _telegramOptions.BotId,
         });
-        await SongsDatabase.SaveChangesAsyncX(cancellationToken: default);
+        await _songsDatabase.SaveChangesAsyncX(cancellationToken: default);
 
         var text = result.Text;
         if (result.IsTopicChangeDetected)
@@ -179,7 +359,7 @@ public class OwnChatterHandler : ChatterHandler
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Error sending the image.");
+                _logger.LogError(e, "Error sending the image.");
             }
         }
 
