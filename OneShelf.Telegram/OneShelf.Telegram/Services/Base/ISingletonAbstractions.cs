@@ -5,7 +5,7 @@ namespace OneShelf.Telegram.Services.Base;
 public interface ISingletonAbstractions
 {
     List<List<Type>> GetCommandsGrid();
-    Type GetDefaultCommand();
+    Type? GetDefaultCommand();
     Type GetHelpCommand();
     Markdown GetStartResponse();
     Markdown GetHelpResponseHeader();

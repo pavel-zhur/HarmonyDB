@@ -20,7 +20,7 @@ public class SingletonAbstractions : ISingletonAbstractions
         ]
     ];
 
-    public Type GetDefaultCommand() => typeof(Default);
+    public Type? GetDefaultCommand() => null;
 
     public Type GetHelpCommand() => typeof(Help);
 

@@ -26,5 +26,9 @@ public class AvailableCommands
 
 
     public (Type commandType, CommandAttribute attribute) Help => GetCommands(Role.Regular).Single(x => x.commandType == _singletonAbstractions.GetHelpCommand());
-    public (Type commandType, CommandAttribute attribute) Default => GetCommands(Role.Regular).Single(x => x.commandType == _singletonAbstractions.GetDefaultCommand());
+
+    public (Type commandType, CommandAttribute attribute)? Default
+        => _singletonAbstractions.GetDefaultCommand() == null
+            ? null
+            : GetCommands(Role.Regular).Single(x => x.commandType == _singletonAbstractions.GetDefaultCommand());
 }

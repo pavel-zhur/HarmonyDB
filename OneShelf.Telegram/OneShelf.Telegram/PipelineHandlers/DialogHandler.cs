@@ -115,9 +115,15 @@ public class DialogHandler : PipelineHandler
             }
             else
             {
-                _ioFactory.InitDialog(userId, _availableCommands.Default.attribute.Alias, null);
+                var @default = _availableCommands.Default;
+                if (!@default.HasValue)
+                {
+                    return false;
+                }
+
+                _ioFactory.InitDialog(userId, @default.Value.attribute.Alias, null);
                 _ioFactory.Io.GetMemory().NewInput(text);
-                command = _availableCommands.Default.commandType;
+                command = @default.Value.commandType;
             }
         }
         else // new command
@@ -175,7 +181,7 @@ public class DialogHandler : PipelineHandler
                             {
                                 IsDisabled = true,
                             },
-                            ParseMode = Telegram.Helpers.Constants.MarkdownV2,
+                            ParseMode = Constants.MarkdownV2,
                             ReplyParameters = new()
                             {
                                 MessageId = update.Message.MessageId,

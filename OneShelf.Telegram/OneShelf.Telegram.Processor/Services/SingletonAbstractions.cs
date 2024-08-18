@@ -159,7 +159,7 @@ public class SingletonAbstractions : ISingletonAbstractions
 
         ];
 
-    public Type GetDefaultCommand() => typeof(Search);
+    public Type? GetDefaultCommand() => typeof(Search);
 
     public Type GetHelpCommand() => typeof(Help);
 
