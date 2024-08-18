@@ -1,4 +1,5 @@
-﻿using OneShelf.OneDragon.Database.Model.Enums;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using OneShelf.OneDragon.Database.Model.Enums;
 
 namespace OneShelf.OneDragon.Database.Model;
 
@@ -20,5 +21,6 @@ public class Interaction
 
     public string Serialized { get; set; } = null!;
 
+    [Column(TypeName = "nvarchar(50)")]
     public InteractionType InteractionType { get; set; }
 }
