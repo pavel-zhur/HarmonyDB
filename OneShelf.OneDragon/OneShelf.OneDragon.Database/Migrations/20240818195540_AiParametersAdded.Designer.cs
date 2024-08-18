@@ -12,8 +12,8 @@ using OneShelf.OneDragon.Database;
 namespace OneShelf.OneDragon.Database.Migrations
 {
     [DbContext(typeof(DragonDatabase))]
-    [Migration("20240818142556_Initial")]
-    partial class Initial
+    [Migration("20240818195540_AiParametersAdded")]
+    partial class AiParametersAdded
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,16 +25,61 @@ namespace OneShelf.OneDragon.Database.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("OneShelf.OneDragon.Database.Model.AiParameters", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DalleVersion")
+                        .HasColumnType("int");
+
+                    b.Property<float?>("FrequencyPenalty")
+                        .HasColumnType("real");
+
+                    b.Property<string>("GptVersion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float?>("PresencePenalty")
+                        .HasColumnType("real");
+
+                    b.Property<string>("SystemMessage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AiParameters");
+                });
+
             modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Chat", b =>
                 {
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsForum")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -58,7 +103,7 @@ namespace OneShelf.OneDragon.Database.Migrations
 
                     b.Property<string>("InteractionType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Serialized")
                         .IsRequired()
@@ -67,6 +112,9 @@ namespace OneShelf.OneDragon.Database.Migrations
                     b.Property<string>("ShortInfoSerialized")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UpdateId")
+                        .HasColumnType("int");
+
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
@@ -74,9 +122,30 @@ namespace OneShelf.OneDragon.Database.Migrations
 
                     b.HasIndex("ChatId");
 
+                    b.HasIndex("UpdateId");
+
                     b.HasIndex("UserId");
 
+                    b.HasIndex("InteractionType", "UserId", "ChatId", "CreatedOn");
+
                     b.ToTable("Interactions");
+                });
+
+            modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Update", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Updates");
                 });
 
             modelBuilder.Entity("OneShelf.OneDragon.Database.Model.User", b =>
@@ -114,6 +183,12 @@ namespace OneShelf.OneDragon.Database.Migrations
                         .WithMany("Interactions")
                         .HasForeignKey("ChatId");
 
+                    b.HasOne("OneShelf.OneDragon.Database.Model.Update", "Update")
+                        .WithMany("Interactions")
+                        .HasForeignKey("UpdateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("OneShelf.OneDragon.Database.Model.User", "User")
                         .WithMany("Interactions")
                         .HasForeignKey("UserId")
@@ -122,10 +197,17 @@ namespace OneShelf.OneDragon.Database.Migrations
 
                     b.Navigation("Chat");
 
+                    b.Navigation("Update");
+
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Chat", b =>
+                {
+                    b.Navigation("Interactions");
+                });
+
+            modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Update", b =>
                 {
                     b.Navigation("Interactions");
                 });

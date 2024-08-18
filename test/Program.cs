@@ -34,5 +34,6 @@ internal class Program
         var host = builder.Build();
 
         await host.Services.GetRequiredService<DragonDatabase>().Database.MigrateAsync();
+        await host.Services.GetRequiredService<DogDatabase>().Database.MigrateAsync();
     }
 }

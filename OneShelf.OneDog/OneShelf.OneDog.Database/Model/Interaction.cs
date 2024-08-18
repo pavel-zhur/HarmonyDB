@@ -4,7 +4,7 @@ using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.OneDog.Database.Model;
 
-[Index(nameof(InteractionType), nameof(CreatedOn))]
+[Index(nameof(InteractionType), nameof(DomainId), nameof(CreatedOn))]
 public class Interaction : IInteraction<InteractionType>
 {
     public int Id { get; set; }

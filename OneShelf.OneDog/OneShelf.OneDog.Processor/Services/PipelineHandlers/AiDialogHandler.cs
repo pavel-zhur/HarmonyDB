@@ -25,22 +25,26 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions,
         DogContext dogContext)
-        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, telegramOptions.Value)
+        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, telegramOptions)
     {
         _dogDatabase = dogDatabase;
         _dogContext = dogContext;
+    }
+
+    protected override void OnInitializing(Update update)
+    {
+        _dogDatabase.InitializeInteractionsRepositoryScope(_dogContext.DomainId);
     }
 
     protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Id != _dogContext.Domain.ChatId) return false;
         if (update.Message.MessageThreadId != _dogContext.Domain.TopicId) return false;
-        if (update.Message.From == null) return false;
 
         return true;
     }
 
-    protected override IInteraction<InteractionType> CreateInteraction() => new Interaction
+    protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction
     {
         DomainId = _dogContext.DomainId,
     };

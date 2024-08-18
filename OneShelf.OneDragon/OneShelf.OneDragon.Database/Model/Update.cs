@@ -1,8 +1,11 @@
-﻿namespace OneShelf.OneDragon.Database.Model;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace OneShelf.OneDragon.Database.Model;
 
 public class Update
 {
-    public int Id { get; set; }
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public required int Id { get; set; }
 
     public required DateTime CreatedOn { get; set; }
 

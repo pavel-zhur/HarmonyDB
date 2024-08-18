@@ -23,6 +23,7 @@ public class UpdatesCollector : PipelineHandler
     {
         var dbUpdate = new Database.Model.Update
         {
+            Id = update.UpdateId,
             CreatedOn = DateTime.Now,
             Json = JsonSerializer.Serialize(update, new JsonSerializerOptions
             {

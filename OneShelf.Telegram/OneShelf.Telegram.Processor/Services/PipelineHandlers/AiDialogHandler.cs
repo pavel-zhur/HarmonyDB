@@ -25,7 +25,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         SongsDatabase songsDatabase,
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions)
-        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, telegramOptions.Value)
+        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, telegramOptions)
     {
         _songsDatabase = songsDatabase;
         _telegramOptions = telegramOptions.Value;
@@ -35,12 +35,11 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     {
         if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
         if (update.Message.MessageThreadId != _telegramOptions.OwnChatterTopicId) return false;
-        if (update.Message.From == null) return false;
 
         return true;
     }
 
-    protected override IInteraction<InteractionType> CreateInteraction() => new Interaction();
+    protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction();
 
     protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => default;
 

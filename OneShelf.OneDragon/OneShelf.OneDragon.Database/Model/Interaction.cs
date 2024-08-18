@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using OneShelf.OneDragon.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.OneDragon.Database.Model;
 
+[Index(nameof(InteractionType), nameof(UserId), nameof(ChatId), nameof(CreatedOn))]
 public class Interaction : IInteraction<InteractionType>
 {
     public int Id { get; set; }

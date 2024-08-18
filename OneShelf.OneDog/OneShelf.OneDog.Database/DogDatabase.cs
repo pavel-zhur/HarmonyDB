@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using OneShelf.OneDog.Database.Model;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
@@ -30,9 +31,19 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
 
     #region IInteractionsRepository
 
+    private Expression<Func<Interaction, bool>>? _scopeFilter;
+
+    public void InitializeInteractionsRepositoryScope(int domainId)
+    {
+        if (_scopeFilter != null)
+            throw new("Already initialized.");
+
+        _scopeFilter = i => i.DomainId == domainId;
+    }
+
     Task<List<IInteraction<InteractionType>>> IInteractionsRepository<InteractionType>.Get(Func<IQueryable<IInteraction<InteractionType>>, IQueryable<IInteraction<InteractionType>>> query)
     {
-        return query(Interactions).ToListAsync();
+        return query(Interactions.Where(_scopeFilter ?? throw new("Not initialized."))).ToListAsync();
     }
 
     async Task IInteractionsRepository<InteractionType>.Add(List<IInteraction<InteractionType>> interactions)

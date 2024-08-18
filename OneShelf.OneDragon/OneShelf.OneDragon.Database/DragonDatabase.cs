@@ -2,6 +2,7 @@
 using OneShelf.OneDragon.Database.Model;
 using OneShelf.OneDragon.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
+using System.Linq.Expressions;
 
 namespace OneShelf.OneDragon.Database;
 
@@ -19,6 +20,8 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
     
     public required DbSet<Update> Updates { get; set; }
 
+    public required DbSet<AiParameters> AiParameters { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -30,9 +33,19 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
 
     #region IInteractionsRepository
 
+    private Expression<Func<Interaction, bool>>? _scopeFilter;
+
+    public void InitializeInteractionsRepositoryScope(long userId, long chatId)
+    {
+        if (_scopeFilter != null)
+            throw new("Already initialized.");
+
+        _scopeFilter = i => i.UserId == userId && i.ChatId == chatId;
+    }
+
     Task<List<IInteraction<InteractionType>>> IInteractionsRepository<InteractionType>.Get(Func<IQueryable<IInteraction<InteractionType>>, IQueryable<IInteraction<InteractionType>>> query)
     {
-        return query(Interactions).ToListAsync();
+        return query(Interactions.Where(_scopeFilter ?? throw new("Not initialized."))).ToListAsync();
     }
 
     async Task IInteractionsRepository<InteractionType>.Add(List<IInteraction<InteractionType>> interactions)

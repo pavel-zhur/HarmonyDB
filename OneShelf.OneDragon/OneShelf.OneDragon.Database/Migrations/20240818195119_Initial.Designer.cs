@@ -12,8 +12,8 @@ using OneShelf.OneDragon.Database;
 namespace OneShelf.OneDragon.Database.Migrations
 {
     [DbContext(typeof(DragonDatabase))]
-    [Migration("20240818144007_AllUpdates")]
-    partial class AllUpdates
+    [Migration("20240818195119_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,16 +25,44 @@ namespace OneShelf.OneDragon.Database.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("OneShelf.OneDragon.Database.Model.AiParameters", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AiParameters");
+                });
+
             modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Chat", b =>
                 {
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsForum")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -81,16 +109,15 @@ namespace OneShelf.OneDragon.Database.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("InteractionType", "UserId", "ChatId", "CreatedOn");
+
                     b.ToTable("Interactions");
                 });
 
             modelBuilder.Entity("OneShelf.OneDragon.Database.Model.Update", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");

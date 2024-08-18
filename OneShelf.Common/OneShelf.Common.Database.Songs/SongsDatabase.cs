@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Common.Database.Songs.Model;
@@ -205,6 +206,11 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
     }
 
     #region IInteractionsRepository
+
+    public void Initialize(Expression<Func<IInteraction<InteractionType>, bool>> scopeFilter)
+    {
+        throw new InvalidOperationException();
+    }
 
     Task<List<IInteraction<InteractionType>>> IInteractionsRepository<InteractionType>.Get(Func<IQueryable<IInteraction<InteractionType>>, IQueryable<IInteraction<InteractionType>>> query)
     {

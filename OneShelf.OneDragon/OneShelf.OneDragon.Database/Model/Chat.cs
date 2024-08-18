@@ -14,4 +14,10 @@ public class Chat
     public string? Title { get; set; }
 
     public ICollection<Interaction> Interactions { get; init; } = null!;
+
+    public required DateTime CreatedOn { get; init; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? UserName { get; set; }
+    public bool? IsForum { get; set; }
 }

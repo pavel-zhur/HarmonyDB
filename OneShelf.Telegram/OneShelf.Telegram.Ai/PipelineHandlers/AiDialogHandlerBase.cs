@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Common.OpenAi.Models;
 using OneShelf.Common.OpenAi.Models.Memory;
@@ -24,18 +25,18 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected readonly DialogRunner _dialogRunner;
     protected readonly TelegramOptions _telegramOptions;
 
-    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, TelegramOptions telegramOptions) 
+    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, IOptions<TelegramOptions> telegramOptions) 
         : base(scopedAbstractions)
     {
         _logger = logger;
         _repository = repository;
         _dialogRunner = dialogRunner;
-        _telegramOptions = telegramOptions;
+        _telegramOptions = telegramOptions.Value;
     }
 
     protected async Task Log(Update update, TInteractionType interactionType, DateTime now)
     {
-        var interaction = CreateInteraction();
+        var interaction = CreateInteraction(update);
         interaction.CreatedOn = now;
         interaction.InteractionType = interactionType;
         interaction.UserId = update.Message!.From!.Id;
@@ -44,7 +45,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         await _repository.Add(interaction.Once().ToList());
     }
 
-    protected abstract IInteraction<TInteractionType> CreateInteraction();
+    protected abstract IInteraction<TInteractionType> CreateInteraction(Update update);
 
     protected async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
     {
@@ -204,7 +205,11 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected override async Task<bool> HandleSync(Update update)
     {
+        if (update.Message?.From == null) return false;
+
         if (!CheckRelevant(update)) return false;
+
+        OnInitializing(update);
 
         var now = DateTime.Now;
         await Log(update, _repository.OwnChatterMessage, now);
@@ -216,6 +221,10 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         }
 
         return false;
+    }
+
+    protected virtual void OnInitializing(Update update)
+    {
     }
 
     protected async Task Respond(Update update, DateTime now)
@@ -307,7 +316,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             return;
         }
 
-        var interaction = CreateInteraction();
+        var interaction = CreateInteraction(update);
         interaction.CreatedOn = now;
         interaction.InteractionType = _repository.OwnChatterMemoryPoint;
         interaction.Serialized = JsonSerializer.Serialize(newMessagePoint);
@@ -317,7 +326,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         if (result.Images.Any())
         {
-            interaction = CreateInteraction();
+            interaction = CreateInteraction(update);
             interaction.CreatedOn = now;
             interaction.InteractionType = imagesUnavailableUntil.HasValue ? _repository.ImagesLimit : _repository.ImagesSuccess;
             interaction.Serialized = result.Images.Count.ToString();
