@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
     <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj" />
+    <ProjectReference Include="..\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj" />
   </ItemGroup>
 
 </Project>

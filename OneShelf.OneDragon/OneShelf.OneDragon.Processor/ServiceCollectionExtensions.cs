@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneShelf.Common.OpenAi;
+using OneShelf.OneDragon.Database;
 using OneShelf.OneDragon.Processor.Commands;
 using OneShelf.OneDragon.Processor.Model;
+using OneShelf.OneDragon.Processor.PipelineHandlers;
 using OneShelf.OneDragon.Processor.Services;
 using OneShelf.Telegram;
 using OneShelf.Telegram.Commands;
@@ -25,10 +27,12 @@ public static class ServiceCollectionExtensions
                     .AddCommand<UpdateCommands>()
                     .AddCommand<Default>()
 
+                    .AddPipelineHandlerInOrder<UsersCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                 );
 
         services
+            .AddDragonDatabase()
             .AddOpenAi(configuration);
 
         return services;
