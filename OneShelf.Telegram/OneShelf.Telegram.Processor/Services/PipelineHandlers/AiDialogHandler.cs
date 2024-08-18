@@ -14,13 +14,13 @@ using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public class OwnChatterHandler : ChatterHandlerBase<InteractionType>
+public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 {
     private readonly SongsDatabase _songsDatabase;
     private new readonly TelegramOptions _telegramOptions;
 
-    public OwnChatterHandler(
-        ILogger<OwnChatterHandler> logger,
+    public AiDialogHandler(
+        ILogger<AiDialogHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase,
         DialogRunner dialogRunner, 
@@ -31,7 +31,7 @@ public class OwnChatterHandler : ChatterHandlerBase<InteractionType>
         _telegramOptions = telegramOptions.Value;
     }
     
-    protected override bool CheckTopicId(Update update)
+    protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
         if (update.Message.MessageThreadId != _telegramOptions.OwnChatterTopicId) return false;

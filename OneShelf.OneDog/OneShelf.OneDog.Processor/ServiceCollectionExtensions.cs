@@ -37,7 +37,7 @@ public static class ServiceCollectionExtensions
                     .AddPipelineHandlerInOrder<UsersCollector>()
                     .AddPipelineHandlerInOrder<ChatsCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
-                    .AddPipelineHandlerInOrder<OwnChatterHandler>()
+                    .AddPipelineHandlerInOrder<AiDialogHandler>()
                 );
 
         services

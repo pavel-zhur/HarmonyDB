@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using OneShelf.OneDragon.Database.Model.Enums;
+using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.OneDragon.Database.Model;
 
-public class Interaction
+public class Interaction : IInteraction<InteractionType>
 {
     public int Id { get; set; }
 

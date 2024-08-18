@@ -13,13 +13,13 @@ using OneShelf.OneDog.Database.Model;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
-public class OwnChatterHandler : ChatterHandlerBase<InteractionType>
+public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 {
     private readonly DogContext _dogContext;
     private readonly DogDatabase _dogDatabase;
 
-    public OwnChatterHandler(
-        ILogger<OwnChatterHandler> logger,
+    public AiDialogHandler(
+        ILogger<AiDialogHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
         DialogRunner dialogRunner, 
@@ -31,7 +31,7 @@ public class OwnChatterHandler : ChatterHandlerBase<InteractionType>
         _dogContext = dogContext;
     }
 
-    protected override bool CheckTopicId(Update update)
+    protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Id != _dogContext.Domain.ChatId) return false;
         if (update.Message.MessageThreadId != _dogContext.Domain.TopicId) return false;

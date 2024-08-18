@@ -73,7 +73,7 @@ public static class ServiceCollectionExtensions
                     .AddPipelineHandlerInOrder<ChosenInlineResultCollector>()
                     .AddPipelineHandlerInOrder<PinsRemover>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
-                    .AddPipelineHandlerInOrder<OwnChatterHandler>()
+                    .AddPipelineHandlerInOrder<AiDialogHandler>()
                     .AddPipelineHandlerInOrder<PublicImportHandler>()
                 );
 

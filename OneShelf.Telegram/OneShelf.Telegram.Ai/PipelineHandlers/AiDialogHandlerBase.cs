@@ -15,16 +15,16 @@ using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Ai.PipelineHandlers;
 
-public abstract class ChatterHandlerBase<TInteractionType> : PipelineHandler
+public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 {
     private TelegramBotClient? _api;
     
-    protected readonly ILogger<ChatterHandlerBase<TInteractionType>> _logger;
+    protected readonly ILogger<AiDialogHandlerBase<TInteractionType>> _logger;
     protected readonly IInteractionsRepository<TInteractionType> _repository;
     protected readonly DialogRunner _dialogRunner;
     protected readonly TelegramOptions _telegramOptions;
 
-    protected ChatterHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<ChatterHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, TelegramOptions telegramOptions) 
+    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, TelegramOptions telegramOptions) 
         : base(scopedAbstractions)
     {
         _logger = logger;
@@ -204,7 +204,7 @@ public abstract class ChatterHandlerBase<TInteractionType> : PipelineHandler
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (!CheckTopicId(update)) return false;
+        if (!CheckRelevant(update)) return false;
 
         var now = DateTime.Now;
         await Log(update, _repository.OwnChatterMessage, now);
@@ -358,7 +358,7 @@ public abstract class ChatterHandlerBase<TInteractionType> : PipelineHandler
         }
     }
 
-    protected abstract bool CheckTopicId(Update update);
+    protected abstract bool CheckRelevant(Update update);
 
     protected abstract Task<DateTime?> GetImagesUnavailableUntil(DateTime now);
 
