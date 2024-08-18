@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Options;
@@ -27,7 +28,7 @@ public class Pipeline
         _logger = logger;
         _telegramContext = telegramContext;
         _scopedAbstractions = scopedAbstractions;
-        _pipeline = telegramTypes.Value.PipelineHandlers.Select(serviceProvider.GetService).Cast<PipelineHandler>().ToList();
+        _pipeline = telegramTypes.Value.PipelineHandlers.Select(serviceProvider.GetRequiredService).Cast<PipelineHandler>().ToList();
     }
 
     /// <summary>

@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
                 );
 
         services
+            .AddScoped<DogContext>()
             .AddOpenAi(configuration);
 
         return services;

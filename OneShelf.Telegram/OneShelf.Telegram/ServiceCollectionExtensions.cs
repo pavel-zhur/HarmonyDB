@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;
@@ -12,20 +13,7 @@ public static class ServiceCollectionExtensions
         where TScopedAbstractions : class, IScopedAbstractions
         where TSingletonAbstractions : class, ISingletonAbstractions
     {
-        services.Configure<TelegramTypes>(o =>
-        {
-            telegramOptionsBuilder(new(o));
-
-            foreach (var command in o.Commands)
-            {
-                services.AddScoped(command);
-            }
-
-            foreach (var pipelineHandler in o.PipelineHandlers)
-            {
-                services.AddScoped(pipelineHandler);
-            }
-        });
+        services.Configure<TelegramTypes>(o => telegramOptionsBuilder(new(o)));
 
         services
             .AddSingleton<DialogHandlerMemory>()
@@ -37,6 +25,19 @@ public static class ServiceCollectionExtensions
             .AddSingleton<AvailableCommands>()
             .AddScoped<Pipeline>()
             .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io);
+
+        TelegramTypes telegramTypes = new();
+        telegramOptionsBuilder(new(telegramTypes));
+
+        foreach (var command in telegramTypes.Commands)
+        {
+            services.AddScoped(command);
+        }
+
+        foreach (var pipelineHandler in telegramTypes.PipelineHandlers)
+        {
+            services.AddScoped(pipelineHandler);
+        }
 
         return services;
     }
