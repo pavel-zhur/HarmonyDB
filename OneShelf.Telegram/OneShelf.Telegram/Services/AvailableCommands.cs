@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Services;

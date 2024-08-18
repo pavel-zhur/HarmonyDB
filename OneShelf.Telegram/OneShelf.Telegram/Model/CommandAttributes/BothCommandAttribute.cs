@@ -1,6 +1,4 @@
-﻿using OneShelf.Telegram.Model;
-
-namespace OneShelf.Telegram.Processor.Model.CommandAttributes;
+﻿namespace OneShelf.Telegram.Model.CommandAttributes;
 
 public class BothCommandAttribute : CommandAttribute
 {

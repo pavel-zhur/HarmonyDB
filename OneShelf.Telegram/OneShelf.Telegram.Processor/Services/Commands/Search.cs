@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using OneShelf.Telegram.Services.Base;
 using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
 

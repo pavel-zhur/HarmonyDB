@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Telegram.Model;
+﻿namespace OneShelf.Telegram.Model.CommandAttributes;
 
 public class CommandAttribute : Attribute
 {

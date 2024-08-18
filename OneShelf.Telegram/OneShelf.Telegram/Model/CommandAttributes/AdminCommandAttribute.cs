@@ -1,6 +1,4 @@
-﻿using OneShelf.Telegram.Model;
-
-namespace OneShelf.OneDragon.Processor.Model.CommandAttributes;
+﻿namespace OneShelf.Telegram.Model.CommandAttributes;
 
 public class AdminCommandAttribute : CommandAttribute
 {
