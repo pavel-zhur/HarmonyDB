@@ -196,7 +196,7 @@ public class DialogHandler : PipelineHandler
             var startOrHelp = command == typeof(Help) || command == typeof(Start);
             if (!startOrHelp)
             {
-                finish.ReplyMessageBody += $"{Environment.NewLine}{_singletonAbstractions}";
+                finish.ReplyMessageBody += $"{Environment.NewLine}{_singletonAbstractions.GetDialogContinuation()}";
             }
 
             completed = true;
