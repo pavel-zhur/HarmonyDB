@@ -1,5 +1,4 @@
-﻿using OneShelf.Common;
-using OneShelf.Telegram.Model;
+﻿using OneShelf.Telegram.Model;
 
 namespace OneShelf.Telegram.Helpers;
 
@@ -16,16 +15,4 @@ public static class StringHelper
     public static Markdown Bold(this Markdown text) => Markdown.UnsafeFromMarkdownString($"*{text}*");
     
     public static Markdown Bold(this string text) => text.ToMarkdown().Bold();
-
-    public static string GetUserTitle(this (long Id, string FirstName, string? LastName, string? Username) user)
-    {
-        return string
-            .Join(" ", new[]
-            {
-                user.FirstName,
-                user.LastName
-            }.Where(x => !string.IsNullOrWhiteSpace(x)))
-            .SelectSingle(x => string.IsNullOrWhiteSpace(x) ? user.Username : x)
-            .SelectSingle(x => string.IsNullOrWhiteSpace(x) ? user.Id.ToString() : x);
-    }
 }
