@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         where TScopedAbstractions : class, IScopedAbstractions
         where TSingletonAbstractions : class, ISingletonAbstractions
     {
+        services.Configure<TelegramOptions>(options => configuration.Bind(nameof(TelegramOptions), options));
         services.Configure<TelegramTypes>(o => telegramOptionsBuilder(new(o)));
 
         services
