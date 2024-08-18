@@ -11,6 +11,7 @@ using OneShelf.Telegram.PipelineHandlers;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Services.Base;
 using System.Text;
+using OneShelf.Telegram.Ai.PipelineHandlers;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -103,7 +104,8 @@ public class OwnChatterHandler : ChatterHandlerBase
 
     private async Task Respond(Update update)
     {
-        var since = DateTime.Now.AddDays(-1);
+        var now = DateTime.Now;
+        var since = now.AddDays(-1);
 
         var interactions = await _songsDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterMessage ||
@@ -114,6 +116,8 @@ public class OwnChatterHandler : ChatterHandlerBase
             .OrderByDescending(x => x.CreatedOn)
             .Take(20)
             .ToListAsync();
+        
+        var imagesUnavailableUntil = await GetImagesUnavailableUntil(now);
 
         interactions = interactions.AsEnumerable().Reverse().ToList();
 
@@ -123,21 +127,7 @@ public class OwnChatterHandler : ChatterHandlerBase
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var parameters = await _songsDatabase.Interactions
-            .Where(x => x.InteractionType == InteractionType.OwnChatterSystemMessage
-                        || x.InteractionType == InteractionType.OwnChatterVersion
-                        || x.InteractionType == InteractionType.OwnChatterImagesVersion
-                        || x.InteractionType == InteractionType.OwnChatterFrequencyPenalty
-                        || x.InteractionType == InteractionType.OwnChatterPresencePenalty)
-            .GroupBy(x => x.InteractionType)
-            .Select(x => x.OrderByDescending(x => x.CreatedOn).FirstOrDefault())
-            .ToListAsync();
-
-        var system = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterSystemMessage)?.Serialized;
-        var version = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterVersion)?.Serialized;
-        var frequencyPenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterFrequencyPenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
-        var presencePenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterPresencePenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
-        var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
+        var (system, version, frequencyPenalty, presencePenalty, imagesVersion) = await GetAiParameters();
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
@@ -162,6 +152,7 @@ public class OwnChatterHandler : ChatterHandlerBase
                 return;
             }
 
+            var (additionalBillingInfo, dogContextDomainId) = GetDialogConfigurationParameters();
             (result, newMessagePoint) = await _dialogRunner.Execute(existingMemory, new()
             {
                 Version = version ?? throw new("The version is required."),
@@ -171,9 +162,9 @@ public class OwnChatterHandler : ChatterHandlerBase
                 ImagesVersion = imagesVersion,
                 UserId = update.Message?.From?.Id,
                 UseCase = "own chatter",
-                AdditionalBillingInfo = null,
-                DomainId = null,
-            }, checkingIsStillLast.Token);
+                AdditionalBillingInfo = additionalBillingInfo,
+                DomainId = dogContextDomainId,
+            }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)
             {
@@ -202,23 +193,15 @@ public class OwnChatterHandler : ChatterHandlerBase
             return;
         }
 
-        _songsDatabase.Interactions.Add(new()
-        {
-            CreatedOn = DateTime.Now,
-            InteractionType = InteractionType.OwnChatterMemoryPoint,
-            Serialized = JsonSerializer.Serialize(newMessagePoint),
-            ShortInfoSerialized = JsonSerializer.Serialize(result),
-            UserId = _telegramOptions.BotId,
-        });
-        await _songsDatabase.SaveChangesAsyncX(cancellationToken: default);
-
+        await SavePoint(now, newMessagePoint, result, imagesUnavailableUntil);
+        
         var text = result.Text;
         if (result.IsTopicChangeDetected)
         {
             text = $"⟳ {text}";
         }
 
-        if (result.Images.Any())
+        if (result.Images.Any() && !imagesUnavailableUntil.HasValue)
         {
             try
             {
@@ -243,5 +226,44 @@ public class OwnChatterHandler : ChatterHandlerBase
         {
             await SendMessage(update, text, false);
         }
+    }
+
+    private async Task SavePoint(DateTime now, ChatBotMemoryPointWithTraces newMessagePoint, DialogResult result,
+        DateTime? imagesUnavailableUntil)
+    {
+        _songsDatabase.Interactions.Add(new()
+        {
+            CreatedOn = now,
+            InteractionType = InteractionType.OwnChatterMemoryPoint,
+            Serialized = JsonSerializer.Serialize(newMessagePoint),
+            ShortInfoSerialized = JsonSerializer.Serialize(result),
+            UserId = _telegramOptions.BotId,
+        });
+
+        await _songsDatabase.SaveChangesAsyncX(cancellationToken: default);
+    }
+
+    private (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => default;
+
+    private async Task<DateTime?> GetImagesUnavailableUntil(DateTime now) => null;
+
+    private async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
+    {
+        var parameters = await _songsDatabase.Interactions
+            .Where(x => x.InteractionType == InteractionType.OwnChatterSystemMessage
+                        || x.InteractionType == InteractionType.OwnChatterVersion
+                        || x.InteractionType == InteractionType.OwnChatterImagesVersion
+                        || x.InteractionType == InteractionType.OwnChatterFrequencyPenalty
+                        || x.InteractionType == InteractionType.OwnChatterPresencePenalty)
+            .GroupBy(x => x.InteractionType)
+            .Select(x => x.OrderByDescending(x => x.CreatedOn).FirstOrDefault())
+            .ToListAsync();
+
+        var system = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterSystemMessage)?.Serialized;
+        var version = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterVersion)?.Serialized;
+        var frequencyPenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterFrequencyPenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
+        var presencePenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterPresencePenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
+        var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
+        return (system, version, frequencyPenalty, presencePenalty, imagesVersion);
     }
 }

@@ -201,6 +201,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Polling",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.TelegramLibrary", "OneShelf.TelegramLibrary", "{FE163498-92F2-4216-B757-BFA3C3C6C0D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Ai", "OneShelf.Telegram\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj", "{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Ai.Model", "OneShelf.Telegram\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj", "{DC7B80CC-E597-4E67-9FFB-33DB252EC321}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -495,6 +499,14 @@ Global
 		{76C5E207-6028-4083-84C5-DAC7839D1F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76C5E207-6028-4083-84C5-DAC7839D1F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76C5E207-6028-4083-84C5-DAC7839D1F85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC7B80CC-E597-4E67-9FFB-33DB252EC321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC7B80CC-E597-4E67-9FFB-33DB252EC321}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC7B80CC-E597-4E67-9FFB-33DB252EC321}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC7B80CC-E597-4E67-9FFB-33DB252EC321}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -573,6 +585,8 @@ Global
 		{DF960A56-A097-4220-A8FE-B9714680F87D} = {950D96F8-860E-4EE6-A8EC-8ECCC6BE480F}
 		{8DB5C0DC-C738-4CC4-A281-392A65ED4743} = {950D96F8-860E-4EE6-A8EC-8ECCC6BE480F}
 		{76C5E207-6028-4083-84C5-DAC7839D1F85} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
+		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
+		{DC7B80CC-E597-4E67-9FFB-33DB252EC321} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}

@@ -7,7 +7,7 @@ using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
 
-namespace OneShelf.Telegram.PipelineHandlers;
+namespace OneShelf.Telegram.Ai.PipelineHandlers;
 
 public abstract class ChatterHandlerBase : PipelineHandler
 {
