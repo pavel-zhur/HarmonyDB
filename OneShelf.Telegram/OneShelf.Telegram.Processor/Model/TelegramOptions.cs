@@ -23,8 +23,6 @@ public record TelegramOptions : Options.TelegramOptions
 
     public string BotUsername { get; set; } = null!;
 
-    public int PublicChatterTopicId { get; set; }
-    
     public int OwnChatterTopicId { get; set; }
 
     public string NeverPromoteResponseStickerFileId { get; set; }

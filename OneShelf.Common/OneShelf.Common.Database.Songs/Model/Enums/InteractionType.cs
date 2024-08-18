@@ -7,6 +7,8 @@ public enum InteractionType
     InlineQuery,
     ChosenInlineResult,
     PdfGeneration,
+
+    [Obsolete]
     PublicChatterMessage,
     OwnChatterMessage,
 

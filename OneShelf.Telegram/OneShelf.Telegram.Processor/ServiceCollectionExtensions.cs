@@ -74,7 +74,6 @@ public static class ServiceCollectionExtensions
                     .AddPipelineHandlerInOrder<PinsRemover>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                     .AddPipelineHandlerInOrder<OwnChatterHandler>()
-                    .AddPipelineHandlerInOrder<PublicChatterHandler>()
                     .AddPipelineHandlerInOrder<PublicImportHandler>()
                 );
 
