@@ -1,55 +1,51 @@
-﻿using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneShelf.Common.Database.Songs;
-using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Telegram.Commands;
+using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Model.Ios;
-using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Services.Commands;
-using OneShelf.Telegram.Services.Base;
-using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
-using Constants = OneShelf.Telegram.Helpers.Constants;
-using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
-namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
+namespace OneShelf.Telegram.PipelineHandlers;
 
 public class DialogHandler : PipelineHandler
 {
     private readonly ILogger<DialogHandler> _logger;
     private readonly TelegramOptions _telegramOptions;
-    private readonly SongsDatabase _songsDatabase;
     private readonly DialogHandlerMemory _dialogHandlerMemory;
     private readonly AvailableCommands _availableCommands;
     private readonly IoFactory _ioFactory;
     private readonly IServiceProvider _serviceProvider;
+    private readonly TelegramContext _telegramContext;
+    private readonly ISingletonAbstractions _singletonAbstractions;
 
     public DialogHandler(
         ILogger<DialogHandler> logger, 
         IOptions<TelegramOptions> telegramOptions, 
-        SongsDatabase songsDatabase,
         DialogHandlerMemory dialogHandlerMemory,
         IoFactory ioFactory,
         IServiceProvider serviceProvider, 
         AvailableCommands availableCommands, 
-        IScopedAbstractions scopedAbstractions)
+        IScopedAbstractions scopedAbstractions, 
+        TelegramContext telegramContext,
+        ISingletonAbstractions singletonAbstractions)
         : base(scopedAbstractions)
     {
         _logger = logger;
         _telegramOptions = telegramOptions.Value;
-        _songsDatabase = songsDatabase;
         _dialogHandlerMemory = dialogHandlerMemory;
         _ioFactory = ioFactory;
         _serviceProvider = serviceProvider;
         _availableCommands = availableCommands;
+        _telegramContext = telegramContext;
+        _singletonAbstractions = singletonAbstractions;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -60,15 +56,7 @@ public class DialogHandler : PipelineHandler
         var isAdmin = _telegramOptions.IsAdmin(userId);
         var text = update.Message.Text?.Trim();
 
-        _songsDatabase.Interactions.Add(new()
-        {
-            InteractionType = InteractionType.Dialog,
-            UserId = userId,
-            CreatedOn = DateTime.Now,
-            Serialized = JsonSerializer.Serialize(update),
-            ShortInfoSerialized = text,
-        });
-        await _songsDatabase.SaveChangesAsyncX();
+        await ScopedAbstractions.OnDialogInteraction(update, userId, text);
 
         if (string.IsNullOrWhiteSpace(update.Message!.Text)) return false;
 
@@ -120,7 +108,7 @@ public class DialogHandler : PipelineHandler
             {
                 memory.NewInput(text);
                 _ioFactory.InitDialog(memory);
-                command = _availableCommands.GetCommands(isAdmin ? Role.Admin : Role.Regular).Single(x =>
+                command = _availableCommands.GetCommands(_telegramContext.GetRole(userId)).Single(x =>
                     x.attribute.Alias == memory.Alias && (memory.Parameters == null
                         ? x.attribute.SupportsNoParameters
                         : x.attribute.SupportsParameters)).commandType;
@@ -134,7 +122,7 @@ public class DialogHandler : PipelineHandler
         }
         else // new command
         {
-            command = _availableCommands.GetCommands(isAdmin ? Role.Admin : Role.Regular).SingleOrDefault(x =>
+            command = _availableCommands.GetCommands(_telegramContext.GetRole(userId)).SingleOrDefault(x =>
                 x.attribute.Alias == alias &&
                 (parameters != null ? x.attribute.SupportsParameters : x.attribute.SupportsNoParameters)).commandType;
             if (command == null)
@@ -208,8 +196,7 @@ public class DialogHandler : PipelineHandler
             var startOrHelp = command == typeof(Help) || command == typeof(Start);
             if (!startOrHelp)
             {
-                finish.ReplyMessageBody +=
-                    $"{Environment.NewLine}Выберите следующую команду, введите часть названия песни для поиска, или посмотрите помощь - /help.";
+                finish.ReplyMessageBody += $"{Environment.NewLine}{_singletonAbstractions}";
             }
 
             completed = true;
@@ -239,7 +226,7 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(isAdmin ? Role.Admin : Role.Regular)
+            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(_telegramContext.GetRole(userId))
                 .Select(x => x
                     .Where(x => x.SupportsNoParameters)
                     .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))

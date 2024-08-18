@@ -10,6 +10,7 @@ using OneShelf.OneDog.Processor.Services.PipelineHandlers;
 using OneShelf.Telegram;
 using OneShelf.Telegram.Commands;
 using OneShelf.Telegram.Options;
+using OneShelf.Telegram.PipelineHandlers;
 
 namespace OneShelf.OneDog.Processor;
 

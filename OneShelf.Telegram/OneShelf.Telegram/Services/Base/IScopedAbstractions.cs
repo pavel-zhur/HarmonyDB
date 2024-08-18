@@ -1,4 +1,5 @@
 ﻿using OneShelf.Telegram.Model;
+using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Services.Base;
 
@@ -11,4 +12,6 @@ public interface IScopedAbstractions
     string GetBotToken();
     
     IEnumerable<long> GetDomainAdministratorIds();
+
+    Task OnDialogInteraction(Update update, long userId, string? text);
 }

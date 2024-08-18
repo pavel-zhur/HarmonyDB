@@ -188,4 +188,7 @@ public class SingletonAbstractions : ISingletonAbstractions
         result.AppendLine("Помимо этого, вот чем я могу помочь:");
         return result;
     }
+
+    public string GetDialogContinuation() =>
+        "Выберите следующую команду, введите часть названия песни для поиска, или посмотрите помощь - /help.";
 }

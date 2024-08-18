@@ -74,4 +74,6 @@ public class SingletonAbstractions : ISingletonAbstractions
         result.AppendLine("Помимо этого, вот чем я могу помочь (почти ничем):");
         return result;
     }
+
+    public string GetDialogContinuation() => "Выберите следующую команду или посмотрите помощь - /help.";
 }

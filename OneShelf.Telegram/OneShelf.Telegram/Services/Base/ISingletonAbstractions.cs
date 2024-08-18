@@ -9,4 +9,5 @@ public interface ISingletonAbstractions
     Type GetHelpCommand();
     Markdown GetStartResponse();
     Markdown GetHelpResponseHeader();
+    string GetDialogContinuation();
 }
