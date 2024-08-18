@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services;

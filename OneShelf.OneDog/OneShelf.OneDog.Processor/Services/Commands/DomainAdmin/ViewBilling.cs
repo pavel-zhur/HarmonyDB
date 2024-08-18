@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OneShelf.Billing.Api.Client;
 using OneShelf.OneDog.Database;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;

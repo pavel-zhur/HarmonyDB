@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services;
 using OneShelf.Telegram.Services.Base;

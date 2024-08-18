@@ -1,4 +1,4 @@
-﻿using OneShelf.OneDragon.Processor.Model.CommandAttributes;
+﻿using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services.Base;
 
