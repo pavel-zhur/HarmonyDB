@@ -16,16 +16,16 @@ using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
 using DateTime = System.DateTime;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using OneShelf.Telegram.PipelineHandlers;
 
 namespace OneShelf.OneDog.Processor.Services.PipelineHandlers;
 
-public class OwnChatterHandler : PipelineHandler
+public class OwnChatterHandler : ChatterHandlerBase
 {
     private readonly TelegramOptions _telegramOptions;
     private readonly DialogRunner _dialogRunner;
     private readonly DogContext _dogContext;
     private readonly DogDatabase _dogDatabase;
-    private readonly ILogger<OwnChatterHandler> _logger;
 
     public OwnChatterHandler(
         ILogger<OwnChatterHandler> logger,
@@ -34,13 +34,12 @@ public class OwnChatterHandler : PipelineHandler
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions,
         DogContext dogContext)
-        : base(scopedAbstractions)
+        : base(scopedAbstractions, logger)
     {
         _telegramOptions = telegramOptions.Value;
         _dogDatabase = dogDatabase;
         _dialogRunner = dialogRunner;
         _dogContext = dogContext;
-        _logger = logger;
     }
     
     private bool CheckTopicId(Update update, int topicId, long publicChatId)
@@ -66,113 +65,6 @@ public class OwnChatterHandler : PipelineHandler
         await _dogDatabase.SaveChangesAsync();
     }
 
-    private async Task SendMessage(Update respondTo, IReadOnlyList<string> images, bool reply)
-    {
-        await (await CreateApi()).SendMediaGroupAsync(
-            new(respondTo.Message!.Chat.Id, images.Select(x => new InputMediaPhoto(x.ToString())))
-            {
-                MessageThreadId = respondTo.Message!.MessageThreadId,
-                ReplyParameters = !reply ? null : new()
-                {
-                    MessageId = respondTo.Message.MessageId,
-                    AllowSendingWithoutReply = false,
-                },
-                DisableNotification = true,
-            });
-    }
-
-    private async Task<TelegramBotClient> CreateApi()
-    {
-        return new(ScopedAbstractions.GetBotToken());
-    }
-
-    private async Task SendMessage(Update respondTo, string text, IReadOnlyList<string> images, bool reply)
-    {
-        var (messageEntities, result) = GetMessageEntities(text);
-
-        try
-        {
-            await (await CreateApi()).SendMediaGroupAsync(new(respondTo.Message!.Chat.Id, images.WithIndices().Select(x => new InputMediaPhoto(x.x.ToString())
-            {
-                Caption = x.i == 0 ? result : null,
-                CaptionEntities = x.i == 0 ? messageEntities : null,
-            }))
-            {
-                MessageThreadId = respondTo.Message!.MessageThreadId,
-                ReplyParameters = !reply ? null : new()
-                {
-                    MessageId = respondTo.Message.MessageId,
-                    AllowSendingWithoutReply = false,
-                },
-                DisableNotification = true,
-            });
-        }
-        catch (BotRequestException e) when (e.Message.Contains("message caption is too long"))
-        {
-            await SendMessage(respondTo, images, reply);
-
-            await SendMessage(respondTo, text, reply);
-        }
-    }
-
-    private async Task SendMessage(Update respondTo, string text, bool reply)
-    {
-        var (messageEntities, result) = GetMessageEntities(text);
-
-        await (await CreateApi()).SendMessageAsync(new(respondTo.Message!.Chat.Id, result)
-        {
-            MessageThreadId = respondTo.Message!.MessageThreadId,
-            ReplyParameters = !reply ? null : new()
-            {
-                MessageId = respondTo.Message.MessageId,
-                AllowSendingWithoutReply = false,
-            },
-            DisableNotification = true,
-            LinkPreviewOptions = new()
-            {
-                IsDisabled = true,
-            },
-            Entities = messageEntities
-        });
-    }
-
-    private static (List<MessageEntity> messageEntities, string result) GetMessageEntities(string text)
-    {
-        var split = text.Split("**");
-        var messageEntities = new List<MessageEntity>();
-
-        StringBuilder builder = new StringBuilder();
-
-        var isBold = false;
-        foreach (var part in split)
-        {
-            if (isBold)
-            {
-                if (part.Length > 0)
-                {
-                    messageEntities.Add(new()
-                    {
-                        Type = "bold",
-                        Offset = builder.Length,
-                        Length = part.Length
-                    });
-                }
-            }
-
-            builder.Append(part);
-
-            isBold = !isBold;
-        }
-
-        var result = builder.ToString();
-        return (messageEntities, result);
-    }
-
-    private async Task Typing(Update update)
-    {
-        await (await CreateApi()).SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
-    }
-
     private async Task CheckNoUpdates(CancellationTokenSource cancellationTokenSource, CancellationToken cancellationToken, int lastUpdateId)
     {
         try
@@ -195,25 +87,6 @@ public class OwnChatterHandler : PipelineHandler
         catch (Exception e)
         {
             _logger.LogError(e, "Error checking for updates.");
-        }
-    }
-
-    private async void LongTyping(Update update, CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Typing(update);
-                await Task.Delay(3000, cancellationToken);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error sending typing events.");
         }
     }
 
