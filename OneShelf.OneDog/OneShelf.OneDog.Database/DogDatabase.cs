@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OneShelf.OneDog.Database.Model;
+using OneShelf.OneDog.Database.Model.Enums;
+using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.OneDog.Database;
 
-public class DogDatabase : DbContext
+public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
 {
     public DogDatabase(DbContextOptions<DogDatabase> options) : base(options)
     {
@@ -25,4 +27,29 @@ public class DogDatabase : DbContext
             .Property(x => x.InteractionType)
             .HasConversion<string?>();
     }
+
+    #region IInteractionsRepository
+
+    Task<List<IInteraction<InteractionType>>> IInteractionsRepository<InteractionType>.Get(Func<IQueryable<IInteraction<InteractionType>>, IQueryable<IInteraction<InteractionType>>> query)
+    {
+        return query(Interactions).ToListAsync();
+    }
+
+    async Task IInteractionsRepository<InteractionType>.Add(List<IInteraction<InteractionType>> interactions)
+    {
+        Interactions.AddRange(interactions.Cast<Interaction>());
+        await SaveChangesAsync();
+    }
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.OwnChatterMessage;
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterMemoryPoint => InteractionType.OwnChatterMemoryPoint;
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterResetDialog => InteractionType.OwnChatterResetDialog;
+
+    InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.ImagesLimit;
+
+    InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.ImagesSuccess;
+
+    #endregion
 }

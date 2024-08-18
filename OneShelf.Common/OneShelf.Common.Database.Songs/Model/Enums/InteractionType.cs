@@ -34,4 +34,7 @@ public enum InteractionType
 
     NeverPromoteTopics,
     AskWeb,
+
+    ImagesLimit,
+    ImagesSuccess,
 }

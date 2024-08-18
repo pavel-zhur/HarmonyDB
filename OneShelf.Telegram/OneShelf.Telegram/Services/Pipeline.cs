@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -57,7 +58,14 @@ public class Pipeline
 
             if (!anyHandled)
             {
-                _logger.LogInformation("Unhandled {}", JsonSerializer.Serialize(update, new JsonSerializerOptions { WriteIndented = true, }));
+                _logger.LogInformation("Unhandled {}",
+                    JsonSerializer.Serialize(
+                        update,
+                        new JsonSerializerOptions
+                        {
+                            WriteIndented = true,
+                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        }));
             }
         }
         catch (TaskCanceledException)

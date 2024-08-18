@@ -15,12 +15,13 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Songs\OneShelf.Common.Songs.csproj" />
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj" />
 	</ItemGroup>
 
 
