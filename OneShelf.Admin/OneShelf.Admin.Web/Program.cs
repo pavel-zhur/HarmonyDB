@@ -1,3 +1,4 @@
+using System.Globalization;
 using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common.Database.Songs;
@@ -21,6 +22,16 @@ builder.Services
     .AddHttpClient();
 
 var app = builder.Build();
+
+app.UseRequestLocalization(o =>
+{
+    var defaultCulture = "en-US";
+    o.SupportedCultures = new List<CultureInfo>
+    {
+        new(defaultCulture),
+    };
+    o.SetDefaultCulture(defaultCulture);
+});
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
