@@ -61,6 +61,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
         var imagesSince = Since(limits.Max(x => x.Window));
         var images = (await _dragonDatabase.Interactions
+                .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
                 .Where(x => x.InteractionType == InteractionType.AiImagesSuccess)
                 .Where(x => x.CreatedOn >= imagesSince)
                 .ToListAsync())
@@ -94,6 +95,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
         var textsSince = Since(limits.Max(x => x.Window));
         var texts = (await _dragonDatabase.Interactions
+                .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
                 .Where(x => x.InteractionType == InteractionType.AiMessage)
                 .Where(x => x.CreatedOn >= textsSince)
                 .ToListAsync())
