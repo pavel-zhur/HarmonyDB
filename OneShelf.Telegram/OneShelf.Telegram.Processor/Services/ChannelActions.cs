@@ -159,7 +159,7 @@ public class ChannelActions
             try
             {
                 await api.EditMessageCaptionAsync(
-                    _telegramOptions.PublicChatId,
+                    _telegramOptions.PublicChatLongId,
                     messageId,
                     markdownV2.ToString(),
                     Constants.MarkdownV2,
