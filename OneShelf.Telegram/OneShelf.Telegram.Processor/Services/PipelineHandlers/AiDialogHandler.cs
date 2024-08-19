@@ -25,7 +25,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         SongsDatabase songsDatabase,
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions)
-        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, telegramOptions)
+        : base(scopedAbstractions, logger, songsDatabase, dialogRunner)
     {
         _songsDatabase = songsDatabase;
         _telegramOptions = telegramOptions.Value;

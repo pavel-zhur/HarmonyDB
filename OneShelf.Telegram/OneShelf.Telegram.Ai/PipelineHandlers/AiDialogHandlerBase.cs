@@ -23,15 +23,13 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected readonly ILogger<AiDialogHandlerBase<TInteractionType>> _logger;
     protected readonly IInteractionsRepository<TInteractionType> _repository;
     protected readonly DialogRunner _dialogRunner;
-    protected readonly TelegramOptions _telegramOptions;
 
-    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, IOptions<TelegramOptions> telegramOptions) 
+    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner) 
         : base(scopedAbstractions)
     {
         _logger = logger;
         _repository = repository;
         _dialogRunner = dialogRunner;
-        _telegramOptions = telegramOptions.Value;
     }
 
     protected async Task Log(Update update, TInteractionType interactionType)
@@ -322,7 +320,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         interaction.InteractionType = _repository.OwnChatterMemoryPoint;
         interaction.Serialized = JsonSerializer.Serialize(newMessagePoint);
         interaction.ShortInfoSerialized = JsonSerializer.Serialize(result);
-        interaction.UserId = _telegramOptions.AdminId;
+        interaction.UserId = update.Message.From.Id;
         await _repository.Add(interaction.Once().ToList());
 
         if (result.Images.Any())
@@ -331,7 +329,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             interaction.CreatedOn = DateTime.Now;
             interaction.InteractionType = imagesUnavailableUntil.HasValue ? _repository.ImagesLimit : _repository.ImagesSuccess;
             interaction.Serialized = result.Images.Count.ToString();
-            interaction.UserId = _telegramOptions.AdminId;
+            interaction.UserId = update.Message.From.Id;
             await _repository.Add(interaction.Once().ToList());
         }
 

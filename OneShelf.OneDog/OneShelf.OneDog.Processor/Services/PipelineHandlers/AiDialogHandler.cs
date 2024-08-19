@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common.OpenAi.Services;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
-using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Telegram.Ai.Model;
 using OneShelf.Telegram.Ai.PipelineHandlers;
@@ -20,12 +19,11 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
     public AiDialogHandler(
         ILogger<AiDialogHandler> logger,
-        IOptions<TelegramOptions> telegramOptions,
         DogDatabase dogDatabase,
         DialogRunner dialogRunner, 
         IScopedAbstractions scopedAbstractions,
         DogContext dogContext)
-        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, telegramOptions)
+        : base(scopedAbstractions, logger, dogDatabase, dialogRunner)
     {
         _dogDatabase = dogDatabase;
         _dogContext = dogContext;

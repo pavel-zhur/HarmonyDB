@@ -7,7 +7,6 @@ using OneShelf.OneDragon.Database.Model;
 using OneShelf.OneDragon.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
 using OneShelf.Telegram.Ai.PipelineHandlers;
-using OneShelf.Telegram.Options;
 using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Update = Telegram.BotAPI.GettingUpdates.Update;
@@ -22,9 +21,8 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         IScopedAbstractions scopedAbstractions,
         ILogger<AiDialogHandlerBase<InteractionType>> logger, 
         DialogRunner dialogRunner, 
-        IOptions<TelegramOptions> telegramOptions, 
         DragonDatabase dragonDatabase)
-        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner, telegramOptions)
+        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner)
     {
         _dragonDatabase = dragonDatabase;
     }
