@@ -283,10 +283,11 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                 FrequencyPenalty = frequencyPenalty,
                 PresencePenalty = presencePenalty,
                 ImagesVersion = imagesVersion,
-                UserId = update.Message?.From?.Id,
+                UserId = update.Message!.From!.Id,
                 UseCase = "own chatter",
                 AdditionalBillingInfo = additionalBillingInfo,
                 DomainId = domainId,
+                ChatId = update.Message!.Chat.Id,
             }, checkingIsStillLast.Token, imagesUnavailableUntil);
 
             if (checkingIsStillLast.IsCancellationRequested)

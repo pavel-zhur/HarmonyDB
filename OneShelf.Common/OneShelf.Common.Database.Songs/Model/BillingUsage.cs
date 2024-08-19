@@ -2,7 +2,8 @@
 
 namespace OneShelf.Common.Database.Songs.Model;
 
-[Index(nameof(DomainId))]
+[Index(nameof(DomainId), nameof(ChatId), nameof(UserId))]
+[Index(nameof(DomainId), nameof(UserId))]
 public class BillingUsage
 {
     public int Id { get; set; }
@@ -26,4 +27,6 @@ public class BillingUsage
     public string? AdditionalInfo { get; init; }
 
     public int? DomainId { get; init; }
+
+    public long? ChatId { get; init; }
 }

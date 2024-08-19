@@ -23,4 +23,6 @@ public record Usage
     public string? Category { get; init; }
 
     public required int? DomainId { get; init; }
+    
+    public required long? ChatId { get; init; }
 }

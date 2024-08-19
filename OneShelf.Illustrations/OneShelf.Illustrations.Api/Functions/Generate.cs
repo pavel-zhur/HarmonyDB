@@ -109,7 +109,8 @@ namespace OneShelf.Illustrations.Api.Functions
                         AdditionalBillingInfo = generateRequest.AdditionalBillingInfo,
                         UseCase = "illustrations images",
                         DomainId = null,
-                        });
+                        ChatId = null,
+                    });
 
                 foreach (var (index, remoteUrl) in generateRequest.GenerateIndices.Zip(urls))
                 {

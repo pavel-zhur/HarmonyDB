@@ -145,6 +145,7 @@ public class DialogRunner
             UseCase = "song images",
             AdditionalBillingInfo = additionalBillingInfo,
             DomainId = null,
+            ChatId = null,
         };
 
         var (responses, trace) = await RequestMany(messages, dialogConfiguration, cancellationToken, "for images", number: 3);
@@ -264,6 +265,7 @@ public class DialogRunner
                 UseCase = configuration.UseCase,
                 AdditionalInfo = configuration.AdditionalBillingInfo,
                 DomainId = configuration.DomainId,
+                ChatId = configuration.ChatId,
             });
 
             return result.Single();
@@ -365,6 +367,7 @@ public class DialogRunner
             OutputTokens = response.Usage.CompletionTokens,
             AdditionalInfo = $"completions count = {number}; {configuration.AdditionalBillingInfo}; {additionalInfo}",
             DomainId = configuration.DomainId,
+            ChatId = configuration.ChatId,
         });
 
         var memoryPointTrace = new MemoryPointTrace(chatRequest, response);
@@ -392,6 +395,7 @@ public class DialogRunner
             OutputTokens = response.Usage.CompletionTokens,
             AdditionalInfo = $"with topic change detection; {configuration.AdditionalBillingInfo}",
             DomainId = configuration.DomainId,
+            ChatId = configuration.ChatId,
         });
 
         memoryPoint.Traces.Add(new(chatRequest, response));

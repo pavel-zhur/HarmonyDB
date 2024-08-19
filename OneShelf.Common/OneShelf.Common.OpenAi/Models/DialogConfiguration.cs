@@ -11,4 +11,5 @@ public class DialogConfiguration
     public required string UseCase { get; init; }
     public required string? AdditionalBillingInfo { get; init; }
     public required int? DomainId { get; init; }
+    public required long? ChatId { get; init; }
 }

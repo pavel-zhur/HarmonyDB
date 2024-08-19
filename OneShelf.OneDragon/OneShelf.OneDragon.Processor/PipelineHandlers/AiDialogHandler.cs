@@ -61,5 +61,5 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
             aiParameters.DalleVersion);
     }
 
-    protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => ("one dragon", null);
+    protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => ("one dragon", -1);
 }
