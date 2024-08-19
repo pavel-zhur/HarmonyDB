@@ -1,10 +1,9 @@
-using System;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 
-namespace OneShelf.OneDog.Runner.Functions
+namespace OneShelf.OneDog.Runner.Functions.Functions
 {
     public class Warmups
     {
@@ -18,7 +17,7 @@ namespace OneShelf.OneDog.Runner.Functions
         }
 
         [Function("Warmups")]
-        public async Task Run([TimerTrigger("0 */4 * * * *", RunOnStartup = true)] TimerInfo myTimer)
+        public async Task Run([TimerTrigger("0 */4 * * * *")] TimerInfo myTimer)
         {
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}, domains: {await _dogDatabase.Domains.CountAsync()}");
             
