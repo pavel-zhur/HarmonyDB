@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,10 @@ public class Regeneration
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly SongsDatabaseMemory _songsDatabaseMemory;
     private readonly TelegramOptions _options;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     public Regeneration(ILogger<Regeneration> logger, ChannelActions channelActions, SongsDatabase songsDatabase, Io io, MessageMarkdownCombiner messageMarkdownCombiner, IHostApplicationLifetime hostApplicationLifetime, SongsDatabaseMemory songsDatabaseMemory, IOptions<TelegramOptions> options)
     {
@@ -178,7 +183,7 @@ public class Regeneration
             {
                 target,
                 Version = Constants.MessageVersions[messageType]
-            });
+            }, _jsonSerializerOptions);
 
             if (existing != null)
             {
