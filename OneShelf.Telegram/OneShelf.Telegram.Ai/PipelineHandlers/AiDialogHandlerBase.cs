@@ -34,10 +34,10 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         _telegramOptions = telegramOptions.Value;
     }
 
-    protected async Task Log(Update update, TInteractionType interactionType, DateTime now)
+    protected async Task Log(Update update, TInteractionType interactionType)
     {
         var interaction = CreateInteraction(update);
-        interaction.CreatedOn = now;
+        interaction.CreatedOn = DateTime.Now;
         interaction.InteractionType = interactionType;
         interaction.UserId = update.Message!.From!.Id;
         interaction.ShortInfoSerialized = update.Message.Text;
@@ -211,12 +211,11 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         OnInitializing(update);
 
-        var now = DateTime.Now;
-        await Log(update, _repository.OwnChatterMessage, now);
+        await Log(update, _repository.OwnChatterMessage);
 
         if (update.Message?.Text?.Length > 2)
         {
-            Queued(Respond(update, now));
+            Queued(Respond(update));
             return true;
         }
 
@@ -227,8 +226,9 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     {
     }
 
-    protected async Task Respond(Update update, DateTime now)
+    protected async Task Respond(Update update)
     {
+        var now = DateTime.Now;
         var since = now.AddDays(-1);
 
         var interactions = await _repository.Get(q => q
@@ -317,7 +317,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         }
 
         var interaction = CreateInteraction(update);
-        interaction.CreatedOn = now;
+        interaction.CreatedOn = DateTime.Now;
         interaction.InteractionType = _repository.OwnChatterMemoryPoint;
         interaction.Serialized = JsonSerializer.Serialize(newMessagePoint);
         interaction.ShortInfoSerialized = JsonSerializer.Serialize(result);
@@ -327,7 +327,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         if (result.Images.Any())
         {
             interaction = CreateInteraction(update);
-            interaction.CreatedOn = now;
+            interaction.CreatedOn = DateTime.Now;
             interaction.InteractionType = imagesUnavailableUntil.HasValue ? _repository.ImagesLimit : _repository.ImagesSuccess;
             interaction.Serialized = result.Images.Count.ToString();
             interaction.UserId = _telegramOptions.AdminId;
