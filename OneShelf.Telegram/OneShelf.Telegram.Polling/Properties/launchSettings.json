@@ -1,0 +1,22 @@
+{
+  "profiles": {
+    "one-dog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "one-dog"
+      }
+    },
+    "telegram": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "telegram"
+      }
+    },
+    "one-dragon": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "one-dragon"
+      }
+    }
+  }
+}

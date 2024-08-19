@@ -4,10 +4,12 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
+using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
+using Constants = OneShelf.Telegram.Helpers.Constants;
 
 namespace OneShelf.Telegram.Processor.Services
 {
@@ -82,7 +84,7 @@ namespace OneShelf.Telegram.Processor.Services
         {
             try
             {
-                var botClient = new BotClient(_options.Token);
+                var botClient = new TelegramBotClient(_options.Token);
 
                 var message = $@"
 

@@ -2,10 +2,10 @@
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Illustrations.Api.Client;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.Stickers;
 
@@ -15,11 +15,13 @@ namespace OneShelf.Telegram.Processor.Services.Commands;
 public class AskWeb : Command
 {
     private readonly SongsDatabase _songsDatabase;
+    private readonly TelegramOptions _options;
 
     public AskWeb(Io io, SongsDatabase songsDatabase, IOptions<TelegramOptions> options)
-        : base(io, options)
+        : base(io)
     {
         _songsDatabase = songsDatabase;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteQuickly()
@@ -34,7 +36,7 @@ public class AskWeb : Command
             UserId = Io.UserId,
             InteractionType = InteractionType.AskWeb,
             CreatedOn = DateTime.Now,
-            Serialized = Options.TenantId.ToString(),
+            Serialized = _options.TenantId.ToString(),
         });
         await _songsDatabase.SaveChangesAsyncX();
     }

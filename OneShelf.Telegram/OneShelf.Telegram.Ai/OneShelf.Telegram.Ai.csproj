@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
+    <ProjectReference Include="..\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj" />
+    <ProjectReference Include="..\OneShelf.Telegram\OneShelf.Telegram.csproj" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
+
+</Project>

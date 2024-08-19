@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj" />
+    <ProjectReference Include="..\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj" />
+  </ItemGroup>
+
+</Project>

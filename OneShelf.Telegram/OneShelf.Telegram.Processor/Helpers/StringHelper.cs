@@ -1,5 +1,6 @@
 ﻿using OneShelf.Common;
 using OneShelf.Common.Database.Songs.Model;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Model;
 
 namespace OneShelf.Telegram.Processor.Helpers;
@@ -21,17 +22,6 @@ public static class StringHelper
     private static string FixFileName(this string name) => Path.GetInvalidPathChars()
         .Aggregate(name, (fixedName, c) => fixedName.Replace(c, '_'));
 
-    public static Markdown ToMarkdown(this string text) => Markdown.UnsafeFromMarkdownString("\\|#-!.()>+=_[]^~{}".Aggregate(text, (current, character) => current.Replace(character.ToString(), $"\\{character}")));
-
-    public static Markdown BuildUrl(this Uri url, Markdown title) => url.ToString().BuildUrl(title);
-
-    public static Markdown BuildUrl(this long userId, Markdown title) => Markdown.UnsafeFromMarkdownString($"[{title}](tg://user?id={userId})");
-
-    public static Markdown BuildUrl(this string url, Markdown title) => Markdown.UnsafeFromMarkdownString($"[{title}]({url.Replace("(", "\\(").Replace(")", "\\)")})");
-
-    public static Markdown Bold(this Markdown text) => Markdown.UnsafeFromMarkdownString($"*{text}*");
-    public static Markdown Bold(this string text) => text.ToMarkdown().Bold();
-    
     public static string SongsPluralWord(this int count)
     {
         return (count % 100) switch
@@ -53,18 +43,6 @@ public static class StringHelper
     public static string GetCategoryTitle(this string categoryTitle, string? part)
     {
         return categoryTitle + (part != null ? $" {part}" : null);
-    }
-
-    public static string GetUserTitle(this (long Id, string FirstName, string? LastName, string? Username) user)
-    {
-        return string
-            .Join(" ", new[]
-            {
-                user.FirstName,
-                user.LastName
-            }.Where(x => !string.IsNullOrWhiteSpace(x)))
-            .SelectSingle(x => string.IsNullOrWhiteSpace(x) ? user.Username : x)
-            .SelectSingle(x => string.IsNullOrWhiteSpace(x) ? user.Id.ToString() : x);
     }
 
     public static string GetCaption(this Message message, string? title) => string.IsNullOrWhiteSpace(title)

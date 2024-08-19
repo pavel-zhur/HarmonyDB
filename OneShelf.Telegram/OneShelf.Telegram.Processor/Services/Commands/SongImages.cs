@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,14 +11,18 @@ using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Illustrations.Api.Client;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
+using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 using Version = OneShelf.Common.Database.Songs.Model.Version;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
@@ -31,53 +36,55 @@ public class SongImages : Command
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
     private readonly SongsDatabase _songsDatabase;
     private readonly IllustrationsApiClient _illustrationsApiClient;
+    private readonly TelegramOptions _options;
     private readonly FullTextSearch _fullTextSearch;
-    private readonly BotClient _botClient;
+    private readonly TelegramBotClient _botClient;
 
     public SongImages(ILogger<SongImages> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner,
         SongsDatabase songsDatabase, IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options,
         FullTextSearch fullTextSearch)
-        : base(io, options)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;
         _songsDatabase = songsDatabase;
         _illustrationsApiClient = illustrationsApiClient;
+        _options = options.Value;
         _fullTextSearch = fullTextSearch;
         _botClient = new(options.Value.Token);
     }
 
     private enum SongImagesChoice
     {
-        [StrictChoiceCaption("v5 (ркмнд!)")]
+        [Display(Name = "v5 (ркмнд!)")]
         Look5,
 
-        [StrictChoiceCaption("v4 (ркмнд!)")]
+        [Display(Name = "v4 (ркмнд!)")]
         Look4,
 
-        [StrictChoiceCaption("v2")]
+        [Display(Name = "v2")]
         Look2,
 
-        [StrictChoiceCaption("v1")]
+        [Display(Name = "v1")]
         Look,
 
-        [StrictChoiceCaption("Что за v1 v2 v3 v4 v5?")]
+        [Display(Name = "Что за v1 v2 v3 v4 v5?")]
         Help,
 
-        [StrictChoiceCaption("Посмотреть исходные запросы")]
+        [Display(Name = "Посмотреть исходные запросы")]
         SeePrompts,
 
-        [StrictChoiceCaption("Посмотреть исходный текст")]
+        [Display(Name = "Посмотреть исходный текст")]
         SeeLyrics,
 
-        [StrictChoiceCaption("Догенерировать еще!")]
+        [Display(Name = "Догенерировать еще!")]
         AddMore,
     }
 
     protected override async Task ExecuteQuickly()
     {
         var user = await _songsDatabase.Users
-            .Where(x => x.TenantId == Options.TenantId)
+            .Where(x => x.TenantId == _options.TenantId)
             .SingleAsync(x => x.Id == Io.UserId);
         if (!user.IsAuthorizedToUseIllustrations)
         {

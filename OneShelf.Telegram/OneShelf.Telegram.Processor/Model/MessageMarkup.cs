@@ -1,4 +1,5 @@
-﻿using Telegram.BotAPI.AvailableTypes;
+﻿using OneShelf.Telegram.Model;
+using Telegram.BotAPI.AvailableTypes;
 
 namespace OneShelf.Telegram.Processor.Model;
 

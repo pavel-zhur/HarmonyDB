@@ -1,11 +1,11 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Runner.Functions.Functions;
@@ -20,12 +20,14 @@ public class BotFunctions
     private readonly Pipeline _pipeline;
     private readonly DailySelection _dailySelection;
     private readonly TelegramOptions _telegramOptions;
+    private readonly RegenerationQueue _regenerationQueue;
 
-    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, Pipeline pipeline, DailySelection dailySelection)
+    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, Pipeline pipeline, DailySelection dailySelection, RegenerationQueue regenerationQueue)
     {
         _logger = logger;
         _pipeline = pipeline;
         _dailySelection = dailySelection;
+        _regenerationQueue = regenerationQueue;
         _telegramOptions = telegramOptions.Value;
     }
 
@@ -34,15 +36,15 @@ public class BotFunctions
         [QueueTrigger(QueueNameRegenerations)] string myQueueItem)
     {
         if (!bool.Parse(myQueueItem)) return;
-        await _pipeline.Regenerate();
+        await _regenerationQueue.QueueUpdateAllSync();
     }
 
     [Function("UpdatesQueueTrigger")]
     public async Task UpdatesQueueTrigger(
         [QueueTrigger(QueueNameUpdates)] string myQueueItem)
     {
-        var update = JsonConvert.DeserializeObject<Update>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update, null);
+        var update = JsonSerializer.Deserialize<Update>(myQueueItem) ?? throw new("Empty request body.");
+        await await _pipeline.ProcessSyncSafeAndDispose(update, 0);
     }
 
     [Function(nameof(Regenerate))]

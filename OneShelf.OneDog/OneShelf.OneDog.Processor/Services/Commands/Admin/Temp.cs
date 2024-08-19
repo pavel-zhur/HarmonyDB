@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.Admin;
 
@@ -10,13 +11,11 @@ namespace OneShelf.OneDog.Processor.Services.Commands.Admin;
 public class Temp : Command
 {
     private readonly ILogger<Temp> _logger;
-    private readonly DogDatabase _dogDatabase;
 
-    public Temp(ILogger<Temp> logger, Io io, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public Temp(ILogger<Temp> logger, Io io)
+        : base(io)
     {
         _logger = logger;
-        _dogDatabase = dogDatabase;
     }
 
     protected override async Task ExecuteQuickly()

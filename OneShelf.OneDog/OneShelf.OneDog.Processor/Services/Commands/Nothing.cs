@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OneShelf.OneDog.Processor.Helpers;
-using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands;
 
@@ -11,15 +11,11 @@ namespace OneShelf.OneDog.Processor.Services.Commands;
 public class Nothing : Command
 {
     private readonly ILogger<Nothing> _logger;
-    private readonly DialogHandlerMemory _dialogHandlerMemory;
-    private readonly TelegramOptions _telegramOptions;
 
-    public Nothing(ILogger<Nothing> logger, Io io, DialogHandlerMemory dialogHandlerMemory, IOptions<TelegramOptions> telegramOptions, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public Nothing(ILogger<Nothing> logger, Io io)
+        : base(io)
     {
         _logger = logger;
-        _dialogHandlerMemory = dialogHandlerMemory;
-        _telegramOptions = telegramOptions.Value;
     }
 
     protected override async Task ExecuteQuickly()

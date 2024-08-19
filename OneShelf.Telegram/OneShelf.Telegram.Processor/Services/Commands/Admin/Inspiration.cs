@@ -2,13 +2,15 @@
 using Microsoft.Extensions.Options;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
 using OneShelf.Pdfs.Generation.Inspiration.Services;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 
@@ -20,8 +22,8 @@ public class Inspiration : Command
     private readonly TelegramOptions _telegramOptions;
 
     public Inspiration(ILogger<Inspiration> logger, Io io, InspirationGeneration inspirationGeneration,
-        IOptions<TelegramOptions> telegramOptions, IOptions<TelegramOptions> options)
-        : base(io, options)
+        IOptions<TelegramOptions> telegramOptions)
+        : base(io)
     {
         _logger = logger;
         _inspirationGeneration = inspirationGeneration;
@@ -45,7 +47,7 @@ public class Inspiration : Command
         bool onlyPublished)
     {
         var pdfFile = await _inspirationGeneration.Inspiration(_telegramOptions.TenantId, dataOrdering, withChords, compactArtists, onlyPublished);
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
         await api.SendDocumentAsync(_telegramOptions.AdminId, new InputFile(pdfFile, $"Inspiration {dataOrdering}{(withChords ? " with chords" : null)}{(compactArtists ? " compact" : null)}.pdf"), caption: "Inspiration");
     }
 }

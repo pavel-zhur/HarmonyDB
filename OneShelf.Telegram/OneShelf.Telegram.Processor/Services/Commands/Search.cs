@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
+using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
@@ -16,8 +16,8 @@ public class Search : Command
     private readonly FullTextSearch _fullTextSearch;
 
     public Search(ILogger<Search> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner,
-        FullTextSearch fullTextSearch, IOptions<TelegramOptions> options)
-        : base(io, options)
+        FullTextSearch fullTextSearch)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;

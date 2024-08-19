@@ -2,12 +2,15 @@
 using Microsoft.Extensions.DependencyInjection;
 using OneShelf.Common.OpenAi;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Model;
 using OneShelf.OneDog.Processor.Services;
 using OneShelf.OneDog.Processor.Services.Commands;
 using OneShelf.OneDog.Processor.Services.Commands.Admin;
 using OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 using OneShelf.OneDog.Processor.Services.PipelineHandlers;
+using OneShelf.Telegram;
+using OneShelf.Telegram.Commands;
+using OneShelf.Telegram.Options;
+using OneShelf.Telegram.PipelineHandlers;
 
 namespace OneShelf.OneDog.Processor;
 
@@ -18,34 +21,27 @@ public static class ServiceCollectionExtensions
         services.Configure<TelegramOptions>(options => configuration.Bind(nameof(TelegramOptions), options));
 
         services
-            .AddDogDatabase();
+            .AddDogDatabase()
+            .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration, o =>
+                o
+                    .AddCommand<UpdateCommands>()
+                    .AddCommand<Help>()
+                    .AddCommand<Nothing>()
+                    .AddCommand<Start>()
+                    
+                    .AddCommand<Temp>()
+                    .AddCommand<ViewBilling>()
+                    .AddCommand<ConfigureChatGpt>()
+                    .AddCommand<ConfigureDog>()
+
+                    .AddPipelineHandlerInOrder<UsersCollector>()
+                    .AddPipelineHandlerInOrder<ChatsCollector>()
+                    .AddPipelineHandlerInOrder<DialogHandler>()
+                    .AddPipelineHandlerInOrder<AiDialogHandler>()
+                );
 
         services
-            .AddScoped<ChannelActions>()
-            .AddScoped<Pipeline>()
-            .AddScoped<IoFactory>()
-            .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IoFactory>().Io)
-
-            .AddSingleton<PipelineMemory>()
-            .AddSingleton<DialogHandlerMemory>()
-
-            .AddScoped<DialogHandler>()
-            .AddScoped<OwnChatterHandler>()
-            .AddScoped<UsersCollector>()
-            .AddScoped<ChatsCollector>()
-
-            .AddScoped<Help>()
-            .AddScoped<Nothing>()
-            .AddScoped<Start>()
-
-            .AddScoped<Temp>()
-            .AddScoped<ViewBilling>()
-            .AddScoped<UpdateCommands>()
-            .AddScoped<ConfigureChatGpt>()
-            .AddScoped<ConfigureDog>()
-
-            .AddScoped<ScopeAwareness>()
-            
+            .AddScoped<DogContext>()
             .AddOpenAi(configuration);
 
         return services;

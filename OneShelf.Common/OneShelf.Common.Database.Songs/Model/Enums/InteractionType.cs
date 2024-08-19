@@ -7,6 +7,8 @@ public enum InteractionType
     InlineQuery,
     ChosenInlineResult,
     PdfGeneration,
+
+    [Obsolete]
     PublicChatterMessage,
     OwnChatterMessage,
 
@@ -32,4 +34,7 @@ public enum InteractionType
 
     NeverPromoteTopics,
     AskWeb,
+
+    ImagesLimit,
+    ImagesSuccess,
 }

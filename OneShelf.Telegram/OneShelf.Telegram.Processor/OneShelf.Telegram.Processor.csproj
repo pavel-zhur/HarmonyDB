@@ -18,7 +18,6 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 		<PackageReference Include="Telegram.Bot" Version="19.0.0" />
-		<PackageReference Include="Telegram.BotAPI" Version="6.9.2" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -28,6 +27,9 @@
 		<ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Client\HarmonyDB.Index.Api.Client.csproj" />
 		<ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api.Model\HarmonyDB.Index.Api.Model.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Inspiration\OneShelf.Pdfs.Generation.Inspiration.csproj" />
+		<ProjectReference Include="..\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj" />
+		<ProjectReference Include="..\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj" />
+		<ProjectReference Include="..\OneShelf.Telegram\OneShelf.Telegram.csproj" />
 	</ItemGroup>
 
 </Project>

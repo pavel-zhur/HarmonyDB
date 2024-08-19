@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 
@@ -13,9 +11,8 @@ public class ChangeSongVersion : Command
     private readonly ILogger<ChangeSongVersion> _logger;
     private readonly SimpleActions _simpleActions;
 
-    public ChangeSongVersion(ILogger<ChangeSongVersion> logger, Io io, SimpleActions simpleActions,
-        IOptions<TelegramOptions> options)
-        : base(io, options)
+    public ChangeSongVersion(ILogger<ChangeSongVersion> logger, Io io, SimpleActions simpleActions)
+        : base(io)
     {
         _logger = logger;
         _simpleActions = simpleActions;

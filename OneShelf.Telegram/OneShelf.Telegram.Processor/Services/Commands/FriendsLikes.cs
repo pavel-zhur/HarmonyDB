@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
@@ -15,13 +15,15 @@ public class FriendsLikes : Command
     private readonly ILogger<FriendsLikes> _logger;
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
     private readonly SongsDatabase _songsDatabase;
+    private readonly TelegramOptions _options;
 
     public FriendsLikes(ILogger<FriendsLikes> logger, Io io, MessageMarkdownCombiner messageMarkdownCombiner, SongsDatabase songsDatabase, IOptions<TelegramOptions> options)
-        : base(io, options)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;
         _songsDatabase = songsDatabase;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteQuickly()
@@ -29,7 +31,7 @@ public class FriendsLikes : Command
         var current = await _songsDatabase.Users
             .SingleAsync(x => x.Id == Io.UserId);
 
-        if (current.TenantId != Options.TenantId)
+        if (current.TenantId != _options.TenantId)
         {
             Io.WriteLine("Только для тех, кто в чате.");
             return;

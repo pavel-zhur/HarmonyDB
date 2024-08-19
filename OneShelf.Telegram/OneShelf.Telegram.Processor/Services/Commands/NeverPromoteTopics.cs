@@ -4,12 +4,14 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Illustrations.Api.Client;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.Stickers;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services.Commands;
 
@@ -21,14 +23,13 @@ public class NeverPromoteTopics : Command
     private readonly SongsDatabase _songsDatabase;
     private readonly IllustrationsApiClient _illustrationsApiClient;
     private readonly FullTextSearch _fullTextSearch;
-    private readonly BotClient _botClient;
+    private readonly TelegramBotClient _botClient;
     private readonly TelegramOptions _options;
 
     public NeverPromoteTopics(ILogger<NeverPromoteTopics> logger, Io io,
         MessageMarkdownCombiner messageMarkdownCombiner, SongsDatabase songsDatabase,
-        IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options, FullTextSearch fullTextSearch,
-        IOptions<TelegramOptions> options1)
-        : base(io, options1)
+        IllustrationsApiClient illustrationsApiClient, IOptions<TelegramOptions> options, FullTextSearch fullTextSearch)
+        : base(io)
     {
         _logger = logger;
         _messageMarkdownCombiner = messageMarkdownCombiner;

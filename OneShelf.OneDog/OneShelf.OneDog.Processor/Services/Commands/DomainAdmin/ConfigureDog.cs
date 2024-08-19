@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Database.Model.Enums;
-using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 
@@ -13,20 +15,22 @@ public class ConfigureDog : Command
 {
     private readonly ILogger<ConfigureDog> _logger;
     private readonly DogDatabase _dogDatabase;
+    private readonly DogContext _dogContext;
 
-    public ConfigureDog(ILogger<ConfigureDog> logger, Io io, DogDatabase dogDatabase, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public ConfigureDog(ILogger<ConfigureDog> logger, Io io, DogDatabase dogDatabase, DogContext dogContext)
+        : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
+        _dogContext = dogContext;
     }
 
     private enum ConfigType
     {
-        [StrictChoiceCaption("Личность")]
+        [Display(Name = "Личность")]
         OwnChatterSystemMessage,
 
-        [StrictChoiceCaption("Амнезия диалога")]
+        [Display(Name = "Амнезия диалога")]
         OwnChatterResetDialog,
     }
 
@@ -42,7 +46,7 @@ public class ConfigureDog : Command
                 InteractionType = InteractionType.OwnChatterResetDialog,
                 UserId = Io.UserId,
                 Serialized = "reset",
-                DomainId = ScopeAwareness.DomainId,
+                DomainId = _dogContext.DomainId,
             });
 
             await _dogDatabase.SaveChangesAsync();
@@ -55,7 +59,7 @@ public class ConfigureDog : Command
         Io.WriteLine();
         Io.WriteLine(setting switch
         {
-            ConfigType.OwnChatterSystemMessage => ScopeAwareness.Domain.SystemMessage,
+            ConfigType.OwnChatterSystemMessage => _dogContext.Domain.SystemMessage,
             ConfigType.OwnChatterResetDialog or _ => throw new ArgumentOutOfRangeException(),
         });
         Io.WriteLine();
@@ -65,7 +69,7 @@ public class ConfigureDog : Command
         switch (setting)
         {
             case ConfigType.OwnChatterSystemMessage:
-                ScopeAwareness.Domain.SystemMessage = newMessage;
+                _dogContext.Domain.SystemMessage = newMessage;
                 break;
             case ConfigType.OwnChatterResetDialog:
             default:

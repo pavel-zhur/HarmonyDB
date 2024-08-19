@@ -23,6 +23,7 @@
     <ProjectReference Include="..\OneShelf.Illustrations\OneShelf.Illustrations.Database\OneShelf.Illustrations.Database.csproj" />
     <ProjectReference Include="..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
     <ProjectReference Include="..\OneShelf.OneDog\OneShelf.OneDog.Database\OneShelf.OneDog.Database.csproj" />
+    <ProjectReference Include="..\OneShelf.OneDragon\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj" />
     <ProjectReference Include="..\OneShelf.Telegram\OneShelf.Telegram.Processor\OneShelf.Telegram.Processor.csproj" />
   </ItemGroup>
 

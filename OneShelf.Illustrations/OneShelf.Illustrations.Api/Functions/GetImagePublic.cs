@@ -10,9 +10,11 @@ namespace OneShelf.Illustrations.Api.Functions;
 public class GetImagePublic
 {
     private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+    private readonly ILogger<GetImagePublic> _logger;
 
     public GetImagePublic(ILoggerFactory loggerFactory, IllustrationsCosmosDatabase illustrationsCosmosDatabase)
     {
+        _logger = loggerFactory.CreateLogger<GetImagePublic>();
         _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
     }
 

@@ -1,10 +1,10 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI;
@@ -17,7 +17,7 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
         private readonly SongsDatabase _songsDatabase;
         private readonly ILogger<ManagementFunctions> _logger;
         private readonly TelegramOptions _telegramOptions;
-        private readonly BotClient _api;
+        private readonly TelegramBotClient _api;
 
         public ManagementFunctions(ILogger<ManagementFunctions> logger, SongsDatabase songsDatabase, IOptions<TelegramOptions> telegramOptions)
         {
@@ -102,7 +102,7 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
-            await response.WriteStringAsync(JsonConvert.SerializeObject(await _api.GetWebhookInfoAsync()));
+            await response.WriteStringAsync(JsonSerializer.Serialize(await _api.GetWebhookInfoAsync()));
 
             return response;
         }

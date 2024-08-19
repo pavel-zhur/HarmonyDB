@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OneShelf.OneDog.Database.Model.Enums;
+using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.OneDog.Database.Model;
 
-[Index(nameof(InteractionType), nameof(CreatedOn))]
-public class Interaction
+[Index(nameof(InteractionType), nameof(DomainId), nameof(CreatedOn))]
+public class Interaction : IInteraction<InteractionType>
 {
     public int Id { get; set; }
 

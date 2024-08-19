@@ -11,7 +11,9 @@
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.OpenAi\OneShelf.Common.OpenAi.csproj" />
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
     <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Database\OneShelf.OneDog.Database.csproj" />
-    <PackageReference Include="Telegram.BotAPI" Version="6.9.2" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj" />
   </ItemGroup>
 
 </Project>

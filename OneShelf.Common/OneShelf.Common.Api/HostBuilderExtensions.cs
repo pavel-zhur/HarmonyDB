@@ -15,7 +15,7 @@ public static class HostBuilderExtensions
                 configureWorker?.Invoke(builderContext, builder);
             }).ConfigureServices(services =>
             {
-                services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+                services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(_ =>
                 {
                 });
             });

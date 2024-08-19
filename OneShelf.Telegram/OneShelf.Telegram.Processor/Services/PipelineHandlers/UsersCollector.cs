@@ -1,56 +1,33 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
-using OneShelf.Telegram.Processor.Helpers;
-using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
-using Telegram.BotAPI.GettingUpdates;
+using OneShelf.Telegram.PipelineHandlers;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.PipelineHandlers;
 
-public class UsersCollector : PipelineHandler
+public class UsersCollector : UsersCollectorBase
 {
     private readonly ILogger<UsersCollector> _logger;
+    private readonly SongsDatabase _songsDatabase;
 
-    public UsersCollector(IOptions<TelegramOptions> telegramOptions, ILogger<UsersCollector> logger, SongsDatabase songsDatabase) 
-        : base(telegramOptions, songsDatabase)
+    public UsersCollector(ILogger<UsersCollector> logger, SongsDatabase songsDatabase, IScopedAbstractions scopedAbstractions) 
+        : base(scopedAbstractions)
     {
         _logger = logger;
+        _songsDatabase = songsDatabase;
     }
 
-    protected override async Task<bool> HandleSync(Update update)
+    protected override async Task Handle(List<(long Id, string? FirstName, string? LastName, string? Username, string? LanguageCode, string Title)> users)
     {
-        var users = new[]
-            {
-                update.Message?.From,
-                update.Message?.ForwardFrom,
-                update.Message?.ReplyToMessage?.From,
-                update.Message?.ReplyToMessage?.ForwardFrom,
-                update.InlineQuery?.From,
-                update.CallbackQuery?.From,
-                update.CallbackQuery?.Message?.From,
-                update.CallbackQuery?.Message?.ForwardFrom,
-                update.CallbackQuery?.Message?.ReplyToMessage?.From,
-                update.CallbackQuery?.Message?.ReplyToMessage?.ForwardFrom,
-            }
-            .Where(x => x != null)
-            .Select(x => (x.Id, x.FirstName, x.LastName, x.Username))
-            .GroupBy(x => x.Id)
-            .Select(g => g.First())
-            .Select(u => (
-                u.Id,
-                title: u.GetUserTitle()))
-            .ToList();
-
         var ids = users.Select(x => x.Id).ToList();
 
-        var usersById = await SongsDatabase.Users
+        var usersById = await _songsDatabase.Users
             .Where(x => ids.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id);
 
-        foreach (var (id, title) in users)
+        foreach (var (id, _, _, _, _, title) in users)
         {
             if (usersById.TryGetValue(id, out var user))
             {
@@ -69,12 +46,10 @@ public class UsersCollector : PipelineHandler
                     }
                 };
 
-                SongsDatabase.Users.Add(user);
+                _songsDatabase.Users.Add(user);
             }
         }
 
-        await SongsDatabase.SaveChangesAsyncX();
-
-        return false;
+        await _songsDatabase.SaveChangesAsyncX();
     }
 }

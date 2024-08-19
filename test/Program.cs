@@ -8,31 +8,32 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
 using OneShelf.Illustrations.Database;
 using OneShelf.OneDog.Database;
+using OneShelf.OneDragon.Database;
 using OneShelf.Telegram.Processor;
 
-namespace test
+namespace test;
+
+internal class Program
 {
-    internal class Program
+    static async Task Main(string[] args)
     {
-        static async Task Main(string[] args)
-        {
-            var builder = Host.CreateApplicationBuilder(args);
+        var builder = Host.CreateApplicationBuilder(args);
 
-            builder.Configuration.AddJsonFile("appsettings.Secrets.json", true);
+        builder.Configuration.AddJsonFile("appsettings.Secrets.json", true);
 
-            builder.Services
-                .AddLogging()
-                .AddIllustrationsDatabase(builder.Configuration)
-                .AddSongsDatabase()
-                .AddBillingApiClient(builder.Configuration)
-                .AddIllustrationsApiClient(builder.Configuration)
-                .AddProcessor(builder.Configuration)
-                .AddIndexAnalysis()
-                .AddDogDatabase();
-            var host = builder.Build();
+        builder.Services
+            .AddLogging()
+            .AddIllustrationsDatabase(builder.Configuration)
+            .AddSongsDatabase()
+            .AddBillingApiClient(builder.Configuration)
+            .AddIllustrationsApiClient(builder.Configuration)
+            .AddProcessor(builder.Configuration)
+            .AddIndexAnalysis()
+            .AddDogDatabase()
+            .AddDragonDatabase();
+        var host = builder.Build();
 
-            await host.Services.GetRequiredService<SongsDatabase>().Database.MigrateAsync();
-
-        }
+        await host.Services.GetRequiredService<DragonDatabase>().Database.MigrateAsync();
+        await host.Services.GetRequiredService<DogDatabase>().Database.MigrateAsync();
     }
 }

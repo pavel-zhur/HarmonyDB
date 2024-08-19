@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
-using OneShelf.Telegram.Processor.Model.Ios;
-using OneShelf.Telegram.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.Telegram.Processor.Services.Commands.Admin;
 
@@ -13,9 +11,8 @@ public class QueueUpdateAll : Command
     private readonly ILogger<QueueUpdateAll> _logger;
     private readonly RegenerationQueue _regenerationQueue;
 
-    public QueueUpdateAll(ILogger<QueueUpdateAll> logger, Io io, RegenerationQueue regenerationQueue,
-        IOptions<TelegramOptions> options)
-        : base(io, options)
+    public QueueUpdateAll(ILogger<QueueUpdateAll> logger, Io io, RegenerationQueue regenerationQueue)
+        : base(io)
     {
         _logger = logger;
         _regenerationQueue = regenerationQueue;

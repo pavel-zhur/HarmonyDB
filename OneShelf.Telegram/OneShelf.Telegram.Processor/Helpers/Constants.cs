@@ -7,14 +7,12 @@ public static class Constants
     static Constants()
     {
         HeartsCallbacks = new[] { "h0", "h1", "h2", "h3", "h4" };
-        MessageVersions = Enum.GetValues<MessageType>().ToDictionary(x => x, x => 1);
+        MessageVersions = Enum.GetValues<MessageType>().ToDictionary(x => x, _ => 1);
     }
 
     public static IReadOnlyList<string> HeartsCallbacks { get; }
 
     public static IReadOnlyDictionary<MessageType, int> MessageVersions { get; }
-
-    public const string MarkdownV2 = "MarkdownV2";
 
     public const string ImproveCommandName = "chords";
 

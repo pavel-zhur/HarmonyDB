@@ -99,6 +99,9 @@ namespace OneShelf.Common.Database.Songs.Migrations
                     b.Property<string>("AdditionalInfo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<long?>("ChatId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Count")
                         .HasColumnType("int");
 
@@ -127,9 +130,11 @@ namespace OneShelf.Common.Database.Songs.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DomainId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("DomainId", "UserId");
+
+                    b.HasIndex("DomainId", "ChatId", "UserId");
 
                     b.ToTable("BillingUsages");
                 });

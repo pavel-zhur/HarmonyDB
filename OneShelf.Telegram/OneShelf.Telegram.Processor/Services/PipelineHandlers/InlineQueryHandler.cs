@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model.Enums;
-using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services.PipelineHandlers.Base;
+using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.GettingUpdates;
 using Telegram.BotAPI.InlineMode;
@@ -17,13 +16,15 @@ public class InlineQueryHandler : PipelineHandler
 
     private readonly ILogger<InlineQueryHandler> _logger;
     private readonly FullTextSearch _fullTextSearch;
+    private readonly SongsDatabase _songsDatabase;
     private readonly MessageMarkdownCombiner _messageMarkdownCombiner;
 
-    public InlineQueryHandler(IOptions<TelegramOptions> telegramOptions, ILogger<InlineQueryHandler> logger, FullTextSearch fullTextSearch, SongsDatabase songsDatabase, MessageMarkdownCombiner messageMarkdownCombiner)
-        : base(telegramOptions, songsDatabase)
+    public InlineQueryHandler(ILogger<InlineQueryHandler> logger, FullTextSearch fullTextSearch, SongsDatabase songsDatabase, MessageMarkdownCombiner messageMarkdownCombiner, IScopedAbstractions scopedAbstractions)
+        : base(scopedAbstractions)
     {
         _logger = logger;
         _fullTextSearch = fullTextSearch;
+        _songsDatabase = songsDatabase;
         _messageMarkdownCombiner = messageMarkdownCombiner;
     }
 
@@ -36,15 +37,15 @@ public class InlineQueryHandler : PipelineHandler
 
         var offset = int.TryParse(update.InlineQuery.Offset, out var value) ? value : 0;
 
-        SongsDatabase.Interactions.Add(new()
+        _songsDatabase.Interactions.Add(new()
         {
             CreatedOn = DateTime.Now,
             UserId = update.InlineQuery.From.Id,
             InteractionType = InteractionType.InlineQuery,
-            Serialized = JsonConvert.SerializeObject(update),
+            Serialized = JsonSerializer.Serialize(update),
             ShortInfoSerialized = $"offset: {offset}; {update.InlineQuery.Query}",
         });
-        await SongsDatabase.SaveChangesAsyncX();
+        await _songsDatabase.SaveChangesAsyncX();
 
         var (found, isPersonal, version) = await _fullTextSearch.Find(update.InlineQuery.Query, update.InlineQuery.From.Id);
 

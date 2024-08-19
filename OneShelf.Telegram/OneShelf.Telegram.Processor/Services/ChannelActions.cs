@@ -1,12 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.CommandAttributes;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.UpdatingMessages;
+using Constants = OneShelf.Telegram.Helpers.Constants;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;
 
@@ -27,7 +30,7 @@ public class ChannelActions
 
     public async Task<bool> Delete(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -56,7 +59,7 @@ public class ChannelActions
 
     public async Task<int> PublishTextMessage(Markdown markdownV2, InlineKeyboardMarkup? inlineKeyboardMarkup, bool inAnnouncementsTopic = false)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -70,7 +73,10 @@ public class ChannelActions
                         ? _telegramOptions.AnnouncementsTopicId
                         : _telegramOptions.PublicTopicId,
                     ReplyMarkup = inlineKeyboardMarkup,
-                    DisableWebPagePreview = true,
+                    LinkPreviewOptions = new()
+                    {
+                        IsDisabled = true,
+                    },
                 });
 
                 return messageResult.MessageId;
@@ -88,7 +94,7 @@ public class ChannelActions
         if (string.IsNullOrWhiteSpace(fileId)) throw new ArgumentNullException(nameof(fileId));
         if (Markdown.IsNullOrWhiteSpace(markdownV2)) throw new ArgumentNullException(nameof(markdownV2));
 
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -107,19 +113,22 @@ public class ChannelActions
 
     public async Task<bool> UpdateTextMessage(Markdown markdownV2, int messageId, InlineKeyboardMarkup? inlineKeyboardMarkup)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
             try
             {
-                await api.EditMessageTextAsync(new(markdownV2.ToString())
+                await api.EditMessageTextAsync<object>(new(markdownV2.ToString())
                 {
                     ChatId = _telegramOptions.PublicChatId,
                     ParseMode = Constants.MarkdownV2,
                     MessageId = messageId,
                     ReplyMarkup = inlineKeyboardMarkup,
-                    DisableWebPagePreview = true,
+                    LinkPreviewOptions = new()
+                    {
+                        IsDisabled = true,
+                    },
                 });
             }
             catch (BotRequestException e) when (e.Message.Contains(
@@ -143,7 +152,7 @@ public class ChannelActions
 
     public async Task<bool> UpdateFileMessage(Markdown markdownV2, int messageId, InlineKeyboardMarkup? inlineKeyboardMarkup)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         return await _exponentialBackOff.WithRetry(async () =>
         {
@@ -172,26 +181,26 @@ public class ChannelActions
 
     public async Task Pin(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         await _exponentialBackOff.WithRetry(async () =>
         {
             await api.PinChatMessageAsync(
                 _telegramOptions.PublicChatId,
                 messageId,
-                true);
+                disableNotification: true);
         });
     }
 
     public async Task Unpin(int messageId)
     {
-        var api = new BotClient(_telegramOptions.Token);
+        var api = new TelegramBotClient(_telegramOptions.Token);
 
         await _exponentialBackOff.WithRetry(async () =>
         {
-            await api.UnPinChatMessageAsync(
+            await api.UnpinChatMessageAsync(
                 _telegramOptions.PublicChatId,
-                messageId);
+                messageId: messageId);
         });
     }
 
@@ -199,7 +208,7 @@ public class ChannelActions
     {
         try
         {
-            var api = new BotClient(_telegramOptions.Token);
+            var api = new TelegramBotClient(_telegramOptions.Token);
 
             await api.SendMessageAsync(_telegramOptions.AdminId, message.ToString(), parseMode: Constants.MarkdownV2);
         }
@@ -211,13 +220,4 @@ public class ChannelActions
 
     public async Task AdminPrivateMessageSafe(string message) =>
         await AdminPrivateMessageSafe(message.ToMarkdown());
-
-    public async Task UpdateCommands(List<CommandAttribute> commands)
-    {
-        var api = new BotClient(_telegramOptions.Token);
-
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeChat(_telegramOptions.AdminId)));
-
-        await api.SetMyCommandsAsync(new SetMyCommandsArgs(commands.Where(x => x.SupportsNoParameters).Where(x => x.AppliesToRegular).Select(x => new BotCommand(x.Alias, x.ButtonDescription)), new BotCommandScopeDefault()));
-    }
 }

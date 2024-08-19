@@ -1,12 +1,11 @@
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OneShelf.OneDog.Database;
 using OneShelf.OneDog.Processor.Services;
+using OneShelf.Telegram.Services;
 using Telegram.BotAPI.GettingUpdates;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace OneShelf.OneDog.Runner.Functions.Functions;
 

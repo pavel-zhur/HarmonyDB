@@ -2,9 +2,11 @@
 using Microsoft.Extensions.Logging;
 using OneShelf.Billing.Api.Client;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Model;
-using OneShelf.OneDog.Processor.Model.Ios;
-using OneShelf.OneDog.Processor.Services.Commands.Base;
+using OneShelf.Telegram.Model;
+using OneShelf.Telegram.Model.CommandAttributes;
+using OneShelf.Telegram.Model.Ios;
+using OneShelf.Telegram.Services;
+using OneShelf.Telegram.Services.Base;
 
 namespace OneShelf.OneDog.Processor.Services.Commands.DomainAdmin;
 
@@ -14,13 +16,15 @@ public class ViewBilling : Command
     private readonly ILogger<ViewBilling> _logger;
     private readonly DogDatabase _dogDatabase;
     private readonly BillingApiClient _billingApiClient;
+    private readonly TelegramContext _telegramContext;
 
-    public ViewBilling(ILogger<ViewBilling> logger, Io io, DogDatabase dogDatabase, BillingApiClient billingApiClient, ScopeAwareness scopeAwareness)
-        : base(io, scopeAwareness)
+    public ViewBilling(ILogger<ViewBilling> logger, Io io, DogDatabase dogDatabase, BillingApiClient billingApiClient, TelegramContext telegramContext)
+        : base(io)
     {
         _logger = logger;
         _dogDatabase = dogDatabase;
         _billingApiClient = billingApiClient;
+        _telegramContext = telegramContext;
     }
 
     protected override async Task ExecuteQuickly()
@@ -30,7 +34,7 @@ public class ViewBilling : Command
 
     private async Task ExecuteBackground()
     {
-        var all = await _billingApiClient.All(ScopeAwareness.DomainId);
+        var all = await _billingApiClient.All(_telegramContext.DomainId);
         var totals = all.Usages
             .Where(x => x.Price > 0)
             .GroupBy(x => x.Category ?? "unknown")
@@ -42,7 +46,7 @@ public class ViewBilling : Command
             return;
         }
 
-        var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == ScopeAwareness.DomainId);
+        var domain = await _dogDatabase.Domains.SingleAsync(x => x.Id == _telegramContext.DomainId);
 
         foreach (var total in totals)
         {

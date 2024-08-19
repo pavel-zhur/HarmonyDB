@@ -168,7 +168,7 @@ namespace OneShelf.OneDog.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("InteractionType", "CreatedOn");
+                    b.HasIndex("InteractionType", "DomainId", "CreatedOn");
 
                     b.ToTable("Interactions");
                 });

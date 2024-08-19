@@ -9,10 +9,14 @@ using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
 using OneShelf.Common.Songs;
+using OneShelf.Telegram.Helpers;
+using OneShelf.Telegram.Model;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.InlineMode;
+using Constants = OneShelf.Telegram.Processor.Helpers.Constants;
+using TelegramOptions = OneShelf.Telegram.Processor.Model.TelegramOptions;
 
 namespace OneShelf.Telegram.Processor.Services;
 
@@ -486,13 +490,14 @@ public class MessageMarkdownCombiner
                 BodyOrCaption = markup,
                 FileId = song.FileId,
                 InlineKeyboardMarkup = new(
-                    new[]
-                    {
-                        new InlineKeyboardButton(Constants.IconCross) { CallbackData = Constants.HeartsCallbacks[0] },
-                        new InlineKeyboardButton(SongsConstants.IconYellowHeart) { CallbackData = Constants.HeartsCallbacks[1] },
-                        new InlineKeyboardButton(SongsConstants.IconOrangeHeart) { CallbackData = Constants.HeartsCallbacks[2] },
-                        new InlineKeyboardButton(SongsConstants.IconRedHeart) { CallbackData = Constants.HeartsCallbacks[3] },
-                    })
+                    [
+                        [
+                            new(Constants.IconCross) { CallbackData = Constants.HeartsCallbacks[0] },
+                            new(SongsConstants.IconYellowHeart) { CallbackData = Constants.HeartsCallbacks[1] },
+                            new(SongsConstants.IconOrangeHeart) { CallbackData = Constants.HeartsCallbacks[2] },
+                            new(SongsConstants.IconRedHeart) { CallbackData = Constants.HeartsCallbacks[3] },
+                        ]
+                    ])
             }, song.GetCaption()));
         }
 
@@ -604,7 +609,14 @@ public class MessageMarkdownCombiner
         {
             Title = title,
             Id = song.Index.ToString(),
-            InputMessageContent = new InputTextMessageContent(message.ToString(), Constants.MarkdownV2, true),
+            InputMessageContent = new InputTextMessageContent(message.ToString())
+            {
+                ParseMode = Telegram.Helpers.Constants.MarkdownV2,
+                LinkPreviewOptions = new()
+                {
+                    IsDisabled = true,
+                },
+            },
             Description = description.ToString(),
         };
     }

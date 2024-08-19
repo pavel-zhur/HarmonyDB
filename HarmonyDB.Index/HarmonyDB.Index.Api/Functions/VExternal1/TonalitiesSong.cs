@@ -8,7 +8,6 @@ using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
-using HarmonyDB.Index.DownstreamApi.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -32,7 +31,7 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly CommonExecutions _commonExecutions;
 
-    public TonalitiesSong(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, DownstreamApiClient downstreamApiClient, CommonExecutions commonExecutions)
+    public TonalitiesSong(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions)
         : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;

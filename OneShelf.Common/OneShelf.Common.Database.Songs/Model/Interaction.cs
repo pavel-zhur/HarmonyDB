@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OneShelf.Common.Database.Songs.Model.Enums;
+using OneShelf.Telegram.Ai.Model;
 
 namespace OneShelf.Common.Database.Songs.Model;
 
 [Index(nameof(InteractionType), nameof(CreatedOn))]
-public class Interaction
+public class Interaction : IInteraction<InteractionType>
 {
     public int Id { get; set; }
 

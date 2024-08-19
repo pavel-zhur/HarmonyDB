@@ -59,6 +59,7 @@ namespace OneShelf.Billing.Api.Functions
                 OutputTokens = usage.OutputTokens,
                 UseCase = usage.UseCase,
                 DomainId = usage.DomainId,
+                ChatId = usage.ChatId,
             });
 
             await _songsDatabase.SaveChangesAsyncX();

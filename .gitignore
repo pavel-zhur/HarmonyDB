@@ -371,3 +371,6 @@ FodyWeavers.xsd
 /OneShelf.Frontend/OneShelf.Frontend.Web/wwwroot/appsettings.Development-mobile.json
 /OneShelf.Frontend/OneShelf.Frontend.Web/wwwroot/appsettings.Development-remote.json
 /HarmonyDB.Playground/HarmonyDB.Playground.Web/appsettings.Development-remote.json
+/OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.one-dog.json
+/OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.one-dragon.json
+/OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.telegram.json

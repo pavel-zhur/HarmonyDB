@@ -31,12 +31,15 @@ namespace OneShelf.Billing.Api.Functions
             {
                 Usages = (await _songsDatabase.BillingUsages
                         .SelectSingle(x => allRequest.DomainId.HasValue ? x.Where(x => x.DomainId == allRequest.DomainId) : x)
+                        .SelectSingle(x => allRequest.ChatId.HasValue ? x.Where(x => x.ChatId == allRequest.ChatId) : x)
+                        .SelectSingle(x => allRequest.UserId.HasValue ? x.Where(x => x.UserId == allRequest.UserId) : x)
                         .ToListAsync())
                     .Select(x => new Usage
                     {
                         Count = x.Count,
                         AdditionalInfo = x.AdditionalInfo,
                         DomainId = x.DomainId,
+                        ChatId = x.ChatId,
                         CreatedOn = x.CreatedOn,
                         InputTokens = x.InputTokens,
                         Model = x.Model,

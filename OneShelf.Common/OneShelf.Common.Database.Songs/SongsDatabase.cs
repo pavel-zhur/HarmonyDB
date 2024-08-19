@@ -1,14 +1,16 @@
 ﻿using System.Data;
+using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
+using OneShelf.Telegram.Ai.Model;
 using Version = OneShelf.Common.Database.Songs.Model.Version;
 
 namespace OneShelf.Common.Database.Songs;
 
-public class SongsDatabase : DbContext
+public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
 {
     private readonly SongsDatabaseMemory _songsDatabaseMemory;
     private readonly int _versionCopy;
@@ -202,4 +204,34 @@ public class SongsDatabase : DbContext
             .Property(x => x.CollectiveType)
             .HasConversion<string?>();
     }
+
+    #region IInteractionsRepository
+
+    public void Initialize(Expression<Func<IInteraction<InteractionType>, bool>> scopeFilter)
+    {
+        throw new InvalidOperationException();
+    }
+
+    Task<List<IInteraction<InteractionType>>> IInteractionsRepository<InteractionType>.Get(Func<IQueryable<IInteraction<InteractionType>>, IQueryable<IInteraction<InteractionType>>> query)
+    {
+        return query(Interactions).ToListAsync();
+    }
+
+    async Task IInteractionsRepository<InteractionType>.Add(List<IInteraction<InteractionType>> interactions)
+    {
+        Interactions.AddRange(interactions.Cast<Interaction>());
+        await SaveChangesAsyncX();
+    }
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.OwnChatterMessage;
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterMemoryPoint => InteractionType.OwnChatterMemoryPoint;
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterResetDialog => InteractionType.OwnChatterResetDialog;
+
+    InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.ImagesLimit;
+
+    InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.ImagesSuccess;
+
+    #endregion
 }

@@ -255,7 +255,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
             }
 
             var existingLike = song.Likes
-                .Where(checkAccess == LikeCategoryAccess.SharedEditSingle ? x => true : x => x.UserId == userId)
+                .Where(checkAccess == LikeCategoryAccess.SharedEditSingle ? _ => true : x => x.UserId == userId)
                 .SingleOrDefault(x => x.Version?.Id == request.VersionId && x.LikeCategoryId == request.LikeCategoryId);
 
             if (request.Level.HasValue)

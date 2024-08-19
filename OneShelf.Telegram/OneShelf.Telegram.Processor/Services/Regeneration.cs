@@ -1,16 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
+using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Processor.Helpers;
 using OneShelf.Telegram.Processor.Model;
-using OneShelf.Telegram.Processor.Model.Ios;
 using Telegram.BotAPI;
 
 namespace OneShelf.Telegram.Processor.Services;
@@ -25,6 +26,10 @@ public class Regeneration
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly SongsDatabaseMemory _songsDatabaseMemory;
     private readonly TelegramOptions _options;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     public Regeneration(ILogger<Regeneration> logger, ChannelActions channelActions, SongsDatabase songsDatabase, Io io, MessageMarkdownCombiner messageMarkdownCombiner, IHostApplicationLifetime hostApplicationLifetime, SongsDatabaseMemory songsDatabaseMemory, IOptions<TelegramOptions> options)
     {
@@ -174,7 +179,12 @@ public class Regeneration
 
             if (target == null) continue; // either deleted or couldn't be deleted and it's ok
 
-            var targetHash = JsonConvert.SerializeObject((target, Constants.MessageVersions[messageType]));
+            var targetHash = JsonSerializer.Serialize(new
+            {
+                target,
+                Version = Constants.MessageVersions[messageType]
+            }, _jsonSerializerOptions);
+
             if (existing != null)
             {
                 // we know the update is sufficient
