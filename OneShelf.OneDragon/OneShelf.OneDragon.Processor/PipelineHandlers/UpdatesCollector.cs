@@ -34,7 +34,7 @@ public class UpdatesCollector : PipelineHandler
         _dragonDatabase.Updates.Add(dbUpdate);
         await _dragonDatabase.SaveChangesAsync();
 
-        _scope.Initialize(dbUpdate.Id);
+        _scope.Initialize(dbUpdate.Id, update.Message?.Chat.Id);
         return false;
     }
 }

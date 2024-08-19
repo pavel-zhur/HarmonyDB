@@ -60,4 +60,6 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     }
 
     protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => ("one dragon", -1);
+
+    protected override string ResponseError => "Случилась ошибка. :(";
 }

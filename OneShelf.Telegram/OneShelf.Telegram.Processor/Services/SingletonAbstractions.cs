@@ -189,6 +189,17 @@ public class SingletonAbstractions : ISingletonAbstractions
         return result;
     }
 
-    public string GetDialogContinuation() =>
-        "Выберите следующую команду, введите часть названия песни для поиска, или посмотрите помощь - /help.";
+    public string? DialogContinuation => "Выберите следующую команду, введите часть названия песни для поиска, или посмотрите помощь - /help.";
+
+    public string CommandNotFound => "Такая команда не найдена.";
+
+    public string BackgroundErrors => "Произошли ошибки в фоне.";
+
+    public string BackgroundOperationComplete => "Фоновая операция завершилась.";
+
+    public string OperationError => "Извините, у меня произошла ошибка при выполнении операции.";
+    
+    public string? NoOperationPlaceholder => "Команда или часть названия...";
+
+    public string MiddleCommandResponsePostfix => "(или /start чтобы вернуться в начало)";
 }

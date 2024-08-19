@@ -64,4 +64,6 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
         return (system, version, frequencyPenalty, presencePenalty, imagesVersion);
     }
+
+    protected override string ResponseError => "Случилась ошибка. :(";
 }

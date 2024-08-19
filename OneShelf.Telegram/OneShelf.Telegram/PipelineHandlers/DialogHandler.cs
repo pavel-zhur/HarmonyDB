@@ -137,7 +137,7 @@ public class DialogHandler : PipelineHandler
                 alias = _availableCommands.Help.attribute.Alias;
                 parameters = null;
                 _ioFactory.InitDialog(userId, alias, parameters);
-                _ioFactory.Io.WriteLine("Такая команда не найдена.");
+                _ioFactory.Io.WriteLine(_singletonAbstractions.CommandNotFound);
                 _ioFactory.Io.WriteLine();
                 command = _availableCommands.Help.commandType;
             }
@@ -167,10 +167,10 @@ public class DialogHandler : PipelineHandler
                     catch (Exception e)
                     {
                         _logger.LogError(e, "Background tasks error.");
-                        _ioFactory.Io.WriteLine("Произошли ошибки в фоне.");
+                        _ioFactory.Io.WriteLine(_singletonAbstractions.BackgroundErrors);
                     }
 
-                    _ioFactory.Io.WriteLine("Фоновая операция завершилась.");
+                    _ioFactory.Io.WriteLine(_singletonAbstractions.BackgroundOperationComplete);
                     var finish = _ioFactory.Io.FinishAndGetFinish();
 
                     if (!Markdown.IsNullOrWhiteSpace(finish.ReplyMessageBody))
@@ -200,9 +200,9 @@ public class DialogHandler : PipelineHandler
             _dialogHandlerMemory.Erase(userId);
 
             var startOrHelp = command == typeof(Help) || command == typeof(Start);
-            if (!startOrHelp)
+            if (!startOrHelp && _singletonAbstractions.DialogContinuation != null)
             {
-                finish.ReplyMessageBody += $"{Environment.NewLine}{_singletonAbstractions.GetDialogContinuation()}";
+                finish.ReplyMessageBody += $"{Environment.NewLine}{_singletonAbstractions.DialogContinuation}";
             }
 
             completed = true;
@@ -222,7 +222,7 @@ public class DialogHandler : PipelineHandler
             }
             else
             {
-                _ioFactory.Io.WriteLine("Извините, у меня произошла ошибка при выполнении операции.");
+                _ioFactory.Io.WriteLine(_singletonAbstractions.OperationError);
             }
 
             completed = true;
@@ -232,14 +232,22 @@ public class DialogHandler : PipelineHandler
 
         if (completed)
         {
-            finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands.GetCommandsGrid(_telegramContext.GetRole(userId))
-                .Select(x => x
-                    .Where(x => x.SupportsNoParameters)
-                    .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))
+            if (_singletonAbstractions.NoOperationPlaceholder != null)
             {
-                InputFieldPlaceholder = "Команда или часть названия...",
-                ResizeKeyboard = true,
-            };
+                finish.ReplyMessageMarkup = new ReplyKeyboardMarkup(_availableCommands
+                    .GetCommandsGrid(_telegramContext.GetRole(userId))
+                    .Select(x => x
+                        .Where(x => x.SupportsNoParameters)
+                        .Select(x => new KeyboardButton($"/{x.Alias}: {x.ButtonDescription}"))))
+                {
+                    InputFieldPlaceholder = _singletonAbstractions.NoOperationPlaceholder,
+                    ResizeKeyboard = true,
+                };
+            }
+            else
+            {
+                finish.ReplyMessageMarkup = new ReplyKeyboardRemove();
+            }
         }
         else
         {
@@ -248,7 +256,7 @@ public class DialogHandler : PipelineHandler
                 finish.ReplyMessageBody.AppendLine();
             }
 
-            finish.ReplyMessageBody += "(или /start чтобы вернуться в начало)";
+            finish.ReplyMessageBody += _singletonAbstractions.MiddleCommandResponsePostfix.ToMarkdown();
         }
 
         QueueApi(userId.ToString(), async api =>
@@ -276,20 +284,23 @@ public class DialogHandler : PipelineHandler
 
             try
             {
-                await api.SendMessageAsync(new(userId, finish.ReplyMessageBody.ToString())
+                if (finish.ReplyMessageBody != null)
                 {
-                    ReplyParameters = new()
+                    await api.SendMessageAsync(new(userId, finish.ReplyMessageBody.ToString())
                     {
-                        MessageId = update.Message.MessageId,
-                        AllowSendingWithoutReply = true,
-                    },
-                    LinkPreviewOptions = new()
-                    {
-                        IsDisabled = true,
-                    },
-                    ParseMode = Constants.MarkdownV2,
-                    ReplyMarkup = finish.ReplyMessageMarkup ?? new ReplyKeyboardRemove(),
-                });
+                        ReplyParameters = new()
+                        {
+                            MessageId = update.Message.MessageId,
+                            AllowSendingWithoutReply = true,
+                        },
+                        LinkPreviewOptions = new()
+                        {
+                            IsDisabled = true,
+                        },
+                        ParseMode = Constants.MarkdownV2,
+                        ReplyMarkup = finish.ReplyMessageMarkup ?? new ReplyKeyboardRemove(),
+                    });
+                }
             }
             catch (BotRequestException e)
             {

@@ -54,6 +54,8 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         return (additionalBillingInfo, dogContextDomainId);
     }
 
+    protected override string ResponseError => "Случилась ошибка. :(";
+
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now)
     {
         DateTime? imagesUnavailableUntil = null;

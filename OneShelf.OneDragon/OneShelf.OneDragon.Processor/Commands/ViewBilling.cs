@@ -24,6 +24,7 @@ public class ViewBilling : Command
 
     protected override async Task ExecuteQuickly()
     {
+        Io.WriteLine("Скоро скажу...");
         Scheduled(ExecuteBackground());
     }
 

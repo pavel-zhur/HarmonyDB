@@ -179,7 +179,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected async Task Typing(Update update)
     {
-        await GetApi().SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
+        await GetApi().SendChatActionAsync(update.Message!.Chat.Id, ChatActions.Typing, messageThreadId: update.Message.MessageThreadId);
     }
 
     protected async void LongTyping(Update update, CancellationToken cancellationToken)
@@ -211,7 +211,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         await Log(update, _repository.OwnChatterMessage);
 
-        if (update.Message?.Text?.Length > 2)
+        if (update.Message?.Text?.Length > 0)
         {
             Queued(Respond(update));
             return true;
@@ -300,7 +300,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         catch (Exception e)
         {
             _logger.LogError(e, "Error requesting the data.");
-            await SendMessage(update, "Случилась ошибка. :(", true);
+            await SendMessage(update, ResponseError, true);
             return;
         }
         finally
@@ -373,4 +373,6 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters();
 
     protected abstract (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters();
+
+    protected abstract string ResponseError { get; }
 }
