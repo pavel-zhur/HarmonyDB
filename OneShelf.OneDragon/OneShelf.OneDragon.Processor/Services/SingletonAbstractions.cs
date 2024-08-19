@@ -13,7 +13,8 @@ public class SingletonAbstractions : ISingletonAbstractions
         ],
         [
             typeof(Start),
-            typeof(Help),
+            typeof(Help),     
+            typeof(ViewBilling)
         ],
         [
             typeof(UpdateCommands),

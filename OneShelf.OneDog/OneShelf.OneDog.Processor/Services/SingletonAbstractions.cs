@@ -26,8 +26,7 @@ public class SingletonAbstractions : ISingletonAbstractions
         [
             typeof(Temp)
         ],
-
-
+        
         [
             typeof(ConfigureChatGpt),
             typeof(ConfigureDog),
@@ -38,7 +37,6 @@ public class SingletonAbstractions : ISingletonAbstractions
         [
             typeof(UpdateCommands)
         ]
-
     ];
 
     public Type? GetDefaultCommand() => typeof(Nothing);

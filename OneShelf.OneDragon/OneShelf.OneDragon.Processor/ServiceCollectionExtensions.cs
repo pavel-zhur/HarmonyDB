@@ -26,7 +26,8 @@ public static class ServiceCollectionExtensions
                     
                     .AddCommand<UpdateCommands>()
                     .AddCommand<Default>()
-
+                    .AddCommand<ViewBilling>()
+                    
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<UsersCollector>()
                     .AddPipelineHandlerInOrder<ChatsCollector>()
