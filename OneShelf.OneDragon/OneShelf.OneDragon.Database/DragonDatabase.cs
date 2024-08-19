@@ -22,6 +22,8 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
 
     public required DbSet<AiParameters> AiParameters { get; set; }
 
+    public required DbSet<Limit> Limits { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

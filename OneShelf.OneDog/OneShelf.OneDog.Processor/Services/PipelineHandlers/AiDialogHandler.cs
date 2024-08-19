@@ -78,6 +78,10 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         return imagesUnavailableUntil;
     }
 
+    protected override async Task<DateTime?> GetChatUnavailableUntil() => null;
+
+    protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
+
     protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
     {
         var system = _dogContext.Domain.SystemMessage;

@@ -209,6 +209,13 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         OnInitializing(update);
 
+        var chatUnavailableUntil = await GetChatUnavailableUntil();
+        if (chatUnavailableUntil.HasValue)
+        {
+            Queued(SendMessage(update, string.Format(UnavailableUntilTemplate, chatUnavailableUntil.Value.ToString("f")), false));
+            return true;
+        }
+
         await Log(update, _repository.OwnChatterMessage);
 
         if (update.Message?.Text?.Length > 0)
@@ -219,6 +226,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         return false;
     }
+
+    protected abstract string UnavailableUntilTemplate { get; }
 
     protected virtual void OnInitializing(Update update)
     {
@@ -369,6 +378,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected abstract bool CheckRelevant(Update update);
 
     protected abstract Task<DateTime?> GetImagesUnavailableUntil(DateTime now);
+    
+    protected abstract Task<DateTime?> GetChatUnavailableUntil();
 
     protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters();
 
