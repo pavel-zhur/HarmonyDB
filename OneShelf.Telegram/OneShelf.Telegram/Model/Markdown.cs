@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json.Serialization;
 using OneShelf.Telegram.Helpers;
 
 namespace OneShelf.Telegram.Model;
 
+[JsonConverter(typeof(MarkdownConverter))]
 public class Markdown
 {
     private readonly StringBuilder _builder = new();
