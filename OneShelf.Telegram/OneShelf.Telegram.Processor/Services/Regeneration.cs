@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using OneShelf.Common;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
@@ -174,7 +174,12 @@ public class Regeneration
 
             if (target == null) continue; // either deleted or couldn't be deleted and it's ok
 
-            var targetHash = JsonConvert.SerializeObject((target, Constants.MessageVersions[messageType]));
+            var targetHash = JsonSerializer.Serialize(new
+            {
+                target,
+                Version = Constants.MessageVersions[messageType]
+            });
+
             if (existing != null)
             {
                 // we know the update is sufficient
