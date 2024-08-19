@@ -30,7 +30,7 @@ public class BotFunctions
         [QueueTrigger(QueueNameUpdates)] string myQueueItem)
     {
         var update = JsonSerializer.Deserialize<Update>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update, 0);
+        await await _pipeline.ProcessSyncSafeAndDispose(update, -1);
     }
 
     [Function(nameof(IncomingUpdate))]
