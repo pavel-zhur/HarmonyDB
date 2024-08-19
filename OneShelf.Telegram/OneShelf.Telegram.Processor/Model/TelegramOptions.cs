@@ -7,6 +7,8 @@ public record TelegramOptions : Options.TelegramOptions
     public string FilesChatId { get; set; } = null!;
 
     public string PublicChatId { get; set; } = null!;
+    
+    public long PublicChatLongId { get; set; }
 
     public int PublicTopicId { get; set; }
 

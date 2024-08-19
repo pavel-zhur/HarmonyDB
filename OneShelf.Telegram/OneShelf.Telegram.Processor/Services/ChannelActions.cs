@@ -161,8 +161,8 @@ public class ChannelActions
                 await api.EditMessageCaptionAsync(
                     _telegramOptions.PublicChatId,
                     messageId,
-                    markdownV2.ToString(),
-                    Constants.MarkdownV2,
+                    caption: markdownV2.ToString(),
+                    parseMode: Constants.MarkdownV2,
                     replyMarkup: inlineKeyboardMarkup);
             }
             catch (BotRequestException e) when (e.Message.Contains(

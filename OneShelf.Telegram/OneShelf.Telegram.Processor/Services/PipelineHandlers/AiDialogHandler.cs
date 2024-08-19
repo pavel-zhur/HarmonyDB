@@ -30,7 +30,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _songsDatabase = songsDatabase;
         _telegramOptions = telegramOptions.Value;
     }
-    
+
     protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
@@ -44,6 +44,10 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => default;
 
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now) => null;
+
+    protected override async Task<DateTime?> GetChatUnavailableUntil() => null;
+
+    protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
     protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
     {
@@ -64,4 +68,6 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
         return (system, version, frequencyPenalty, presencePenalty, imagesVersion);
     }
+
+    protected override string ResponseError => "Случилась ошибка. :(";
 }

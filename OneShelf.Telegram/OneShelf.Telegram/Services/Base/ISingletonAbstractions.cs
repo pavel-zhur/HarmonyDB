@@ -9,5 +9,11 @@ public interface ISingletonAbstractions
     Type GetHelpCommand();
     Markdown GetStartResponse();
     Markdown GetHelpResponseHeader();
-    string GetDialogContinuation();
+    string? DialogContinuation { get; }
+    string CommandNotFound { get; }
+    string BackgroundErrors { get; }
+    string BackgroundOperationComplete { get; }
+    string OperationError { get; }
+    string? NoOperationPlaceholder { get; }
+    string MiddleCommandResponsePostfix { get; }
 }

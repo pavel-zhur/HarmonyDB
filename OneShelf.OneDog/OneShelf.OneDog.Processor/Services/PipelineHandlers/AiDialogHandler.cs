@@ -54,6 +54,8 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         return (additionalBillingInfo, dogContextDomainId);
     }
 
+    protected override string ResponseError => "Случилась ошибка. :(";
+
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now)
     {
         DateTime? imagesUnavailableUntil = null;
@@ -75,6 +77,10 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
         return imagesUnavailableUntil;
     }
+
+    protected override async Task<DateTime?> GetChatUnavailableUntil() => null;
+
+    protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
     protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
     {

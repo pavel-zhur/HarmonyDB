@@ -25,8 +25,8 @@ public static class ServiceCollectionExtensions
                     .AddCommand<Start>()
                     
                     .AddCommand<UpdateCommands>()
-                    .AddCommand<Default>()
                     .AddCommand<ViewBilling>()
+                    .AddCommand<Amnesia>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<UsersCollector>()

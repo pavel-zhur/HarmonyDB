@@ -179,7 +179,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected async Task Typing(Update update)
     {
-        await GetApi().SendChatActionAsync(update.Message!.Chat.Id, "typing", messageThreadId: update.Message.MessageThreadId);
+        await GetApi().SendChatActionAsync(update.Message!.Chat.Id, ChatActions.Typing, messageThreadId: update.Message.MessageThreadId);
     }
 
     protected async void LongTyping(Update update, CancellationToken cancellationToken)
@@ -209,9 +209,16 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         OnInitializing(update);
 
+        var chatUnavailableUntil = await GetChatUnavailableUntil();
+        if (chatUnavailableUntil.HasValue)
+        {
+            Queued(SendMessage(update, string.Format(UnavailableUntilTemplate, chatUnavailableUntil.Value.ToString("f")), false));
+            return true;
+        }
+
         await Log(update, _repository.OwnChatterMessage);
 
-        if (update.Message?.Text?.Length > 2)
+        if (update.Message?.Text?.Length > 0)
         {
             Queued(Respond(update));
             return true;
@@ -219,6 +226,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         return false;
     }
+
+    protected abstract string UnavailableUntilTemplate { get; }
 
     protected virtual void OnInitializing(Update update)
     {
@@ -300,7 +309,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         catch (Exception e)
         {
             _logger.LogError(e, "Error requesting the data.");
-            await SendMessage(update, "Случилась ошибка. :(", true);
+            await SendMessage(update, ResponseError, true);
             return;
         }
         finally
@@ -369,8 +378,12 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected abstract bool CheckRelevant(Update update);
 
     protected abstract Task<DateTime?> GetImagesUnavailableUntil(DateTime now);
+    
+    protected abstract Task<DateTime?> GetChatUnavailableUntil();
 
     protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters();
 
     protected abstract (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters();
+
+    protected abstract string ResponseError { get; }
 }
