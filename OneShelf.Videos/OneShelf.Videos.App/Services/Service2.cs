@@ -63,12 +63,11 @@ public class Service2
                 lock (fileNameTimestamps)
                 {
                     fileNameTimestamps[x] = timestampFromFile;
-                    Console.WriteLine(timestampFromFile);
-                    Console.WriteLine(x);
                 }
 
                 return tempFileName;
-            });
+            },
+            3);
 
         Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
     }

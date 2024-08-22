@@ -13,8 +13,6 @@ public class Service3
         if (image.Properties.Contains(ExifTag.DateTime)) throw new($"The image contains a datetime, {path}.");
 
         var dateTime = DateTime.ParseExact(Path.GetFileNameWithoutExtension(path).SelectSingle(x => x.Substring(x.IndexOf('@') + 1)), "dd-MM-yyyy_HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-        Console.WriteLine(dateTime);
-        Console.WriteLine();
 
         image.Properties.Set(ExifTag.DateTime, dateTime);
         await image.SaveAsync(tempFileName);

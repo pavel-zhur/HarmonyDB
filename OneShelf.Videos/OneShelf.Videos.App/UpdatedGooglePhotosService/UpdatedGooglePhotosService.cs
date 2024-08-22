@@ -1,4 +1,5 @@
-﻿using CasCap.Models;
+﻿using CasCap.Exceptions;
+using CasCap.Models;
 using CasCap.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,7 +30,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
             _client.DefaultRequestHeaders.Authorization.Parameter);
     }
 
-    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null)
+    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null, int threads = 10)
         where T : struct
     {
         var uploadItems = new List<List<(UploadItem uploadItem, T key)>>
@@ -43,7 +44,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
         _processed = 0;
 
         var taken = 0;
-        await Task.WhenAll(Enumerable.Range(0, 10).Select(i => Task.Run(async () =>
+        await Task.WhenAll(Enumerable.Range(0, threads).Select(i => Task.Run(async () =>
         {
             while (true)
             {
@@ -65,20 +66,32 @@ public class UpdatedGooglePhotosService : GooglePhotosService
                     filePath = await transformFile(next.key, i);
                 }
 
-                var uploadToken = await UploadMediaAsync(filePath, GooglePhotosUploadMethod.Simple);
-                if (!string.IsNullOrWhiteSpace(uploadToken))
-                {
-                    lock (uploadItems)
+                var retry = 1;
+                while (true)
+                    try
                     {
-                        if (uploadItems[^1].Count == 50)
+                        var uploadToken = await UploadMediaAsync(filePath, GooglePhotosUploadMethod.Simple);
+                        if (!string.IsNullOrWhiteSpace(uploadToken))
                         {
-                            uploadItems.Add(new());
-                            handle.Set();
+                            lock (uploadItems)
+                            {
+                                if (uploadItems[^1].Count == 50)
+                                {
+                                    uploadItems.Add(new());
+                                    handle.Set();
+                                }
+
+                                uploadItems[^1].Add((new(uploadToken!, filePath, next.description), next.key));
+                            }
                         }
 
-                        uploadItems[^1].Add((new(uploadToken!, filePath, next.description), next.key));
+                        break;
                     }
-                }
+                    catch (GooglePhotosException) when (retry < 10)
+                    {
+                        Console.WriteLine("retrying...");
+                        await Task.Delay(TimeSpan.FromSeconds(2) * retry++);
+                    }
             }
 
             _logger.LogInformation($"{i}: upload thread ended.");
