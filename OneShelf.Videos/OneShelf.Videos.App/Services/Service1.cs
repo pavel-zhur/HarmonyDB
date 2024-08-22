@@ -96,14 +96,6 @@ public class Service1
         })));
     }
 
-    public async Task ExportDatabase(List<UploadedItem> all)
-    {
-        await using var fileStream = File.Create(Path.Combine(_options.Value.BasePath, "db.csv"));
-        await using var textWriter = new StreamWriter(fileStream, Encoding.UTF8);
-        await using var csvWriter = new CsvWriter(textWriter, CultureInfo.InvariantCulture);
-        await csvWriter.WriteRecordsAsync(all);
-    }
-
     private List<ActualFile> ReadActualFiles()
     {
         return JsonSerializer.Deserialize<List<ActualFile>>(File.ReadAllText(GetAllJsonPath()))!;

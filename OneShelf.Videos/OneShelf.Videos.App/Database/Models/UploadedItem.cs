@@ -2,7 +2,7 @@
 
 public class UploadedItem
 {
-    public int Id { get; init; }
+    public int Id { get; set; }
     public required DateTime CreatedOn { get; init; }
     public required long ChatId { get; init; }
     public required int MessageId { get; init; }

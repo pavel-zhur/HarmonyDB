@@ -1,5 +1,4 @@
-﻿using CsvHelper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +14,7 @@ builder.Services
     .AddScoped<Service1>()
     .AddScoped<Service2>()
     .AddScoped<Service3>()
-    .AddDbContext<VideosDatabase>(o => o.UseSqlite(builder.Configuration.GetConnectionString(nameof(VideosDatabase))), ServiceLifetime.Transient)
+    .AddDbContext<VideosDatabase>(o => o.UseSqlServer(builder.Configuration.GetConnectionString(nameof(VideosDatabase))))
     .AddMyGooglePhotos();
 var host = builder.Build();
 
@@ -26,12 +25,7 @@ var service3 = host.Services.GetRequiredService<Service3>();
 await using (var videosDatabase = host.Services.GetRequiredService<VideosDatabase>())
 {
     await videosDatabase.Database.MigrateAsync();
-    
-    //var all = await videosDatabase.UploadedItems.ToListAsync();
-    //Console.WriteLine(all.Count);
-
-    //await service1.ExportDatabase(all);
-    //return;
+    return;
 }
 
 //re-login and display auth token
