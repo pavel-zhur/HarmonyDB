@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using CsvHelper;
 using Microsoft.Extensions.Options;
 using OneShelf.Videos.App.ChatModels;
+using OneShelf.Videos.App.Database.Models;
 using OneShelf.Videos.App.Models;
 
 namespace OneShelf.Videos.App.Services;
@@ -93,6 +94,14 @@ public class Service1
             Text = (string)JsonSerializer.Serialize(m.Text),
             m,
         })));
+    }
+
+    public async Task ExportDatabase(List<UploadedItem> all)
+    {
+        await using var fileStream = File.Create(Path.Combine(_options.Value.BasePath, "db.csv"));
+        await using var textWriter = new StreamWriter(fileStream, Encoding.UTF8);
+        await using var csvWriter = new CsvWriter(textWriter, CultureInfo.InvariantCulture);
+        await csvWriter.WriteRecordsAsync(all);
     }
 
     private List<ActualFile> ReadActualFiles()

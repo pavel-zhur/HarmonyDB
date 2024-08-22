@@ -20,7 +20,7 @@ It is not production ready, it's just once-use. Probably I'll make a library lat
 - Prerequisites:
   - the root path in the appsettings needs to point to a folder with:
     - all.json (not actualy currently used)
-    - may have an _app directory (will be excluded from all.json on generation)
+    - may have an _app* directories (will be excluded from all.json on generation)
     - result (i).json files where i corresponds to the folders
     - each folder is an exported chat
     - the db file will be created automatically at the path specified in appsettings

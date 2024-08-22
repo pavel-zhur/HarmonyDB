@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.App.Database;
 
@@ -10,9 +11,11 @@ using OneShelf.Videos.App.Database;
 namespace OneShelf.Videos.App.Migrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240822032311_FileNameTimestamps")]
+    partial class FileNameTimestamps
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -37,21 +40,23 @@ namespace OneShelf.Videos.App.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MediaItemId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool?>("MediaItemIsPhoto")
+                    b.Property<bool>("MediaItemIsPhoto")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool?>("MediaItemIsVideo")
+                    b.Property<bool>("MediaItemIsVideo")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("MediaItemMetadataCreationType")
+                    b.Property<DateTime>("MediaItemMetadataCreationType")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MediaItemMimeType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("MediaItemSyncDate")
+                    b.Property<DateTime>("MediaItemSyncDate")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MessageId")

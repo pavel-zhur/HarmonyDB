@@ -29,7 +29,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
             _client.DefaultRequestHeaders.Authorization.Parameter);
     }
 
-    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded)
+    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null)
         where T : struct
     {
         var uploadItems = new List<List<(UploadItem uploadItem, T key)>>
@@ -59,7 +59,13 @@ public class UpdatedGooglePhotosService : GooglePhotosService
                     _logger.LogInformation($"{i}: {taken - 1} / {items.Count}: uploading next...");
                 }
 
-                var uploadToken = await UploadMediaAsync(next.filePath, GooglePhotosUploadMethod.Simple);
+                var filePath = next.filePath;
+                if (transformFile != null)
+                {
+                    filePath = await transformFile(next.key, i);
+                }
+
+                var uploadToken = await UploadMediaAsync(filePath, GooglePhotosUploadMethod.Simple);
                 if (!string.IsNullOrWhiteSpace(uploadToken))
                 {
                     lock (uploadItems)
@@ -70,7 +76,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
                             handle.Set();
                         }
 
-                        uploadItems[^1].Add((new(uploadToken!, next.filePath, next.description), next.key));
+                        uploadItems[^1].Add((new(uploadToken!, filePath, next.description), next.key));
                     }
                 }
             }

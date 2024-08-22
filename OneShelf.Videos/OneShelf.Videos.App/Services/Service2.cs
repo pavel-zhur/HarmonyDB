@@ -12,12 +12,14 @@ public class Service2
     private readonly UpdatedGooglePhotosService.UpdatedGooglePhotosService _googlePhotosService;
     private readonly ILogger<Service2> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly Service3 _service3;
 
-    public Service2(UpdatedGooglePhotosService.UpdatedGooglePhotosService googlePhotosService, ILogger<Service2> logger, IServiceProvider serviceProvider)
+    public Service2(UpdatedGooglePhotosService.UpdatedGooglePhotosService googlePhotosService, ILogger<Service2> logger, IServiceProvider serviceProvider, Service3 service3)
     {
         _googlePhotosService = googlePhotosService;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _service3 = service3;
     }
 
     public async Task ListAlbums()
@@ -30,7 +32,49 @@ public class Service2
         }
     }
 
-    public async Task UploadItems(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
+    public async Task UploadPhotos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
+    {
+        _googlePhotosService.LoginWithOptions();
+
+        var added = (await ExecuteDatabase(async db => await db.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync())).ToHashSet();
+        Console.WriteLine($"initial items: {items.Count}");
+        items = items.Where(x => !added.Contains(new { ChatId = x.chatId, MessageId = x.messageId })).ToList();
+        Console.WriteLine($"remaining items: {items.Count}");
+
+        var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
+        var fileNameTimestamps = new Dictionary<(long chatId, int messageId), DateTime>();
+        var result = await _googlePhotosService.UploadMultiple(
+            items
+                .Select(x => ((x.chatId, x.messageId), x.path,
+                    //$"chatId = {x.chatId}, messageId = {x.messageId}, published on = {x.publishedOn}, filename = {Path.GetFileName(x.path)}"
+                    (string?)null))
+                .ToList(),
+            newItems => AddToDatabase(itemsByKey, newItems, fileNameTimestamps),
+            async (x, i) =>
+            {
+                var tempDirectory = Path.Combine(Path.GetTempPath(), i.ToString());
+                if (Directory.Exists(tempDirectory))
+                {
+                    Directory.Delete(tempDirectory, true);
+                }
+
+                Directory.CreateDirectory(tempDirectory);
+                var tempFileName = Path.Combine(Path.GetTempPath(), i.ToString(), Path.GetFileName(itemsByKey[x].path));
+                var timestampFromFile = await _service3.SetExifTimestamp(itemsByKey[x].path, tempFileName);
+                lock (fileNameTimestamps)
+                {
+                    fileNameTimestamps[x] = timestampFromFile;
+                    Console.WriteLine(timestampFromFile);
+                    Console.WriteLine(x);
+                }
+
+                return tempFileName;
+            });
+
+        Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
+    }
+
+    public async Task UploadVideos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
     {
         _googlePhotosService.LoginWithOptions();
 
@@ -51,11 +95,14 @@ public class Service2
         Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
     }
 
-    private async Task AddToDatabase(Dictionary<(long chatId, int messageId), (long chatId, int messageId, string path, DateTime publishedOn)> items, Dictionary<(long chatId, int messageId), NewMediaItemResult> newItems)
+    private async Task AddToDatabase(
+        Dictionary<(long chatId, int messageId), (long chatId, int messageId, string path, DateTime publishedOn)> items,
+        Dictionary<(long chatId, int messageId), NewMediaItemResult> newItems,
+        Dictionary<(long chatId, int messageId), DateTime>? fileNameTimestamps = null)
     {
         await ExecuteDatabase(async db =>
         {
-            db.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value))));
+            db.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
             await db.SaveChangesAsync();
         });
     }

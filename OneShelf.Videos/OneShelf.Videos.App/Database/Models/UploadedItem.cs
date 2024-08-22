@@ -10,11 +10,12 @@ public class UploadedItem
     public required string? Status { get; init; }
     public required int StatusCode { get; init; }
     public required string? StatusMessage { get; init; }
-    public required string MediaItemId { get; init; }
-    public required bool MediaItemIsPhoto { get; init; }
-    public required bool MediaItemIsVideo { get; init; }
-    public required string MediaItemMimeType { get; init; }
-    public required DateTime MediaItemSyncDate { get; init; }
-    public required DateTime MediaItemMetadataCreationType { get; init; }
+    public required string? MediaItemId { get; init; }
+    public required bool? MediaItemIsPhoto { get; init; }
+    public required bool? MediaItemIsVideo { get; init; }
+    public required string? MediaItemMimeType { get; init; }
+    public required DateTime? MediaItemSyncDate { get; init; }
+    public required DateTime? MediaItemMetadataCreationType { get; init; }
     public required string Json { get; init; }
+    public required DateTime? FileNameTimestamp { get; init; }
 }
