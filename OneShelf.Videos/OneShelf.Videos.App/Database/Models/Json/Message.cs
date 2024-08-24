@@ -1,7 +1,18 @@
-﻿namespace OneShelf.Videos.App.ChatModels;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using OneShelf.Videos.App.ChatModels;
+
+namespace OneShelf.Videos.App.Database.Models.Json;
 
 public class Message
 {
+    [JsonIgnore]
+    public long ChatId { get; set; }
+
+    [JsonIgnore]
+    public Chat Chat { get; set; } = null;
+
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public required int Id { get; set; }
     public int? MessageId { get; set; }
     public int? ReplyToMessageId { get; set; }

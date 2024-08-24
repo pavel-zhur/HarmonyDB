@@ -2,6 +2,7 @@
 using CasCap.Models;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Videos.App.Database.Models;
+using OneShelf.Videos.App.Database.Models.Json;
 
 namespace OneShelf.Videos.App.Database;
 
@@ -13,6 +14,8 @@ public class VideosDatabase : DbContext
     }
 
     public required DbSet<UploadedItem> UploadedItems { get; set; }
+    public required DbSet<ChatFolder> ChatFolders { get; set; }
+    public required DbSet<Chat> Chats { get; set; }
 
     public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {
@@ -34,5 +37,11 @@ public class VideosDatabase : DbContext
             Json = JsonSerializer.Serialize(i.result.mediaItem),
             FileNameTimestamp = i.fileNameTimestamp,
         }));
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Chat>().Ignore(x => x.Messages);
     }
 }

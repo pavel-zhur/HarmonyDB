@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.App.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.App.Database;
 namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240824033010_ChatFoldersAdded")]
+    partial class ChatFoldersAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,30 +47,6 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                         .IsUnique();
 
                     b.ToTable("ChatFolders");
-                });
-
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Json.Chat", b =>
-                {
-                    b.Property<long>("Id")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("ChatFolderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatFolderId")
-                        .IsUnique();
-
-                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.App.Database.Models.UploadedItem", b =>
@@ -127,22 +106,6 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                     b.HasKey("Id");
 
                     b.ToTable("UploadedItems");
-                });
-
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Json.Chat", b =>
-                {
-                    b.HasOne("OneShelf.Videos.App.Database.Models.ChatFolder", "ChatFolder")
-                        .WithOne("Chat")
-                        .HasForeignKey("OneShelf.Videos.App.Database.Models.Json.Chat", "ChatFolderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChatFolder");
-                });
-
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.ChatFolder", b =>
-                {
-                    b.Navigation("Chat");
                 });
 #pragma warning restore 612, 618
         }
