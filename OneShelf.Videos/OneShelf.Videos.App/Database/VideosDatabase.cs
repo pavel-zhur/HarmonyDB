@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using CasCap.Models;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Videos.App.Database.Models;
@@ -8,6 +10,11 @@ namespace OneShelf.Videos.App.Database;
 
 public class VideosDatabase : DbContext
 {
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+    };
+
     public VideosDatabase(DbContextOptions<VideosDatabase> options)
         : base(options)
     {
@@ -48,37 +55,37 @@ public class VideosDatabase : DbContext
         modelBuilder.Entity<Message>()
             .Property(x => x.ContactInformation)
             .HasConversion<string?>(
-                e => e!.Value.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<Message>()
             .Property(x => x.InlineBotButtons)
             .HasConversion<string?>(
-                e => e!.Value.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<Message>()
             .Property(x => x.LocationInformation)
             .HasConversion<string?>(
-                e => e!.Value.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<Message>()
             .Property(x => x.Poll)
             .HasConversion<string?>(
-                e => e!.Value.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<Message>()
             .Property(x => x.Text)
             .HasConversion<string>(
-                e => e.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<Message>()
             .Property(x => x.TextEntities)
             .HasConversion<string>(
-                e => e.ToString(),
-                x => JsonSerializer.Deserialize<JsonElement>(x, JsonSerializerOptions.Default));
+                e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
+                x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
     }
 }
