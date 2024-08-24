@@ -1,18 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using OneShelf.Videos.App.ChatModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace OneShelf.Videos.App.Database.Models.Json;
 
+[Index(nameof(ChatId), nameof(Id), IsUnique = true)]
 public class Message
 {
+    [JsonIgnore]
+    [Key]
+    public int DatabaseMessageId { get; set; }
+
     [JsonIgnore]
     public long ChatId { get; set; }
 
     [JsonIgnore]
     public Chat Chat { get; set; } = null;
 
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public required int Id { get; set; }
     public int? MessageId { get; set; }
     public int? ReplyToMessageId { get; set; }
@@ -28,9 +33,9 @@ public class Message
     public string? Action { get; set; }
     public string? Title { get; set; }
     public string? Inviter { get; set; }
-    public required dynamic Text { get; set; }
+    public required JsonElement Text { get; set; }
     public List<string>? Members { get; set; }
-    public required List<TextEntity> TextEntities { get; set; }
+    public required JsonElement TextEntities { get; set; }
     public string? Photo { get; set; }
     public int? Width { get; set; }
     public int? Height { get; set; }
@@ -42,14 +47,14 @@ public class Message
     public int? DurationSeconds { get; set; }
     public string? ForwardedFrom { get; set; }
     public string? StickerEmoji { get; set; }
-    public dynamic? Poll { get; set; }
+    public JsonElement? Poll { get; set; }
     public string? Performer { get; set; }
-    public dynamic? LocationInformation { get; set; }
-    public dynamic? ContactInformation { get; set; }
+    public JsonElement? LocationInformation { get; set; }
+    public JsonElement? ContactInformation { get; set; }
     public string? SavedFrom { get; set; }
     public string? ViaBot { get; set; }
     public long? NewIconEmojiId { get; set; }
-    public dynamic? InlineBotButtons { get; set; }
+    public JsonElement? InlineBotButtons { get; set; }
     public int? ScheduleDate { get; set; }
     public int? Duration { get; set; }
     public string? NewTitle { get; set; }

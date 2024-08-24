@@ -16,6 +16,7 @@ public class VideosDatabase : DbContext
     public required DbSet<UploadedItem> UploadedItems { get; set; }
     public required DbSet<ChatFolder> ChatFolders { get; set; }
     public required DbSet<Chat> Chats { get; set; }
+    public required DbSet<Message> Messages { get; set; }
 
     public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {
@@ -42,6 +43,41 @@ public class VideosDatabase : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.Entity<Chat>().Ignore(x => x.Messages);
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.ContactInformation)
+            .HasConversion<string?>(
+                e => e!.Value.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.InlineBotButtons)
+            .HasConversion<string?>(
+                e => e!.Value.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.LocationInformation)
+            .HasConversion<string?>(
+                e => e!.Value.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.Poll)
+            .HasConversion<string?>(
+                e => e!.Value.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x!, JsonSerializerOptions.Default));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.Text)
+            .HasConversion<string>(
+                e => e.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x, JsonSerializerOptions.Default));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.TextEntities)
+            .HasConversion<string>(
+                e => e.ToString(),
+                x => JsonSerializer.Deserialize<JsonElement>(x, JsonSerializerOptions.Default));
     }
 }

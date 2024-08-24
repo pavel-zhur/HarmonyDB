@@ -3,8 +3,13 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CsvHelper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneShelf.Videos.App.ChatModels;
+using OneShelf.Common;
+using OneShelf.Videos.App.Database;
+using OneShelf.Videos.App.Database.Models;
+using OneShelf.Videos.App.Database.Models.Json;
 using OneShelf.Videos.App.Models;
 
 namespace OneShelf.Videos.App.Services;
@@ -13,10 +18,14 @@ public class Service1
 {
     private readonly IOptions<VideosOptions> _options;
     private List<(string pathPrefix, Chat chat)>? _chats;
+    private readonly VideosDatabase _videosDatabase;
+    private readonly ILogger<Service1> _logger;
 
-    public Service1(IOptions<VideosOptions> options)
+    public Service1(IOptions<VideosOptions> options, VideosDatabase videosDatabase, ILogger<Service1> logger)
     {
         _options = options;
+        _videosDatabase = videosDatabase;
+        _logger = logger;
     }
 
     public List<(long chatId, int messageId, string path, DateTime publishedOn)> GetExport1()
@@ -40,74 +49,49 @@ public class Service1
             .ToList();
     }
 
-    public void Initialize()
+    public async Task SaveChatFolders()
     {
-        var actualFiles = ReadActualFiles();
-
-        _chats = actualFiles
-            .Select(x =>
-            {
-                var path = x.FullName;
-                var index = path.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]);
-                if (index == -1) return null;
-                index = path.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], index + 1);
-                if (index == -1) return null;
-                return path.Substring(0, index + 1);
-            })
-            .Where(x => x != null)
-            .Distinct()
-            .OrderBy(x => x)
-            .Zip(Directory.GetFiles(_options.Value.BasePath, "result (?).json")
-                .Select(f =>
-                {
-                    try
-                    {
-                        return JsonSerializer.Deserialize<Chat>(File.ReadAllText(f), new JsonSerializerOptions
-                        {
-                            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-                            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-                        });
-                    }
-                    catch
-                    {
-                        Console.WriteLine(f);
-                        throw;
-                    }
-                }))
-            .Select(x => (pathPrefix: x.First!, chat: x.Second!))
-            .ToList();
-    }
-
-    private async Task ExportMessages()
-    {
-        await using var fileStream = File.Create(Path.Combine(_options.Value.BasePath, "messages.csv"));
-        await using var textWriter = new StreamWriter(fileStream, Encoding.UTF8);
-        await using var csvWriter = new CsvWriter(textWriter, CultureInfo.InvariantCulture);
-        await csvWriter.WriteRecordsAsync(_chats!.SelectMany(c => c.chat.Messages.Select(m => new
+        foreach (var directory in Directory.GetDirectories(_options.Value.BasePath, "*", SearchOption.TopDirectoryOnly))
         {
-            c.chat.Id,
-            c.chat.Name,
-            c.chat.Type,
-            c.pathPrefix,
-            Text = (string)JsonSerializer.Serialize(m.Text),
-            m,
-        })));
+            if (File.Exists(Path.Combine(directory, "result.json")))
+            {
+                _videosDatabase.ChatFolders.Add(new()
+                {
+                    Name = Path.GetFileName(directory),
+                    Root = directory,
+                });
+            }
+        }
+
+        await _videosDatabase.SaveChangesAsync();
     }
 
-    private List<ActualFile> ReadActualFiles()
+    public async Task SaveMessages()
     {
-        return JsonSerializer.Deserialize<List<ActualFile>>(File.ReadAllText(GetAllJsonPath()))!;
-    }
+        string[]? localCacheFiles = null;
+        if (_options.Value.LocalCachePath != null)
+        {
+            localCacheFiles = Directory.GetFiles(_options.Value.LocalCachePath, "result (?).json");
+        }
 
-    private async Task SaveActualFiles()
-    {
-        var actualFiles = new DirectoryInfo("y:").GetFiles("*.*", SearchOption.AllDirectories).Where(x => !x.FullName.StartsWith(Path.Combine(_options.Value.BasePath, "_app"))).Select(x => new ActualFile(x.FullName, x.Length)).ToList();
-        await File.WriteAllTextAsync(GetAllJsonPath(), JsonSerializer.Serialize(actualFiles, new JsonSerializerOptions { WriteIndented = true, }));
-    }
+        foreach (var (chatFolder, i) in (await _videosDatabase.ChatFolders.ToListAsync()).WithIndices())
+        {
+            var jsonFile = localCacheFiles?[i] ?? chatFolder.ResultJsonFullPath;
+            
+            var result = JsonSerializer.Deserialize<Chat>(await File.ReadAllTextAsync(jsonFile), new JsonSerializerOptions
+            {
+                UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            })!;
 
-    private string GetAllJsonPath()
-    {
-        return Path.Combine(_options.Value.BasePath, "all.json");
+            result.ChatFolder = chatFolder;
+            _videosDatabase.Chats.Add(result);
+            _logger.LogInformation("{folder} added.", chatFolder.Name);
+        }
+
+        _logger.LogInformation("Saving...");
+        await _videosDatabase.SaveChangesAsync();
+        _logger.LogInformation("Saved.");
     }
 
 }

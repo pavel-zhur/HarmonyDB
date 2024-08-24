@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace OneShelf.Videos.App.Database.Models.Json;
 
+[Index(nameof(ChatFolderId), IsUnique = true)]
 public class Chat
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]

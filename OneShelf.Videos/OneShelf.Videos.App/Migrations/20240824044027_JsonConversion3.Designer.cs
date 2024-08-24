@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.App.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.App.Database;
 namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240824044027_JsonConversion3")]
+    partial class JsonConversion3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -216,8 +219,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
 
                     b.HasKey("DatabaseMessageId");
 
-                    b.HasIndex("ChatId", "Id")
-                        .IsUnique();
+                    b.HasIndex("ChatId");
 
                     b.ToTable("Messages");
                 });

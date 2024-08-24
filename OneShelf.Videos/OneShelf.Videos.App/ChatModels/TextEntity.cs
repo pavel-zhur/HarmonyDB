@@ -1,5 +1,6 @@
 ﻿namespace OneShelf.Videos.App.ChatModels;
 
+// todo: actually used to be referenced by the Message (TextEntities was a collection of it). This type may be useful in the future.
 public class TextEntity
 {
     public required string Type { get; set; }
