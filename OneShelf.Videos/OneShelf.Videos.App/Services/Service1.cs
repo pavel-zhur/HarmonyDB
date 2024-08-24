@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using CsvHelper;
 using Microsoft.Extensions.Options;
 using OneShelf.Videos.App.ChatModels;
-using OneShelf.Videos.App.Database.Models;
 using OneShelf.Videos.App.Models;
 
 namespace OneShelf.Videos.App.Services;
@@ -13,7 +12,6 @@ namespace OneShelf.Videos.App.Services;
 public class Service1
 {
     private readonly IOptions<VideosOptions> _options;
-    //private readonly string _path = "Y:\\";
     private List<(string pathPrefix, Chat chat)>? _chats;
 
     public Service1(IOptions<VideosOptions> options)
