@@ -18,11 +18,13 @@ public class UpdatedGooglePhotosService : GooglePhotosService
         _videosOptions = videosOptions;
     }
 
+    [Obsolete]
     public void LoginWithOptions()
     {
         _client.DefaultRequestHeaders.Authorization = new(_videosOptions.Value.AuthorizationScheme!, _videosOptions.Value.AuthorizationParameter);
     }
 
+    [Obsolete]
     public (string scheme, string? parameter) GetLogin()
     {
         return (

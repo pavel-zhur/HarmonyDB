@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.App.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.App.Database;
 namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240824052457_InventoryItems")]
+    partial class InventoryItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,6 +88,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("MediaMetadataHeight")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<float?>("MediaMetadataPhotoApertureFNumber")
@@ -118,6 +122,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MediaMetadataWidth")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MimeType")

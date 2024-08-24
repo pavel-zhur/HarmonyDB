@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Videos.App.Database;
+using OneShelf.Videos.App.Database.Models;
 
 namespace OneShelf.Videos.App.Services;
 
@@ -21,19 +22,46 @@ public class Service2
         _service3 = service3;
     }
 
-    public async Task ListAlbums()
+    public async Task SaveInventory()
     {
-        _googlePhotosService.LoginWithOptions();
-        var albums = await _googlePhotosService.GetAlbumsAsync();
-        foreach (var album in albums)
+        await _googlePhotosService.LoginAsync();
+        var items = await _googlePhotosService.GetMediaItemsAsync().ToListAsync();
+        _logger.LogInformation("{items} found.", items.Count);
+        _videosDatabase.InventoryItems.AddRange(items.Select(i => new InventoryItem
         {
-            _logger.LogInformation($"{album.id}\t{album.title}");
-        }
+            BaseUrl = i.baseUrl,
+            Description = i.description,
+            FileName = i.filename,
+            Id = i.id,
+            IsPhoto = i.isPhoto,
+            IsVideo = i.isVideo,
+            ProductUrl = i.productUrl,
+            SyncDate = i.syncDate,
+            MimeType = i.mimeType,
+            ContributorInfoDisplayName = i.contributorInfo?.displayName,
+            ContributorInfoProfilePictureBaseUrl = i.contributorInfo?.profilePictureBaseUrl,
+            MediaMetadataHeight = i.mediaMetadata.height,
+            MediaMetadataWidth = i.mediaMetadata.width,
+            MediaMetadataCreationTime = i.mediaMetadata.creationTime,
+            MediaMetadataPhotoApertureFNumber = i.mediaMetadata.photo?.apertureFNumber,
+            MediaMetadataPhotoExposureTime = i.mediaMetadata.photo?.exposureTime,
+            MediaMetadataPhotoFocalLength = i.mediaMetadata.photo?.focalLength,
+            MediaMetadataPhotoIsoEquivalent = i.mediaMetadata.photo?.isoEquivalent,
+            MediaMetadataPhotoCameraMake = i.mediaMetadata.photo?.cameraMake,
+            MediaMetadataPhotoCameraModel = i.mediaMetadata.photo?.cameraModel,
+            MediaMetadataVideoStatus = i.mediaMetadata.video?.status,
+            MediaMetadataVideoFps = i.mediaMetadata.video?.fps,
+            MediaMetadataVideoCameraMake = i.mediaMetadata.video?.cameraMake,
+            MediaMetadataVideoCameraModel = i.mediaMetadata.video?.cameraModel,
+        }));
+        _logger.LogInformation("Saving...");
+        await _videosDatabase.SaveChangesAsync();
+        _logger.LogInformation("Saved.");
     }
 
     public async Task UploadPhotos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
     {
-        _googlePhotosService.LoginWithOptions();
+        await _googlePhotosService.LoginAsync();
 
         var added = (await _videosDatabase.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");
@@ -74,7 +102,7 @@ public class Service2
 
     public async Task UploadVideos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
     {
-        _googlePhotosService.LoginWithOptions();
+        await _googlePhotosService.LoginAsync();
 
         var added = (await _videosDatabase.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");

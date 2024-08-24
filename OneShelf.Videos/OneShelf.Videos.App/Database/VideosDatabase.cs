@@ -17,6 +17,7 @@ public class VideosDatabase : DbContext
     public required DbSet<ChatFolder> ChatFolders { get; set; }
     public required DbSet<Chat> Chats { get; set; }
     public required DbSet<Message> Messages { get; set; }
+    public required DbSet<InventoryItem> InventoryItems { get; set; }
 
     public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {

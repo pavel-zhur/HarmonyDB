@@ -22,27 +22,25 @@ var service1 = host.Services.GetRequiredService<Service1>();
 var service2 = host.Services.GetRequiredService<Service2>();
 var service3 = host.Services.GetRequiredService<Service3>();
 
-//await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
-//await videosDatabase.Database.MigrateAsync();
+await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
+await videosDatabase.Database.MigrateAsync();
 //return;
 
 //await service1.SaveChatFolders();
-//return;
-
-//re-login and display auth token
-if (false)
-{
-    var updatedGooglePhotosService = host.Services.GetRequiredService<UpdatedGooglePhotosService>();
-    await updatedGooglePhotosService.LoginAsync();
-    Console.WriteLine(updatedGooglePhotosService.GetLogin());
-    return;
-}
-
-//await service2.ListAlbums();
-//return;
-
 //await service1.SaveMessages();
+//return;
 
-//await service2.ListAlbums();
+////re-login and display auth token
+//if (true)
+//{
+//    var updatedGooglePhotosService = host.Services.GetRequiredService<UpdatedGooglePhotosService>();
+//    await updatedGooglePhotosService.LoginAsync();
+//    //Console.WriteLine(updatedGooglePhotosService.GetLogin());
+//    return;
+//}
+
+await service2.SaveInventory();
+return;
+
 //await service2.UploadPhotos(service1.GetExport1().ToList());
 //await service2.UploadVideos(service1.GetExport2().ToList());

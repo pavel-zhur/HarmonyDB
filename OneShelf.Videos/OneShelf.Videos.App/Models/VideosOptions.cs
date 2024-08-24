@@ -6,7 +6,9 @@ public record VideosOptions
     
     public string? LocalCachePath { get; init; }
 
+    [Obsolete]
     public string? AuthorizationScheme { get; init; }
 
+    [Obsolete]
     public string? AuthorizationParameter { get; init; }
 }
