@@ -68,17 +68,9 @@ public class Service1
 
     public async Task SaveMessages()
     {
-        string[]? localCacheFiles = null;
-        if (_options.Value.LocalCachePath != null)
+        foreach (var (chatFolder, i) in (await _videosDatabase.ChatFolders.Where(f => f.Chat == null).ToListAsync()).WithIndices())
         {
-            localCacheFiles = Directory.GetFiles(_options.Value.LocalCachePath, "result (?).json");
-        }
-
-        foreach (var (chatFolder, i) in (await _videosDatabase.ChatFolders.ToListAsync()).WithIndices())
-        {
-            var jsonFile = localCacheFiles?[i] ?? chatFolder.ResultJsonFullPath;
-            
-            var result = JsonSerializer.Deserialize<Chat>(await File.ReadAllTextAsync(jsonFile), new JsonSerializerOptions
+            var result = JsonSerializer.Deserialize<Chat>(await File.ReadAllTextAsync(chatFolder.ResultJsonFullPath), new JsonSerializerOptions
             {
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
