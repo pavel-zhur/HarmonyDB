@@ -63,11 +63,6 @@ public class Service2
     {
         await _googlePhotosService.LoginAsync();
 
-        var added = (await _videosDatabase.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync()).ToHashSet();
-        Console.WriteLine($"initial items: {items.Count}");
-        items = items.Where(x => !added.Contains(new { ChatId = x.chatId, MessageId = x.messageId })).ToList();
-        Console.WriteLine($"remaining items: {items.Count}");
-
         var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
         var fileNameTimestamps = new Dictionary<(long chatId, int messageId), DateTime>();
         var result = await _googlePhotosService.UploadMultiple(
@@ -116,7 +111,9 @@ public class Service2
                     //$"chatId = {x.chatId}, messageId = {x.messageId}, published on = {x.publishedOn}, filename = {Path.GetFileName(x.path)}"
                     (string?)null))
                 .ToList(),
-            newItems => AddToDatabase(itemsByKey, newItems));
+            newItems => AddToDatabase(itemsByKey, newItems),
+            threads: 3,
+            batchSize: 10);
 
         Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
     }

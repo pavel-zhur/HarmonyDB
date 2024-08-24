@@ -32,7 +32,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
             _client.DefaultRequestHeaders.Authorization.Parameter);
     }
 
-    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null, int threads = 10)
+    public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null, int threads = 10, int batchSize = 50)
         where T : struct
     {
         var uploadItems = new List<List<(UploadItem uploadItem, T key)>>
@@ -77,7 +77,7 @@ public class UpdatedGooglePhotosService : GooglePhotosService
                         {
                             lock (uploadItems)
                             {
-                                if (uploadItems[^1].Count == 50)
+                                if (uploadItems[^1].Count == batchSize)
                                 {
                                     uploadItems.Add(new());
                                     handle.Set();

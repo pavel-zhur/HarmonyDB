@@ -24,10 +24,12 @@ var service3 = host.Services.GetRequiredService<Service3>();
 
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
 await videosDatabase.Database.MigrateAsync();
+
 //return;
 
 //await service1.SaveChatFolders();
 //await service1.SaveMessages();
+//await service2.SaveInventory();
 //return;
 
 ////re-login and display auth token
@@ -39,8 +41,5 @@ await videosDatabase.Database.MigrateAsync();
 //    return;
 //}
 
-await service2.SaveInventory();
-return;
-
-//await service2.UploadPhotos(service1.GetExport1().ToList());
-//await service2.UploadVideos(service1.GetExport2().ToList());
+//await service2.UploadPhotos((await service1.GetExport1()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
+//await service2.UploadVideos((await service1.GetExport2()).OrderBy(_ => Random.Shared.NextDouble()).ToList());

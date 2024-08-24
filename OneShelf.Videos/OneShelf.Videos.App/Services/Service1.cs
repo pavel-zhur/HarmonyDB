@@ -17,7 +17,6 @@ namespace OneShelf.Videos.App.Services;
 public class Service1
 {
     private readonly IOptions<VideosOptions> _options;
-    private List<(string pathPrefix, Chat chat)>? _chats;
     private readonly VideosDatabase _videosDatabase;
     private readonly ILogger<Service1> _logger;
 
@@ -28,39 +27,52 @@ public class Service1
         _logger = logger;
     }
 
-    public List<(long chatId, int messageId, string path, DateTime publishedOn)> GetExport1()
+    public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport1()
     {
-        return _chats!
-            .SelectMany(c => c.chat.Messages
-                .Where(x => x.Photo != null)
-                .Select(x => (c.chat.Id, x.Id, Path.Combine(c.pathPrefix, x.Photo!), x.Date)))
-            .OrderBy(_ => Random.Shared.NextDouble())
+        var messages = await _videosDatabase.Messages
+            .Where(x => x.Photo != null)
+            .Include(x => x.Chat)
+            .ThenInclude(x => x.ChatFolder)
+            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
+            .ToListAsync();
+
+        return messages
+            .Select(x => (x.Chat.Id, x.Id, Path.Combine(x.Chat.ChatFolder.Root, x.Photo!), x.Date))
             .ToList();
     }
 
-    public List<(long chatId, int messageId, string path, DateTime publishedOn)> GetExport2()
+    public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport2()
     {
-        return _chats!
-            .SelectMany(c => c.chat.Messages
-                .Where(x => x.MimeType?.StartsWith("video/", StringComparison.InvariantCultureIgnoreCase) == true)
-                .Where(x => x.MediaType == "video_file") // todo: more video files without this filter may exist. the filter is too narrow.
-                .Select(x => (c.chat.Id, x.Id, Path.Combine(c.pathPrefix, x.File!), x.Date)))
-            .OrderBy(_ => Random.Shared.NextDouble())
+        var messages = await _videosDatabase.Messages
+            .Where(x => x.MimeType!.ToLower().StartsWith("video/") == true)
+            .Where(x => x.MediaType == "video_file" || x.MediaType == null)
+            .Include(x => x.Chat)
+            .ThenInclude(x => x.ChatFolder)
+            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
+            .ToListAsync();
+
+        return messages
+            .Select(x => (x.Chat.Id, x.Id, Path.Combine(x.Chat.ChatFolder.Root, x.File!), x.Date))
             .ToList();
     }
 
     public async Task SaveChatFolders()
     {
+        var existing = await _videosDatabase.ChatFolders.ToListAsync();
         foreach (var directory in Directory.GetDirectories(_options.Value.BasePath, "*", SearchOption.TopDirectoryOnly))
         {
-            if (File.Exists(Path.Combine(directory, "result.json")))
+            var name = Path.GetFileName(directory);
+            if (existing.Any(x => x.Name == name)) continue;
+
+            if (!File.Exists(Path.Combine(directory, "result.json"))) continue;
+
+            _videosDatabase.ChatFolders.Add(new()
             {
-                _videosDatabase.ChatFolders.Add(new()
-                {
-                    Name = Path.GetFileName(directory),
-                    Root = directory,
-                });
-            }
+                Name = name,
+                Root = directory,
+            });
+
+            _logger.LogInformation("Added {root}.", directory);
         }
 
         await _videosDatabase.SaveChangesAsync();
