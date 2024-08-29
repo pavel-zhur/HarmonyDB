@@ -25,6 +25,7 @@ public class VideosDatabase : DbContext
     public required DbSet<Chat> Chats { get; set; }
     public required DbSet<Message> Messages { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
+    public required DbSet<Source> Sources { get; set; }
 
     public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {
@@ -42,7 +43,7 @@ public class VideosDatabase : DbContext
             MediaItemIsVideo = i.result.mediaItem?.isVideo,
             MediaItemMimeType = i.result.mediaItem?.mimeType,
             MediaItemSyncDate = i.result.mediaItem?.syncDate,
-            MediaItemMetadataCreationType = i.result.mediaItem?.mediaMetadata?.creationTime,
+            MediaItemMetadataCreationTime = i.result.mediaItem?.mediaMetadata?.creationTime,
             Json = JsonSerializer.Serialize(i.result.mediaItem),
             FileNameTimestamp = i.fileNameTimestamp,
         }));
