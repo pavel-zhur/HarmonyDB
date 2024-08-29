@@ -26,6 +26,7 @@ public class VideosDatabase : DbContext
     public required DbSet<Message> Messages { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
     public required DbSet<Source> Sources { get; set; }
+    public required DbSet<SourceTopic> SourceTopics { get; set; }
 
     public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {
