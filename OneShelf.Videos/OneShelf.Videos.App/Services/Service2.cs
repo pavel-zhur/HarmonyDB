@@ -67,9 +67,7 @@ public class Service2
         var fileNameTimestamps = new Dictionary<(long chatId, int messageId), DateTime>();
         var result = await _googlePhotosService.UploadMultiple(
             items
-                .Select(x => ((x.chatId, x.messageId), x.path,
-                    //$"chatId = {x.chatId}, messageId = {x.messageId}, published on = {x.publishedOn}, filename = {Path.GetFileName(x.path)}"
-                    (string?)null))
+                .Select(x => ((x.chatId, x.messageId), x.path, (string?)null))
                 .ToList(),
             newItems => AddToDatabase(itemsByKey, newItems, fileNameTimestamps),
             async (x, i) =>
