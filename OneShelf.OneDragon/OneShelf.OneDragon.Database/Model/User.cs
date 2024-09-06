@@ -23,5 +23,5 @@ public class User
     
     public string? LanguageCode { get; set; }
 
-    public bool UseLimits { get; set; }
+    public required bool UseLimits { get; set; }
 }
