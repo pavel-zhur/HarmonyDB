@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using OneShelf.Videos.App.Database.Models.Enums;
 
 namespace OneShelf.Videos.App.Database.Models.Json;
 

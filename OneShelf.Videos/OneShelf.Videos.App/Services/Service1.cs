@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Videos.App.Database;
 using OneShelf.Videos.App.Database.Models;
+using OneShelf.Videos.App.Database.Models.Enums;
 using OneShelf.Videos.App.Database.Models.Json;
 using OneShelf.Videos.App.Models;
 

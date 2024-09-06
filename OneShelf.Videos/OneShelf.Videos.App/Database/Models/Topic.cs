@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OneShelf.Videos.App.Database.Models.Json;
 
-namespace OneShelf.Videos.App.Database.Models.Json;
+namespace OneShelf.Videos.App.Database.Models;
 
 [Index(nameof(ChatId), nameof(RootMessageIdOr0), IsUnique = true)]
 public class Topic

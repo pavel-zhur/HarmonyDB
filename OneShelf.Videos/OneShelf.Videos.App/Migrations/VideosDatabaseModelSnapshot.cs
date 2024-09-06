@@ -322,7 +322,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                     b.ToTable("Messages");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Json.Topic", b =>
+            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Topic", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -430,7 +430,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OneShelf.Videos.App.Database.Models.Json.Topic", "Topic")
+                    b.HasOne("OneShelf.Videos.App.Database.Models.Topic", "Topic")
                         .WithMany()
                         .HasForeignKey("TopicId");
 
@@ -439,7 +439,7 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                     b.Navigation("Topic");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Json.Topic", b =>
+            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Topic", b =>
                 {
                     b.HasOne("OneShelf.Videos.App.Database.Models.Json.Chat", "Chat")
                         .WithMany()
