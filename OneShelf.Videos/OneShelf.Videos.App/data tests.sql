@@ -121,3 +121,13 @@ left join videos.messages rm on rm.chatid = m.chatid and rm.id = r.parentid
 where m.replytomessageid is not null and r.chatid is null
 	or rm.replytomessageid is not null
 	or rm.action <> 'topic_created'
+
+-- test 9: no results
+select *
+from videos.UploadedItems u
+full join (
+
+select * from videos.Messages where topicid is not null
+
+) m on m.chatid = u.chatid and m.id = u.messageid
+where u.id is null or m.id is null

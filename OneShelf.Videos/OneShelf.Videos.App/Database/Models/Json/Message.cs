@@ -18,6 +18,12 @@ public class Message
     [JsonIgnore]
     public Chat Chat { get; set; } = null;
 
+    [JsonIgnore]
+    public int? TopicId { get; set; }
+
+    [JsonIgnore]
+    public Topic? Topic { get; set; }
+
     public required int Id { get; set; }
     public int? MessageId { get; set; }
     public int? ReplyToMessageId { get; set; }

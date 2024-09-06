@@ -25,6 +25,9 @@ var service3 = host.Services.GetRequiredService<Service3>();
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
 await videosDatabase.Database.MigrateAsync();
 
+//await videosDatabase.CreateMissingTopics();
+//await videosDatabase.UpdateMessagesTopics();
+
 //return;
 
 //await service1.SaveChatFolders();
