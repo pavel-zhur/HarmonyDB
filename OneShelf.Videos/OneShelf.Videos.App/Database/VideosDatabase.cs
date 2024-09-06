@@ -5,6 +5,7 @@ using CasCap.Models;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Videos.App.Database.Models;
 using OneShelf.Videos.App.Database.Models.Json;
+using Album = OneShelf.Videos.App.Database.Models.Album;
 
 namespace OneShelf.Videos.App.Database;
 
@@ -26,6 +27,9 @@ public class VideosDatabase : DbContext
     public required DbSet<Message> Messages { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
     public required DbSet<Topic> Topics { get; set; }
+    public required DbSet<Album> Albums { get; set; }
+    public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
+    public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
 
     public async Task CreateMissingTopics()
     {
@@ -167,6 +171,10 @@ left join topics t on t.chatid = m.chatid and t.rootmessageidor0 = isnull(r.pare
             .HasConversion<string>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
+
+        modelBuilder.Entity<AlbumConstraint>()
+            .Property(x => x.MessageSelectedType)
+            .HasConversion<string>();
 
         modelBuilder.Entity<Message>()
             .Property(x => x.SelectedType)

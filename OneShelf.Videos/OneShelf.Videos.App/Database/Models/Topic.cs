@@ -17,4 +17,8 @@ public class Topic
     public required string OriginalTitle { get; set; }
 
     public required string Title { get; set; }
+
+    public ICollection<Message> Messages { get; set; }
+
+    public ICollection<AlbumConstraint> AlbumConstraints { get; set; }
 }

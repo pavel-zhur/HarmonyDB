@@ -46,3 +46,4 @@ await videosDatabase.Database.MigrateAsync();
 
 //await service2.UploadPhotos((await service1.GetExport1()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
 //await service2.UploadVideos((await service1.GetExport2()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
+//await service2.CreateAlbums(await service1.GetAlbums());

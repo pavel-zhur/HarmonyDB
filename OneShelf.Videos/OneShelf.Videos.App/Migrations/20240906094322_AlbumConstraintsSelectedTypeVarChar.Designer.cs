@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.App.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.App.Database;
 namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240906094322_AlbumConstraintsSelectedTypeVarChar")]
+    partial class AlbumConstraintsSelectedTypeVarChar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,29 +410,6 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                     b.ToTable("Topics");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.UploadedAlbum", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AlbumId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GoogleAlbumId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AlbumId")
-                        .IsUnique();
-
-                    b.ToTable("UploadedAlbums");
-                });
-
             modelBuilder.Entity("OneShelf.Videos.App.Database.Models.UploadedItem", b =>
                 {
                     b.Property<int>("Id")
@@ -545,22 +525,9 @@ namespace OneShelf.Videos.App.Migrations.VideosDatabaseMigrations
                     b.Navigation("Chat");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.App.Database.Models.UploadedAlbum", b =>
-                {
-                    b.HasOne("OneShelf.Videos.App.Database.Models.Album", "Album")
-                        .WithOne("UploadedAlbum")
-                        .HasForeignKey("OneShelf.Videos.App.Database.Models.UploadedAlbum", "AlbumId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Album");
-                });
-
             modelBuilder.Entity("OneShelf.Videos.App.Database.Models.Album", b =>
                 {
                     b.Navigation("Constraints");
-
-                    b.Navigation("UploadedAlbum");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.App.Database.Models.ChatFolder", b =>

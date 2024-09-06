@@ -98,4 +98,49 @@ public class Service1
         _logger.LogInformation("Saved.");
     }
 
+    public async Task<List<(int albumId, string title, List<(string? mediaItemId, long chatId, int messageId)> items)>> GetAlbums()
+    {
+        var albums = await _videosDatabase.Albums
+            .Where(x => x.UploadedAlbum == null)
+            .Include(x => x.Constraints)
+            .ThenInclude(x => x.Topic)
+            .ToListAsync();
+
+        var messages = (await _videosDatabase.Messages
+                .Where(x => x.SelectedType.HasValue && x.TopicId.HasValue)
+                .Select(m => new
+                {
+                    m.TopicId,
+                    m.ChatId,
+                    m.Width,
+                    m.Height,
+                    m.Date,
+                    m.Id,
+                    m.SelectedType,
+                })
+                .ToListAsync())
+            .ToLookup(x => x.TopicId!.Value);
+
+        var uploadedItems = await _videosDatabase.UploadedItems
+            .Where(i => _videosDatabase.InventoryItems.Any(j => j.Id == i.MediaItemId && (j.IsPhoto || j.MediaMetadataVideoStatus == "READY")))
+            .ToDictionaryAsync(x => new { x.ChatId, x.MessageId, }, x => x.MediaItemId);
+
+        return albums
+            .Select(a => (a.Id, a.Title,
+                a.Constraints
+                    .SelectMany(c => messages[c.TopicId!.Value].Where(m =>
+                    {
+                        if (c.MessageSelectedType.HasValue && c.MessageSelectedType != m.SelectedType) return false;
+                        if (c.IsSquare && m.Width != m.Height) return false;
+                        if (!c.Include) throw new("The exclusion is not supported yet.");
+                        if (c.After.HasValue && m.Date < c.After) return false;
+                        if (c.Before.HasValue && m.Date > c.Before) return false;
+                        return true;
+                    }))
+                    .Select(x => new { x.ChatId, MessageId = x.Id })
+                    .Distinct()
+                    .Select(x => (uploadedItems.GetValueOrDefault(x), x.ChatId, x.MessageId))
+                    .ToList()))
+            .ToList();
+    }
 }

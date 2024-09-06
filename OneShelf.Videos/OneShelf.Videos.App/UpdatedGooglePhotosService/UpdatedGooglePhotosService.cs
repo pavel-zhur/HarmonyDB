@@ -1,4 +1,6 @@
-﻿using CasCap.Exceptions;
+﻿using System.Net;
+using CasCap.Common.Extensions;
+using CasCap.Exceptions;
 using CasCap.Models;
 using CasCap.Services;
 using Microsoft.Extensions.Logging;
@@ -9,6 +11,8 @@ namespace OneShelf.Videos.App.UpdatedGooglePhotosService;
 
 public class UpdatedGooglePhotosService : GooglePhotosService
 {
+    private const int DefaultBatchSizeMediaItems = 50;
+
     private readonly IOptions<VideosOptions> _videosOptions;
     private int _processed;
 
@@ -30,6 +34,36 @@ public class UpdatedGooglePhotosService : GooglePhotosService
         return (
             _client.DefaultRequestHeaders.Authorization!.Scheme,
             _client.DefaultRequestHeaders.Authorization.Parameter);
+    }
+
+    public async Task AddMediaItemsToAlbumWithRetryAsync(string albumId, List<string> mediaItemIds)
+    {
+        var batches = mediaItemIds.Distinct().ToList().GetBatches(DefaultBatchSizeMediaItems);
+        foreach (var batch in batches)
+        {
+            var req = new { mediaItemIds = batch.Value };
+            var retry = 0;
+            var delay = TimeSpan.FromSeconds(2);
+            while (true)
+            {
+                var tpl = await PostJson<string, Error>(string.Format(RequestUris.POST_albums_batchAddMediaItems, albumId), req);
+                if (tpl.error is not null)
+                {
+                    if (tpl.statusCode == HttpStatusCode.TooManyRequests && retry < 8)
+                    {
+                        retry++;
+                        delay *= 2;
+                        _logger.LogInformation("Retrying...");
+                        await Task.Delay(delay);
+                        continue;
+                    }
+
+                    throw new GooglePhotosException(tpl.error);
+                }
+
+                break;
+            }
+        }
     }
 
     public async Task<Dictionary<T, NewMediaItemResult>> UploadMultiple<T>(List<(T key, string filePath, string? description)> items, Func<Dictionary<T, NewMediaItemResult>, Task> newItemsAdded, Func<T, int, Task<string>>? transformFile = null, int threads = 10, int batchSize = 50)

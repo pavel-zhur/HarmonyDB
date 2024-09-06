@@ -124,4 +124,24 @@ public class Service2
         _videosDatabase.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
         await _videosDatabase.SaveChangesAsync();
     }
+
+    public async Task CreateAlbums(List<(int albumId, string title, List<(string? mediaItemId, long chatId, int messageId)> items)> albums)
+    {
+        await _googlePhotosService.LoginAsync();
+        foreach (var (albumId, title, items) in albums)
+        {
+            _logger.LogInformation("{title} uploading...", title);
+            var googleAlbum = await _googlePhotosService.CreateAlbumAsync(title);
+            await _googlePhotosService.AddMediaItemsToAlbumWithRetryAsync(googleAlbum!.id, items.Where(x => x.mediaItemId != null).Select(x => x.mediaItemId!).ToList());
+
+            _videosDatabase.UploadedAlbums.Add(new()
+            {
+                GoogleAlbumId = googleAlbum.id,
+                AlbumId = albumId,
+            });
+
+            await _videosDatabase.SaveChangesAsync();
+            _logger.LogInformation("{title} uploaded.", title);
+        }
+    }
 }
