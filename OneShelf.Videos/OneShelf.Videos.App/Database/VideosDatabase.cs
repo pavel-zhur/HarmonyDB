@@ -32,11 +32,9 @@ public class VideosDatabase : DbContext
         await Database.ExecuteSqlAsync(@$"
 
 with m as (
-	select *, case when m.photo is not null then 'photo' when m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null') then 'video' else null end messagetype
+	select *
 	from messages m
-	where 
-		(m.photo is not null)
-		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
+	where selectedtype is not null
 ), r as (
 	select chatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
 	from m
@@ -56,7 +54,7 @@ with m as (
 	from (
 		select 
 			-- c.*, r.*, m.*
-			c.name, r.title, count(case when messagetype = 'video' then 1 end) videos, count(case when messagetype = 'photo' then 1 end) photos, m.chatid, isnull(r.parentid, 0) rootmessageidor0
+			c.name, r.title, m.chatid, isnull(r.parentid, 0) rootmessageidor0
 		from m
 		left join roots r on r.childid = m.id and r.chatid = m.chatid
 		inner join chats c on c.id = m.chatid
@@ -79,11 +77,9 @@ ORDER BY nt.chatid, nt.rootmessageidor0
         await Database.ExecuteSqlAsync(@$"
 
 with m as (
-	select *, case when m.photo is not null then 'photo' when m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null') then 'video' else null end messagetype
+	select *
 	from messages m
-	where 
-		(m.photo is not null)
-		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
+	where selectedtype is not null
 ), r as (
 	select chatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
 	from m
@@ -171,5 +167,11 @@ left join topics t on t.chatid = m.chatid and t.rootmessageidor0 = isnull(r.pare
             .HasConversion<string>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
+
+        modelBuilder.Entity<Message>()
+            .Property(x => x.SelectedType)
+            .HasConversion<string>()
+            .HasComputedColumnSql(
+                "case when photo is not null then 'photo' when mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null') then 'video' else null end");
     }
 }

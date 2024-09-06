@@ -24,6 +24,9 @@ public class Message
     [JsonIgnore]
     public Topic? Topic { get; set; }
 
+    [JsonIgnore]
+    public MessageSelectedType? SelectedType { get; set; }
+
     public required int Id { get; set; }
     public int? MessageId { get; set; }
     public int? ReplyToMessageId { get; set; }

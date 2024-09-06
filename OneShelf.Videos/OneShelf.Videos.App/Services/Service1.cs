@@ -30,7 +30,7 @@ public class Service1
     public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport1()
     {
         var messages = await _videosDatabase.Messages
-            .Where(x => x.Photo != null)
+            .Where(x => x.SelectedType == MessageSelectedType.Photo)
             .Include(x => x.Chat)
             .ThenInclude(x => x.ChatFolder)
             .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
@@ -44,8 +44,7 @@ public class Service1
     public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport2()
     {
         var messages = await _videosDatabase.Messages
-            .Where(x => x.MimeType!.ToLower().StartsWith("video/") == true)
-            .Where(x => x.MediaType == "video_file" || x.MediaType == null)
+            .Where(x => x.SelectedType == MessageSelectedType.Video)
             .Include(x => x.Chat)
             .ThenInclude(x => x.ChatFolder)
             .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
