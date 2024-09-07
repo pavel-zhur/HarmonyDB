@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OneShelf.Videos.App.Database;
 using OneShelf.Videos.App.Models;
 using OneShelf.Videos.App.Services;
 using OneShelf.Videos.App.UpdatedGooglePhotosService;
+using OneShelf.Videos.Database;
 
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.AddJsonFile("appsettings.Secrets.json");
@@ -14,7 +14,8 @@ builder.Services
     .AddScoped<Service1>()
     .AddScoped<Service2>()
     .AddScoped<Service3>()
-    .AddDbContext<VideosDatabase>(o => o.UseSqlServer(builder.Configuration.GetConnectionString(nameof(VideosDatabase))))
+    .AddScoped<VideosDatabaseOperations>()
+    .AddVideosDatabase(builder.Configuration)
     .AddMyGooglePhotos();
 var host = builder.Build();
 
@@ -46,4 +47,4 @@ await videosDatabase.Database.MigrateAsync();
 
 //await service2.UploadPhotos((await service1.GetExport1()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
 //await service2.UploadVideos((await service1.GetExport2()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
-//await service2.CreateAlbums(await service1.GetAlbums());
+await service2.CreateAlbums(await service1.GetAlbums());

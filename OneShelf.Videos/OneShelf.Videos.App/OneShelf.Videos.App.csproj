@@ -11,17 +11,16 @@
 		<PackageReference Include="CasCap.Apis.GooglePhotos" Version="3.0.1" />
 		<PackageReference Include="CsvHelper" Version="33.0.1" />
 		<PackageReference Include="ExifLibNet" Version="2.1.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.5">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common\OneShelf.Common.csproj" />
+	  <ProjectReference Include="..\OneShelf.Videos.Database\OneShelf.Videos.Database.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

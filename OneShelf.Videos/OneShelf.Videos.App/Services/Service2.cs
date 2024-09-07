@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
-using OneShelf.Videos.App.Database;
-using OneShelf.Videos.App.Database.Models;
+using OneShelf.Videos.Database;
+using OneShelf.Videos.Database.Models;
 
 namespace OneShelf.Videos.App.Services;
 
@@ -12,14 +12,16 @@ public class Service2
     private readonly UpdatedGooglePhotosService.UpdatedGooglePhotosService _googlePhotosService;
     private readonly ILogger<Service2> _logger;
     private readonly VideosDatabase _videosDatabase;
+    private readonly VideosDatabaseOperations _videosDatabaseOperations;
     private readonly Service3 _service3;
 
-    public Service2(UpdatedGooglePhotosService.UpdatedGooglePhotosService googlePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, Service3 service3)
+    public Service2(UpdatedGooglePhotosService.UpdatedGooglePhotosService googlePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, Service3 service3, VideosDatabaseOperations videosDatabaseOperations)
     {
         _googlePhotosService = googlePhotosService;
         _logger = logger;
         _videosDatabase = videosDatabase;
         _service3 = service3;
+        _videosDatabaseOperations = videosDatabaseOperations;
     }
 
     public async Task SaveInventory()
@@ -121,7 +123,7 @@ public class Service2
         Dictionary<(long chatId, int messageId), NewMediaItemResult> newItems,
         Dictionary<(long chatId, int messageId), DateTime>? fileNameTimestamps = null)
     {
-        _videosDatabase.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
+        _videosDatabaseOperations.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
         await _videosDatabase.SaveChangesAsync();
     }
 

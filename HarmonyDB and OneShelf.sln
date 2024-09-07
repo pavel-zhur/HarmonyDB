@@ -191,23 +191,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram", "OneShe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.OneDragon", "OneShelf.OneDragon", "{950D96F8-860E-4EE6-A8EC-8ECCC6BE480F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Runner.Functions", "OneShelf.OneDragon\OneShelf.OneDragon.Runner.Functions\OneShelf.OneDragon.Runner.Functions.csproj", "{4A7E75E5-B345-4BF8-BFCC-788ADC1FA218}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Runner.Functions", "OneShelf.OneDragon\OneShelf.OneDragon.Runner.Functions\OneShelf.OneDragon.Runner.Functions.csproj", "{4A7E75E5-B345-4BF8-BFCC-788ADC1FA218}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Processor", "OneShelf.OneDragon\OneShelf.OneDragon.Processor\OneShelf.OneDragon.Processor.csproj", "{DF960A56-A097-4220-A8FE-B9714680F87D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Processor", "OneShelf.OneDragon\OneShelf.OneDragon.Processor\OneShelf.OneDragon.Processor.csproj", "{DF960A56-A097-4220-A8FE-B9714680F87D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Database", "OneShelf.OneDragon\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj", "{8DB5C0DC-C738-4CC4-A281-392A65ED4743}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.OneDragon.Database", "OneShelf.OneDragon\OneShelf.OneDragon.Database\OneShelf.OneDragon.Database.csproj", "{8DB5C0DC-C738-4CC4-A281-392A65ED4743}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Polling", "OneShelf.Telegram\OneShelf.Telegram.Polling\OneShelf.Telegram.Polling.csproj", "{76C5E207-6028-4083-84C5-DAC7839D1F85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram.Polling", "OneShelf.Telegram\OneShelf.Telegram.Polling\OneShelf.Telegram.Polling.csproj", "{76C5E207-6028-4083-84C5-DAC7839D1F85}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.TelegramLibrary", "OneShelf.TelegramLibrary", "{FE163498-92F2-4216-B757-BFA3C3C6C0D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Ai", "OneShelf.Telegram\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj", "{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram.Ai", "OneShelf.Telegram\OneShelf.Telegram.Ai\OneShelf.Telegram.Ai.csproj", "{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Telegram.Ai.Model", "OneShelf.Telegram\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj", "{DC7B80CC-E597-4E67-9FFB-33DB252EC321}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Telegram.Ai.Model", "OneShelf.Telegram\OneShelf.Telegram.Ai.Model\OneShelf.Telegram.Ai.Model.csproj", "{DC7B80CC-E597-4E67-9FFB-33DB252EC321}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Videos", "OneShelf.Videos", "{5F839A7C-B540-4475-9FFE-9E5E4FC10D78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Videos.App", "OneShelf.Videos\OneShelf.Videos.App\OneShelf.Videos.App.csproj", "{99134E7C-CE2F-4641-A9E3-B961F76307F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Videos.App", "OneShelf.Videos\OneShelf.Videos.App\OneShelf.Videos.App.csproj", "{99134E7C-CE2F-4641-A9E3-B961F76307F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Videos.Database", "OneShelf.Videos\OneShelf.Videos.Database\OneShelf.Videos.Database.csproj", "{D702C117-2C9A-44E0-B428-30371616FBAE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -515,6 +517,10 @@ Global
 		{99134E7C-CE2F-4641-A9E3-B961F76307F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99134E7C-CE2F-4641-A9E3-B961F76307F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99134E7C-CE2F-4641-A9E3-B961F76307F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D702C117-2C9A-44E0-B428-30371616FBAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D702C117-2C9A-44E0-B428-30371616FBAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D702C117-2C9A-44E0-B428-30371616FBAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D702C117-2C9A-44E0-B428-30371616FBAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -596,6 +602,7 @@ Global
 		{DAFCA5B8-2C80-4519-8E4A-3E5958E2A37E} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
 		{DC7B80CC-E597-4E67-9FFB-33DB252EC321} = {95E2976B-C1F3-47B9-98F5-741E9D21CC68}
 		{99134E7C-CE2F-4641-A9E3-B961F76307F0} = {5F839A7C-B540-4475-9FFE-9E5E4FC10D78}
+		{D702C117-2C9A-44E0-B428-30371616FBAE} = {5F839A7C-B540-4475-9FFE-9E5E4FC10D78}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}

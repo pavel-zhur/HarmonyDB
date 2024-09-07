@@ -7,11 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
-using OneShelf.Videos.App.Database;
-using OneShelf.Videos.App.Database.Models;
-using OneShelf.Videos.App.Database.Models.Enums;
-using OneShelf.Videos.App.Database.Models.Json;
 using OneShelf.Videos.App.Models;
+using OneShelf.Videos.Database;
+using OneShelf.Videos.Database.Models.Enums;
+using OneShelf.Videos.Database.Models.Json;
 
 namespace OneShelf.Videos.App.Services;
 
