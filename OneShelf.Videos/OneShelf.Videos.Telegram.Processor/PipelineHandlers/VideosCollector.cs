@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Services.Base;
+using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
 using OneShelf.Videos.Database.Models.Enums;
@@ -10,26 +12,32 @@ using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
+using Telegram.BotAPI.UpdatingMessages;
+using File = System.IO.File;
 
 namespace OneShelf.Videos.Telegram.Processor.PipelineHandlers;
 
 public class VideosCollector : PipelineHandler
 {
     private readonly VideosDatabase _videosDatabase;
-    private readonly IOptions<TelegramOptions> _options;
+    private readonly IOptions<TelegramOptions> _telegramOptions;
     private readonly Scope _scope;
+    private readonly HttpClient _httpClient;
+    private readonly IOptions<VideosOptions> _videoOptions;
 
-    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> options, Scope scope) 
+    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> telegramOptions, Scope scope, HttpClient httpClient, IOptions<VideosOptions> videoOptions) 
         : base(scopedAbstractions)
     {
         _videosDatabase = videosDatabase;
-        _options = options;
+        _telegramOptions = telegramOptions;
         _scope = scope;
+        _httpClient = httpClient;
+        _videoOptions = videoOptions;
     }
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (update.Message?.From?.Id != _options.Value.AdminId) return false;
+        if (update.Message?.From?.Id != _telegramOptions.Value.AdminId) return false;
         if (!IsPrivate(update.Message?.Chat)) return false;
 
         TelegramMediaType type;
@@ -116,6 +124,12 @@ public class VideosCollector : PipelineHandler
             return false;
         }
 
+        var alreadyResponded = false;
+        if (update.Message.MediaGroupId != null)
+        {
+            alreadyResponded = await _videosDatabase.TelegramMedia.AnyAsync(x => x.MediaGroupId == update.Message.MediaGroupId);
+        }
+
         var telegramMedia = new TelegramMedia
         {
             TelegramUpdateId = _scope.UpdateId,
@@ -147,22 +161,53 @@ public class VideosCollector : PipelineHandler
 
         await _videosDatabase.SaveChangesAsync();
 
-        QueueApi(null, api => Respond(api, update, telegramMedia.Id));
+        QueueApi(null, api => Respond(api, update, telegramMedia, alreadyResponded));
 
         return true;
     }
 
-    private async Task Respond(TelegramBotClient client, Update update, int telegramMediaId)
+    private async Task Respond(TelegramBotClient api, Update update, TelegramMedia telegramMedia, bool alreadyResponded)
     {
-        await client.SendMessageAsync(
-            update.Message!.Chat.Id,
-            $"Got {telegramMediaId}.",
-            replyParameters: new()
-            {
-                ChatId = update.Message.Chat.Id,
-                MessageId = update.Message.MessageId,
-                AllowSendingWithoutReply = true,
-            },
-            replyMarkup: new InlineKeyboardMarkup([[new("button") { CallbackData = telegramMediaId.ToString(), }]]));
+        if (!alreadyResponded)
+        {
+            await api.SendMessageAsync(
+                update.Message!.Chat.Id,
+                $"Got {telegramMedia.Id}.",
+                replyParameters: new()
+                {
+                    ChatId = update.Message.Chat.Id,
+                    MessageId = update.Message.MessageId,
+                    AllowSendingWithoutReply = true,
+                },
+                replyMarkup: new InlineKeyboardMarkup([
+                    [
+                        new("button")
+                        {
+                            CallbackData = $"{telegramMedia.Id}; {telegramMedia.MediaGroupId}",
+                        }
+                    ]
+                ]));
+        }
+
+        //telegramMedia.DownloadedFileName = await Save(api, telegramMedia, false);
+        //await _videosDatabase.SaveChangesAsync();
+
+        //if (telegramMedia.ThumbnailFileId != null)
+        //{
+        //    telegramMedia.DownloadedThumbnailFileName = await Save(api, telegramMedia, true);
+        //    await _videosDatabase.SaveChangesAsync();
+        //}
     }
+
+    //private async Task<string> Save(TelegramBotClient api, TelegramMedia telegramMedia, bool isThumbnail)
+    //{
+    //    var file = await api.GetFileAsync(isThumbnail ? telegramMedia.ThumbnailFileId! : telegramMedia.FileId);
+    //    Console.WriteLine(file.FilePath);
+    //    var response = await _httpClient.GetAsync($"https://api.telegram.org/file/bot{_telegramOptions.Value.Token}/{file.FilePath}");
+    //    var bytes = await response.Content.ReadAsByteArrayAsync();
+    //    Console.WriteLine(bytes.Length);
+    //    var name = $"{DateTime.Now.Ticks}_{telegramMedia.FileName}";
+    //    await File.WriteAllBytesAsync(Path.Combine(_videoOptions.Value.BasePath, "_uploaded", isThumbnail ? "thumbnails" : ".", name), bytes);
+    //    return name;
+    //}
 }

@@ -1,7 +1,9 @@
-﻿using OneShelf.Videos.Database.Models.Enums;
+﻿using Microsoft.EntityFrameworkCore;
+using OneShelf.Videos.Database.Models.Enums;
 
 namespace OneShelf.Videos.Database.Models;
 
+[Index(nameof(MediaGroupId))]
 public class TelegramMedia
 {
     public int Id { get; set; }
