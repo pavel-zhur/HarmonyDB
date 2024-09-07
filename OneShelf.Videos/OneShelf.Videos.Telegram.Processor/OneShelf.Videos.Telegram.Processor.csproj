@@ -7,6 +7,10 @@
 	  <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj" />
 		<ProjectReference Include="..\OneShelf.Videos.BusinessLogic\OneShelf.Videos.BusinessLogic.csproj" />

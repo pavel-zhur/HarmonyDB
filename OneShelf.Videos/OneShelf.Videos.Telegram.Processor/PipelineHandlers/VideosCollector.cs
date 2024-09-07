@@ -24,8 +24,9 @@ public class VideosCollector : PipelineHandler
     private readonly Scope _scope;
     private readonly HttpClient _httpClient;
     private readonly IOptions<VideosOptions> _videoOptions;
+    private readonly VideosCollectorMemory _videosCollectorMemory;
 
-    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> telegramOptions, Scope scope, HttpClient httpClient, IOptions<VideosOptions> videoOptions) 
+    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> telegramOptions, Scope scope, HttpClient httpClient, IOptions<VideosOptions> videoOptions, VideosCollectorMemory videosCollectorMemory) 
         : base(scopedAbstractions)
     {
         _videosDatabase = videosDatabase;
@@ -33,6 +34,7 @@ public class VideosCollector : PipelineHandler
         _scope = scope;
         _httpClient = httpClient;
         _videoOptions = videoOptions;
+        _videosCollectorMemory = videosCollectorMemory;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -124,12 +126,6 @@ public class VideosCollector : PipelineHandler
             return false;
         }
 
-        var alreadyResponded = false;
-        if (update.Message.MediaGroupId != null)
-        {
-            alreadyResponded = await _videosDatabase.TelegramMedia.AnyAsync(x => x.MediaGroupId == update.Message.MediaGroupId);
-        }
-
         var telegramMedia = new TelegramMedia
         {
             TelegramUpdateId = _scope.UpdateId,
@@ -157,9 +153,17 @@ public class VideosCollector : PipelineHandler
             ThumbnailHeight = thumbnail?.Height,
         };
 
-        _videosDatabase.TelegramMedia.Add(telegramMedia);
+        var alreadyResponded = false;
+        using (await _videosCollectorMemory.DatabaseLock.LockAsync())
+        {
+            if (update.Message.MediaGroupId != null)
+            {
+                alreadyResponded = await _videosDatabase.TelegramMedia.AnyAsync(x => x.MediaGroupId == update.Message.MediaGroupId);
+            }
 
-        await _videosDatabase.SaveChangesAsync();
+            _videosDatabase.TelegramMedia.Add(telegramMedia);
+            await _videosDatabase.SaveChangesAsync();
+        }
 
         QueueApi(null, api => Respond(api, update, telegramMedia, alreadyResponded));
 
@@ -170,6 +174,11 @@ public class VideosCollector : PipelineHandler
     {
         if (!alreadyResponded)
         {
+            await api.SetMessageReactionAsync(
+                update.Message!.Chat.Id,
+                update.Message.MessageId,
+                [new ReactionTypeEmoji("👀")]);
+
             await api.SendMessageAsync(
                 update.Message!.Chat.Id,
                 $"Got {telegramMedia.Id}.",

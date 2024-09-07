@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
 
         services
             .AddVideosBusinessLogic(configuration)
+            .AddSingleton<VideosCollectorMemory>()
             .AddScoped<Scope>();
 
         return services;
