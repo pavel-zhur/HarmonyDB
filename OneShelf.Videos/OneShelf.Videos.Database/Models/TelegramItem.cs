@@ -13,6 +13,8 @@ public class TelegramMedia
 
     public required TelegramMediaType Type { get; set; }
 
+    public int? HandlerMessageId { get; set; }
+
     public required DateTime CreatedOn { get; set; }
     public required DateTime TelegramPublishedOn { get; set; }
 

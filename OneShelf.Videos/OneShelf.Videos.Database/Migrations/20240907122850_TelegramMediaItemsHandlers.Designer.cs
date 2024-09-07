@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.Database;
 namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240907122850_TelegramMediaItemsHandlers")]
+    partial class TelegramMediaItemsHandlers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

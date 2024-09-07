@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
                     .AddCommand<ViewChats>()
                     .AddCommand<GetFileSize>()
                     .AddCommand<ListAlbums>()
+                    .AddCommand<ShowHandlers>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<VideosCollector>()

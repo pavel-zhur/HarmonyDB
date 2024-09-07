@@ -178,24 +178,6 @@ public class VideosCollector : PipelineHandler
                 update.Message!.Chat.Id,
                 update.Message.MessageId,
                 [new ReactionTypeEmoji("👀")]);
-
-            await api.SendMessageAsync(
-                update.Message!.Chat.Id,
-                $"Got {telegramMedia.Id}.",
-                replyParameters: new()
-                {
-                    ChatId = update.Message.Chat.Id,
-                    MessageId = update.Message.MessageId,
-                    AllowSendingWithoutReply = true,
-                },
-                replyMarkup: new InlineKeyboardMarkup([
-                    [
-                        new("button")
-                        {
-                            CallbackData = $"{telegramMedia.Id}; {telegramMedia.MediaGroupId}",
-                        }
-                    ]
-                ]));
         }
 
         //telegramMedia.DownloadedFileName = await Save(api, telegramMedia, false);

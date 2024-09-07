@@ -13,6 +13,9 @@ public class SingletonAbstractions : ISingletonAbstractions
             typeof(Help),     
         ],
         [
+            typeof(ShowHandlers),
+        ],
+        [
             typeof(ViewChats),
             typeof(GetFileSize),
             typeof(ListAlbums),
