@@ -24,7 +24,7 @@ public static class ServiceCollectionExtensions
             .AddMyGooglePhotos();
     }
 
-    public static IServiceCollection AddMyGooglePhotos(this IServiceCollection services)
+    private static IServiceCollection AddMyGooglePhotos(this IServiceCollection services)
     {
         const string sectionKey = $"{nameof(CasCap)}:{nameof(GooglePhotosOptions)}";
 
