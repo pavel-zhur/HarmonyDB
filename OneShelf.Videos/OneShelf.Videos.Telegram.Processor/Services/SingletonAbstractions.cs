@@ -14,6 +14,7 @@ public class SingletonAbstractions : ISingletonAbstractions
         ],
         [
             typeof(ShowHandlers),
+            typeof(DownloadAll),
         ],
         [
             typeof(ViewChats),

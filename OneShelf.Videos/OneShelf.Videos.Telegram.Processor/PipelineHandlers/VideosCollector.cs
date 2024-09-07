@@ -12,8 +12,6 @@ using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
-using Telegram.BotAPI.UpdatingMessages;
-using File = System.IO.File;
 
 namespace OneShelf.Videos.Telegram.Processor.PipelineHandlers;
 
@@ -22,18 +20,14 @@ public class VideosCollector : PipelineHandler
     private readonly VideosDatabase _videosDatabase;
     private readonly IOptions<TelegramOptions> _telegramOptions;
     private readonly Scope _scope;
-    private readonly HttpClient _httpClient;
-    private readonly IOptions<VideosOptions> _videoOptions;
     private readonly VideosCollectorMemory _videosCollectorMemory;
 
-    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> telegramOptions, Scope scope, HttpClient httpClient, IOptions<VideosOptions> videoOptions, VideosCollectorMemory videosCollectorMemory) 
+    public VideosCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, IOptions<TelegramOptions> telegramOptions, Scope scope, VideosCollectorMemory videosCollectorMemory) 
         : base(scopedAbstractions)
     {
         _videosDatabase = videosDatabase;
         _telegramOptions = telegramOptions;
         _scope = scope;
-        _httpClient = httpClient;
-        _videoOptions = videoOptions;
         _videosCollectorMemory = videosCollectorMemory;
     }
 
@@ -165,12 +159,12 @@ public class VideosCollector : PipelineHandler
             await _videosDatabase.SaveChangesAsync();
         }
 
-        QueueApi(null, api => Respond(api, update, telegramMedia, alreadyResponded));
+        QueueApi(null, api => Respond(api, update, alreadyResponded));
 
         return true;
     }
 
-    private async Task Respond(TelegramBotClient api, Update update, TelegramMedia telegramMedia, bool alreadyResponded)
+    private async Task Respond(TelegramBotClient api, Update update, bool alreadyResponded)
     {
         if (!alreadyResponded)
         {
@@ -179,26 +173,5 @@ public class VideosCollector : PipelineHandler
                 update.Message.MessageId,
                 [new ReactionTypeEmoji("👀")]);
         }
-
-        //telegramMedia.DownloadedFileName = await Save(api, telegramMedia, false);
-        //await _videosDatabase.SaveChangesAsync();
-
-        //if (telegramMedia.ThumbnailFileId != null)
-        //{
-        //    telegramMedia.DownloadedThumbnailFileName = await Save(api, telegramMedia, true);
-        //    await _videosDatabase.SaveChangesAsync();
-        //}
     }
-
-    //private async Task<string> Save(TelegramBotClient api, TelegramMedia telegramMedia, bool isThumbnail)
-    //{
-    //    var file = await api.GetFileAsync(isThumbnail ? telegramMedia.ThumbnailFileId! : telegramMedia.FileId);
-    //    Console.WriteLine(file.FilePath);
-    //    var response = await _httpClient.GetAsync($"https://api.telegram.org/file/bot{_telegramOptions.Value.Token}/{file.FilePath}");
-    //    var bytes = await response.Content.ReadAsByteArrayAsync();
-    //    Console.WriteLine(bytes.Length);
-    //    var name = $"{DateTime.Now.Ticks}_{telegramMedia.FileName}";
-    //    await File.WriteAllBytesAsync(Path.Combine(_videoOptions.Value.BasePath, "_uploaded", isThumbnail ? "thumbnails" : ".", name), bytes);
-    //    return name;
-    //}
 }

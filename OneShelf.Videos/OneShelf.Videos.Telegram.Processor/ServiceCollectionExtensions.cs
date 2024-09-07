@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
                     .AddCommand<GetFileSize>()
                     .AddCommand<ListAlbums>()
                     .AddCommand<ShowHandlers>()
+                    .AddCommand<DownloadAll>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<VideosCollector>()

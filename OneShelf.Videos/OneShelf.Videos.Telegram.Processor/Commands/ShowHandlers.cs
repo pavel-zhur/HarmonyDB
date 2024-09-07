@@ -5,7 +5,6 @@ using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Videos.Database;
-using OneShelf.Videos.Database.Models;
 using OneShelf.Videos.Telegram.Processor.Model;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;

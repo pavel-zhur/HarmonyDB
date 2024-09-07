@@ -15,6 +15,9 @@ public class TelegramMedia
 
     public int? HandlerMessageId { get; set; }
 
+    public string? DownloadedFileName { get; set; }
+    public string? DownloadedThumbnailFileName { get; set; }
+
     public required DateTime CreatedOn { get; set; }
     public required DateTime TelegramPublishedOn { get; set; }
 
