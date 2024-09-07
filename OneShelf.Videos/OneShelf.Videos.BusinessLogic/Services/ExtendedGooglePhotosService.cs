@@ -22,20 +22,6 @@ public class ExtendedGooglePhotosService : GooglePhotosService
         _videosOptions = videosOptions;
     }
 
-    [Obsolete]
-    public void LoginWithOptions()
-    {
-        _client.DefaultRequestHeaders.Authorization = new(_videosOptions.Value.AuthorizationScheme!, _videosOptions.Value.AuthorizationParameter);
-    }
-
-    [Obsolete]
-    public (string scheme, string? parameter) GetLogin()
-    {
-        return (
-            _client.DefaultRequestHeaders.Authorization!.Scheme,
-            _client.DefaultRequestHeaders.Authorization.Parameter);
-    }
-
     public async Task AddMediaItemsToAlbumWithRetryAsync(string albumId, List<string> mediaItemIds)
     {
         var batches = mediaItemIds.Distinct().ToList().GetBatches(DefaultBatchSizeMediaItems);
