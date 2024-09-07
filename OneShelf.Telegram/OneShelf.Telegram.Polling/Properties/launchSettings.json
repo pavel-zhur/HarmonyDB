@@ -17,6 +17,12 @@
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "one-dragon"
       }
+    },
+    "videos": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "videos"
+      }
     }
   }
 }

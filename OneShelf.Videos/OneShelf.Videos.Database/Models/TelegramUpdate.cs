@@ -10,4 +10,6 @@ public class TelegramUpdate
     public required DateTime CreatedOn { get; set; }
 
     public required string Json { get; set; }
+
+    public TelegramMedia? TelegramMedia { get; set; }
 }

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
+using OneShelf.Videos.Telegram.Processor.Services;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Videos.Telegram.Processor.PipelineHandlers;
@@ -10,11 +11,13 @@ namespace OneShelf.Videos.Telegram.Processor.PipelineHandlers;
 public class UpdatesCollector : PipelineHandler
 {
     private readonly VideosDatabase _videosDatabase;
+    private readonly Scope _scope;
 
-    public UpdatesCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase) 
+    public UpdatesCollector(IScopedAbstractions scopedAbstractions, VideosDatabase videosDatabase, Scope scope) 
         : base(scopedAbstractions)
     {
         _videosDatabase = videosDatabase;
+        _scope = scope;
     }
 
     protected override async Task<bool> HandleSync(Update update)
@@ -31,6 +34,8 @@ public class UpdatesCollector : PipelineHandler
 
         _videosDatabase.TelegramUpdates.Add(dbUpdate);
         await _videosDatabase.SaveChangesAsync();
+
+        _scope.Initialize(dbUpdate.Id);
 
         return false;
     }

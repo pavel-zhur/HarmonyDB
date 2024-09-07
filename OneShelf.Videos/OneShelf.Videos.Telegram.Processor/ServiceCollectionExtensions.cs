@@ -29,11 +29,13 @@ public static class ServiceCollectionExtensions
                     .AddCommand<ListAlbums>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
+                    .AddPipelineHandlerInOrder<VideosCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                 );
 
         services
-            .AddVideosBusinessLogic(configuration);
+            .AddVideosBusinessLogic(configuration)
+            .AddScoped<Scope>();
 
         return services;
     }

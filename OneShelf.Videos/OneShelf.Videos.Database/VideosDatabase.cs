@@ -29,6 +29,7 @@ public class VideosDatabase : DbContext
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
     public required DbSet<TelegramUpdate> TelegramUpdates { get; set; }
+    public required DbSet<TelegramMedia> TelegramMedia { get; set; }
 
     public async Task CreateMissingTopics()
     {

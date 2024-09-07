@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -36,13 +37,13 @@ public class ApiPoller : BackgroundService
             {
                 foreach (var update in updates)
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(update, new JsonSerializerOptions { WriteIndented = true, }));
+                    Console.WriteLine(JsonSerializer.Serialize(update, new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, }));
                     try
                     {
                         using var httpClient = _httpClientFactory.CreateClient();
                         httpClient.DefaultRequestHeaders.Add(_pollerOptions.WebHooksSecretHeader, _pollerOptions.WebHooksSecretToken);
                         await httpClient.PostAsync(_pollerOptions.IncomingUpdateUrl, new StringContent(
-                            JsonSerializer.Serialize(update), Encoding.UTF8), stoppingToken);
+                            JsonSerializer.Serialize(update, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, }), Encoding.UTF8), stoppingToken);
                         _logger.LogInformation("Successfully forwarded.");
                     }
                     catch (Exception e)
