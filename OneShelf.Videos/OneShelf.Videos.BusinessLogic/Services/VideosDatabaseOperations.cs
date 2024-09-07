@@ -3,7 +3,7 @@ using CasCap.Models;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
 
-namespace OneShelf.Videos.App.Services;
+namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class VideosDatabaseOperations(VideosDatabase videosDatabase)
 {

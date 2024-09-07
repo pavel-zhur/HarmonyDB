@@ -2,7 +2,7 @@
 using ExifLibrary;
 using OneShelf.Common;
 
-namespace OneShelf.Videos.App.Services;
+namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class Service3
 {

@@ -1,18 +1,15 @@
-﻿using System.Globalization;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using CsvHelper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
-using OneShelf.Videos.App.Models;
+using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models.Enums;
 using OneShelf.Videos.Database.Models.Json;
 
-namespace OneShelf.Videos.App.Services;
+namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class Service1
 {

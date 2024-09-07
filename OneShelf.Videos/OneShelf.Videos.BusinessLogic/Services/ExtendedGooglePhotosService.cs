@@ -5,18 +5,18 @@ using CasCap.Models;
 using CasCap.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneShelf.Videos.App.Models;
+using OneShelf.Videos.BusinessLogic.Models;
 
-namespace OneShelf.Videos.App.UpdatedGooglePhotosService;
+namespace OneShelf.Videos.BusinessLogic.Services;
 
-public class UpdatedGooglePhotosService : GooglePhotosService
+public class ExtendedGooglePhotosService : GooglePhotosService
 {
     private const int DefaultBatchSizeMediaItems = 50;
 
     private readonly IOptions<VideosOptions> _videosOptions;
     private int _processed;
 
-    public UpdatedGooglePhotosService(ILogger<GooglePhotosService> logger, IOptions<GooglePhotosOptions> options, HttpClient client, IOptions<VideosOptions> videosOptions)
+    public ExtendedGooglePhotosService(ILogger<GooglePhotosService> logger, IOptions<GooglePhotosOptions> options, HttpClient client, IOptions<VideosOptions> videosOptions)
         : base(logger, options, client)
     {
         _videosOptions = videosOptions;

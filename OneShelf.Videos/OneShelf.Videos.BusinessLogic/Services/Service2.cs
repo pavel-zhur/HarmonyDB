@@ -5,19 +5,19 @@ using OneShelf.Common;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
 
-namespace OneShelf.Videos.App.Services;
+namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class Service2
 {
-    private readonly UpdatedGooglePhotosService.UpdatedGooglePhotosService _googlePhotosService;
+    private readonly ExtendedGooglePhotosService _extendedGooglePhotosService;
     private readonly ILogger<Service2> _logger;
     private readonly VideosDatabase _videosDatabase;
     private readonly VideosDatabaseOperations _videosDatabaseOperations;
     private readonly Service3 _service3;
 
-    public Service2(UpdatedGooglePhotosService.UpdatedGooglePhotosService googlePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, Service3 service3, VideosDatabaseOperations videosDatabaseOperations)
+    public Service2(ExtendedGooglePhotosService extendedGooglePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, Service3 service3, VideosDatabaseOperations videosDatabaseOperations)
     {
-        _googlePhotosService = googlePhotosService;
+        _extendedGooglePhotosService = extendedGooglePhotosService;
         _logger = logger;
         _videosDatabase = videosDatabase;
         _service3 = service3;
@@ -26,8 +26,8 @@ public class Service2
 
     public async Task SaveInventory()
     {
-        await _googlePhotosService.LoginAsync();
-        var items = await _googlePhotosService.GetMediaItemsAsync().ToListAsync();
+        await _extendedGooglePhotosService.LoginAsync();
+        var items = await _extendedGooglePhotosService.GetMediaItemsAsync().ToListAsync();
         _logger.LogInformation("{items} found.", items.Count);
         _videosDatabase.InventoryItems.AddRange(items.Select(i => new InventoryItem
         {
@@ -63,11 +63,11 @@ public class Service2
 
     public async Task UploadPhotos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
     {
-        await _googlePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.LoginAsync();
 
         var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
         var fileNameTimestamps = new Dictionary<(long chatId, int messageId), DateTime>();
-        var result = await _googlePhotosService.UploadMultiple(
+        var result = await _extendedGooglePhotosService.UploadMultiple(
             items
                 .Select(x => ((x.chatId, x.messageId), x.path, (string?)null))
                 .ToList(),
@@ -97,7 +97,7 @@ public class Service2
 
     public async Task UploadVideos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
     {
-        await _googlePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.LoginAsync();
 
         var added = (await _videosDatabase.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");
@@ -105,7 +105,7 @@ public class Service2
         Console.WriteLine($"remaining items: {items.Count}");
 
         var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
-        var result = await _googlePhotosService.UploadMultiple(
+        var result = await _extendedGooglePhotosService.UploadMultiple(
             items
                 .Select(x => ((x.chatId, x.messageId), x.path,
                     //$"chatId = {x.chatId}, messageId = {x.messageId}, published on = {x.publishedOn}, filename = {Path.GetFileName(x.path)}"
@@ -129,12 +129,12 @@ public class Service2
 
     public async Task CreateAlbums(List<(int albumId, string title, List<(string? mediaItemId, long chatId, int messageId)> items)> albums)
     {
-        await _googlePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.LoginAsync();
         foreach (var (albumId, title, items) in albums)
         {
             _logger.LogInformation("{title} uploading...", title);
-            var googleAlbum = await _googlePhotosService.CreateAlbumAsync(title);
-            await _googlePhotosService.AddMediaItemsToAlbumWithRetryAsync(googleAlbum!.id, items.Where(x => x.mediaItemId != null).Select(x => x.mediaItemId!).ToList());
+            var googleAlbum = await _extendedGooglePhotosService.CreateAlbumAsync(title);
+            await _extendedGooglePhotosService.AddMediaItemsToAlbumWithRetryAsync(googleAlbum!.id, items.Where(x => x.mediaItemId != null).Select(x => x.mediaItemId!).ToList());
 
             _videosDatabase.UploadedAlbums.Add(new()
             {

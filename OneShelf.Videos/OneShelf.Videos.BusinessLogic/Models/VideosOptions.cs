@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Videos.App.Models;
+﻿namespace OneShelf.Videos.BusinessLogic.Models;
 
 public record VideosOptions
 {
