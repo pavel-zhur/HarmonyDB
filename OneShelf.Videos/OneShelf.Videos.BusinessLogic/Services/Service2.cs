@@ -24,6 +24,13 @@ public class Service2
         _videosDatabaseOperations = videosDatabaseOperations;
     }
 
+    public async Task<List<string>> ListAlbums()
+    {
+        await _extendedGooglePhotosService.LoginAsync();
+        var albums = await _extendedGooglePhotosService.GetAlbumsAsync();
+        return albums.Select(x => x.title).ToList();
+    }
+
     public async Task SaveInventory()
     {
         await _extendedGooglePhotosService.LoginAsync();

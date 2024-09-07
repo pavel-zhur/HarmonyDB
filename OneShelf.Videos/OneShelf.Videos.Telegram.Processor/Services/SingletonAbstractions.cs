@@ -12,6 +12,8 @@ public class SingletonAbstractions : ISingletonAbstractions
             typeof(Start),
             typeof(Help),     
             typeof(ViewChats),
+            typeof(GetFileSize),
+            typeof(ListAlbums),
         ],
         [
             typeof(UpdateCommands),

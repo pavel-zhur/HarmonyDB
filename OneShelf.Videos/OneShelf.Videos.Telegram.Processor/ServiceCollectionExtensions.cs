@@ -25,6 +25,8 @@ public static class ServiceCollectionExtensions
                     
                     .AddCommand<UpdateCommands>()
                     .AddCommand<ViewChats>()
+                    .AddCommand<GetFileSize>()
+                    .AddCommand<ListAlbums>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
