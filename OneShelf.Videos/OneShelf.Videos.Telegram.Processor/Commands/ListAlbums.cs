@@ -5,7 +5,7 @@ using OneShelf.Videos.BusinessLogic.Services;
 
 namespace OneShelf.Videos.Telegram.Processor.Commands;
 
-[AdminCommand("get_file_size", "Файлик", "Посмотреть файл")]
+[AdminCommand("list_albums", "Альбомы", "Посмотреть альбомы")]
 public class ListAlbums : Command
 {
     private readonly Service2 _service2;
