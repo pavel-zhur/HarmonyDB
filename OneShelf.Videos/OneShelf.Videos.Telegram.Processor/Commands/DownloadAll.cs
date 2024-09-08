@@ -72,6 +72,7 @@ public class DownloadAll : Command
         }
     }
 
+    [Obsolete("This method doesn't work. There's a 20 MB limit for bots.")]
     private async Task<string> Save(TelegramMedia telegramMedia, bool isThumbnail)
     {
         var file = await _botClient.GetFileAsync(isThumbnail ? telegramMedia.ThumbnailFileId! : telegramMedia.FileId);
