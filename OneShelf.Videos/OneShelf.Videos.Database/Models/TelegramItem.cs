@@ -18,6 +18,8 @@ public class TelegramMedia
     public string? DownloadedFileName { get; set; }
     public string? DownloadedThumbnailFileName { get; set; }
 
+    public ICollection<Tag> Tags { get; set; } = null!;
+
     public required DateTime CreatedOn { get; set; }
     public required DateTime TelegramPublishedOn { get; set; }
 

@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
                     .AddCommand<DownloadAll>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
+                    .AddPipelineHandlerInOrder<TagsHandler>()
                     .AddPipelineHandlerInOrder<VideosCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                 );
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
         services
             .AddVideosBusinessLogic(configuration)
             .AddSingleton<VideosCollectorMemory>()
+            .AddSingleton<HandlersConstructor>()
             .AddScoped<Scope>();
 
         return services;

@@ -6,6 +6,7 @@ using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Telegram.Processor.Model;
+using OneShelf.Videos.Telegram.Processor.Services;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
@@ -18,12 +19,14 @@ public class ShowHandlers : Command
     private readonly VideosDatabase _videosDatabase;
     private readonly IOptions<TelegramOptions> _options;
     private readonly TelegramBotClient _botClient;
+    private readonly HandlersConstructor _handlersConstructor;
 
-    public ShowHandlers(Io io, VideosDatabase videosDatabase, IOptions<TelegramOptions> options) 
+    public ShowHandlers(Io io, VideosDatabase videosDatabase, IOptions<TelegramOptions> options, HandlersConstructor handlersConstructor) 
         : base(io)
     {
         _videosDatabase = videosDatabase;
         _options = options;
+        _handlersConstructor = handlersConstructor;
         _botClient = new(_options.Value.Token);
     }
 
@@ -43,29 +46,21 @@ public class ShowHandlers : Command
             .Select(x => x.Select(x => x.current).ToList())
             .ToList();
 
+        var tags = await _videosDatabase.Tags.ToListAsync();
+        var allTagsOff = tags.ToDictionary(x => x, _ => false);
+
         foreach (var chunk in chunks)
         {
+            var (text, markup) = _handlersConstructor.GetHandlerMessage(chunk, allTagsOff);
             var message = await _botClient.SendMessageAsync(
                 chunk[0].ChatId,
-                "#handler " + string.Join(
-                    " + ",
-                    chunk
-                        .WithPrevious()
-                        .ToChunksByShouldStartNew(p => p.current.MediaGroupId != p.previous?.MediaGroupId)
-                        .Select(g => g.Count)),
+                text,
                 replyParameters: new()
                 {
                     ChatId = chunk[0].ChatId,
                     MessageId = chunk[0].MessageId,
                 },
-                replyMarkup: new InlineKeyboardMarkup([
-                    [
-                        new("button1")
-                        {
-                            CallbackData = "button1",
-                        }
-                    ]
-                ]));
+                replyMarkup: markup);
 
             chunk.ForEach(m => m.HandlerMessageId = message.MessageId);
             await _videosDatabase.SaveChangesAsync();
