@@ -375,3 +375,4 @@ FodyWeavers.xsd
 /OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.one-dragon.json
 /OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.telegram.json
 /OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.videos.json
+/OneShelf.Videos/OneShelf.Videos.Telegram.Functions/local.settings.json

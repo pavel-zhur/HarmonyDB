@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "OneShelf.Videos.Telegram.Functions": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7190",
-      "launchBrowser": false
-    }
-  }
-}
