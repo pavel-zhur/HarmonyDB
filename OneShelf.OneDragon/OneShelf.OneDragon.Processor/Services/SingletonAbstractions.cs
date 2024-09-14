@@ -9,14 +9,19 @@ public class SingletonAbstractions : ISingletonAbstractions
 {
     public List<List<Type>> GetCommandsGrid() => [
         [
-            typeof(Start),
+            typeof(Images),
+        ],
+        [
             typeof(Help),     
             typeof(ViewBilling),
             typeof(Amnesia)
         ],
         [
+            typeof(Start),
+        ],
+        [
             typeof(UpdateCommands),
-        ]
+        ],
     ];
 
     public Type? GetDefaultCommand() => null;

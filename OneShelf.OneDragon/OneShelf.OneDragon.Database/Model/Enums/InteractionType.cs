@@ -6,5 +6,8 @@ public enum InteractionType
     AiMemoryPoint,
     AiResetDialog,
     AiImagesLimit,
-    AiImagesSuccess
+    AiImagesSuccess,
+
+    DirectImagesSuccess,
+    DirectImagesLimit,
 }

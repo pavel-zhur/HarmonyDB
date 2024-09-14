@@ -18,16 +18,18 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 {
     private readonly DragonDatabase _dragonDatabase;
     private readonly DragonScope _dragonScope;
+    private readonly Availability _availability;
 
     public AiDialogHandler(
         IScopedAbstractions scopedAbstractions,
         ILogger<AiDialogHandlerBase<InteractionType>> logger, 
         DialogRunner dialogRunner, 
-        DragonDatabase dragonDatabase, DragonScope dragonScope)
+        DragonDatabase dragonDatabase, DragonScope dragonScope, Availability availability)
         : base(scopedAbstractions, logger, dragonDatabase, dialogRunner)
     {
         _dragonDatabase = dragonDatabase;
         _dragonScope = dragonScope;
+        _availability = availability;
     }
 
     protected override void OnInitializing(Update update)
@@ -50,37 +52,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     }
 
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now)
-    {
-        var user = await _dragonDatabase.Users.SingleAsync(x => x.Id == _dragonScope.UserId);
-        if (!user.UseLimits) return null;
-
-        var limits = await _dragonDatabase.Limits.Where(x => x.Images.HasValue).ToListAsync();
-        if (!limits.Any()) return null;
-
-        DateTime Since(TimeSpan window) => now.Add(-window);
-
-        var imagesSince = Since(limits.Max(x => x.Window));
-        var images = (await _dragonDatabase.Interactions
-                .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.AiImagesSuccess)
-                .Where(x => x.CreatedOn >= imagesSince)
-                .ToListAsync())
-            .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
-            .ToList();
-
-        DateTime? imagesUnavailableUntil = null;
-        foreach (var limit in limits)
-        {
-            if (images.Where(x => x.CreatedOn >= Since(limit.Window)).Sum(x => x.count) >= limit.Images!.Value)
-            {
-                imagesUnavailableUntil ??= DateTime.MinValue;
-                var value = images.Min(x => x.CreatedOn).Add(limit.Window);
-                imagesUnavailableUntil = imagesUnavailableUntil > value ? imagesUnavailableUntil : value;
-            }
-        }
-
-        return imagesUnavailableUntil;
-    }
+        => await _availability.GetImagesUnavailableUntil(now);
 
     protected override async Task<DateTime?> GetChatUnavailableUntil()
     {
