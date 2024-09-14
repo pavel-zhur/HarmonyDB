@@ -5,6 +5,7 @@ using OneShelf.Common.OpenAi.Services;
 using OneShelf.OneDragon.Database;
 using OneShelf.OneDragon.Database.Model;
 using OneShelf.OneDragon.Database.Model.Enums;
+using OneShelf.OneDragon.Processor.Model;
 using OneShelf.OneDragon.Processor.Services;
 using OneShelf.Telegram.Ai.Model;
 using OneShelf.Telegram.Ai.PipelineHandlers;
@@ -19,23 +20,30 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     private readonly DragonDatabase _dragonDatabase;
     private readonly DragonScope _dragonScope;
     private readonly Availability _availability;
+    private readonly IOptions<TelegramOptions> _options;
 
     public AiDialogHandler(
         IScopedAbstractions scopedAbstractions,
         ILogger<AiDialogHandlerBase<InteractionType>> logger, 
         DialogRunner dialogRunner, 
-        DragonDatabase dragonDatabase, DragonScope dragonScope, Availability availability)
+        DragonDatabase dragonDatabase,
+        DragonScope dragonScope, 
+        Availability availability,
+        IOptions<TelegramOptions> options)
         : base(scopedAbstractions, logger, dragonDatabase, dialogRunner)
     {
         _dragonDatabase = dragonDatabase;
         _dragonScope = dragonScope;
         _availability = availability;
+        _options = options;
     }
 
     protected override void OnInitializing(Update update)
     {
         _dragonDatabase.InitializeInteractionsRepositoryScope(update.Message!.From!.Id, update.Message.Chat.Id);
     }
+
+    protected override bool TraceImages => _options.Value.IsAdmin(_dragonScope.UserId);
 
     protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction
     {

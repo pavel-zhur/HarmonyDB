@@ -233,6 +233,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     {
     }
 
+    protected virtual bool TraceImages => false;
+
     protected async Task Respond(Update update)
     {
         var now = DateTime.Now;
@@ -352,6 +354,18 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         {
             try
             {
+                if (TraceImages)
+                {
+                    try
+                    {
+                        await SendMessage(update, string.Join(Environment.NewLine, newMessagePoint.ImageTraces.Select(x => $"- {x}").Prepend(string.Empty).Prepend("Traces:")), false);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error writing the traces.");
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     await SendMessage(update, text, result.Images, false);
