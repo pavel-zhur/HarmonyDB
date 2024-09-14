@@ -61,8 +61,8 @@ jobs:
       run: dotnet publish OneShelf.Sources/OneShelf.Sources.Self.Api/OneShelf.Sources.Self.Api.csproj --no-restore
     - name: Publish 11
       run: dotnet publish OneShelf.OneDragon/OneShelf.OneDragon.Runner.Functions/OneShelf.OneDragon.Runner.Functions.csproj --no-restore
-    - name: Publish 12
-      run: dotnet publish OneShelf.Videos/OneShelf.Videos.Telegram.Functions/OneShelf.Videos.Telegram.Functions.csproj --no-restore
+#    - name: Publish 12
+#      run: dotnet publish OneShelf.Videos/OneShelf.Videos.Telegram.Functions/OneShelf.Videos.Telegram.Functions.csproj --no-restore
 
     # - uses: actions/upload-artifact@v4
     #   with:
@@ -116,7 +116,7 @@ jobs:
     - run: Compress-Archive -Path OneShelf.Collectives/OneShelf.Collectives.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Collectives.Api.zip
     - run: Compress-Archive -Path OneShelf.Sources/OneShelf.Sources.Self.Api/bin/Release/net8.0/publish/* -Destination OneShelf.Sources.Self.Api.zip
     - run: Compress-Archive -Path OneShelf.OneDragon/OneShelf.OneDragon.Runner.Functions/bin/Release/net8.0/publish/* -Destination OneShelf.OneDragon.Runner.Functions.zip
-    - run: Compress-Archive -Path OneShelf.Videos/OneShelf.Videos.Telegram.Functions/bin/Release/net8.0/publish/* -Destination OneShelf.Videos.Telegram.Functions.zip
+#    - run: Compress-Archive -Path OneShelf.Videos/OneShelf.Videos.Telegram.Functions/bin/Release/net8.0/publish/* -Destination OneShelf.Videos.Telegram.Functions.zip
   
 #    - name: Test
 #      run: dotnet test --no-build --verbosity normal

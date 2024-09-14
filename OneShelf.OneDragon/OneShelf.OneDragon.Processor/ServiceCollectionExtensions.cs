@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
                     .AddCommand<UpdateCommands>()
                     .AddCommand<ViewBilling>()
                     .AddCommand<Amnesia>()
+                    .AddCommand<Images>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<UsersCollector>()
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
         services
             .AddDragonDatabase()
             .AddOpenAi(configuration)
+            .AddScoped<Availability>()
             .AddScoped<DragonScope>();
 
         return services;
