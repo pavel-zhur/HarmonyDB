@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.Database;
 namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240920114536_LiveAttributes2")]
+    partial class LiveAttributes2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -396,9 +399,6 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<long>("TopicChatId")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("DocumentAttributeTypes")
                         .HasColumnType("nvarchar(max)");
 
@@ -443,12 +443,14 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("TopicChatId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("TopicId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<string>("VideoFlags")
                         .HasColumnType("nvarchar(max)");
@@ -456,7 +458,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<int>("Width")
                         .HasColumnType("int");
 
-                    b.HasKey("Id", "TopicChatId");
+                    b.HasKey("Id");
 
                     b.HasIndex("TopicId", "TopicChatId");
 

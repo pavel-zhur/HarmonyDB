@@ -10,14 +10,17 @@ var builder = Host.CreateApplicationBuilder();
 builder.Configuration.AddJsonFile("appsettings.Secrets.json");
 builder.Services
     .AddVideosBusinessLogic(builder.Configuration);
-var host = builder.Build();
+using var host = builder.Build();
 
 var service1 = host.Services.GetRequiredService<Service1>();
 var service2 = host.Services.GetRequiredService<Service2>();
 var service3 = host.Services.GetRequiredService<Service3>();
+var service4 = host.Services.GetRequiredService<Service4>();
 
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
 await videosDatabase.Database.MigrateAsync();
+
+await service4.Try();
 
 //await videosDatabase.CreateMissingTopics();
 //await videosDatabase.UpdateMessagesTopics();
@@ -40,4 +43,4 @@ await videosDatabase.Database.MigrateAsync();
 
 //await service2.UploadPhotos((await service1.GetExport1()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
 //await service2.UploadVideos((await service1.GetExport2()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
-await service2.CreateAlbums(await service1.GetAlbums());
+//await service2.CreateAlbums(await service1.GetAlbums());

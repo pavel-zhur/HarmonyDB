@@ -28,6 +28,9 @@ public class VideosDatabase : DbContext
     public required DbSet<Album> Albums { get; set; }
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
+    public required DbSet<LiveChat> LiveChats { get; set; }
+    public required DbSet<LiveTopic> LiveTopics { get; set; }
+    public required DbSet<LiveMedia> LiveMediae { get; set; }
 
     public async Task CreateMissingTopics()
     {
@@ -157,5 +160,9 @@ left join topics t on t.chatid = m.chatid and t.rootmessageidor0 = isnull(r.pare
             .HasConversion<string>()
             .HasComputedColumnSql(
                 "case when photo is not null then 'photo' when mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null') then 'video' else null end");
+
+        modelBuilder.Entity<LiveMedia>()
+            .Property(x => x.Type)
+            .HasConversion<string>();
     }
 }

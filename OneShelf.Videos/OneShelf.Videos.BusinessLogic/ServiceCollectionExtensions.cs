@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<Service1>()
             .AddScoped<Service2>()
             .AddScoped<Service3>()
+            .AddScoped<Service4>()
+            .AddSingleton<TelegramLoggerInitializer>()
             .AddScoped<VideosDatabaseOperations>()
             .AddMyGooglePhotos();
     }
