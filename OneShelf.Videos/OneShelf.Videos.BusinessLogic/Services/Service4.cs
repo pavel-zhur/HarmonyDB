@@ -56,9 +56,10 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
     {
         var liveChat = await videosDatabase.LiveChats.Include(x => x.Topics).ThenInclude(x => x.Mediae).Where(x => x.Id == chat.ID).SingleAsync();
         var liveMediae = liveChat.Topics.SelectMany(t => t.Mediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
-        var downloadedItems = await videosDatabase.DownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.TopicChatId == chat.ID && y.MediaId == x.LiveMediaId)).ToDictionaryAsync(x => x.LiveMediaId);
+        var downloadedItems = await videosDatabase.DownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.MediaId == x.LiveMediaId)).ToDictionaryAsync(x => x.LiveMediaId);
 
         var success = 0;
+        var failed = 0;
         var items = liveMediae.DistinctBy(x => x.x.MediaId).Where(x => !downloadedItems.TryGetValue(x.x.MediaId, out var y) || y.ThumbnailFileName == null).ToList();
 
         await Parallel.ForEachAsync(
@@ -67,7 +68,7 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
             async (item, cancellationToken) =>
             {
                 var (liveMedia, (document, photo, message, mediaFlags)) = item;
-                var downloaded = downloadedItems.GetValueOrDefault(liveMedia.Id);
+                var downloaded = downloadedItems.GetValueOrDefault(liveMedia.MediaId);
 
                 if (downloaded == null)
                 {
@@ -100,18 +101,36 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
                     }
                     catch (Exception e)
                     {
+                        Interlocked.Increment(ref failed);
                         logger.LogError(e, message: "Error downloading an item.");
                         downloaded = null;
                     }
                 }
 
-                if (downloaded != null)
+                if (downloaded != null && (document?.LargestThumbSize != null || photo != null))
                 {
                     // download thumbnail too
+                    try
+                    {
+                        using var outputStream = new MemoryStream();
+                        await client.DownloadFileAsync((InputFileLocationBase?)document?.ToFileLocation(document.LargestThumbSize) ?? photo!.ToFileLocation(photo.sizes.SingleOrDefault(x => x.Type == "x") ?? photo.sizes.MaxBy(x => x.FileSize)), outputStream);
+                        var fileName = $"{liveMedia.MediaId}.jpg";
+                        await File.WriteAllBytesAsync(
+                            Path.Combine(options.Value.BasePath, "_instant", "thumbnails", fileName),
+                            outputStream.ToArray(), cancellationToken);
 
+                        using var _ = await _databaseLock.LockAsync();
+                        downloaded.ThumbnailFileName = fileName;
+                        await videosDatabase.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        Interlocked.Increment(ref failed);
+                        logger.LogError(e, message: "Error downloading an item.");
+                    }
                 }
 
-                logger.LogInformation("Success {value} / {total}", Interlocked.Increment(ref success), items.Count);
+                logger.LogInformation("Done {value} / {total}, failed {failed}", Interlocked.Increment(ref success), items.Count, failed);
             });
     }
 
