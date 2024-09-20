@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Nito.AsyncEx;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
@@ -17,6 +18,7 @@ namespace OneShelf.Videos.BusinessLogic.Services;
 public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger, VideosDatabase videosDatabase, TelegramLoggerInitializer _) : IDisposable
 {
     private byte[]? _session;
+    private readonly AsyncLock _databaseLock = new();
 
     public async Task Try()
     {
@@ -45,9 +47,72 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
 
         //await client.DownloadFileAsync(topics[0].media[0].document.ToFileLocation(topics[0].media[0].document.LargestThumbSize), outputStream)
 
-        logger.LogInformation(string.Join(Environment.NewLine, topics.Select(x => $"{x.Key}={x.Value.name} (d: {x.Value.media.Count(x => x.document != null)}, p: {x.Value.media.Count(x => x.photo != null)})")));
-        
         await Save(chat, topics);
+
+        await Download(client, chat, topics);
+    }
+
+    private async Task Download(Client client, ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
+    {
+        var liveChat = await videosDatabase.LiveChats.Include(x => x.Topics).ThenInclude(x => x.Mediae).Where(x => x.Id == chat.ID).SingleAsync();
+        var liveMediae = liveChat.Topics.SelectMany(t => t.Mediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
+        var downloadedItems = await videosDatabase.DownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.TopicChatId == chat.ID && y.MediaId == x.LiveMediaId)).ToDictionaryAsync(x => x.LiveMediaId);
+
+        var success = 0;
+        var items = liveMediae.DistinctBy(x => x.x.MediaId).Where(x => !downloadedItems.TryGetValue(x.x.MediaId, out var y) || y.ThumbnailFileName == null).ToList();
+
+        await Parallel.ForEachAsync(
+            items,
+            new ParallelOptions { MaxDegreeOfParallelism = 3, },
+            async (item, cancellationToken) =>
+            {
+                var (liveMedia, (document, photo, message, mediaFlags)) = item;
+                var downloaded = downloadedItems.GetValueOrDefault(liveMedia.Id);
+
+                if (downloaded == null)
+                {
+                    try
+                    {
+                        using var outputStream = new MemoryStream();
+                        if (document != null)
+                        {
+                            await client.DownloadFileAsync(document, outputStream);
+                        }
+                        else
+                        {
+                            await client.DownloadFileAsync(photo, outputStream);
+                        }
+
+                        var fileName = liveMedia.FileName != null && !string.IsNullOrWhiteSpace(Path.GetExtension(liveMedia.FileName)) ? $"{liveMedia.MediaId}{Path.GetExtension(liveMedia.FileName)}" : liveMedia.MediaId.ToString();
+                        await File.WriteAllBytesAsync(
+                            Path.Combine(options.Value.BasePath, "_instant", fileName),
+                            outputStream.ToArray(), cancellationToken);
+
+                        using var _ = await _databaseLock.LockAsync();
+
+                        videosDatabase.DownloadedItems.Add(downloaded = new()
+                        {
+                            LiveMediaId = liveMedia.MediaId,
+                            FileName = fileName,
+                        });
+
+                        await videosDatabase.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError(e, message: "Error downloading an item.");
+                        downloaded = null;
+                    }
+                }
+
+                if (downloaded != null)
+                {
+                    // download thumbnail too
+
+                }
+
+                logger.LogInformation("Success {value} / {total}", Interlocked.Increment(ref success), items.Count);
+            });
     }
 
     private async Task Save(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)

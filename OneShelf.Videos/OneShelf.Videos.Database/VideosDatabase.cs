@@ -31,6 +31,7 @@ public class VideosDatabase : DbContext
     public required DbSet<LiveChat> LiveChats { get; set; }
     public required DbSet<LiveTopic> LiveTopics { get; set; }
     public required DbSet<LiveMedia> LiveMediae { get; set; }
+    public required DbSet<DownloadedItem> DownloadedItems { get; set; }
 
     public async Task CreateMissingTopics()
     {
