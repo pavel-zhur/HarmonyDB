@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -12,14 +10,14 @@ using TL;
 using WTelegram;
 using Document = TL.Document;
 
-namespace OneShelf.Videos.BusinessLogic.Services;
+namespace OneShelf.Videos.BusinessLogic.Services.Live;
 
-public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger, VideosDatabase videosDatabase, TelegramLoggerInitializer _) : IDisposable
+public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloader> logger, VideosDatabase videosDatabase, TelegramLoggerInitializer _) : IDisposable
 {
     private byte[]? _session;
     private readonly AsyncLock _databaseLock = new();
 
-    public async Task Try()
+    public async Task Try(bool downloadMissing)
     {
         await using var client = await Login();
 
@@ -29,11 +27,16 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
         {
             var chat = allChats.chats[chatId];
 
-            await ProcessChat(client, chat);
+            var topics = await ProcessChat(client, chat);
+
+            if (downloadMissing)
+            {
+                await Download(client, chat, topics);
+            }
         }
     }
 
-    private async Task ProcessChat(Client client, ChatBase chat)
+    private async Task<Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)>> ProcessChat(Client client, ChatBase chat)
     {
         var inputPeer = chat.ToInputPeer();
 
@@ -44,11 +47,9 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
 
         var topics = await GetTopicsAndMedia(messages);
 
-        //await client.DownloadFileAsync(topics[0].media[0].document.ToFileLocation(topics[0].media[0].document.LargestThumbSize), outputStream)
-
         await Save(chat, topics);
 
-        await Download(client, chat, topics);
+        return topics;
     }
 
     private async Task Download(Client client, ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
@@ -184,7 +185,7 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
                 liveMedia.MediaType = media.message.media.GetType().ToString();
                 liveMedia.MediaFlags = media.mediaFlags;
 
-                if (media.document is {} document)
+                if (media.document is { } document)
                 {
                     liveMedia.Type = LiveMediaType.Document;
                     liveMedia.MediaDate = document.date;
@@ -205,7 +206,7 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
                         liveMedia.VideoFlags = attributeVideo.flags.ToString();
                     }
                 }
-                else if (media.photo is {} photo)
+                else if (media.photo is { } photo)
                 {
                     liveMedia.Type = LiveMediaType.Photo;
                     liveMedia.MediaDate = photo.date;
@@ -325,7 +326,7 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
                     ? await File.ReadAllBytesAsync(options.Value.TelegramAuthPath)
                     : null,
                 x => _session = x);
-        
+
             var myself = await client.LoginUserIfNeeded();
 
             logger.LogInformation("We are logged-in as {myself} (id {id})", myself, myself.id);
