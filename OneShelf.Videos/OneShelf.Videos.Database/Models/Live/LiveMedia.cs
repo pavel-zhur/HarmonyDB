@@ -1,20 +1,19 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using OneShelf.Videos.Database.Models.Enums;
 
-namespace OneShelf.Videos.Database.Models;
+namespace OneShelf.Videos.Database.Models.Live;
 
-[PrimaryKey(nameof(Id), nameof(TopicChatId))]
+[PrimaryKey(nameof(Id), nameof(LiveTopicLiveChatId))]
 public class LiveMedia
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int Id { get; set; }
 
-    public int TopicId { get; set; }
+    public int LiveTopicId { get; set; }
 
-    public long TopicChatId { get; set; }
+    public long LiveTopicLiveChatId { get; set; }
 
-    public LiveTopic Topic { get; set; }
+    public LiveTopic LiveTopic { get; set; }
 
     public LiveMediaType Type { get; set; }
 

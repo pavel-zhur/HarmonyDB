@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Videos.Database.Models;
+using OneShelf.Videos.Database.Models.Live;
 using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.Database;

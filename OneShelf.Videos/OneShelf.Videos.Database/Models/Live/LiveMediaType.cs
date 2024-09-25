@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Videos.Database.Models.Enums;
+﻿namespace OneShelf.Videos.Database.Models.Live;
 
 public enum LiveMediaType
 {

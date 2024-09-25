@@ -7,8 +7,7 @@ using Newtonsoft.Json;
 using Nito.AsyncEx;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
-using OneShelf.Videos.Database.Models;
-using OneShelf.Videos.Database.Models.Enums;
+using OneShelf.Videos.Database.Models.Live;
 using TL;
 using WTelegram;
 using Document = TL.Document;
@@ -54,8 +53,8 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
 
     private async Task Download(Client client, ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
     {
-        var liveChat = await videosDatabase.LiveChats.Include(x => x.Topics).ThenInclude(x => x.Mediae).Where(x => x.Id == chat.ID).SingleAsync();
-        var liveMediae = liveChat.Topics.SelectMany(t => t.Mediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
+        var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).Where(x => x.Id == chat.ID).SingleAsync();
+        var liveMediae = liveChat.LiveTopics.SelectMany(t => t.LiveMediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
         var downloadedItems = await videosDatabase.DownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.MediaId == x.LiveMediaId)).ToDictionaryAsync(x => x.LiveMediaId);
 
         var success = 0;
@@ -136,13 +135,13 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
 
     private async Task Save(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
     {
-        var liveChat = await videosDatabase.LiveChats.Include(x => x.Topics).ThenInclude(x => x.Mediae).SingleOrDefaultAsync(x => x.Id == chat.ID);
+        var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).SingleOrDefaultAsync(x => x.Id == chat.ID);
         if (liveChat == null)
         {
             liveChat = new()
             {
                 Id = chat.ID,
-                Topics = new List<LiveTopic>(),
+                LiveTopics = new List<LiveTopic>(),
             };
 
             videosDatabase.LiveChats.Add(liveChat);
@@ -152,21 +151,21 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
 
         foreach (var topic in topics)
         {
-            var liveTopic = liveChat.Topics.SingleOrDefault(x => x.Id == topic.Key);
+            var liveTopic = liveChat.LiveTopics.SingleOrDefault(x => x.Id == topic.Key);
             if (liveTopic == null)
             {
                 liveTopic = new()
                 {
                     Id = topic.Key,
-                    Mediae = new List<LiveMedia>(),
+                    LiveMediae = new List<LiveMedia>(),
                 };
 
-                liveChat.Topics.Add(liveTopic);
+                liveChat.LiveTopics.Add(liveTopic);
             }
 
             liveTopic.Title = topic.Value.name;
 
-            var liveMediae = liveTopic.Mediae.ToDictionary(x => x.Id);
+            var liveMediae = liveTopic.LiveMediae.ToDictionary(x => x.Id);
             foreach (var media in topic.Value.media)
             {
                 var liveMedia = liveMediae.GetValueOrDefault(media.message.ID);
@@ -177,7 +176,7 @@ public class Service4(IOptions<VideosOptions> options, ILogger<Service4> logger,
                         Id = media.message.ID,
                     };
 
-                    liveTopic.Mediae.Add(liveMedia);
+                    liveTopic.LiveMediae.Add(liveMedia);
                 }
 
                 liveMedia.MessageDate = media.message.fwd_from?.date ?? media.message.Date;

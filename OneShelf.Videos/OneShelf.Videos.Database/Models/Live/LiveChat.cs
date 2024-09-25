@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace OneShelf.Videos.Database.Models;
+namespace OneShelf.Videos.Database.Models.Live;
 
 public class LiveChat
 {
@@ -9,5 +9,5 @@ public class LiveChat
 
     public string Title { get; set; }
 
-    public ICollection<LiveTopic> Topics { get; set; }
+    public ICollection<LiveTopic> LiveTopics { get; set; }
 }
