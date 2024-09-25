@@ -56,7 +56,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
     {
         var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).Where(x => x.Id == chat.ID).SingleAsync();
         var liveMediae = liveChat.LiveTopics.SelectMany(t => t.LiveMediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
-        var downloadedItems = await videosDatabase.DownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.MediaId == x.LiveMediaId)).ToDictionaryAsync(x => x.LiveMediaId);
+        var downloadedItems = await videosDatabase.LiveDownloadedItems.Where(x => videosDatabase.LiveMediae.Any(y => y.MediaId == x.LiveMediaMediaId)).ToDictionaryAsync(x => x.LiveMediaMediaId);
 
         var success = 0;
         var failed = 0;
@@ -91,9 +91,9 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
 
                         using var _ = await _databaseLock.LockAsync();
 
-                        videosDatabase.DownloadedItems.Add(downloaded = new()
+                        videosDatabase.LiveDownloadedItems.Add(downloaded = new()
                         {
-                            LiveMediaId = liveMedia.MediaId,
+                            LiveMediaMediaId = liveMedia.MediaId,
                             FileName = fileName,
                         });
 

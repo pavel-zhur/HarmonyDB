@@ -25,15 +25,16 @@ public class VideosDatabase : DbContext
     public required DbSet<StaticMessage> StaticMessages { get; set; }
     public required DbSet<StaticTopic> StaticTopics { get; set; }
 
+    public required DbSet<LiveChat> LiveChats { get; set; }
+    public required DbSet<LiveTopic> LiveTopics { get; set; }
+    public required DbSet<LiveMedia> LiveMediae { get; set; }
+    public required DbSet<LiveDownloadedItem> LiveDownloadedItems { get; set; }
+
     public required DbSet<UploadedItem> UploadedItems { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
     public required DbSet<Album> Albums { get; set; }
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
-    public required DbSet<LiveChat> LiveChats { get; set; }
-    public required DbSet<LiveTopic> LiveTopics { get; set; }
-    public required DbSet<LiveMedia> LiveMediae { get; set; }
-    public required DbSet<DownloadedItem> DownloadedItems { get; set; }
 
     public async Task CreateMissingTopics()
     {
