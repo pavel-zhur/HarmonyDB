@@ -12,8 +12,8 @@ public class VideosDatabaseOperations(VideosDatabase videosDatabase)
         videosDatabase.UploadedItems.AddRange(items.Select(i => new UploadedItem
         {
             CreatedOn = DateTime.Now,
-            ChatId = i.chatId,
-            MessageId = i.messageId,
+            StaticChatId = i.chatId,
+            StaticMessageId = i.messageId,
             TelegramPublishedOn = i.publishedOn,
             Status = i.result.status.status,
             StatusCode = i.result.status.code,

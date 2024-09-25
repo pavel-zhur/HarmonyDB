@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.EntityFrameworkCore;
 using OneShelf.Videos.Database.Models;
-using OneShelf.Videos.Database.Models.Json;
+using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.Database;
 
@@ -19,12 +19,13 @@ public class VideosDatabase : DbContext
     {
     }
 
+    public required DbSet<StaticChatFolder> StaticChatFolders { get; set; }
+    public required DbSet<StaticChat> StaticChats { get; set; }
+    public required DbSet<StaticMessage> StaticMessages { get; set; }
+    public required DbSet<StaticTopic> StaticTopics { get; set; }
+
     public required DbSet<UploadedItem> UploadedItems { get; set; }
-    public required DbSet<ChatFolder> ChatFolders { get; set; }
-    public required DbSet<Chat> Chats { get; set; }
-    public required DbSet<Message> Messages { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
-    public required DbSet<Topic> Topics { get; set; }
     public required DbSet<Album> Albums { get; set; }
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
@@ -39,41 +40,41 @@ public class VideosDatabase : DbContext
 
 with m as (
 	select *
-	from messages m
+	from staticmessages m
 	where selectedtype is not null
 ), r as (
-	select chatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
+	select staticchatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
 	from m
 	where replytomessageid is not null
 	union all
-	select p.chatid, r.childid, isnull(p.replytomessageid, p.id) parentid, level + 1 as level, case when p.replytomessageid is null then 1 else 0 end isfinal
-	from messages p
-	inner join r on r.parentid = p.id and r.chatid = p.chatid
+	select p.staticchatid, r.childid, isnull(p.replytomessageid, p.id) parentid, level + 1 as level, case when p.replytomessageid is null then 1 else 0 end isfinal
+	from staticmessages p
+	inner join r on r.parentid = p.id and r.staticchatid = p.staticchatid
 	where r.isfinal = 0
 ), roots as (
 	select r.*, p.title
 	from r
-	inner join messages p on r.parentid = p.id and r.chatid = p.chatid
+	inner join staticmessages p on r.parentid = p.id and r.staticchatid = p.staticchatid
 	where isfinal = 1 and action = 'topic_created'
 ), newtopics as (
 	select *
 	from (
 		select 
 			-- c.*, r.*, m.*
-			c.name, r.title, m.chatid, isnull(r.parentid, 0) rootmessageidor0
+			c.name, r.title, m.staticchatid, isnull(r.parentid, 0) rootmessageidor0
 		from m
-		left join roots r on r.childid = m.id and r.chatid = m.chatid
-		inner join chats c on c.id = m.chatid
-		group by c.name, r.title, m.chatid, r.parentid
+		left join roots r on r.childid = m.id and r.staticchatid = m.staticchatid
+		inner join staticchats c on c.id = m.staticchatid
+		group by c.name, r.title, m.staticchatid, r.parentid
 	) x
 )
 
-insert into topics (chatid, rootmessageidor0, originaltitle, title)
-select nt.chatid, nt.rootmessageidor0, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end
+insert into statictopics (staticchatid, rootmessageidor0, originaltitle, title)
+select nt.staticchatid, nt.rootmessageidor0, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end
 from newtopics nt
-left join topics t on t.chatid = nt.chatid and nt.rootmessageidor0 = t.rootmessageidor0
+left join statictopics t on t.staticchatid = nt.staticchatid and nt.rootmessageidor0 = t.rootmessageidor0
 where t.id is null
-ORDER BY nt.chatid, nt.rootmessageidor0
+ORDER BY nt.staticchatid, nt.rootmessageidor0
 
 ");
     }
@@ -84,30 +85,30 @@ ORDER BY nt.chatid, nt.rootmessageidor0
 
 with m as (
 	select *
-	from messages m
+	from staticmessages m
 	where selectedtype is not null
 ), r as (
-	select chatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
+	select staticchatid, id childid, replytomessageid parentid, 1 as level, 0 as isfinal
 	from m
 	where replytomessageid is not null
 	union all
-	select p.chatid, r.childid, isnull(p.replytomessageid, p.id) parentid, level + 1 as level, case when p.replytomessageid is null then 1 else 0 end isfinal
-	from messages p
-	inner join r on r.parentid = p.id and r.chatid = p.chatid
+	select p.staticchatid, r.childid, isnull(p.replytomessageid, p.id) parentid, level + 1 as level, case when p.replytomessageid is null then 1 else 0 end isfinal
+	from staticmessages p
+	inner join r on r.parentid = p.id and r.staticchatid = p.staticchatid
 	where r.isfinal = 0
 ), roots as (
 	select r.*, p.title
 	from r
-	inner join messages p on r.parentid = p.id and r.chatid = p.chatid
+	inner join staticmessages p on r.parentid = p.id and r.staticchatid = p.staticchatid
 	where isfinal = 1 and action = 'topic_created'
 )
 
-update messages
-set topicid = t.id
-from messages m
-inner join m mm on mm.DatabaseMessageId = m.DatabaseMessageId
-left join roots r on r.chatid = m.chatid and r.childid = m.id
-left join topics t on t.chatid = m.chatid and t.rootmessageidor0 = isnull(r.parentid, 0)
+update staticmessages
+set statictopicid = t.id
+from staticmessages m
+inner join m mm on mm.DatabaseStaticMessageId = m.DatabaseStaticMessageId
+left join roots r on r.staticchatid = m.staticchatid and r.childid = m.id
+left join statictopics t on t.staticchatid = m.staticchatid and t.rootmessageidor0 = isnull(r.parentid, 0)
 
 ");
     }
@@ -116,47 +117,47 @@ left join topics t on t.chatid = m.chatid and t.rootmessageidor0 = isnull(r.pare
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.ContactInformation)
             .HasConversion<string?>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.InlineBotButtons)
             .HasConversion<string?>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.LocationInformation)
             .HasConversion<string?>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.Poll)
             .HasConversion<string?>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.Text)
             .HasConversion<string>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.TextEntities)
             .HasConversion<string>(
                 e => JsonSerializer.Serialize(e, _jsonSerializerOptions),
                 x => JsonSerializer.Deserialize<JsonElement>(x, _jsonSerializerOptions));
 
         modelBuilder.Entity<AlbumConstraint>()
-            .Property(x => x.MessageSelectedType)
+            .Property(x => x.StaticMessageSelectedType)
             .HasConversion<string>();
 
-        modelBuilder.Entity<Message>()
+        modelBuilder.Entity<StaticMessage>()
             .Property(x => x.SelectedType)
             .HasConversion<string>()
             .HasComputedColumnSql(

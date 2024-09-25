@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.Database;
 namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240925120602_Statics")]
+    partial class Statics
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -322,7 +325,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.HasIndex("StaticChatFolderId")
                         .IsUnique();
 
-                    b.ToTable("StaticChats");
+                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChatFolder", b =>
@@ -346,7 +349,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("StaticChatFolders");
+                    b.ToTable("ChatFolders");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticMessage", b =>
@@ -508,7 +511,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.HasIndex("StaticChatId", "Id")
                         .IsUnique();
 
-                    b.ToTable("StaticMessages");
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticTopic", b =>
@@ -538,7 +541,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.HasIndex("StaticChatId", "RootMessageIdOr0")
                         .IsUnique();
 
-                    b.ToTable("StaticTopics");
+                    b.ToTable("Topics");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.UploadedAlbum", b =>

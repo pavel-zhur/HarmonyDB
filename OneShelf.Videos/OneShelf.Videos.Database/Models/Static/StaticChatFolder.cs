@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using OneShelf.Videos.Database.Models.Json;
 
-namespace OneShelf.Videos.Database.Models;
+namespace OneShelf.Videos.Database.Models.Static;
 
 [Index(nameof(Name), IsUnique = true)]
-public class ChatFolder
+public class StaticChatFolder
 {
     public int Id { get; set; }
 
@@ -14,5 +13,5 @@ public class ChatFolder
 
     public string ResultJsonFullPath => Path.Combine(Root, "result.json");
 
-    public Chat? Chat { get; set; }
+    public StaticChat? StaticChat { get; set; }
 }

@@ -1,7 +1,7 @@
-﻿namespace OneShelf.Videos.Database.Models.Json;
+﻿namespace OneShelf.Videos.Database.Models.Static;
 
-[Obsolete("Actually used to be referenced by the Message (TextEntities was a collection of it). This type may be useful in the future.")]
-public class TextEntity
+[Obsolete("Actually used to be referenced by the StaticMessage (TextEntities was a collection of it). This type may be useful in the future.")]
+public class StaticTextEntity
 {
     public required string Type { get; set; }
     public required string Text { get; set; }

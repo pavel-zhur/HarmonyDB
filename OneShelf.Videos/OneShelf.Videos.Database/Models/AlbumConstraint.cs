@@ -1,4 +1,4 @@
-﻿using OneShelf.Videos.Database.Models.Enums;
+﻿using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.Database.Models;
 
@@ -12,11 +12,11 @@ public class AlbumConstraint
 
     public bool Include { get; set; }
 
-    public int? TopicId { get; set; }
+    public int? StaticTopicId { get; set; }
 
-    public Topic? Topic { get; set; }
+    public StaticTopic? StaticTopic { get; set; }
 
-    public MessageSelectedType? MessageSelectedType { get; set; }
+    public StaticMessageSelectedType? StaticMessageSelectedType { get; set; }
 
     public bool IsSquare { get; set; }
 

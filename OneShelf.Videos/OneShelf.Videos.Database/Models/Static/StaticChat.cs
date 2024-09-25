@@ -2,20 +2,20 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneShelf.Videos.Database.Models.Json;
+namespace OneShelf.Videos.Database.Models.Static;
 
-[Index(nameof(ChatFolderId), IsUnique = true)]
-public class Chat
+[Index(nameof(StaticChatFolderId), IsUnique = true)]
+public class StaticChat
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public required long Id { get; set; }
     public required string Name { get; set; }
     public required string Type { get; set; }
-    public required List<Message> Messages { get; set; }
+    public required List<StaticMessage> Messages { get; set; }
 
     [JsonIgnore]
-    public int ChatFolderId { get; set; }
+    public int StaticChatFolderId { get; set; }
 
     [JsonIgnore]
-    public ChatFolder ChatFolder { get; set; } = null!;
+    public StaticChatFolder StaticChatFolder { get; set; } = null!;
 }

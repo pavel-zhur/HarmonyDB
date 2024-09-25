@@ -106,7 +106,7 @@ public class Service2
     {
         await _extendedGooglePhotosService.LoginAsync();
 
-        var added = (await _videosDatabase.UploadedItems.Select(x => new { x.ChatId, x.MessageId }).ToListAsync()).ToHashSet();
+        var added = (await _videosDatabase.UploadedItems.Select(x => new { ChatId = x.StaticChatId, MessageId = x.StaticMessageId }).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");
         items = items.Where(x => !added.Contains(new { ChatId = x.chatId, MessageId = x.messageId })).ToList();
         Console.WriteLine($"remaining items: {items.Count}");

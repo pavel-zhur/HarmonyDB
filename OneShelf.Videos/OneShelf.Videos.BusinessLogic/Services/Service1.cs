@@ -6,8 +6,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
-using OneShelf.Videos.Database.Models.Enums;
-using OneShelf.Videos.Database.Models.Json;
+using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.BusinessLogic.Services;
 
@@ -26,35 +25,35 @@ public class Service1
 
     public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport1()
     {
-        var messages = await _videosDatabase.Messages
-            .Where(x => x.SelectedType == MessageSelectedType.Photo)
-            .Include(x => x.Chat)
-            .ThenInclude(x => x.ChatFolder)
-            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
+        var messages = await _videosDatabase.StaticMessages
+            .Where(x => x.SelectedType == StaticMessageSelectedType.Photo)
+            .Include(x => x.StaticChat)
+            .ThenInclude(x => x.StaticChatFolder)
+            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.StaticChatId == x.StaticChatId && y.StaticMessageId == x.Id))
             .ToListAsync();
 
         return messages
-            .Select(x => (x.Chat.Id, x.Id, Path.Combine(x.Chat.ChatFolder.Root, x.Photo!), x.Date))
+            .Select(x => (x.StaticChat.Id, x.Id, Path.Combine(x.StaticChat.StaticChatFolder.Root, x.Photo!), x.Date))
             .ToList();
     }
 
     public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport2()
     {
-        var messages = await _videosDatabase.Messages
-            .Where(x => x.SelectedType == MessageSelectedType.Video)
-            .Include(x => x.Chat)
-            .ThenInclude(x => x.ChatFolder)
-            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.ChatId == x.ChatId && y.MessageId == x.Id))
+        var messages = await _videosDatabase.StaticMessages
+            .Where(x => x.SelectedType == StaticMessageSelectedType.Video)
+            .Include(x => x.StaticChat)
+            .ThenInclude(x => x.StaticChatFolder)
+            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.StaticChatId == x.StaticChatId && y.StaticMessageId == x.Id))
             .ToListAsync();
 
         return messages
-            .Select(x => (x.Chat.Id, x.Id, Path.Combine(x.Chat.ChatFolder.Root, x.File!), x.Date))
+            .Select(x => (x.StaticChat.Id, x.Id, Path.Combine(x.StaticChat.StaticChatFolder.Root, x.File!), x.Date))
             .ToList();
     }
 
     public async Task SaveChatFolders()
     {
-        var existing = await _videosDatabase.ChatFolders.ToListAsync();
+        var existing = await _videosDatabase.StaticChatFolders.ToListAsync();
         foreach (var directory in Directory.GetDirectories(_options.Value.BasePath, "*", SearchOption.TopDirectoryOnly))
         {
             var name = Path.GetFileName(directory);
@@ -62,7 +61,7 @@ public class Service1
 
             if (!File.Exists(Path.Combine(directory, "result.json"))) continue;
 
-            _videosDatabase.ChatFolders.Add(new()
+            _videosDatabase.StaticChatFolders.Add(new()
             {
                 Name = name,
                 Root = directory,
@@ -76,16 +75,16 @@ public class Service1
 
     public async Task SaveMessages()
     {
-        foreach (var (chatFolder, i) in (await _videosDatabase.ChatFolders.Where(f => f.Chat == null).ToListAsync()).WithIndices())
+        foreach (var (chatFolder, i) in (await _videosDatabase.StaticChatFolders.Where(f => f.StaticChat == null).ToListAsync()).WithIndices())
         {
-            var result = JsonSerializer.Deserialize<Chat>(await File.ReadAllTextAsync(chatFolder.ResultJsonFullPath), new JsonSerializerOptions
+            var result = JsonSerializer.Deserialize<StaticChat>(await File.ReadAllTextAsync(chatFolder.ResultJsonFullPath), new JsonSerializerOptions
             {
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             })!;
 
-            result.ChatFolder = chatFolder;
-            _videosDatabase.Chats.Add(result);
+            result.StaticChatFolder = chatFolder;
+            _videosDatabase.StaticChats.Add(result);
             _logger.LogInformation("{folder} added.", chatFolder.Name);
         }
 
@@ -99,15 +98,15 @@ public class Service1
         var albums = await _videosDatabase.Albums
             .Where(x => x.UploadedAlbum == null)
             .Include(x => x.Constraints)
-            .ThenInclude(x => x.Topic)
+            .ThenInclude(x => x.StaticTopic)
             .ToListAsync();
 
-        var messages = (await _videosDatabase.Messages
-                .Where(x => x.SelectedType.HasValue && x.TopicId.HasValue)
+        var messages = (await _videosDatabase.StaticMessages
+                .Where(x => x.SelectedType.HasValue && x.StaticTopicId.HasValue)
                 .Select(m => new
                 {
-                    m.TopicId,
-                    m.ChatId,
+                    TopicId = m.StaticTopicId,
+                    ChatId = m.StaticChatId,
                     m.Width,
                     m.Height,
                     m.Date,
@@ -119,14 +118,14 @@ public class Service1
 
         var uploadedItems = await _videosDatabase.UploadedItems
             .Where(i => _videosDatabase.InventoryItems.Any(j => j.Id == i.MediaItemId && (j.IsPhoto || j.MediaMetadataVideoStatus == "READY")))
-            .ToDictionaryAsync(x => new { x.ChatId, x.MessageId, }, x => x.MediaItemId);
+            .ToDictionaryAsync(x => new { ChatId = x.StaticChatId, MessageId = x.StaticMessageId, }, x => x.MediaItemId);
 
         return albums
             .Select(a => (a.Id, a.Title,
                 a.Constraints
-                    .SelectMany(c => messages[c.TopicId!.Value].Where(m =>
+                    .SelectMany(c => messages[c.StaticTopicId!.Value].Where(m =>
                     {
-                        if (c.MessageSelectedType.HasValue && c.MessageSelectedType != m.SelectedType) return false;
+                        if (c.StaticMessageSelectedType.HasValue && c.StaticMessageSelectedType != m.SelectedType) return false;
                         if (c.IsSquare && m.Width != m.Height) return false;
                         if (!c.Include) throw new("The exclusion is not supported yet.");
                         if (c.After.HasValue && m.Date < c.After) return false;
