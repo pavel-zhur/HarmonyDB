@@ -4,7 +4,7 @@ using OneShelf.Common;
 
 namespace OneShelf.Videos.BusinessLogic.Services;
 
-public class Service3
+public class ExifService
 {
     public async Task<DateTime> SetExifTimestamp(string path, string tempFileName)
     {

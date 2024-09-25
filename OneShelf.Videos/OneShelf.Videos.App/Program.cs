@@ -15,7 +15,7 @@ using var host = builder.Build();
 
 var service1 = host.Services.GetRequiredService<Service1>();
 var service2 = host.Services.GetRequiredService<Service2>();
-var service3 = host.Services.GetRequiredService<Service3>();
+var service3 = host.Services.GetRequiredService<ExifService>();
 var service4 = host.Services.GetRequiredService<LiveDownloader>();
 
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();

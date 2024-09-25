@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
             .Configure<VideosOptions>(o => configuration.GetSection(nameof(VideosOptions)).Bind(o))
             .AddScoped<Service1>()
             .AddScoped<Service2>()
-            .AddScoped<Service3>()
+            .AddScoped<ExifService>()
             .AddScoped<LiveDownloader>()
             .AddSingleton<TelegramLoggerInitializer>()
             .AddScoped<VideosDatabaseOperations>()

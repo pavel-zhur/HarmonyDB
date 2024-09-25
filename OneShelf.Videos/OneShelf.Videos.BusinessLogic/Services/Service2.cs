@@ -13,14 +13,14 @@ public class Service2
     private readonly ILogger<Service2> _logger;
     private readonly VideosDatabase _videosDatabase;
     private readonly VideosDatabaseOperations _videosDatabaseOperations;
-    private readonly Service3 _service3;
+    private readonly ExifService _exifService;
 
-    public Service2(ExtendedGooglePhotosService extendedGooglePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, Service3 service3, VideosDatabaseOperations videosDatabaseOperations)
+    public Service2(ExtendedGooglePhotosService extendedGooglePhotosService, ILogger<Service2> logger, VideosDatabase videosDatabase, ExifService exifService, VideosDatabaseOperations videosDatabaseOperations)
     {
         _extendedGooglePhotosService = extendedGooglePhotosService;
         _logger = logger;
         _videosDatabase = videosDatabase;
-        _service3 = service3;
+        _exifService = exifService;
         _videosDatabaseOperations = videosDatabaseOperations;
     }
 
@@ -89,7 +89,7 @@ public class Service2
 
                 Directory.CreateDirectory(tempDirectory);
                 var tempFileName = Path.Combine(Path.GetTempPath(), i.ToString(), Path.GetFileName(itemsByKey[x].path));
-                var timestampFromFile = await _service3.SetExifTimestamp(itemsByKey[x].path, tempFileName);
+                var timestampFromFile = await _exifService.SetExifTimestamp(itemsByKey[x].path, tempFileName);
                 lock (fileNameTimestamps)
                 {
                     fileNameTimestamps[x] = timestampFromFile;
