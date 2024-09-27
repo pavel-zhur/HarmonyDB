@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using OneShelf.Common;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.Database;
+using OneShelf.Videos.Database.Models;
 using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.BusinessLogic.Services;
@@ -27,7 +28,7 @@ public class Service1
     {
         var messages = await _videosDatabase.Mediae
             .Where(x => x.StaticMessage != null)
-            .Where(x => x.StaticMessage!.SelectedType == StaticMessageSelectedType.Photo)
+            .Where(x => x.StaticMessage!.SelectedType == MediaType.Photo)
             .Where(x => x.StaticMessage!.Media != null)
             .Where(x => x.UploadedItem == null)
             .Include(x => x.StaticMessage)
@@ -44,7 +45,7 @@ public class Service1
     {
         var messages = await _videosDatabase.Mediae
             .Where(x => x.StaticMessage != null)
-            .Where(x => x.StaticMessage!.SelectedType == StaticMessageSelectedType.Video)
+            .Where(x => x.StaticMessage!.SelectedType == MediaType.Video)
             .Where(x => x.StaticMessage!.Media != null)
             .Where(x => x.UploadedItem == null)
             .Include(x => x.StaticMessage)

@@ -20,6 +20,8 @@ public class LiveMedia
 
     public Media? Media { get; set; }
 
+    public MediaType? SelectedType { get; set; }
+
     public DateTime MessageDate { get; set; }
     public bool IsForwarded { get; set; }
     public DateTime MediaDate { get; set; }

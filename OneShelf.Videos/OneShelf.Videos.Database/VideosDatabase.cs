@@ -42,17 +42,17 @@ public class VideosDatabase : DbContext
     {
         await Database.ExecuteSqlAsync(@$"
 
-insert into mediae (staticchatid, staticmessageid)
-select sm.staticchatid, sm.id
+insert into mediae (staticchatid, staticmessageid, type)
+select sm.staticchatid, sm.id, sm.selectedtype
 from StaticMessages sm
 left join mediae m on m.staticmessageid = sm.id and m.staticchatid = sm.StaticChatId
 where sm.SelectedType is not null and m.id is null
 
-insert into mediae (livechatid, livemediaid)
-select lm.livetopiclivechatid, lm.id
+insert into mediae (livechatid, livemediaid, type)
+select lm.livetopiclivechatid, lm.id, lm.selectedtype
 from livemediae lm
 left join mediae m on m.livemediaid = lm.id and m.livechatid = lm.livetopiclivechatid
-where m.id is null
+where lm.SelectedType is not null and m.id is null
 
 ");
     }
@@ -213,5 +213,24 @@ left join statictopics t on t.staticchatid = m.staticchatid and t.rootmessageido
             .HasPrincipalKey<LiveMedia>(x => new { x.Id, x.LiveTopicLiveChatId })
             .HasForeignKey<Media>(x => new { x.LiveMediaId, x.LiveChatId })
             .IsRequired(false);
+
+        modelBuilder.Entity<LiveMedia>()
+            .Property(x => x.SelectedType)
+            .HasConversion<string>()
+            .HasComputedColumnSql(
+                @"
+case 
+when type = 'Photo' then 'Photo' 
+when MimeType like 'video/%' then 'Video' 
+when mimetype = 'image/webp' then null 
+when mimetype = 'application/x-tgsticker' then null
+when MimeType like 'image/%' then 'Photo' 
+else null
+end
+");
+
+        modelBuilder.Entity<Media>()
+            .Property(x => x.Type)
+            .HasConversion<string>();
     }
 }

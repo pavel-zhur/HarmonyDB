@@ -20,7 +20,7 @@ public class StaticMessage
     public StaticTopic? StaticTopic { get; set; }
 
     [JsonIgnore]
-    public StaticMessageSelectedType? SelectedType { get; set; }
+    public MediaType? SelectedType { get; set; }
 
     [JsonIgnore]
     public Media? Media { get; set; }

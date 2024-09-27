@@ -16,7 +16,7 @@ public class AlbumConstraint
 
     public StaticTopic? StaticTopic { get; set; }
 
-    public StaticMessageSelectedType? StaticMessageSelectedType { get; set; }
+    public MediaType? StaticMessageSelectedType { get; set; }
 
     public bool IsSquare { get; set; }
 
