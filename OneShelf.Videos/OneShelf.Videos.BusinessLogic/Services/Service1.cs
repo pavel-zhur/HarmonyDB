@@ -23,31 +23,37 @@ public class Service1
         _logger = logger;
     }
 
-    public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport1()
+    public async Task<List<(int mediaId, string path, DateTime publishedOn)>> GetExport1()
     {
-        var messages = await _videosDatabase.StaticMessages
-            .Where(x => x.SelectedType == StaticMessageSelectedType.Photo)
-            .Include(x => x.StaticChat)
+        var messages = await _videosDatabase.Mediae
+            .Where(x => x.StaticMessage != null)
+            .Where(x => x.StaticMessage!.SelectedType == StaticMessageSelectedType.Photo)
+            .Where(x => x.StaticMessage!.Media != null)
+            .Where(x => x.UploadedItem == null)
+            .Include(x => x.StaticMessage)
+            .ThenInclude(x => x.StaticChat)
             .ThenInclude(x => x.StaticChatFolder)
-            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.StaticChatId == x.StaticChatId && y.StaticMessageId == x.Id))
             .ToListAsync();
 
         return messages
-            .Select(x => (x.StaticChat.Id, x.Id, Path.Combine(x.StaticChat.StaticChatFolder.Root, x.Photo!), x.Date))
+            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.Photo!), x.StaticMessage.Date))
             .ToList();
     }
 
-    public async Task<List<(long chatId, int messageId, string path, DateTime publishedOn)>> GetExport2()
+    public async Task<List<(int mediaId, string path, DateTime publishedOn)>> GetExport2()
     {
-        var messages = await _videosDatabase.StaticMessages
-            .Where(x => x.SelectedType == StaticMessageSelectedType.Video)
-            .Include(x => x.StaticChat)
+        var messages = await _videosDatabase.Mediae
+            .Where(x => x.StaticMessage != null)
+            .Where(x => x.StaticMessage!.SelectedType == StaticMessageSelectedType.Video)
+            .Where(x => x.StaticMessage!.Media != null)
+            .Where(x => x.UploadedItem == null)
+            .Include(x => x.StaticMessage)
+            .ThenInclude(x => x.StaticChat)
             .ThenInclude(x => x.StaticChatFolder)
-            .Where(x => !_videosDatabase.UploadedItems.Any(y => y.StaticChatId == x.StaticChatId && y.StaticMessageId == x.Id))
             .ToListAsync();
 
         return messages
-            .Select(x => (x.StaticChat.Id, x.Id, Path.Combine(x.StaticChat.StaticChatFolder.Root, x.File!), x.Date))
+            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.File!), x.StaticMessage.Date))
             .ToList();
     }
 
@@ -93,7 +99,7 @@ public class Service1
         _logger.LogInformation("Saved.");
     }
 
-    public async Task<List<(int albumId, string title, List<(string? mediaItemId, long chatId, int messageId)> items)>> GetAlbums()
+    public async Task<List<(int albumId, string title, List<(string mediaItemId, int mediaId)> items)>> GetAlbums()
     {
         var albums = await _videosDatabase.Albums
             .Where(x => x.UploadedAlbum == null)
@@ -101,24 +107,24 @@ public class Service1
             .ThenInclude(x => x.StaticTopic)
             .ToListAsync();
 
-        var messages = (await _videosDatabase.StaticMessages
-                .Where(x => x.SelectedType.HasValue && x.StaticTopicId.HasValue)
+        var messages = (await _videosDatabase.Mediae
+                .Where(x => x.StaticMessage != null)
+                .Where(x => x.StaticMessage!.SelectedType.HasValue && x.StaticMessage.StaticTopicId.HasValue)
                 .Select(m => new
                 {
-                    TopicId = m.StaticTopicId,
-                    ChatId = m.StaticChatId,
-                    m.Width,
-                    m.Height,
-                    m.Date,
+                    TopicId = m.StaticMessage!.StaticTopicId,
+                    m.StaticMessage.Width,
+                    m.StaticMessage.Height,
+                    m.StaticMessage.Date,
+                    m.StaticMessage.SelectedType,
                     m.Id,
-                    m.SelectedType,
                 })
                 .ToListAsync())
             .ToLookup(x => x.TopicId!.Value);
 
         var uploadedItems = await _videosDatabase.UploadedItems
             .Where(i => _videosDatabase.InventoryItems.Any(j => j.Id == i.MediaItemId && (j.IsPhoto || j.MediaMetadataVideoStatus == "READY")))
-            .ToDictionaryAsync(x => new { ChatId = x.StaticChatId, MessageId = x.StaticMessageId, }, x => x.MediaItemId);
+            .ToDictionaryAsync(x => x.MediaId, x => x.MediaItemId);
 
         return albums
             .Select(a => (a.Id, a.Title,
@@ -132,9 +138,11 @@ public class Service1
                         if (c.Before.HasValue && m.Date > c.Before) return false;
                         return true;
                     }))
-                    .Select(x => new { x.ChatId, MessageId = x.Id })
+                    .Select(x => x.Id)
                     .Distinct()
-                    .Select(x => (uploadedItems.GetValueOrDefault(x), x.ChatId, x.MessageId))
+                    .Select(x => (mediaItemId: uploadedItems.GetValueOrDefault(x), x))
+                    .Where(x => x.mediaItemId != null)
+                    .Select(x => (x.mediaItemId!, x.x))
                     .ToList()))
             .ToList();
     }

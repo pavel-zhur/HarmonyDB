@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Videos.Database;
 using OneShelf.Videos.Database.Models;
+using System.Globalization;
 
 namespace OneShelf.Videos.BusinessLogic.Services;
 
@@ -68,15 +69,15 @@ public class Service2
         _logger.LogInformation("Saved.");
     }
 
-    public async Task UploadPhotos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
+    public async Task UploadPhotos(List<(int mediaId, string path, DateTime publishedOn)> items)
     {
         await _extendedGooglePhotosService.LoginAsync();
 
-        var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
-        var fileNameTimestamps = new Dictionary<(long chatId, int messageId), DateTime>();
+        var itemsByKey = items.ToDictionary(x => x.mediaId);
+        var fileNameTimestamps = new Dictionary<int, DateTime>();
         var result = await _extendedGooglePhotosService.UploadMultiple(
             items
-                .Select(x => ((x.chatId, x.messageId), x.path, (string?)null))
+                .Select(x => (x.mediaId, x.path, (string?)null))
                 .ToList(),
             newItems => AddToDatabase(itemsByKey, newItems, fileNameTimestamps),
             async (x, i) =>
@@ -88,11 +89,13 @@ public class Service2
                 }
 
                 Directory.CreateDirectory(tempDirectory);
-                var tempFileName = Path.Combine(Path.GetTempPath(), i.ToString(), Path.GetFileName(itemsByKey[x].path));
-                var timestampFromFile = await _exifService.SetExifTimestamp(itemsByKey[x].path, tempFileName);
+                var fileName = itemsByKey[x].path;
+                var tempFileName = Path.Combine(Path.GetTempPath(), i.ToString(), Path.GetFileName(fileName));
+                var exifTimestamp = DateTime.ParseExact(Path.GetFileNameWithoutExtension(fileName).SelectSingle(x => x.Substring(x.IndexOf('@') + 1)), "dd-MM-yyyy_HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+                await _exifService.SetExifTimestamp(fileName, tempFileName, exifTimestamp);
                 lock (fileNameTimestamps)
                 {
-                    fileNameTimestamps[x] = timestampFromFile;
+                    fileNameTimestamps[x] = exifTimestamp;
                 }
 
                 return tempFileName;
@@ -102,19 +105,19 @@ public class Service2
         Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
     }
 
-    public async Task UploadVideos(List<(long chatId, int messageId, string path, DateTime publishedOn)> items)
+    public async Task UploadVideos(List<(int mediaId, string path, DateTime publishedOn)> items)
     {
         await _extendedGooglePhotosService.LoginAsync();
 
-        var added = (await _videosDatabase.UploadedItems.Select(x => new { ChatId = x.StaticChatId, MessageId = x.StaticMessageId }).ToListAsync()).ToHashSet();
+        var added = (await _videosDatabase.UploadedItems.Select(x => x.MediaId).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");
-        items = items.Where(x => !added.Contains(new { ChatId = x.chatId, MessageId = x.messageId })).ToList();
+        items = items.Where(x => !added.Contains(x.mediaId)).ToList();
         Console.WriteLine($"remaining items: {items.Count}");
 
-        var itemsByKey = items.ToDictionary(x => (x.chatId, x.messageId));
+        var itemsByKey = items.ToDictionary(x => x.mediaId);
         var result = await _extendedGooglePhotosService.UploadMultiple(
             items
-                .Select(x => ((x.chatId, x.messageId), x.path,
+                .Select(x => (x.mediaId, x.path,
                     //$"chatId = {x.chatId}, messageId = {x.messageId}, published on = {x.publishedOn}, filename = {Path.GetFileName(x.path)}"
                     (string?)null))
                 .ToList(),
@@ -126,22 +129,22 @@ public class Service2
     }
 
     private async Task AddToDatabase(
-        Dictionary<(long chatId, int messageId), (long chatId, int messageId, string path, DateTime publishedOn)> items,
-        Dictionary<(long chatId, int messageId), NewMediaItemResult> newItems,
-        Dictionary<(long chatId, int messageId), DateTime>? fileNameTimestamps = null)
+        Dictionary<int, (int mediaId, string path, DateTime publishedOn)> items,
+        Dictionary<int, NewMediaItemResult> newItems,
+        Dictionary<int, DateTime>? fileNameTimestamps = null)
     {
-        _videosDatabaseOperations.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.chatId, x.messageId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
+        _videosDatabaseOperations.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.mediaId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
         await _videosDatabase.SaveChangesAsync();
     }
 
-    public async Task CreateAlbums(List<(int albumId, string title, List<(string? mediaItemId, long chatId, int messageId)> items)> albums)
+    public async Task CreateAlbums(List<(int albumId, string title, List<(string mediaItemId, int mediaId)> items)> albums)
     {
         await _extendedGooglePhotosService.LoginAsync();
         foreach (var (albumId, title, items) in albums)
         {
             _logger.LogInformation("{title} uploading...", title);
             var googleAlbum = await _extendedGooglePhotosService.CreateAlbumAsync(title);
-            await _extendedGooglePhotosService.AddMediaItemsToAlbumWithRetryAsync(googleAlbum!.id, items.Where(x => x.mediaItemId != null).Select(x => x.mediaItemId!).ToList());
+            await _extendedGooglePhotosService.AddMediaItemsToAlbumWithRetryAsync(googleAlbum!.id, items.Select(x => x.mediaItemId).ToList());
 
             _videosDatabase.UploadedAlbums.Add(new()
             {

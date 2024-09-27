@@ -7,13 +7,12 @@ namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class VideosDatabaseOperations(VideosDatabase videosDatabase)
 {
-    public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
+    public void AddItems(IEnumerable<(int mediaId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
     {
         videosDatabase.UploadedItems.AddRange(items.Select(i => new UploadedItem
         {
             CreatedOn = DateTime.Now,
-            StaticChatId = i.chatId,
-            StaticMessageId = i.messageId,
+            MediaId = i.mediaId,
             TelegramPublishedOn = i.publishedOn,
             Status = i.result.status.status,
             StatusCode = i.result.status.code,
