@@ -18,4 +18,6 @@ public class Media
 
     public LiveChat? LiveChat { get; set; }
     public LiveMedia? LiveMedia { get; set; }
+
+    public UploadedItem? UploadedItem { get; set; }
 }

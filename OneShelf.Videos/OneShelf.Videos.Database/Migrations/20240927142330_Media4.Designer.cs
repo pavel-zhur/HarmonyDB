@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.Videos.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.Videos.Database;
 namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 {
     [DbContext(typeof(VideosDatabase))]
-    partial class VideosDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20240927142330_Media4")]
+    partial class Media4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -608,7 +611,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MediaId")
+                    b.Property<int?>("MediaId")
                         .HasColumnType("int");
 
                     b.Property<string>("MediaItemId")
@@ -650,7 +653,8 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("MediaId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[MediaId] IS NOT NULL");
 
                     b.ToTable("UploadedItems");
                 });
@@ -775,9 +779,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                 {
                     b.HasOne("OneShelf.Videos.Database.Models.Media", "Media")
                         .WithOne("UploadedItem")
-                        .HasForeignKey("OneShelf.Videos.Database.Models.UploadedItem", "MediaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OneShelf.Videos.Database.Models.UploadedItem", "MediaId");
 
                     b.Navigation("Media");
                 });
