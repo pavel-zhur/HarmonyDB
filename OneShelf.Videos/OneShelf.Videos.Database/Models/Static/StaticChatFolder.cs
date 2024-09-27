@@ -11,7 +11,5 @@ public class StaticChatFolder
 
     public required string Root { get; set; }
 
-    public string ResultJsonFullPath => Path.Combine(Root, "result.json");
-
     public StaticChat? StaticChat { get; set; }
 }

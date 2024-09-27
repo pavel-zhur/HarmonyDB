@@ -83,7 +83,7 @@ public class Service1
     {
         foreach (var (chatFolder, i) in (await _videosDatabase.StaticChatFolders.Where(f => f.StaticChat == null).ToListAsync()).WithIndices())
         {
-            var result = JsonSerializer.Deserialize<StaticChat>(await File.ReadAllTextAsync(chatFolder.ResultJsonFullPath), new JsonSerializerOptions
+            var result = JsonSerializer.Deserialize<StaticChat>(await File.ReadAllTextAsync(Path.Combine(chatFolder.Root, "result.json")), new JsonSerializerOptions
             {
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
