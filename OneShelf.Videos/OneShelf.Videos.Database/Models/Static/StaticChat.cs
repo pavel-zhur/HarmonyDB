@@ -19,6 +19,6 @@ public class StaticChat
     [JsonIgnore]
     public StaticChatFolder StaticChatFolder { get; set; } = null!;
 
-    //[JsonIgnore]
-    //public ICollection<Media> Mediae { get; set; }
+    [JsonIgnore]
+    public ICollection<Media> Mediae { get; set; }
 }

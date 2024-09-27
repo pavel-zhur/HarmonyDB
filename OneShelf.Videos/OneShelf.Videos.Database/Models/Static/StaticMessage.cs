@@ -22,8 +22,8 @@ public class StaticMessage
     [JsonIgnore]
     public StaticMessageSelectedType? SelectedType { get; set; }
 
-    //[JsonIgnore]
-    //public Media? Media { get; set; }
+    [JsonIgnore]
+    public Media? Media { get; set; }
 
     public required int Id { get; set; }
     public int? MessageId { get; set; }

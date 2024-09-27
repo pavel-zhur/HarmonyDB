@@ -30,6 +30,8 @@ public class VideosDatabase : DbContext
     public required DbSet<LiveMedia> LiveMediae { get; set; }
     public required DbSet<LiveDownloadedItem> LiveDownloadedItems { get; set; }
 
+    public required DbSet<Media> Mediae { get; set; }
+
     public required DbSet<UploadedItem> UploadedItems { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
     public required DbSet<Album> Albums { get; set; }
@@ -178,5 +180,19 @@ left join statictopics t on t.staticchatid = m.staticchatid and t.rootmessageido
         modelBuilder.Entity<LiveMedia>()
             .Property(x => x.Type)
             .HasConversion<string>();
+
+        modelBuilder.Entity<Media>()
+            .HasOne(x => x.StaticMessage)
+            .WithOne(x => x.Media)
+            .HasPrincipalKey<StaticMessage>(x => new { x.StaticChatId, x.Id })
+            .HasForeignKey<Media>(x => new { x.StaticChatId, x.StaticMessageId })
+            .IsRequired(false);
+
+        modelBuilder.Entity<Media>()
+            .HasOne(x => x.LiveMedia)
+            .WithOne(x => x.Media)
+            .HasPrincipalKey<LiveMedia>(x => new { x.Id, x.LiveTopicLiveChatId })
+            .HasForeignKey<Media>(x => new { x.LiveMediaId, x.LiveChatId })
+            .IsRequired(false);
     }
 }

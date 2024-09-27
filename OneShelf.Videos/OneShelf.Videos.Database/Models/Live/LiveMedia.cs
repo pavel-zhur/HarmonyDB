@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace OneShelf.Videos.Database.Models.Live;
@@ -16,6 +17,8 @@ public class LiveMedia
     public LiveTopic LiveTopic { get; set; }
 
     public LiveMediaType Type { get; set; }
+
+    public Media? Media { get; set; }
 
     public DateTime MessageDate { get; set; }
     public bool IsForwarded { get; set; }
