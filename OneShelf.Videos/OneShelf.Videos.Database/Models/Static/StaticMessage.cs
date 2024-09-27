@@ -1,17 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace OneShelf.Videos.Database.Models.Static;
 
-[Index(nameof(StaticChatId), nameof(Id), IsUnique = true)]
+[PrimaryKey(nameof(StaticChatId), nameof(Id))]
 public class StaticMessage
 {
-    [JsonIgnore]
-    [Key]
-    public int DatabaseStaticMessageId { get; set; }
-
     [JsonIgnore]
     public long StaticChatId { get; set; }
 
@@ -26,6 +21,9 @@ public class StaticMessage
 
     [JsonIgnore]
     public StaticMessageSelectedType? SelectedType { get; set; }
+
+    //[JsonIgnore]
+    //public Media? Media { get; set; }
 
     public required int Id { get; set; }
     public int? MessageId { get; set; }

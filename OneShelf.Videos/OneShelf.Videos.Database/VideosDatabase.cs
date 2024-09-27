@@ -36,6 +36,16 @@ public class VideosDatabase : DbContext
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
 
+    public async Task CleanupTopics()
+    {
+        await Database.ExecuteSqlAsync(@$"
+
+update staticmessages set statictopicid = null
+delete from statictopics
+
+");
+    }
+
     public async Task CreateMissingTopics()
     {
         await Database.ExecuteSqlAsync(@$"
@@ -108,7 +118,7 @@ with m as (
 update staticmessages
 set statictopicid = t.id
 from staticmessages m
-inner join m mm on mm.DatabaseStaticMessageId = m.DatabaseStaticMessageId
+inner join m mm on mm.staticchatid = m.staticchatid and mm.id = m.id
 left join roots r on r.staticchatid = m.staticchatid and r.childid = m.id
 left join statictopics t on t.staticchatid = m.staticchatid and t.rootmessageidor0 = isnull(r.parentid, 0)
 

@@ -14,7 +14,7 @@ from (
 		(m.photo is not null)
 		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
 where u.id is null
 
 -- test 3: no results
@@ -26,7 +26,7 @@ from (
 		(m.photo is not null)
 		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
 where m.date <> u.telegrampublishedon
 
 -- test 4: no results
@@ -38,7 +38,7 @@ from (
 		(m.photo is not null)
 		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
 where filenametimestamp <> mediaitemmetadatacreationtime
 
 -- test 5: no results
@@ -52,8 +52,8 @@ from (
 		(m.photo is not null)
 		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
-left join videos.dbo.inventoryitems i on i.id = u.mediaitemid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.inventoryitems i on i.id = u.mediaitemid
 where i.mediametadatacreationtime <> mediaitemmetadatacreationtime
 
 -- test 6: no results
@@ -67,8 +67,8 @@ from (
 		(m.photo is not null)
 		or (m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
-left join videos.dbo.inventoryitems i on i.id = u.mediaitemid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.inventoryitems i on i.id = u.mediaitemid
 where date < mediaitemmetadatacreationtime
 
 -- test 7: no results
@@ -81,8 +81,8 @@ from (
 	where 
 		(m.mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null'))
 ) m
-left join videos.dbo.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
-left join videos.dbo.inventoryitems i on i.id = u.mediaitemid
+left join videos.uploadeditems u on u.staticchatid = m.staticchatid and u.staticmessageid = m.staticmessageid
+left join videos.inventoryitems i on i.id = u.mediaitemid
 where isnull(mediametadatavideostatus, 'null') <> 'READY'
 
 -- test 8: no results
@@ -124,7 +124,7 @@ where m.replytomessageid is not null and r.staticchatid is null
 
 -- test 9: no results
 select *
-from videos.dbo.UploadedItems u
+from videos.UploadedItems u
 full join (
 
 select * from videos.staticmessages where statictopicid is not null
