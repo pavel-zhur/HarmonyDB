@@ -38,6 +38,25 @@ public class VideosDatabase : DbContext
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
 
+    public async Task AppendMediae()
+    {
+        await Database.ExecuteSqlAsync(@$"
+
+insert into mediae (staticchatid, staticmessageid)
+select sm.staticchatid, sm.id
+from StaticMessages sm
+left join mediae m on m.staticmessageid = sm.id and m.staticchatid = sm.StaticChatId
+where sm.SelectedType is not null and m.id is null
+
+insert into mediae (livechatid, livemediaid)
+select lm.livetopiclivechatid, lm.id
+from livemediae lm
+left join mediae m on m.livemediaid = lm.id and m.livechatid = lm.livetopiclivechatid
+where m.id is null
+
+");
+    }
+
     public async Task CleanupTopics()
     {
         await Database.ExecuteSqlAsync(@$"
