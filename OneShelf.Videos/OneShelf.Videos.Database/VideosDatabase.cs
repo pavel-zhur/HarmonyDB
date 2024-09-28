@@ -39,6 +39,23 @@ public class VideosDatabase : DbContext
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
 
+    public async Task AppendTopics()
+    {
+        var staticTopics = await StaticTopics.Where(x => x.Topic == null).ToListAsync();
+        Topics.AddRange(staticTopics.Select(x => new Topic
+        {
+            StaticTopic = x,
+        }));
+
+        var liveTopics = await LiveTopics.Where(x => x.Topic == null).ToListAsync();
+        Topics.AddRange(liveTopics.Select(x => new Topic
+        {
+            LiveTopic = x,
+        }));
+
+        await SaveChangesAsync();
+    }
+
     public async Task AppendMediae()
     {
         await Database.ExecuteSqlAsync(@$"
@@ -58,7 +75,7 @@ where lm.SelectedType is not null and m.id is null
 ");
     }
 
-    public async Task CleanupTopics()
+    public async Task CleanupStaticTopics()
     {
         await Database.ExecuteSqlAsync(@$"
 
@@ -68,7 +85,7 @@ delete from statictopics
 ");
     }
 
-    public async Task CreateMissingTopics()
+    public async Task CreateMissingStaticTopics()
     {
         await Database.ExecuteSqlAsync(@$"
 
@@ -113,7 +130,7 @@ ORDER BY nt.staticchatid, nt.rootmessageidor0
 ");
     }
 
-    public async Task UpdateMessagesTopics()
+    public async Task UpdateStaticMessagesTopics()
     {
         await Database.ExecuteSqlAsync(@$"
 

@@ -21,10 +21,11 @@ var service4 = host.Services.GetRequiredService<LiveDownloader>();
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
 await videosDatabase.Database.MigrateAsync();
 
-await service4.Try(false);
+await videosDatabase.AppendTopics();
+//await service4.Try(false);
 
-//await videosDatabase.CreateMissingTopics();
-//await videosDatabase.UpdateMessagesTopics();
+//await videosDatabase.CreateMissingStaticTopics();
+//await videosDatabase.UpdateStaticMessagesTopics();
 
 //return;
 
