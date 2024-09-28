@@ -10,7 +10,10 @@ public class AlbumConstraint
 
     public bool Include { get; set; }
 
+    [Obsolete]
     public int? StaticTopicId { get; set; }
+
+    public int? TopicId { get; set; }
 
     public MediaType? StaticMessageSelectedType { get; set; }
 
