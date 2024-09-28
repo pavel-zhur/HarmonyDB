@@ -15,6 +15,8 @@ public class AlbumConstraint
 
     public int? TopicId { get; set; }
 
+    public Topic? Topic { get; set; }
+
     public MediaType? StaticMessageSelectedType { get; set; }
 
     public bool IsSquare { get; set; }

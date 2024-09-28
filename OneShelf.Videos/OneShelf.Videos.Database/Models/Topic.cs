@@ -18,4 +18,6 @@ public class Topic
 
     public LiveChat? LiveChat { get; set; }
     public LiveTopic? LiveTopic { get; set; }
+
+    public ICollection<AlbumConstraint> AlbumConstraints { get; set; } = null!;
 }
