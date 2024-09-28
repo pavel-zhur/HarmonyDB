@@ -39,6 +39,23 @@ public class VideosDatabase : DbContext
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
 
+    public async Task UpdateMediaTopics()
+    {
+        await Database.ExecuteSqlAsync(@$"
+
+update mediae
+set topicid = t.id
+from mediae m
+left join StaticMessages sm on m.staticmessageid = sm.id and m.staticchatid = sm.StaticChatId
+left join livemediae lm on m.livemediaid = lm.id and m.livechatid = lm.livetopiclivechatid
+left join statictopics st on st.StaticChatId = sm.StaticChatId and st.RootMessageIdOr0 = sm.StaticTopicRootMessageIdOr0
+left join livetopics lt on lt.LiveChatId = lm.LiveTopicLiveChatId and lt.id = lm.LiveTopicId
+inner join topics t on (t.staticchatid = t.StaticChatId and t.StaticTopicRootMessageIdOr0 = st.RootMessageIdOr0)
+	or (t.livechatid = lt.LiveChatId and t.livetopicid = lt.Id)
+
+");
+    }
+
     public async Task AppendTopics()
     {
         var staticTopics = await StaticTopics.Where(x => x.Topic == null).ToListAsync();
@@ -124,7 +141,7 @@ insert into statictopics (staticchatid, rootmessageidor0, originaltitle, title)
 select nt.staticchatid, nt.rootmessageidor0, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end, case when nt.title is null then nt.name else nt.name + ' / ' + nt.title end
 from newtopics nt
 left join statictopics t on t.staticchatid = nt.staticchatid and nt.rootmessageidor0 = t.rootmessageidor0
-where t.id is null
+where t.staticchatid is null
 ORDER BY nt.staticchatid, nt.rootmessageidor0
 
 ");

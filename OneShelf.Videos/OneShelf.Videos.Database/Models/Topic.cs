@@ -20,4 +20,5 @@ public class Topic
     public LiveTopic? LiveTopic { get; set; }
 
     public ICollection<AlbumConstraint> AlbumConstraints { get; set; } = null!;
+    public ICollection<Media> Mediae { get; set; } = null!;
 }

@@ -22,4 +22,7 @@ public class Media
     public MediaType Type { get; set; }
 
     public UploadedItem? UploadedItem { get; set; }
+    
+    public int? TopicId { get; set; }
+    public Topic? Topic { get; set; }
 }
