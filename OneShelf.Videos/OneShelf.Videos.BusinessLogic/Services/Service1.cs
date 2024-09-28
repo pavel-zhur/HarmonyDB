@@ -105,14 +105,15 @@ public class Service1
         var albums = await _videosDatabase.Albums
             .Where(x => x.UploadedAlbum == null)
             .Include(x => x.Constraints)
+            .ThenInclude(x => x.Topic)
             .ToListAsync();
 
         var messages = (await _videosDatabase.Mediae
                 .Where(x => x.StaticMessage != null)
-                .Where(x => x.StaticMessage!.SelectedType.HasValue && x.StaticMessage.StaticTopic != null)
+                .Where(x => x.StaticMessage!.SelectedType.HasValue && x.StaticMessage.StaticTopic!.Topic != null)
                 .Select(m => new
                 {
-                    StaticTopicId = m.StaticMessage!.StaticTopic!.Id,
+                    TopicId = m.StaticMessage!.StaticTopic!.Topic!.Id,
                     m.StaticMessage.StaticTopicRootMessageIdOr0,
                     m.StaticMessage.Width,
                     m.StaticMessage.Height,
@@ -121,7 +122,7 @@ public class Service1
                     m.Id,
                 })
                 .ToListAsync())
-            .ToLookup(x => x.StaticTopicId);
+            .ToLookup(x => x.TopicId);
 
         var uploadedItems = await _videosDatabase.UploadedItems
             .Where(i => _videosDatabase.InventoryItems.Any(j => j.Id == i.MediaItemId && (j.IsPhoto || j.MediaMetadataVideoStatus == "READY")))
@@ -130,7 +131,7 @@ public class Service1
         return albums
             .Select(a => (a.Id, a.Title,
                 a.Constraints
-                    .SelectMany(c => messages[c.StaticTopicId!.Value].Where(m =>
+                    .SelectMany(c => messages[c.TopicId!.Value].Where(m =>
                     {
                         if (c.StaticMessageSelectedType.HasValue && c.StaticMessageSelectedType != m.SelectedType) return false;
                         if (c.IsSquare && m.Width != m.Height) return false;

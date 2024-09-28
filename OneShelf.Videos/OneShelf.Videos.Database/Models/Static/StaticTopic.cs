@@ -5,8 +5,6 @@ namespace OneShelf.Videos.Database.Models.Static;
 [PrimaryKey(nameof(StaticChatId), nameof(RootMessageIdOr0))]
 public class StaticTopic
 {
-    public int Id { get; set; }
-
     public required long StaticChatId { get; set; }
 
     public StaticChat StaticChat { get; set; } = null!;
