@@ -18,4 +18,6 @@ public class StaticTopic
     public required string Title { get; set; }
 
     public ICollection<StaticMessage> StaticMessages { get; set; }
+
+    public Topic? Topic { get; set; }
 }

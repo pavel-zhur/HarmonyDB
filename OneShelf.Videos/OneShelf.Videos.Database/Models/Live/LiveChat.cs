@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace OneShelf.Videos.Database.Models.Live;
 
@@ -13,4 +12,6 @@ public class LiveChat
     public ICollection<LiveTopic> LiveTopics { get; set; }
 
     public ICollection<Media> Mediae { get; set; }
+
+    public ICollection<Topic> Topics { get; set; }
 }

@@ -31,6 +31,7 @@ public class VideosDatabase : DbContext
     public required DbSet<LiveDownloadedItem> LiveDownloadedItems { get; set; }
 
     public required DbSet<Media> Mediae { get; set; }
+    public required DbSet<Topic> Topics { get; set; }
 
     public required DbSet<UploadedItem> UploadedItems { get; set; }
     public required DbSet<InventoryItem> InventoryItems { get; set; }
@@ -238,5 +239,19 @@ end
             .WithMany(x => x.StaticMessages)
             .IsRequired(false)
             .HasForeignKey(x => new { x.StaticChatId, x.StaticTopicRootMessageIdOr0 });
+
+        modelBuilder.Entity<Topic>()
+            .HasOne(x => x.StaticTopic)
+            .WithOne(x => x.Topic)
+            .HasPrincipalKey<StaticTopic>(x => new { x.StaticChatId, x.RootMessageIdOr0 })
+            .HasForeignKey<Topic>(x => new { x.StaticChatId, x.StaticTopicRootMessageIdOr0 })
+            .IsRequired(false);
+
+        modelBuilder.Entity<Topic>()
+            .HasOne(x => x.LiveTopic)
+            .WithOne(x => x.Topic)
+            .HasPrincipalKey<LiveTopic>(x => new { x.Id, x.LiveChatId })
+            .HasForeignKey<Topic>(x => new { x.LiveTopicId, x.LiveChatId })
+            .IsRequired(false);
     }
 }

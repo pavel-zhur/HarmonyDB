@@ -14,4 +14,6 @@ public class LiveTopic
     public string Title { get; set; }
 
     public ICollection<LiveMedia> LiveMediae { get; set; }
+
+    public Topic? Topic { get; set; }
 }

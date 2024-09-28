@@ -21,4 +21,7 @@ public class StaticChat
 
     [JsonIgnore]
     public ICollection<Media> Mediae { get; set; }
+
+    [JsonIgnore]
+    public ICollection<Topic> Topics { get; set; }
 }

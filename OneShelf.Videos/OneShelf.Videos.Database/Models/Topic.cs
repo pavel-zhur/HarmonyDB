@@ -8,18 +8,14 @@ public class Topic
     public int Id { get; set; }
 
     public long? StaticChatId { get; set; }
-    public int? StaticMessageId { get; set; }
+    public int? StaticTopicRootMessageIdOr0 { get; set; }
 
     public StaticChat? StaticChat { get; set; }
-    public StaticMessage? StaticMessage { get; set; }
+    public StaticTopic? StaticTopic { get; set; }
 
     public long? LiveChatId { get; set; }
-    public int? LiveMediaId { get; set; }
+    public int? LiveTopicId { get; set; }
 
     public LiveChat? LiveChat { get; set; }
-    public LiveMedia? LiveMedia { get; set; }
-
-    public MediaType Type { get; set; }
-
-    public UploadedItem? UploadedItem { get; set; }
+    public LiveTopic? LiveTopic { get; set; }
 }
