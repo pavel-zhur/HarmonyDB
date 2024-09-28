@@ -137,7 +137,7 @@ with m as (
 )
 
 update staticmessages
-set statictopicid = t.id
+set statictopicrootmessageidor0 = t.RootMessageIdOr0
 from staticmessages m
 inner join m mm on mm.staticchatid = m.staticchatid and mm.id = m.id
 left join roots r on r.staticchatid = m.staticchatid and r.childid = m.id
@@ -232,5 +232,11 @@ end
         modelBuilder.Entity<Media>()
             .Property(x => x.Type)
             .HasConversion<string>();
+
+        modelBuilder.Entity<StaticMessage>()
+            .HasOne(x => x.StaticTopic)
+            .WithMany(x => x.StaticMessages)
+            .IsRequired(false)
+            .HasForeignKey(x => new { x.StaticChatId, x.StaticTopicRootMessageIdOr0 });
     }
 }

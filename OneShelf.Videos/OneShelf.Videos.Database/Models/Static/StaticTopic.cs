@@ -2,7 +2,7 @@
 
 namespace OneShelf.Videos.Database.Models.Static;
 
-[Index(nameof(StaticChatId), nameof(RootMessageIdOr0), IsUnique = true)]
+[PrimaryKey(nameof(StaticChatId), nameof(RootMessageIdOr0))]
 public class StaticTopic
 {
     public int Id { get; set; }
@@ -18,6 +18,4 @@ public class StaticTopic
     public required string Title { get; set; }
 
     public ICollection<StaticMessage> StaticMessages { get; set; }
-
-    public ICollection<AlbumConstraint> AlbumConstraints { get; set; }
 }

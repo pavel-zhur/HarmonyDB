@@ -105,15 +105,15 @@ public class Service1
         var albums = await _videosDatabase.Albums
             .Where(x => x.UploadedAlbum == null)
             .Include(x => x.Constraints)
-            .ThenInclude(x => x.StaticTopic)
             .ToListAsync();
 
         var messages = (await _videosDatabase.Mediae
                 .Where(x => x.StaticMessage != null)
-                .Where(x => x.StaticMessage!.SelectedType.HasValue && x.StaticMessage.StaticTopicId.HasValue)
+                .Where(x => x.StaticMessage!.SelectedType.HasValue && x.StaticMessage.StaticTopic != null)
                 .Select(m => new
                 {
-                    TopicId = m.StaticMessage!.StaticTopicId,
+                    StaticTopicId = m.StaticMessage!.StaticTopic!.Id,
+                    m.StaticMessage.StaticTopicRootMessageIdOr0,
                     m.StaticMessage.Width,
                     m.StaticMessage.Height,
                     m.StaticMessage.Date,
@@ -121,7 +121,7 @@ public class Service1
                     m.Id,
                 })
                 .ToListAsync())
-            .ToLookup(x => x.TopicId!.Value);
+            .ToLookup(x => x.StaticTopicId);
 
         var uploadedItems = await _videosDatabase.UploadedItems
             .Where(i => _videosDatabase.InventoryItems.Any(j => j.Id == i.MediaItemId && (j.IsPhoto || j.MediaMetadataVideoStatus == "READY")))

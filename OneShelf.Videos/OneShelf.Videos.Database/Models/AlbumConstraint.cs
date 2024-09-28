@@ -1,6 +1,4 @@
-﻿using OneShelf.Videos.Database.Models.Static;
-
-namespace OneShelf.Videos.Database.Models;
+﻿namespace OneShelf.Videos.Database.Models;
 
 public class AlbumConstraint
 {
@@ -13,8 +11,6 @@ public class AlbumConstraint
     public bool Include { get; set; }
 
     public int? StaticTopicId { get; set; }
-
-    public StaticTopic? StaticTopic { get; set; }
 
     public MediaType? StaticMessageSelectedType { get; set; }
 

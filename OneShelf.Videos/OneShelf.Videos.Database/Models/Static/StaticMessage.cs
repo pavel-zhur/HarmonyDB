@@ -14,7 +14,7 @@ public class StaticMessage
     public StaticChat StaticChat { get; set; } = null!;
 
     [JsonIgnore]
-    public int? StaticTopicId { get; set; }
+    public int? StaticTopicRootMessageIdOr0 { get; set; }
 
     [JsonIgnore]
     public StaticTopic? StaticTopic { get; set; }
