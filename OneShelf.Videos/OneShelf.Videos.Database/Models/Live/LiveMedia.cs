@@ -22,6 +22,8 @@ public class LiveMedia
 
     public MediaType? SelectedType { get; set; }
 
+    public bool LastInventoryExists { get; set; }
+
     public DateTime MessageDate { get; set; }
     public bool IsForwarded { get; set; }
     public DateTime MediaDate { get; set; }

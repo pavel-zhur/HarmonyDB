@@ -47,10 +47,10 @@ update mediae
 set topicid = t.id
 from mediae m
 left join StaticMessages sm on m.staticmessageid = sm.id and m.staticchatid = sm.StaticChatId
-left join livemediae lm on m.livemediaid = lm.id and m.livechatid = lm.livetopiclivechatid
+left join livemediae lm on m.livemediaid = lm.id and m.livechatid = lm.livetopiclivechatid and lm.lastinventoryexists=1
 left join statictopics st on st.StaticChatId = sm.StaticChatId and st.RootMessageIdOr0 = sm.StaticTopicRootMessageIdOr0
 left join livetopics lt on lt.LiveChatId = lm.LiveTopicLiveChatId and lt.id = lm.LiveTopicId
-inner join topics t on (t.staticchatid = t.StaticChatId and t.StaticTopicRootMessageIdOr0 = st.RootMessageIdOr0)
+left join topics t on (t.staticchatid = t.StaticChatId and t.StaticTopicRootMessageIdOr0 = st.RootMessageIdOr0)
 	or (t.livechatid = lt.LiveChatId and t.livetopicid = lt.Id)
 
 ");

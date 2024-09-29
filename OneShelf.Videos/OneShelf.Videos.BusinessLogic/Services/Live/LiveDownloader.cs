@@ -148,6 +148,11 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
             videosDatabase.LiveChats.Add(liveChat);
         }
 
+        foreach (var liveMedia in liveChat.LiveTopics.SelectMany(x => x.LiveMediae))
+        {
+            liveMedia.LastInventoryExists = false;
+        }
+
         liveChat.Title = chat.Title;
 
         foreach (var topic in topics)
@@ -180,6 +185,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
                     liveTopic.LiveMediae.Add(liveMedia);
                 }
 
+                liveMedia.LastInventoryExists = true;
                 liveMedia.MessageDate = media.message.fwd_from?.date ?? media.message.Date;
                 liveMedia.IsForwarded = media.message.fwd_from != null;
                 liveMedia.MediaType = media.message.media.GetType().ToString();
