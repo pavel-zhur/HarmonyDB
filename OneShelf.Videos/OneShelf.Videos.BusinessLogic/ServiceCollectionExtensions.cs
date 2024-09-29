@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<ExifService>()
             .AddScoped<LiveDownloader>()
             .AddSingleton<TelegramLoggerInitializer>()
+            .AddSingleton<Paths>()
             .AddScoped<VideosDatabaseOperations>()
             .AddMyGooglePhotos();
     }

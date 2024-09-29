@@ -8,7 +8,6 @@ public class UploadedItem
     public int MediaId { get; init; }
     public Media Media { get; init; } = null!;
 
-    public required DateTime TelegramPublishedOn { get; init; }
     public required string? Status { get; init; }
     public required int StatusCode { get; init; }
     public required string? StatusMessage { get; init; }
@@ -19,5 +18,4 @@ public class UploadedItem
     public required DateTime? MediaItemSyncDate { get; init; }
     public required DateTime? MediaItemMetadataCreationTime { get; init; }
     public required string Json { get; init; }
-    public required DateTime? FileNameTimestamp { get; init; }
 }

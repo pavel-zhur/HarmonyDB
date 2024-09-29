@@ -25,6 +25,9 @@ public class StaticMessage
     [JsonIgnore]
     public Media? Media { get; set; }
 
+    [JsonIgnore]
+    public DateTime? PhotoPathTimestamp { get; set; }
+
     public required int Id { get; set; }
     public int? MessageId { get; set; }
     public int? ReplyToMessageId { get; set; }

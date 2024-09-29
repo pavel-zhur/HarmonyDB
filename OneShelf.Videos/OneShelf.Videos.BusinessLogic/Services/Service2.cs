@@ -69,17 +69,16 @@ public class Service2
         _logger.LogInformation("Saved.");
     }
 
-    public async Task UploadPhotos(List<(int mediaId, string path, DateTime publishedOn)> items)
+    public async Task UploadPhotos(List<(int mediaId, string path, DateTime? exifTimestamp)> items)
     {
         await _extendedGooglePhotosService.LoginAsync();
 
         var itemsByKey = items.ToDictionary(x => x.mediaId);
-        var fileNameTimestamps = new Dictionary<int, DateTime>();
         var result = await _extendedGooglePhotosService.UploadMultiple(
             items
                 .Select(x => (x.mediaId, x.path, (string?)null))
                 .ToList(),
-            newItems => AddToDatabase(itemsByKey, newItems, fileNameTimestamps),
+            newItems => AddToDatabase(itemsByKey, newItems),
             async (x, i) =>
             {
                 var tempDirectory = Path.Combine(Path.GetTempPath(), i.ToString());
@@ -91,12 +90,8 @@ public class Service2
                 Directory.CreateDirectory(tempDirectory);
                 var fileName = itemsByKey[x].path;
                 var tempFileName = Path.Combine(Path.GetTempPath(), i.ToString(), Path.GetFileName(fileName));
-                var exifTimestamp = DateTime.ParseExact(Path.GetFileNameWithoutExtension(fileName).SelectSingle(x => x.Substring(x.IndexOf('@') + 1)), "dd-MM-yyyy_HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+                var exifTimestamp = itemsByKey[x].exifTimestamp!.Value;
                 await _exifService.SetExifTimestamp(fileName, tempFileName, exifTimestamp);
-                lock (fileNameTimestamps)
-                {
-                    fileNameTimestamps[x] = exifTimestamp;
-                }
 
                 return tempFileName;
             },
@@ -105,7 +100,7 @@ public class Service2
         Console.WriteLine($"started: {items.Count}, finished: {result.Count}");
     }
 
-    public async Task UploadVideos(List<(int mediaId, string path, DateTime publishedOn)> items)
+    public async Task UploadVideos(List<(int mediaId, string path, DateTime? exifTimestamp)> items)
     {
         await _extendedGooglePhotosService.LoginAsync();
 
@@ -129,11 +124,10 @@ public class Service2
     }
 
     private async Task AddToDatabase(
-        Dictionary<int, (int mediaId, string path, DateTime publishedOn)> items,
-        Dictionary<int, NewMediaItemResult> newItems,
-        Dictionary<int, DateTime>? fileNameTimestamps = null)
+        Dictionary<int, (int mediaId, string path, DateTime? exifTimestamp)> items,
+        Dictionary<int, NewMediaItemResult> newItems)
     {
-        _videosDatabaseOperations.AddItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.mediaId, x.path, x.publishedOn, result: i.Value, fileNameTimestamp: fileNameTimestamps?[i.Key]))));
+        _videosDatabaseOperations.AddUploadedItems(newItems.Select(i => items[i.Key].SelectSingle(x => (x.mediaId, x.path, result: i.Value))));
         await _videosDatabase.SaveChangesAsync();
     }
 

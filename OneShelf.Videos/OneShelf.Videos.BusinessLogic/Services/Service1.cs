@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,15 +17,17 @@ public class Service1
     private readonly IOptions<VideosOptions> _options;
     private readonly VideosDatabase _videosDatabase;
     private readonly ILogger<Service1> _logger;
+    private readonly Paths _paths;
 
-    public Service1(IOptions<VideosOptions> options, VideosDatabase videosDatabase, ILogger<Service1> logger)
+    public Service1(IOptions<VideosOptions> options, VideosDatabase videosDatabase, ILogger<Service1> logger, Paths paths)
     {
         _options = options;
         _videosDatabase = videosDatabase;
         _logger = logger;
+        _paths = paths;
     }
 
-    public async Task<List<(int mediaId, string path, DateTime publishedOn)>> GetExport1()
+    public async Task<List<(int mediaId, string path, DateTime? exifTimestamp)>> GetExportStaticPhoto()
     {
         var messages = await _videosDatabase.Mediae
             .Where(x => x.StaticMessage != null)
@@ -37,11 +40,11 @@ public class Service1
             .ToListAsync();
 
         return messages
-            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.Photo!), x.StaticMessage.Date))
+            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.Photo!), (DateTime?)x.StaticMessage.PhotoPathTimestamp!.Value))
             .ToList();
     }
 
-    public async Task<List<(int mediaId, string path, DateTime publishedOn)>> GetExport2()
+    public async Task<List<(int mediaId, string path, DateTime? exifTimestamp)>> GetExportStaticVideo()
     {
         var messages = await _videosDatabase.Mediae
             .Where(x => x.StaticMessage != null)
@@ -54,7 +57,41 @@ public class Service1
             .ToListAsync();
 
         return messages
-            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.File!), x.StaticMessage.Date))
+            .Select(x => (x.Id, Path.Combine(x.StaticMessage!.StaticChat.StaticChatFolder.Root, x.StaticMessage.File!), (DateTime?)null))
+            .ToList();
+    }
+
+    public async Task<List<(int mediaId, string path, DateTime? exifTimestamp)>> GetExportLivePhoto()
+    {
+        var messages = await _videosDatabase.Mediae
+            .Where(x => x.LiveMedia != null)
+            .Where(x => x.LiveMedia!.SelectedType == MediaType.Photo)
+            .Where(x => x.UploadedItem == null)
+            .Include(x => x.LiveMedia)
+            .ToListAsync();
+
+        var liveDownloadedItems = await _videosDatabase.LiveDownloadedItems.ToDictionaryAsync(x => x.LiveMediaMediaId, x => x.FileName);
+
+        return messages
+            .Where(x => liveDownloadedItems.ContainsKey(x.LiveMedia!.MediaId))
+            .Select(x => (x.Id, _paths.GetLiveDownloadedPath(liveDownloadedItems[x.LiveMedia!.MediaId]), (DateTime?)x.LiveMedia.MediaDate))
+            .ToList();
+    }
+
+    public async Task<List<(int mediaId, string path, DateTime? exifTimestamp)>> GetExportLiveVideo()
+    {
+        var messages = await _videosDatabase.Mediae
+            .Where(x => x.LiveMedia != null)
+            .Where(x => x.LiveMedia!.SelectedType == MediaType.Video)
+            .Where(x => x.UploadedItem == null)
+            .Include(x => x.LiveMedia)
+            .ToListAsync();
+
+        var liveDownloadedItems = await _videosDatabase.LiveDownloadedItems.ToDictionaryAsync(x => x.LiveMediaMediaId, x => x.FileName);
+
+        return messages
+            .Where(x => liveDownloadedItems.ContainsKey(x.LiveMedia!.MediaId))
+            .Select(x => (x.Id, _paths.GetLiveDownloadedPath(liveDownloadedItems[x.LiveMedia!.MediaId]), (DateTime?)null))
             .ToList();
     }
 
@@ -90,6 +127,8 @@ public class Service1
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             })!;
 
+            result.Messages.ForEach(x => x.PhotoPathTimestamp = x.Photo != null ? GetAssumedTimestamp(x.Photo) : null);
+
             result.StaticChatFolder = chatFolder;
             _videosDatabase.StaticChats.Add(result);
             _logger.LogInformation("{folder} added.", chatFolder.Name);
@@ -99,6 +138,9 @@ public class Service1
         await _videosDatabase.SaveChangesAsync();
         _logger.LogInformation("Saved.");
     }
+
+    private static DateTime GetAssumedTimestamp(string fileName)
+        => DateTime.ParseExact(Path.GetFileNameWithoutExtension(fileName).SelectSingle(x => x.Substring(x.IndexOf('@') + 1)), "dd-MM-yyyy_HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
 
     public async Task<List<(int albumId, string title, List<(string mediaItemId, int mediaId)> items)>> GetAlbums()
     {

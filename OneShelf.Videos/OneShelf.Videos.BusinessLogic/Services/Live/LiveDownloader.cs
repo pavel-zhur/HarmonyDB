@@ -12,7 +12,7 @@ using Document = TL.Document;
 
 namespace OneShelf.Videos.BusinessLogic.Services.Live;
 
-public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloader> logger, VideosDatabase videosDatabase, TelegramLoggerInitializer _) : IDisposable
+public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloader> logger, VideosDatabase videosDatabase, TelegramLoggerInitializer _, Paths paths) : IDisposable
 {
     private byte[]? _session;
     private readonly AsyncLock _databaseLock = new();
@@ -86,7 +86,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
 
                         var fileName = liveMedia.FileName != null && !string.IsNullOrWhiteSpace(Path.GetExtension(liveMedia.FileName)) ? $"{liveMedia.MediaId}{Path.GetExtension(liveMedia.FileName)}" : liveMedia.MediaId.ToString();
                         await File.WriteAllBytesAsync(
-                            Path.Combine(options.Value.BasePath, "_instant", fileName),
+                            paths.GetLiveDownloadedPath(fileName),
                             outputStream.ToArray(), cancellationToken);
 
                         using var _ = await _databaseLock.LockAsync();
