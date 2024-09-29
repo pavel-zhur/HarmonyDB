@@ -17,7 +17,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
     private byte[]? _session;
     private readonly AsyncLock _databaseLock = new();
 
-    public async Task Try(bool downloadMissing)
+    public async Task UpdateLive(bool downloadMissing)
     {
         await using var client = await Login();
 
@@ -47,7 +47,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
 
         var topics = await GetTopicsAndMedia(messages);
 
-        await Save(chat, topics);
+        await SaveToDatabase(chat, topics);
 
         return topics;
     }
@@ -84,7 +84,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
                             await client.DownloadFileAsync(photo, outputStream);
                         }
 
-                        var fileName = liveMedia.FileName != null && !string.IsNullOrWhiteSpace(Path.GetExtension(liveMedia.FileName)) ? $"{liveMedia.MediaId}{Path.GetExtension(liveMedia.FileName)}" : liveMedia.MediaId.ToString();
+                        var fileName = liveMedia.FileName != null && !string.IsNullOrWhiteSpace(Path.GetExtension(liveMedia.FileName)) ? $"{liveMedia.MediaId}{Path.GetExtension(liveMedia.FileName)}" : $"{liveMedia.MediaId}.{(photo != null ? "jpg" : "mp4")}";
                         await File.WriteAllBytesAsync(
                             paths.GetLiveDownloadedPath(fileName),
                             outputStream.ToArray(), cancellationToken);
@@ -134,7 +134,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
             });
     }
 
-    private async Task Save(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
+    private async Task SaveToDatabase(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
     {
         var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).SingleOrDefaultAsync(x => x.Id == chat.ID);
         if (liveChat == null)

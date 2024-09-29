@@ -17,12 +17,21 @@ var service1 = host.Services.GetRequiredService<Service1>();
 var service2 = host.Services.GetRequiredService<Service2>();
 var service3 = host.Services.GetRequiredService<ExifService>();
 var service4 = host.Services.GetRequiredService<LiveDownloader>();
-
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
-await videosDatabase.Database.MigrateAsync();
 
-await videosDatabase.AppendTopics();
-//await service4.Try(false);
+//await videosDatabase.Database.MigrateAsync();
+
+//await service4.UpdateLive(true);
+//await videosDatabase.AppendTopics();
+//await videosDatabase.AppendMediae();
+//await videosDatabase.UpdateMediaTopics();
+
+
+
+await service2.UploadPhotos(await service1.GetExportLivePhoto());
+await service2.UploadVideos(await service1.GetExportLiveVideo());
+
+
 
 //await videosDatabase.CreateMissingStaticTopics();
 //await videosDatabase.UpdateStaticMessagesTopics();
