@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.BusinessLogic.Services;
+using OneShelf.Videos.BusinessLogic.Services.Live;
 using OneShelf.Videos.Database;
 using Polly;
 
@@ -19,7 +20,10 @@ public static class ServiceCollectionExtensions
             .Configure<VideosOptions>(o => configuration.GetSection(nameof(VideosOptions)).Bind(o))
             .AddScoped<Service1>()
             .AddScoped<Service2>()
-            .AddScoped<Service3>()
+            .AddScoped<ExifService>()
+            .AddScoped<LiveDownloader>()
+            .AddSingleton<TelegramLoggerInitializer>()
+            .AddSingleton<Paths>()
             .AddScoped<VideosDatabaseOperations>()
             .AddMyGooglePhotos();
     }

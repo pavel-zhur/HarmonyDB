@@ -4,23 +4,33 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OneShelf.Videos.BusinessLogic;
 using OneShelf.Videos.BusinessLogic.Services;
+using OneShelf.Videos.BusinessLogic.Services.Live;
 using OneShelf.Videos.Database;
 
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.AddJsonFile("appsettings.Secrets.json");
 builder.Services
     .AddVideosBusinessLogic(builder.Configuration);
-var host = builder.Build();
+using var host = builder.Build();
 
 var service1 = host.Services.GetRequiredService<Service1>();
 var service2 = host.Services.GetRequiredService<Service2>();
-var service3 = host.Services.GetRequiredService<Service3>();
-
+var liveDownloader = host.Services.GetRequiredService<LiveDownloader>();
 await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase>();
-await videosDatabase.Database.MigrateAsync();
 
-//await videosDatabase.CreateMissingTopics();
-//await videosDatabase.UpdateMessagesTopics();
+//await videosDatabase.Database.MigrateAsync();
+
+await service2.SaveInventory();
+await liveDownloader.UpdateLive(true);
+await videosDatabase.AppendTopics();
+await videosDatabase.AppendMediae();
+await videosDatabase.UpdateMediaTopics();
+await service2.UploadPhotos(await service1.GetExportLivePhoto());
+await service2.UploadVideos(await service1.GetExportLiveVideo());
+
+
+//await videosDatabase.CreateMissingStaticTopics();
+//await videosDatabase.UpdateStaticMessagesTopics();
 
 //return;
 
@@ -40,4 +50,4 @@ await videosDatabase.Database.MigrateAsync();
 
 //await service2.UploadPhotos((await service1.GetExport1()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
 //await service2.UploadVideos((await service1.GetExport2()).OrderBy(_ => Random.Shared.NextDouble()).ToList());
-await service2.CreateAlbums(await service1.GetAlbums());
+//await service2.CreateAlbums(await service1.GetAlbums());

@@ -1,32 +1,32 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using OneShelf.Videos.Database.Models.Enums;
 
-namespace OneShelf.Videos.Database.Models.Json;
+namespace OneShelf.Videos.Database.Models.Static;
 
-[Index(nameof(ChatId), nameof(Id), IsUnique = true)]
-public class Message
+[PrimaryKey(nameof(StaticChatId), nameof(Id))]
+public class StaticMessage
 {
     [JsonIgnore]
-    [Key]
-    public int DatabaseMessageId { get; set; }
+    public long StaticChatId { get; set; }
 
     [JsonIgnore]
-    public long ChatId { get; set; }
+    public StaticChat StaticChat { get; set; } = null!;
 
     [JsonIgnore]
-    public Chat Chat { get; set; } = null;
+    public int? StaticTopicRootMessageIdOr0 { get; set; }
 
     [JsonIgnore]
-    public int? TopicId { get; set; }
+    public StaticTopic? StaticTopic { get; set; }
 
     [JsonIgnore]
-    public Topic? Topic { get; set; }
+    public MediaType? SelectedType { get; set; }
 
     [JsonIgnore]
-    public MessageSelectedType? SelectedType { get; set; }
+    public Media? Media { get; set; }
+
+    [JsonIgnore]
+    public DateTime? PhotoPathTimestamp { get; set; }
 
     public required int Id { get; set; }
     public int? MessageId { get; set; }

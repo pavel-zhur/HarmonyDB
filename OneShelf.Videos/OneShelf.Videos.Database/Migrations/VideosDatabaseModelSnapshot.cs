@@ -62,7 +62,7 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<bool>("IsSquare")
                         .HasColumnType("bit");
 
-                    b.Property<string>("MessageSelectedType")
+                    b.Property<string>("StaticMessageSelectedType")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TopicId")
@@ -77,37 +77,10 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.ToTable("AlbumConstraints");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.ChatFolder", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Root")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("ChatFolders");
-                });
-
             modelBuilder.Entity("OneShelf.Videos.Database.Models.InventoryItem", b =>
                 {
-                    b.Property<int>("DatabaseInventoryItemId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DatabaseInventoryItemId"));
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("BaseUrl")
                         .IsRequired()
@@ -119,14 +92,13 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<string>("ContributorInfoProfilePictureBaseUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Id")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -186,22 +158,175 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<DateTime>("SyncDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("DatabaseInventoryItemId");
+                    b.HasKey("Id");
 
                     b.ToTable("InventoryItems");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Json.Chat", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveChat", b =>
                 {
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("ChatFolderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LiveChats");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveDownloadedItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("LiveMediaMediaId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ThumbnailFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileName")
+                        .IsUnique();
+
+                    b.HasIndex("LiveMediaMediaId")
+                        .IsUnique();
+
+                    b.ToTable("LiveDownloadedItems");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveMedia", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<long>("LiveTopicLiveChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DocumentAttributeTypes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentAttributes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("Duration")
+                        .HasColumnType("float");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Flags")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsForwarded")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("LastInventoryExists")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LiveTopicId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MediaDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MediaFlags")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("MediaId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("MessageDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MimeType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SelectedType")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("nvarchar(max)")
+                        .HasComputedColumnSql("\r\ncase \r\nwhen type = 'Photo' then 'Photo' \r\nwhen MimeType like 'video/%' then 'Video' \r\nwhen mimetype = 'image/webp' then null \r\nwhen mimetype = 'application/x-tgsticker' then null\r\nwhen MimeType like 'image/%' then 'Photo' \r\nelse null\r\nend\r\n");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VideoFlags")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id", "LiveTopicLiveChatId");
+
+                    b.HasIndex("LiveTopicId", "LiveTopicLiveChatId");
+
+                    b.ToTable("LiveMediae");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveTopic", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<long>("LiveChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id", "LiveChatId");
+
+                    b.HasIndex("LiveChatId");
+
+                    b.ToTable("LiveTopics");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Media", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long?>("LiveChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("LiveMediaId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("StaticChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("StaticMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TopicId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -209,19 +334,76 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatFolderId")
-                        .IsUnique();
+                    b.HasIndex("LiveChatId");
 
-                    b.ToTable("Chats");
+                    b.HasIndex("TopicId");
+
+                    b.HasIndex("LiveMediaId", "LiveChatId")
+                        .IsUnique()
+                        .HasFilter("[LiveMediaId] IS NOT NULL AND [LiveChatId] IS NOT NULL");
+
+                    b.HasIndex("StaticChatId", "StaticMessageId")
+                        .IsUnique()
+                        .HasFilter("[StaticChatId] IS NOT NULL AND [StaticMessageId] IS NOT NULL");
+
+                    b.ToTable("Mediae");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Json.Message", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChat", b =>
                 {
-                    b.Property<int>("DatabaseMessageId")
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StaticChatFolderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaticChatFolderId")
+                        .IsUnique();
+
+                    b.ToTable("StaticChats");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChatFolder", b =>
+                {
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DatabaseMessageId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Root")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("StaticChatFolders");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticMessage", b =>
+                {
+                    b.Property<long>("StaticChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
 
                     b.Property<string>("Action")
                         .HasColumnType("nvarchar(max)");
@@ -234,9 +416,6 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 
                     b.Property<int?>("Boosts")
                         .HasColumnType("int");
-
-                    b.Property<long>("ChatId")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("ContactInformation")
                         .HasColumnType("nvarchar(max)");
@@ -278,9 +457,6 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<int?>("Height")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
                     b.Property<string>("InlineBotButtons")
                         .HasColumnType("nvarchar(max)");
 
@@ -317,6 +493,9 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<string>("Photo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PhotoPathTimestamp")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Poll")
                         .HasColumnType("nvarchar(max)");
 
@@ -337,6 +516,9 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                         .HasColumnType("nvarchar(max)")
                         .HasComputedColumnSql("case when photo is not null then 'photo' when mimetype like 'video/%' and isnull(mediatype, 'null') in ('video_file', 'null') then 'video' else null end");
 
+                    b.Property<int?>("StaticTopicRootMessageIdOr0")
+                        .HasColumnType("int");
+
                     b.Property<string>("StickerEmoji")
                         .HasColumnType("nvarchar(max)");
 
@@ -354,9 +536,6 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TopicId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -367,14 +546,32 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<int?>("Width")
                         .HasColumnType("int");
 
-                    b.HasKey("DatabaseMessageId");
+                    b.HasKey("StaticChatId", "Id");
 
-                    b.HasIndex("TopicId");
+                    b.HasIndex("StaticChatId", "StaticTopicRootMessageIdOr0");
 
-                    b.HasIndex("ChatId", "Id")
-                        .IsUnique();
+                    b.ToTable("StaticMessages");
+                });
 
-                    b.ToTable("Messages");
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticTopic", b =>
+                {
+                    b.Property<long>("StaticChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("RootMessageIdOr0")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("StaticChatId", "RootMessageIdOr0");
+
+                    b.ToTable("StaticTopics");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Topic", b =>
@@ -385,24 +582,29 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("ChatId")
+                    b.Property<long?>("LiveChatId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("OriginalTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RootMessageIdOr0")
+                    b.Property<int?>("LiveTopicId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<long?>("StaticChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("StaticTopicRootMessageIdOr0")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatId", "RootMessageIdOr0")
-                        .IsUnique();
+                    b.HasIndex("LiveChatId");
+
+                    b.HasIndex("LiveTopicId", "LiveChatId")
+                        .IsUnique()
+                        .HasFilter("[LiveTopicId] IS NOT NULL AND [LiveChatId] IS NOT NULL");
+
+                    b.HasIndex("StaticChatId", "StaticTopicRootMessageIdOr0")
+                        .IsUnique()
+                        .HasFilter("[StaticChatId] IS NOT NULL AND [StaticTopicRootMessageIdOr0] IS NOT NULL");
 
                     b.ToTable("Topics");
                 });
@@ -438,18 +640,15 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("ChatId")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FileNameTimestamp")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Json")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MediaId")
+                        .HasColumnType("int");
 
                     b.Property<string>("MediaItemId")
                         .HasColumnType("nvarchar(max)");
@@ -469,9 +668,6 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<DateTime?>("MediaItemSyncDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
 
@@ -481,10 +677,10 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Property<string>("StatusMessage")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("TelegramPublishedOn")
-                        .HasColumnType("datetime2");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("MediaId")
+                        .IsUnique();
 
                     b.ToTable("UploadedItems");
                 });
@@ -506,43 +702,125 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Navigation("Topic");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Json.Chat", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveMedia", b =>
                 {
-                    b.HasOne("OneShelf.Videos.Database.Models.ChatFolder", "ChatFolder")
-                        .WithOne("Chat")
-                        .HasForeignKey("OneShelf.Videos.Database.Models.Json.Chat", "ChatFolderId")
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveTopic", "LiveTopic")
+                        .WithMany("LiveMediae")
+                        .HasForeignKey("LiveTopicId", "LiveTopicLiveChatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ChatFolder");
+                    b.Navigation("LiveTopic");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Json.Message", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveTopic", b =>
                 {
-                    b.HasOne("OneShelf.Videos.Database.Models.Json.Chat", "Chat")
-                        .WithMany("Messages")
-                        .HasForeignKey("ChatId")
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveChat", "LiveChat")
+                        .WithMany("LiveTopics")
+                        .HasForeignKey("LiveChatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("LiveChat");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Media", b =>
+                {
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveChat", "LiveChat")
+                        .WithMany("Mediae")
+                        .HasForeignKey("LiveChatId");
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticChat", "StaticChat")
+                        .WithMany("Mediae")
+                        .HasForeignKey("StaticChatId");
+
                     b.HasOne("OneShelf.Videos.Database.Models.Topic", "Topic")
-                        .WithMany("Messages")
+                        .WithMany("Mediae")
                         .HasForeignKey("TopicId");
 
-                    b.Navigation("Chat");
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveMedia", "LiveMedia")
+                        .WithOne("Media")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.Media", "LiveMediaId", "LiveChatId");
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticMessage", "StaticMessage")
+                        .WithOne("Media")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.Media", "StaticChatId", "StaticMessageId");
+
+                    b.Navigation("LiveChat");
+
+                    b.Navigation("LiveMedia");
+
+                    b.Navigation("StaticChat");
+
+                    b.Navigation("StaticMessage");
 
                     b.Navigation("Topic");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Topic", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChat", b =>
                 {
-                    b.HasOne("OneShelf.Videos.Database.Models.Json.Chat", "Chat")
-                        .WithMany()
-                        .HasForeignKey("ChatId")
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticChatFolder", "StaticChatFolder")
+                        .WithOne("StaticChat")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.Static.StaticChat", "StaticChatFolderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Chat");
+                    b.Navigation("StaticChatFolder");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticMessage", b =>
+                {
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticChat", "StaticChat")
+                        .WithMany("Messages")
+                        .HasForeignKey("StaticChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticTopic", "StaticTopic")
+                        .WithMany("StaticMessages")
+                        .HasForeignKey("StaticChatId", "StaticTopicRootMessageIdOr0");
+
+                    b.Navigation("StaticChat");
+
+                    b.Navigation("StaticTopic");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticTopic", b =>
+                {
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticChat", "StaticChat")
+                        .WithMany()
+                        .HasForeignKey("StaticChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StaticChat");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Topic", b =>
+                {
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveChat", "LiveChat")
+                        .WithMany("Topics")
+                        .HasForeignKey("LiveChatId");
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticChat", "StaticChat")
+                        .WithMany("Topics")
+                        .HasForeignKey("StaticChatId");
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Live.LiveTopic", "LiveTopic")
+                        .WithOne("Topic")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.Topic", "LiveTopicId", "LiveChatId");
+
+                    b.HasOne("OneShelf.Videos.Database.Models.Static.StaticTopic", "StaticTopic")
+                        .WithOne("Topic")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.Topic", "StaticChatId", "StaticTopicRootMessageIdOr0");
+
+                    b.Navigation("LiveChat");
+
+                    b.Navigation("LiveTopic");
+
+                    b.Navigation("StaticChat");
+
+                    b.Navigation("StaticTopic");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.UploadedAlbum", b =>
@@ -556,6 +834,17 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Navigation("Album");
                 });
 
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.UploadedItem", b =>
+                {
+                    b.HasOne("OneShelf.Videos.Database.Models.Media", "Media")
+                        .WithOne("UploadedItem")
+                        .HasForeignKey("OneShelf.Videos.Database.Models.UploadedItem", "MediaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+                });
+
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Album", b =>
                 {
                     b.Navigation("Constraints");
@@ -563,21 +852,63 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.Navigation("UploadedAlbum");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.ChatFolder", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveChat", b =>
                 {
-                    b.Navigation("Chat");
+                    b.Navigation("LiveTopics");
+
+                    b.Navigation("Mediae");
+
+                    b.Navigation("Topics");
                 });
 
-            modelBuilder.Entity("OneShelf.Videos.Database.Models.Json.Chat", b =>
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveMedia", b =>
                 {
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Live.LiveTopic", b =>
+                {
+                    b.Navigation("LiveMediae");
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Media", b =>
+                {
+                    b.Navigation("UploadedItem");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChat", b =>
+                {
+                    b.Navigation("Mediae");
+
                     b.Navigation("Messages");
+
+                    b.Navigation("Topics");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticChatFolder", b =>
+                {
+                    b.Navigation("StaticChat");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticMessage", b =>
+                {
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.Static.StaticTopic", b =>
+                {
+                    b.Navigation("StaticMessages");
+
+                    b.Navigation("Topic");
                 });
 
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Topic", b =>
                 {
                     b.Navigation("AlbumConstraints");
 
-                    b.Navigation("Messages");
+                    b.Navigation("Mediae");
                 });
 #pragma warning restore 612, 618
         }

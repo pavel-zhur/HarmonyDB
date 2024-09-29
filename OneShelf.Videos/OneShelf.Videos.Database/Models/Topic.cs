@@ -1,24 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OneShelf.Videos.Database.Models.Json;
+﻿using OneShelf.Videos.Database.Models.Live;
+using OneShelf.Videos.Database.Models.Static;
 
 namespace OneShelf.Videos.Database.Models;
 
-[Index(nameof(ChatId), nameof(RootMessageIdOr0), IsUnique = true)]
 public class Topic
 {
     public int Id { get; set; }
 
-    public required long ChatId { get; set; }
+    public long? StaticChatId { get; set; }
+    public int? StaticTopicRootMessageIdOr0 { get; set; }
 
-    public Chat Chat { get; set; } = null!;
+    public StaticChat? StaticChat { get; set; }
+    public StaticTopic? StaticTopic { get; set; }
 
-    public int RootMessageIdOr0 { get; set; }
+    public long? LiveChatId { get; set; }
+    public int? LiveTopicId { get; set; }
 
-    public required string OriginalTitle { get; set; }
+    public LiveChat? LiveChat { get; set; }
+    public LiveTopic? LiveTopic { get; set; }
 
-    public required string Title { get; set; }
-
-    public ICollection<Message> Messages { get; set; }
-
-    public ICollection<AlbumConstraint> AlbumConstraints { get; set; }
+    public ICollection<AlbumConstraint> AlbumConstraints { get; set; } = null!;
+    public ICollection<Media> Mediae { get; set; } = null!;
 }

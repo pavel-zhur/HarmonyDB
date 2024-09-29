@@ -4,9 +4,10 @@ public class UploadedItem
 {
     public int Id { get; set; }
     public required DateTime CreatedOn { get; init; }
-    public required long ChatId { get; init; }
-    public required int MessageId { get; init; }
-    public required DateTime TelegramPublishedOn { get; init; }
+
+    public int MediaId { get; init; }
+    public Media Media { get; init; } = null!;
+
     public required string? Status { get; init; }
     public required int StatusCode { get; init; }
     public required string? StatusMessage { get; init; }
@@ -17,5 +18,4 @@ public class UploadedItem
     public required DateTime? MediaItemSyncDate { get; init; }
     public required DateTime? MediaItemMetadataCreationTime { get; init; }
     public required string Json { get; init; }
-    public required DateTime? FileNameTimestamp { get; init; }
 }

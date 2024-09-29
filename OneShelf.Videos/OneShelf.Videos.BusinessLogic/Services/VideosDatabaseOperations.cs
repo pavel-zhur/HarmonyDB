@@ -7,14 +7,12 @@ namespace OneShelf.Videos.BusinessLogic.Services;
 
 public class VideosDatabaseOperations(VideosDatabase videosDatabase)
 {
-    public void AddItems(IEnumerable<(long chatId, int messageId, string path, DateTime publishedOn, NewMediaItemResult result, DateTime? fileNameTimestamp)> items)
+    public void AddUploadedItems(IEnumerable<(int mediaId, string path, NewMediaItemResult result)> items)
     {
         videosDatabase.UploadedItems.AddRange(items.Select(i => new UploadedItem
         {
             CreatedOn = DateTime.Now,
-            ChatId = i.chatId,
-            MessageId = i.messageId,
-            TelegramPublishedOn = i.publishedOn,
+            MediaId = i.mediaId,
             Status = i.result.status.status,
             StatusCode = i.result.status.code,
             StatusMessage = i.result.status.message,
@@ -25,7 +23,6 @@ public class VideosDatabaseOperations(VideosDatabase videosDatabase)
             MediaItemSyncDate = i.result.mediaItem?.syncDate,
             MediaItemMetadataCreationTime = i.result.mediaItem?.mediaMetadata?.creationTime,
             Json = JsonSerializer.Serialize(i.result.mediaItem),
-            FileNameTimestamp = i.fileNameTimestamp,
         }));
     }
 }
