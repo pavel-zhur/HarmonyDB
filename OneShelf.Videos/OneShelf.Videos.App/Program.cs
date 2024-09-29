@@ -20,6 +20,7 @@ await using var videosDatabase = host.Services.GetRequiredService<VideosDatabase
 
 //await videosDatabase.Database.MigrateAsync();
 
+await service2.SaveInventory();
 await liveDownloader.UpdateLive(true);
 await videosDatabase.AppendTopics();
 await videosDatabase.AppendMediae();

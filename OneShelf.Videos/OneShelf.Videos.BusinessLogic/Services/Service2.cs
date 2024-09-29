@@ -37,33 +37,48 @@ public class Service2
         await _extendedGooglePhotosService.LoginAsync();
         var items = await _extendedGooglePhotosService.GetMediaItemsAsync().ToListAsync();
         _logger.LogInformation("{items} found.", items.Count);
-        _videosDatabase.InventoryItems.AddRange(items.Select(i => new InventoryItem
+
+        var existingItems = await _videosDatabase.InventoryItems.ToDictionaryAsync(x => x.Id);
+
+        foreach (var i in items)
         {
-            BaseUrl = i.baseUrl,
-            Description = i.description,
-            FileName = i.filename,
-            Id = i.id,
-            IsPhoto = i.isPhoto,
-            IsVideo = i.isVideo,
-            ProductUrl = i.productUrl,
-            SyncDate = i.syncDate,
-            MimeType = i.mimeType,
-            ContributorInfoDisplayName = i.contributorInfo?.displayName,
-            ContributorInfoProfilePictureBaseUrl = i.contributorInfo?.profilePictureBaseUrl,
-            MediaMetadataHeight = i.mediaMetadata.height,
-            MediaMetadataWidth = i.mediaMetadata.width,
-            MediaMetadataCreationTime = i.mediaMetadata.creationTime,
-            MediaMetadataPhotoApertureFNumber = i.mediaMetadata.photo?.apertureFNumber,
-            MediaMetadataPhotoExposureTime = i.mediaMetadata.photo?.exposureTime,
-            MediaMetadataPhotoFocalLength = i.mediaMetadata.photo?.focalLength,
-            MediaMetadataPhotoIsoEquivalent = i.mediaMetadata.photo?.isoEquivalent,
-            MediaMetadataPhotoCameraMake = i.mediaMetadata.photo?.cameraMake,
-            MediaMetadataPhotoCameraModel = i.mediaMetadata.photo?.cameraModel,
-            MediaMetadataVideoStatus = i.mediaMetadata.video?.status,
-            MediaMetadataVideoFps = i.mediaMetadata.video?.fps,
-            MediaMetadataVideoCameraMake = i.mediaMetadata.video?.cameraMake,
-            MediaMetadataVideoCameraModel = i.mediaMetadata.video?.cameraModel,
-        }));
+            var item = existingItems.GetValueOrDefault(i.id);
+            if (item == null)
+            {
+                item = new()
+                {
+                    Id = i.id,
+                    CreatedOn = DateTime.UtcNow,
+                };
+
+                _videosDatabase.InventoryItems.Add(item);
+            }
+
+            item.BaseUrl = i.baseUrl;
+            item.Description = i.description;
+            item.FileName = i.filename;
+            item.IsPhoto = i.isPhoto;
+            item.IsVideo = i.isVideo;
+            item.ProductUrl = i.productUrl;
+            item.SyncDate = i.syncDate;
+            item.MimeType = i.mimeType;
+            item.ContributorInfoDisplayName = i.contributorInfo?.displayName;
+            item.ContributorInfoProfilePictureBaseUrl = i.contributorInfo?.profilePictureBaseUrl;
+            item.MediaMetadataHeight = i.mediaMetadata.height;
+            item.MediaMetadataWidth = i.mediaMetadata.width;
+            item.MediaMetadataCreationTime = i.mediaMetadata.creationTime;
+            item.MediaMetadataPhotoApertureFNumber = i.mediaMetadata.photo?.apertureFNumber;
+            item.MediaMetadataPhotoExposureTime = i.mediaMetadata.photo?.exposureTime;
+            item.MediaMetadataPhotoFocalLength = i.mediaMetadata.photo?.focalLength;
+            item.MediaMetadataPhotoIsoEquivalent = i.mediaMetadata.photo?.isoEquivalent;
+            item.MediaMetadataPhotoCameraMake = i.mediaMetadata.photo?.cameraMake;
+            item.MediaMetadataPhotoCameraModel = i.mediaMetadata.photo?.cameraModel;
+            item.MediaMetadataVideoStatus = i.mediaMetadata.video?.status;
+            item.MediaMetadataVideoFps = i.mediaMetadata.video?.fps;
+            item.MediaMetadataVideoCameraMake = i.mediaMetadata.video?.cameraMake;
+            item.MediaMetadataVideoCameraModel = i.mediaMetadata.video?.cameraModel;
+        }
+
         _logger.LogInformation("Saving...");
         await _videosDatabase.SaveChangesAsync();
         _logger.LogInformation("Saved.");
