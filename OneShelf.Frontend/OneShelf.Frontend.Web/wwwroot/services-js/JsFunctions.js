@@ -9,3 +9,7 @@ export function Confirm(query) {
 export function ScrollToTop() {
     document.querySelector('.content-inner').scrollTo(0, 0);
 }
+
+export function FirstInitSuccessful() {
+    document.getElementById('error-compat-mode').setAttribute('style', 'display: none');
+}
