@@ -51,7 +51,8 @@ namespace OneShelf.Billing.Api.Functions
                             "dall-e-3" => x.Count * .04f,
                             "dall-e-2" => x.Count * .018f,
                             "gpt-4-1106-preview" or "gpt-4-0125-preview" => .01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000,
-                            "gpt-4o" => (.01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000) * 0.5f,
+                            "gpt-4o" when x.CreatedOn < new DateTime(2024, 10, 2) => (.01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000) * 0.5f,
+                            "gpt-4o" => .01f * x.InputTokens / 1000 / 4 + .01f * x.OutputTokens / 1000,
                             _ => null,
                         },
                         Category = x.UseCase switch
