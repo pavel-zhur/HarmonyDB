@@ -1,6 +1,7 @@
 ﻿@using OneShelf.Frontend.Web.Components
 @inherits LayoutComponentBase
 @inject IJSRuntime Js
+@inject JsFunctions JsFunctions
 
 <!-- Main navbar -->
 <div class="navbar navbar-dark navbar-expand-lg navbar-static border-bottom border-bottom-white border-opacity-10 my-navbar-black @(_just ? "my-navbar-black-body-just" : string.Empty)">
@@ -87,6 +88,7 @@
 		if (firstRender)
 		{
 			await module.InvokeVoidAsync("MainLayoutRendered");
+			await JsFunctions.FirstInitSuccessful();
 		}
 		
 		await module.InvokeVoidAsync("InitSecondToTop");

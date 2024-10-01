@@ -30,4 +30,10 @@ public class JsFunctions
         var module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", $"./services-js/{GetType().Name}.js");
         await module.InvokeVoidAsync("ScrollToTop");
     }
+
+    public async Task FirstInitSuccessful()
+    {
+        var module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", $"./services-js/{GetType().Name}.js");
+        await module.InvokeVoidAsync("FirstInitSuccessful");
+    }
 }

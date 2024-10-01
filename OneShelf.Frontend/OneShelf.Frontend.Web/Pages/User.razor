@@ -1,6 +1,8 @@
 ﻿@page "/user"
+@using SpawnDev.BlazorJS
 @inject IdentityProvider IdentityProvider
 @inject NavigationManager NavigationManager
+@inject BlazorJSRuntime BlazorJsRuntime
 
 <PageTitle>Профиль</PageTitle>
 
@@ -8,18 +10,44 @@
 
 @if (!Unauthorized)
 {
-    <div>Не знаю, зачем нужна эта страница, обычно она везде есть. Вы можете присоединяться к клубам, напишите админам. Можно выйти (ваш шортлист будет с вами при следующем входе):</div>
+    <div class="mb-3">Вы можете присоединяться к клубам, напишите админам.</div>
 }
 
-<button class="btn btn-primary" @onclick="Logout">Выйти</button>
+@if (IdentityProvider.Identity != null)
+{
+    <button class="btn btn-primary mb-3" @onclick="Logout">Выйти</button>
+}
+else
+{
+    <h1>Вам бы войти бы:</h1>
+    <button class="btn btn-primary mb-3" @onclick="() => IdentityProvider.EnsureAuthorized()">Войти</button>
+}
 
 @if (Unauthorized)
 {
-    <div>Может быть, вы видите это сообщение по ошибке. Если вам кажется, что доступ должен быть, тем более, напишите, пожалуйста. Спасибо.</div>
+    <div class="mb-3">Может быть, вы видите это сообщение по ошибке. Если вам кажется, что доступ должен быть, тем более, напишите, пожалуйста. Спасибо.</div>
 }
+
+<h3>Совместимость</h3>
+<div class="mb-3">Это для случаев если приложение не загружается с первого раза. Не включайте режим совместимости, если всё работает.</div>
+<div>
+    <label>
+        <input type="checkbox" disabled="disabled" checked="@(_isCompatMode)"/>
+        Совместимость сейчас
+    </label>
+</div>
+<div>
+    <label>
+        <input type="checkbox" disabled="disabled" checked="@(_forceCompatMode)" />
+        Совместимость всегда
+        <button @onclick="SwitchForceCompatMode">@(_forceCompatMode ? "Выключить" : "Включить")</button>
+    </label>
+</div>
 
 @code {
     private string? _title;
+    private bool _isCompatMode;
+    private bool _forceCompatMode;
 
     [Parameter]
     [SupplyParameterFromQuery]
@@ -29,9 +57,10 @@
     {
         await base.OnInitializedAsync();
 
-        if (!IdentityProvider.EnsureAuthorized()) return;
+        _title = IdentityProvider.Identity?.Title;
 
-        _title = IdentityProvider.RequiredIdentity.Title;
+        _isCompatMode = BlazorJsRuntime.WindowThis!.JSRef!.Get<bool>("useCompatMode");
+        _forceCompatMode = BlazorJsRuntime.WindowThis.LocalStorage.GetItem("forceCompatMode") == "1";
     }
 
     protected override async Task OnParametersSetAsync()
@@ -43,6 +72,20 @@
     {
         await IdentityProvider.Set(null);
         NavigationManager.NavigateTo("/");
+    }
+
+    private void SwitchForceCompatMode()
+    {
+        if (_forceCompatMode)
+        {
+            BlazorJsRuntime.WindowThis!.LocalStorage.RemoveItem("forceCompatMode");
+        }
+        else
+        {
+            BlazorJsRuntime.WindowThis!.LocalStorage.SetItem("forceCompatMode", "1");
+        }
+
+        BlazorJsRuntime.WindowThis!.Location.Reload();
     }
 
 }
