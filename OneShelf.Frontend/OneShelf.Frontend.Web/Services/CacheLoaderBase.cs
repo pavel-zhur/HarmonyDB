@@ -93,10 +93,13 @@ public abstract class CacheLoaderBase : IDisposable
 
     private async void Go(CancellationToken token)
     {
+        Logger.LogInformation("Chords loading started.");
+
         try
         {
             await Work(token);
             OnProgressChanged(null);
+            Logger.LogInformation("Chords loading finished successfully.");
         }
         catch (TaskCanceledException)
         {

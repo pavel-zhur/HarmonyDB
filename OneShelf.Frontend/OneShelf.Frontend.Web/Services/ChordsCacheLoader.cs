@@ -4,6 +4,8 @@ namespace OneShelf.Frontend.Web.Services;
 
 public class ChordsCacheLoader : CacheLoaderBase
 {
+    private static readonly TimeSpan FirstDelay = TimeSpan.FromSeconds(20);
+
     private readonly CollectionIndexProvider _collectionIndexProvider;
     private readonly DataProvider _dataProvider;
     private readonly Api _api;
@@ -64,5 +66,11 @@ public class ChordsCacheLoader : CacheLoaderBase
 
             await Task.Delay(300, token);
         }
+    }
+
+    public async void StartDelayed()
+    {
+        await Task.Delay(FirstDelay);
+        Start();
     }
 }

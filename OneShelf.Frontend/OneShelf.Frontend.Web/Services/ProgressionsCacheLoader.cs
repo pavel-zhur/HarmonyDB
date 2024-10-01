@@ -59,13 +59,13 @@ public class ProgressionsCacheLoader : CacheLoaderBase
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var progressionsProgress = dbProgressions.Select(x => x.id).ToHashSet();
+        var progressionsProgress = dbProgressions.Select(x => x.Key).ToHashSet();
 
         var availableChords = await _dataProvider.GetChordsExternalIdsAvailableInCache();
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var toGet = availableChords.Intersect(externalIds).Except(dbProgressions.Select(x => x.id)).ToList();
+        var toGet = availableChords.Intersect(externalIds).Except(dbProgressions.Select(x => x.Key)).ToList();
 
         if ((toGet.Count > CacheLoaderBase.MissingProgressionsThreshold || (externalIds.Count - availableChords.Count) > CacheLoaderBase.MissingChordsThresholdForProgressionsOnlyFastFail) && onlyFast) return null;
 
@@ -73,7 +73,7 @@ public class ProgressionsCacheLoader : CacheLoaderBase
         var chordsFactor = 50; // reading chords will take 50 times longer
         var total = dbProgressions.Count + toGet.Count * chordsFactor;
         var progress = 0;
-        foreach (var ((item, id), i) in dbProgressions.WithIndices())
+        foreach (var (item, i) in dbProgressions.WithIndices())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -83,7 +83,7 @@ public class ProgressionsCacheLoader : CacheLoaderBase
                 await OnUpdated(progressionsProgress, progress);
             }
 
-            progressions[id] = _progressionsBuilder.BuildProgression(JsonSerializer.Deserialize<CompressedChordsProgressionDataV1>(item.Contents)!.Decompress());
+            progressions[item.Key] = _progressionsBuilder.BuildProgression(JsonSerializer.Deserialize<CompressedChordsProgressionDataV1>(item.Contents)!.Decompress());
         }
 
         foreach (var (externalId, i) in toGet.WithIndices())

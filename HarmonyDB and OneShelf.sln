@@ -209,9 +209,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Videos", "OneShelf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Videos.App", "OneShelf.Videos\OneShelf.Videos.App\OneShelf.Videos.App.csproj", "{99134E7C-CE2F-4641-A9E3-B961F76307F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Videos.Database", "OneShelf.Videos\OneShelf.Videos.Database\OneShelf.Videos.Database.csproj", "{D702C117-2C9A-44E0-B428-30371616FBAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Videos.Database", "OneShelf.Videos\OneShelf.Videos.Database\OneShelf.Videos.Database.csproj", "{D702C117-2C9A-44E0-B428-30371616FBAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Videos.BusinessLogic", "OneShelf.Videos\OneShelf.Videos.BusinessLogic\OneShelf.Videos.BusinessLogic.csproj", "{76A8BAAB-7065-45F8-82E8-E188D4C27EB3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneShelf.Videos.BusinessLogic", "OneShelf.Videos\OneShelf.Videos.BusinessLogic\OneShelf.Videos.BusinessLogic.csproj", "{76A8BAAB-7065-45F8-82E8-E188D4C27EB3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
