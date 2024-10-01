@@ -1,8 +1,11 @@
 ﻿@page "/user"
+@using OneShelf.Frontend.Web.Services.Worker
 @using SpawnDev.BlazorJS
 @inject IdentityProvider IdentityProvider
 @inject NavigationManager NavigationManager
 @inject BlazorJSRuntime BlazorJsRuntime
+@inject OptionalWebWorker OptionalWebWorker
+@inject JsFunctions JsFunctions
 
 <PageTitle>Профиль</PageTitle>
 
@@ -28,7 +31,7 @@ else
     <div class="mb-3">Может быть, вы видите это сообщение по ошибке. Если вам кажется, что доступ должен быть, тем более, напишите, пожалуйста. Спасибо.</div>
 }
 
-<h3>Совместимость</h3>
+<h3>Хитрые настройки</h3>
 <div class="mb-3">Это для случаев если приложение не загружается с первого раза. Не включайте режим совместимости, если всё работает.</div>
 <div>
     <label>
@@ -41,6 +44,18 @@ else
         <input type="checkbox" disabled="disabled" checked="@(_forceCompatMode)" />
         Совместимость всегда
         <button @onclick="SwitchForceCompatMode">@(_forceCompatMode ? "Выключить" : "Включить")</button>
+    </label>
+</div>
+<div>
+    <label>
+        <input type="checkbox" disabled="disabled" checked="@(OptionalWebWorker.IsInitializationFinished)" />
+        Optional web worker initialized
+    </label>
+</div>
+<div>
+    <label>
+        <input type="checkbox" disabled="disabled" checked="@(OptionalWebWorker.WebWorkerExists)" />
+        Optional web worker exists
     </label>
 </div>
 
@@ -74,8 +89,11 @@ else
         NavigationManager.NavigateTo("/");
     }
 
-    private void SwitchForceCompatMode()
+    private async Task SwitchForceCompatMode()
     {
+        if (!await JsFunctions.Confirm("Прям уверены? Лучше не надо."))
+            return;
+
         if (_forceCompatMode)
         {
             BlazorJsRuntime.WindowThis!.LocalStorage.RemoveItem("forceCompatMode");

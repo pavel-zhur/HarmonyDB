@@ -1,0 +1,57 @@
+﻿@page "/test1"
+@using OneShelf.Frontend.Web.Services.Worker
+@using SpawnDev.BlazorJS.WebWorkers
+
+<h3>Test1</h3>
+
+<button @onclick="Button1">@_button1</button>
+<button @onclick="Button2">@_button2</button>
+<button @onclick="Button3">@_button3</button>
+<button @onclick="Button4">@_button4</button>
+<button @onclick="Button5">@_button5</button>
+
+@code {
+    private string _button1 = "Create";
+    private string _button2 = "Dispose";
+    private string _button3 = "Call";
+    private string _button4 = "Call 0";
+    private string _button5 = "Init 0";
+    private WebWorker? _webWorker;
+
+    [Inject] 
+    WebWorkerService WebWorkerService { get; init; }
+
+    private async Task Button1()
+    {
+        _button1 = "creating...";
+        _webWorker = await WebWorkerService.GetWebWorker();
+        _button1 = "created.";
+    }
+
+    private async Task Button2()
+    {
+        _button2 = "disposing...";
+        _webWorker.Dispose();
+        _webWorker = null;
+        _button2 = "disposed.";
+    }
+
+    private async Task Button3()
+    {
+        _button3 = "calling...";
+        _button3 = (await _webWorker.GetService<IService1>().Go(35)).ToString();
+    }
+
+    private async Task Button4()
+    {
+        _button4 = "calling...";
+        _button4 = (await _webWorker.GetService<IService1>().Go(0)).ToString();
+    }
+
+    private async Task Button5()
+    {
+        var _ = _webWorker.GetService<IService1>().Go(0);
+        _button5 = "inited.";
+    }
+
+}

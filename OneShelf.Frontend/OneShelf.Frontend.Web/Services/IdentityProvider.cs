@@ -6,8 +6,8 @@ using Microsoft.JSInterop;
 using Nito.AsyncEx;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common.Api.Common;
-using OneShelf.Frontend.Web.Models;
 using OneShelf.Frontend.Web.Pages;
+using OneShelf.Frontend.Web.Services.Worker;
 
 namespace OneShelf.Frontend.Web.Services;
 
