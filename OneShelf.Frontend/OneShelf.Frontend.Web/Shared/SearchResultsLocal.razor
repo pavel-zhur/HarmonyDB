@@ -503,7 +503,7 @@ else
                 .ThenByDescending(x => x.x.TemplateRating),
             SongsMode.NewestLike => songs
                 .Select(x => ((string?)null, (int?)null, x))
-                .OrderByDescending(x => x.x.Likes.Where(ShortlistedUserId.HasValue ? x => x.UserId == ShortlistedUserId : LikeCategoryId.HasValue ? x => x.LikeCategoryId == LikeCategoryId : x => true).Max(x => x.CreatedOn))
+                .OrderByDescending(x => x.x.Likes.Where(ShortlistedUserId.HasValue ? x => x.UserId == ShortlistedUserId : LikeCategoryId.HasValue ? x => x.LikeCategoryId == LikeCategoryId : _ => true).Max(x => x.CreatedOn))
                 .ThenByDescending(x => x.x.TemplateRating),
             SongsMode.IndexDesc => songs
                 .Select(x => ((string?)null, (int?)null, x))

@@ -1,9 +1,6 @@
 using System.Text.Json.Serialization;
 using BlazorApplicationInsights;
 using Blazored.LocalStorage;
-using DnetIndexedDb;
-using DnetIndexedDb.Fluent;
-using DnetIndexedDb.Models;
 using HarmonyDB.Index.Analysis;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -14,6 +11,7 @@ using OneShelf.Frontend.Web.IndexedDb;
 using OneShelf.Frontend.Web.Interop;
 using OneShelf.Frontend.Web.Models;
 using OneShelf.Frontend.Web.Services;
+using SpawnDev.BlazorJS;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -48,21 +46,9 @@ builder.Services
     .AddBlazorApplicationInsights(config =>
     {
         config.ConnectionString = builder.Configuration.GetSection(nameof(FrontendOptions)).Get<FrontendOptions>()!.AppInsightsConnectionString;
-    });
-
-builder.Services
-    .AddIndexedDbDatabase<MyIndexedDb>(options =>
-    {
-        var model = new IndexedDbDatabaseModel()
-            .WithName("OneShelfDatabase")
-            .WithVersion(6)
-            .WithModelId(0);
-
-        model.AddStore<IndexedItem>();
-        model.AddStore<IndexedItemKey>();
-
-        options.UseDatabase(model);
-    }, ServiceLifetime.Singleton);
+    })
+    .AddTransient<MyIndexedDb>()
+    .AddBlazorJSRuntime();
 
 var host = builder.Build();
 

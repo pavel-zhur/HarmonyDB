@@ -46,11 +46,11 @@ else
     }
     <div>
         <span>Люблю:</span>
-        <input type="radio" name="alteration" id="preferSharp" value="@NoteAlteration.Sharp" checked="@(_preferences.Alteration == NoteAlteration.Sharp)" @onchange="e => SetAlteration(NoteAlteration.Sharp)"/>
+        <input type="radio" name="alteration" id="preferSharp" value="@NoteAlteration.Sharp" checked="@(_preferences.Alteration == NoteAlteration.Sharp)" @onchange="() => SetAlteration(NoteAlteration.Sharp)"/>
         <label for="preferSharp">###</label>
-        <input type="radio" name="alteration" id="preferFlat" value="@NoteAlteration.Flat" checked="@(_preferences.Alteration == NoteAlteration.Flat)" @onchange="e => SetAlteration(NoteAlteration.Flat)"/>
+        <input type="radio" name="alteration" id="preferFlat" value="@NoteAlteration.Flat" checked="@(_preferences.Alteration == NoteAlteration.Flat)" @onchange="() => SetAlteration(NoteAlteration.Flat)"/>
         <label for="preferFlat">bbb</label>
-        <input type="radio" name="alteration" id="preferNone" value="null" checked="@(_preferences.Alteration == null)" @onchange="e => SetAlteration(null)"/>
+        <input type="radio" name="alteration" id="preferNone" value="null" checked="@(_preferences.Alteration == null)" @onchange="() => SetAlteration(null)"/>
         <label for="preferNone">Что есть, то есть</label>
     </div>
     <div>

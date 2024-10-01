@@ -35,6 +35,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
                     .Where(x => externalIds.Contains(x.Key) && x.Key == x.Value.ExternalId && sourceIndex == _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(x.Value.Source))
                     .Select(x =>
                     {
+                        x.Value.Output.Fix0_Compress();
                         x.Value.Source = _downstreamApiClient.GetSourceTitle(x.Value.Source);
                         return x.Value;
                     })

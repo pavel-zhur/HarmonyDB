@@ -5,6 +5,7 @@
 @inject CollectionNavigation CollectionNavigation
 @inject CollectionIndexProvider CollectionIndexProvider
 @inject IllustrationsProvider IllustrationsProvider
+@inject ChordsCacheLoader ChordsCacheLoader
 
 <PageTitle>Один Шкаф</PageTitle>
 
@@ -111,6 +112,7 @@ else
         {
             CollectionIndexProvider.MightSync();
             IllustrationsProvider.MaybeInit();
+            ChordsCacheLoader.StartDelayed();
         }
 
         return base.OnAfterRenderAsync(firstRender);
