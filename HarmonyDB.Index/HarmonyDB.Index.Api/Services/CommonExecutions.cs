@@ -55,6 +55,7 @@ public class CommonExecutions
         var sourceIndex = _downstreamApiClient.GetDownstreamSourceIndexByExternalId(externalId);
         var getSongResponse = await _downstreamApiClient.V1GetSong(sourceIndex, externalId);
         getSongResponse.Song.Source = _downstreamApiClient.GetSourceTitle(getSongResponse.Song.Source);
+        getSongResponse.Song.Output.Fix0_Compress();
         return getSongResponse;
     }
 }

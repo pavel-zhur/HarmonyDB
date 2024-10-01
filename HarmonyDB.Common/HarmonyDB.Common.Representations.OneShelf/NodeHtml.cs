@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json.Serialization;
+using OneShelf.Common;
 
 namespace HarmonyDB.Common.Representations.OneShelf;
 
@@ -176,5 +177,25 @@ public class NodeHtml : NodeCollectionBase
     public int? GetNodesCount()
     {
 	    return TraverseAll().Count();
+    }
+
+    public void Fix0_Compress()
+    {
+        foreach (var nodeCollectionBase in TraverseAll().Select(x => x.element).OfType<NodeCollectionBase>().ToList())
+        {
+            var newChildren = nodeCollectionBase.Children.ToChunks(x => x.NodeText != null)
+                .SelectMany(c =>
+                    !c.criterium
+                        ? c.chunk
+                        : new NodeText(string.Join(string.Empty, c.chunk.Select(x => x.NodeText!.Text))).AsChild()
+                            .Once())
+                .ToList();
+
+            if (newChildren.Count != nodeCollectionBase.Children.Count)
+            {
+                nodeCollectionBase.Children.Clear();
+                nodeCollectionBase.Children.AddRange(newChildren);
+            }
+        }
     }
 }
