@@ -13,8 +13,13 @@ public static class ChordParser
         var fragments = UnwrapParentheses(input, options);
         List<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, bool fromParentheses, MatchAmbiguity matchAmbiguity)> result = new();
 
-        foreach (var (fragment, fromParentheses) in fragments)
+        foreach (var ((fragment, fromParentheses), i) in fragments.WithIndices())
         {
+            if (i > 0)
+            {
+                result.Add((null, null, null, null, ChordTypeMeaninglessAddition.FragmentSeparator, true, MatchAmbiguity.Safe));
+            }
+
             var currentFragment = fragment;
 
             while (true)

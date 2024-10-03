@@ -34,4 +34,9 @@ public enum ChordTypeAdditions
     Sharp13 = 1 << 19,
 
     HalfDiminished7 = 1 << 20,
+
+    Plus = 1 << 21,
+    Minus = 1 << 22,
+    Sharp = 1 << 23,
+    Flat = 1 << 24,
 }

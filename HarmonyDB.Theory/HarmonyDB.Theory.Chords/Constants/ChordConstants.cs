@@ -20,6 +20,7 @@ public static class ChordConstants
         (ChordType.Major, "major", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
 
         (ChordType.Minor, "m", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordType.Minor, "mi", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Minor, "min", MatchCase.MatchUpperFirst, MatchAmbiguity.Safe),
         (ChordType.Minor, "minor", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
 
@@ -33,14 +34,16 @@ public static class ChordConstants
         (ChordType.Dim7, "o", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordType.Sus2, "sus2", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordType.Sus2, "s2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Sus2, "susp2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordType.Sus4, "sus4", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordType.Sus4, "s4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Sus4, "susp4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Sus4, "sus", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
         (ChordType.Sus4, "susp", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
-        (ChordType.Power, "5", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordType.Power, "5", MatchCase.ExactOnly, MatchAmbiguity.Degree),
         (ChordType.Power, "no3", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Power, "no3rd", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordType.Power, "omit3", MatchCase.ExactOnly, MatchAmbiguity.Safe),
@@ -49,15 +52,18 @@ public static class ChordConstants
 
     public static readonly IReadOnlyList<(ChordTypeExtension extension, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeExtensionRepresentations =
     [
-        (ChordTypeExtension.X7, "7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeExtension.X9, "9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeExtension.X11, "11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeExtension.X13, "13", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.X7, "add7", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeExtension.X7, "7", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeExtension.X9, "9", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeExtension.X11, "11", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeExtension.X13, "13", MatchCase.ExactOnly, MatchAmbiguity.Degree),
 
-        (ChordTypeExtension.XMaj7, "maj", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "maj7", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "maj", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "ma7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "major7", MatchCase.MatchUpperFirst, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "M7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "MA7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
         (ChordTypeExtension.XMaj7, "7M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
 
@@ -84,38 +90,54 @@ public static class ChordConstants
 
         (ChordTypeAdditions.No11, "no11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
-        (ChordTypeAdditions.Add2, "2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeAdditions.Add2, "add2", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Add2, "2", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeAdditions.Add2, "add2", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
 
-        (ChordTypeAdditions.Add4, "4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeAdditions.Add4, "add4", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Add4, "4", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeAdditions.Add4, "add4", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
         
         (ChordTypeAdditions.Flat5, "addb5", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Flat6, "addb6", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Flat9, "addb9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Flat11, "addb11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Flat13, "addb13", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Flat5, "add-5", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Flat6, "add-6", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Flat9, "add-9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Flat11, "add-11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Flat13, "add-13", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         
         (ChordTypeAdditions.Sharp4, "add#4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Sharp5, "add#5", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Sharp9, "add#9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Sharp11, "add#11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeAdditions.Sharp13, "add#13", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Sharp4, "add+4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Sharp5, "add+5", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Sharp9, "add+9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Sharp11, "add+11", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Sharp13, "add+13", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
-        (ChordTypeAdditions.Add6, "6", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeAdditions.Add6, "add6", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Add6, "6", MatchCase.ExactOnly, MatchAmbiguity.Degree),
+        (ChordTypeAdditions.Add6, "add6", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
 
-        (ChordTypeAdditions.Add9, "add9", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
-        (ChordTypeAdditions.Add11, "add11", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
-        (ChordTypeAdditions.Add13, "add13", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeAdditions.Add9, "add9", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
+        (ChordTypeAdditions.Add11, "add11", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
+        (ChordTypeAdditions.Add13, "add13", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
 
         (ChordTypeAdditions.HalfDiminished7, "ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+
+        (ChordTypeAdditions.Sharp, "#", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAdditions.Flat, "b", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAdditions.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAdditions.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
     ];
 
     public static readonly IReadOnlyList<(ChordTypeMeaninglessAddition meaninglessAddition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
     [
         (ChordTypeMeaninglessAddition.Star, "*"),
         (ChordTypeMeaninglessAddition.Question, "?"),
+        (ChordTypeMeaninglessAddition.Slash, "/"),
     ];
 
     public static readonly IReadOnlyList<string> Romans =

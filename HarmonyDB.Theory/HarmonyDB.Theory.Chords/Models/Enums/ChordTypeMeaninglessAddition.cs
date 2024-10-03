@@ -4,4 +4,6 @@ public enum ChordTypeMeaninglessAddition
 {
     Star,
     Question,
+    FragmentSeparator,
+    Slash,
 }
