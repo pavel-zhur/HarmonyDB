@@ -19,7 +19,7 @@ public static class ChordParser
         if (NoteConstants.NoChordVariants.Contains(stringRepresentation))
             return new(ChordParseResultType.SpecialNoChord);
 
-        var bassRepresentation = ExtractBass(ref stringRepresentation, options);
+        var bassRepresentation = ExtractBass(ref stringRepresentation, out var bass, options);
 
         var prefixLength = NoteParser.TryParsePrefixNote(stringRepresentation, out var root, out var rootRepresentation, options.NoteParsingOptions);
         if (prefixLength == 0)
@@ -27,13 +27,22 @@ public static class ChordParser
 
         var chord = stringRepresentation.Substring(prefixLength);
 
+        if (bass.HasValue && root.Equals(bass.Value))
+        {
+            if (options.ForgiveSameBass)
+                bassRepresentation = null;
+            else
+                throw new ArgumentOutOfRangeException(nameof(stringRepresentation), stringRepresentation, "The bass is the same as the root.");
+        }
+
         return new(new Chord(rootRepresentation, bassRepresentation, chord));
     }
 
-    private static NoteRepresentation? ExtractBass(ref string stringRepresentation, ChordParsingOptions options)
+    private static NoteRepresentation? ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
         var slashParts = stringRepresentation.Split('/');
         NoteRepresentation? bassRepresentation = null;
+        bass = null;
 
         switch (slashParts.Length)
         {
@@ -41,8 +50,12 @@ public static class ChordParser
                 throw new ArgumentOutOfRangeException(nameof(stringRepresentation), stringRepresentation, "An empty string could not be parsed.");
 
             case > 1:
-                if (NoteParser.TryParseNote(slashParts[^1], out var bass, out bassRepresentation, options.NoteParsingOptions))
+                if (NoteParser.TryParseNote(slashParts[^1], out var note, out bassRepresentation, options.NoteParsingOptions))
+                {
                     stringRepresentation = string.Join(string.Empty, slashParts.SkipLast(1));
+                    bass = note;
+                }
+
                 break;
         }
 
