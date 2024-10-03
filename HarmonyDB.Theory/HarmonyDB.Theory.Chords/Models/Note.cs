@@ -1,4 +1,6 @@
-﻿namespace HarmonyDB.Theory.Chords.Models;
+﻿using HarmonyDB.Theory.Chords.Constants;
+
+namespace HarmonyDB.Theory.Chords.Models;
 
 public readonly record struct Note
 {

@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Theory.Chords.Models.Enums;
+﻿using HarmonyDB.Theory.Chords.Constants;
+using HarmonyDB.Theory.Chords.Models.Enums;
 
 namespace HarmonyDB.Theory.Chords.Models;
 

@@ -1,6 +1,7 @@
-﻿using HarmonyDB.Theory.Chords.Models.Enums;
+﻿using HarmonyDB.Theory.Chords.Models;
+using HarmonyDB.Theory.Chords.Models.Enums;
 
-namespace HarmonyDB.Theory.Chords.Models;
+namespace HarmonyDB.Theory.Chords.Constants;
 
 public static class NoteConstants
 {
@@ -25,16 +26,6 @@ public static class NoteConstants
 
     public const char FlatUnicodeSymbol = '♭';
     public const char SharpUnicodeSymbol = '♯';
-
-    public const string NoChord = "N.C.";
-
-    public static readonly IReadOnlyList<string> NoChordVariants =
-    [
-        NoChord,
-        "N.C",
-        "NC",
-        "N.С.", // russian C
-    ];
 
     public static readonly IReadOnlyList<char> FlatSymbols = new List<char> { FlatSymbol, FlatUnicodeSymbol };
     public static readonly IReadOnlyList<char> SharpSymbols = new List<char> { SharpSymbol, SharpUnicodeSymbol };
