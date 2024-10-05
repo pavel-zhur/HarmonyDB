@@ -1,4 +1,6 @@
 ﻿using HarmonyDB.Theory.Chords.Models.Enums;
+using HarmonyDB.Theory.Chords.Models.Internal;
+using HarmonyDB.Theory.Chords.Models.Internal.Enums;
 using OneShelf.Common;
 
 namespace HarmonyDB.Theory.Chords.Constants;
@@ -68,6 +70,7 @@ public static class ChordConstants
         (ChordTypeExtension.XMaj7, "7M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
 
         (ChordTypeExtension.XMaj9, "maj9", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj9, "ma9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj9, "M9", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordTypeExtension.XMaj11, "maj11", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
@@ -124,16 +127,19 @@ public static class ChordConstants
         (ChordTypeAdditions.Add9, "add9", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
         (ChordTypeAdditions.Add11, "add11", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
         (ChordTypeAdditions.Add13, "add13", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
-
-        (ChordTypeAdditions.HalfDiminished7, "ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-
-        (ChordTypeAdditions.Sharp, "#", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
-        (ChordTypeAdditions.Flat, "b", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
-        (ChordTypeAdditions.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
-        (ChordTypeAdditions.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
     ];
 
-    public static readonly IReadOnlyList<(ChordTypeMeaninglessAddition meaninglessAddition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
+    internal static readonly IReadOnlyList<(ChordTypeAmbiguousAddition addition, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeAmbiguousAdditionRepresentations =
+    [
+        (ChordTypeAmbiguousAddition.HalfDiminished7, "ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+
+        (ChordTypeAmbiguousAddition.Sharp, "#", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Flat, "b", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+    ];
+
+    internal static readonly IReadOnlyList<(ChordTypeMeaninglessAddition addition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
     [
         (ChordTypeMeaninglessAddition.Star, "*"),
         (ChordTypeMeaninglessAddition.Question, "?"),
@@ -146,17 +152,19 @@ public static class ChordConstants
         "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
     ];
 
-    public static readonly IReadOnlyList<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> AllRepresentations
+    internal static readonly IReadOnlyList<(ChordTypeToken token, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> AllRepresentations
         = ChordTypeRepresentations
-            .Select(x => ((ChordType?)x.type, (ChordTypeExtension?)null, (ChordTypeAdditions?)null, (byte?)null, (ChordTypeMeaninglessAddition?)null, x.representation, x.matchCase, x.matchAmbiguity))
+            .Select(x => (new ChordTypeToken(x.type), x.representation, x.matchCase, x.matchAmbiguity))
             .Concat(ChordTypeExtensionRepresentations
-                .Select(x => ((ChordType?)null, (ChordTypeExtension?)x.extension, (ChordTypeAdditions?)null, (byte?)null, (ChordTypeMeaninglessAddition?)null, x.representation, x.matchCase, x.matchAmbiguity)))
+                .Select(x => (new ChordTypeToken(x.extension), x.representation, x.matchCase, x.matchAmbiguity)))
             .Concat(ChordTypeAdditionRepresentations
-                .Select(x => ((ChordType?)null, (ChordTypeExtension?)null, (ChordTypeAdditions?)x.addition, (byte?)null, (ChordTypeMeaninglessAddition?)null, x.representation, x.matchCase, x.matchAmbiguity)))
+                .Select(x => (new ChordTypeToken(x.addition), x.representation, x.matchCase, x.matchAmbiguity)))
             .Concat(Romans.WithIndices()
-                .Select(x => ((ChordType?)null, (ChordTypeExtension?)null, (ChordTypeAdditions?)null, (byte?)(x.i + 1), (ChordTypeMeaninglessAddition?)null, representation: x.x, MatchCase.ExactOnly, Definite: MatchAmbiguity.Safe)))
+                .Select(x => (new ChordTypeToken((byte)(x.i + 1)), representation: x.x, MatchCase.ExactOnly, Definite: MatchAmbiguity.Safe)))
             .Concat(ChordTypeMeaninglessAdditionRepresentations
-                .Select(x => ((ChordType?)null, (ChordTypeExtension?)null, (ChordTypeAdditions?)null, (byte?)null, (ChordTypeMeaninglessAddition?)x.meaninglessAddition, representation: x.representation, MatchCase.ExactOnly, Definite: MatchAmbiguity.Safe)))
+                .Select(x => (new ChordTypeToken(x.addition), x.representation, MatchCase.ExactOnly, Definite: MatchAmbiguity.Safe)))
+            .Concat(ChordTypeAmbiguousAdditionRepresentations
+                .Select(x => (new ChordTypeToken(x.addition), x.representation, MatchCase.ExactOnly, Definite: MatchAmbiguity.Safe)))
             .OrderByDescending(x => x.representation.Length)
             .ToList();
 }

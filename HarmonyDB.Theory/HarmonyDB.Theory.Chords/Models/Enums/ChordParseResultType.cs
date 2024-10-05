@@ -4,4 +4,5 @@ public enum ChordParseResultType
 {
     SpecialNoChord,
     Success,
+    Error,
 }

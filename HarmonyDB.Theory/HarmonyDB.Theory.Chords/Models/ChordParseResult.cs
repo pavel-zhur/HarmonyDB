@@ -12,12 +12,19 @@ public record ChordParseResult
         ResultType = resultType;
     }
 
-    public ChordParseResult(Chord chord)
+    public ChordParseResult(ChordRepresentation chord)
     {
         ResultType = ChordParseResultType.Success;
         Chord = chord;
     }
 
+    public ChordParseResult(ChordParseResultError error)
+    {
+        ResultType = ChordParseResultType.Error;
+        Error = error;
+    }
+
     public ChordParseResultType ResultType { get; }
-    public Chord? Chord { get; }
+    public ChordRepresentation? Chord { get; }
+    public ChordParseResultError? Error { get; }
 }

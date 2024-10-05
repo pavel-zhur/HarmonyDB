@@ -1,6 +1,8 @@
 ﻿using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;
+using HarmonyDB.Theory.Chords.Models.Internal;
+using HarmonyDB.Theory.Chords.Models.Internal.Enums;
 using HarmonyDB.Theory.Chords.Options;
 using OneShelf.Common;
 
@@ -8,16 +10,53 @@ namespace HarmonyDB.Theory.Chords.Parsers;
 
 public static class ChordParser
 {
-    public static List<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? TryGetTokens(string input, ChordTypeParsingOptions options)
+    public static ChordParseResult Parse(string stringRepresentation, ChordParsingOptions? options = null)
     {
-        var fragments = UnwrapParentheses(input, options);
-        List<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, bool fromParentheses, MatchAmbiguity matchAmbiguity)> result = new();
+        options ??= ChordParsingOptions.Default;
 
-        foreach (var ((fragment, fromParentheses), i) in fragments.WithIndices())
+        if (options.ForgiveEdgeWhitespaces)
+            stringRepresentation = stringRepresentation.Trim();
+
+        if (options.ForgiveRoundBraces && stringRepresentation.Length > 0 && stringRepresentation[0] == '(' && stringRepresentation[^1] == ')')
+            stringRepresentation = stringRepresentation.Substring(1, stringRepresentation.Length - 1);
+
+        if (ChordConstants.NoChordVariants.Contains(stringRepresentation))
+            return new(ChordParseResultType.SpecialNoChord);
+
+        var (bassRepresentation, error) = ExtractBass(ref stringRepresentation, out var bass, options);
+        if (error.HasValue)
+            return new(error.Value);
+
+        var prefixLength = NoteParser.TryParsePrefixNote(stringRepresentation, out var root, out var rootRepresentation, options.NoteParsingOptions);
+        if (prefixLength == 0)
+            return new(ChordParseResultError.UnreadableRoot);
+
+        var chord = stringRepresentation.Substring(prefixLength);
+
+        if (bass.HasValue && root.Equals(bass.Value))
+        {
+            if (options.ForgiveSameBass)
+                bassRepresentation = null;
+            else
+                return new(ChordParseResultError.SameBass);
+        }
+
+        return new(new ChordRepresentation(rootRepresentation, bassRepresentation, chord));
+    }
+
+    internal static (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? tokens, ChordParseResultError? error) TryGetTokens(string input, ChordTypeParsingOptions options)
+    {
+        var (fragments, error) = TryUnwrapParentheses(input, options);
+        if (error.HasValue)
+            return (null, error);
+
+        List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)> result = new();
+
+        foreach (var ((fragment, fromParentheses), i) in fragments!.WithIndices())
         {
             if (i > 0)
             {
-                result.Add((null, null, null, null, ChordTypeMeaninglessAddition.FragmentSeparator, true, MatchAmbiguity.Safe));
+                result.Add((new(ChordTypeMeaninglessAddition.FragmentSeparator), true, MatchAmbiguity.Safe));
             }
 
             var currentFragment = fragment;
@@ -27,7 +66,7 @@ public static class ChordParser
                 var match = ChordConstants.AllRepresentations
                     // ReSharper disable AccessToModifiedClosure
                     .FirstOrNull(x => currentFragment.Length >= x.representation.Length && x.matchCase switch
-                        {
+                    {
                         MatchCase.ExactOnly => currentFragment.StartsWith(x.representation),
                         MatchCase.MatchUpperFirst => currentFragment.StartsWith(x.representation)
                                                      || char.ToLowerInvariant(currentFragment[0]) == x.representation[0] && currentFragment[1..x.representation.Length] == x.representation[1..],
@@ -40,10 +79,10 @@ public static class ChordParser
 
                 if (!match.HasValue)
                 {
-                    return null;
+                    return (null, ChordParseResultError.UnexpectedChordTypeToken);
                 }
 
-                result.Add((match.Value.type, match.Value.extension, match.Value.addition, match.Value.fret, match.Value.meaninglessAddition, fromParentheses, match.Value.matchAmbiguity));
+                result.Add((match.Value.token, fromParentheses, match.Value.matchAmbiguity));
                 if (currentFragment.Length == match.Value.representation.Length)
                 {
                     break;
@@ -53,12 +92,12 @@ public static class ChordParser
             }
         }
 
-        return result;
+        return (result, null);
     }
 
-    internal static List<(string fragment, bool fromParentheses)> UnwrapParentheses(string input, ChordTypeParsingOptions options)
+    internal static (List<(string fragment, bool fromParentheses)>? fragments, ChordParseResultError? error) TryUnwrapParentheses(string input, ChordTypeParsingOptions options)
     {
-        if (input == string.Empty) return new();
+        if (input == string.Empty) return (new(), null);
 
         var inputs = (input, fromParentheses: false).Once().ToList();
 
@@ -75,45 +114,13 @@ public static class ChordParser
         var trimmed = inputs.Select(x => x with { input = x.input.Trim() }).Where(x => x.input != string.Empty).ToList();
         if (!options.TrimWhitespaceFragments && (trimmed.Count != inputs.Count || trimmed.Zip(inputs).Any(x => x.First != x.Second)))
         {
-            throw new ArgumentOutOfRangeException(nameof(input), input, "Whitespace fragments.");
+            return new(null, ChordParseResultError.WhitespaceFragments);
         }
 
-        return trimmed;
+        return (trimmed, null);
     }
 
-    public static ChordParseResult Parse(string stringRepresentation, ChordParsingOptions? options = null)
-    {
-        options ??= ChordParsingOptions.Default;
-
-        if (options.ForgiveEdgeWhitespaces)
-            stringRepresentation = stringRepresentation.Trim();
-
-        if (options.ForgiveRoundBraces && stringRepresentation.Length > 0 && stringRepresentation[0] == '(' && stringRepresentation[^1] == ')')
-            stringRepresentation = stringRepresentation.Substring(1, stringRepresentation.Length - 1);
-
-        if (ChordConstants.NoChordVariants.Contains(stringRepresentation))
-            return new(ChordParseResultType.SpecialNoChord);
-
-        var bassRepresentation = ExtractBass(ref stringRepresentation, out var bass, options);
-
-        var prefixLength = NoteParser.TryParsePrefixNote(stringRepresentation, out var root, out var rootRepresentation, options.NoteParsingOptions);
-        if (prefixLength == 0)
-            throw new ArgumentOutOfRangeException(nameof(stringRepresentation), stringRepresentation, "The chord root could not be parsed.");
-
-        var chord = stringRepresentation.Substring(prefixLength);
-
-        if (bass.HasValue && root.Equals(bass.Value))
-        {
-            if (options.ForgiveSameBass)
-                bassRepresentation = null;
-            else
-                throw new ArgumentOutOfRangeException(nameof(stringRepresentation), stringRepresentation, "The bass is the same as the root.");
-        }
-
-        return new(new Chord(rootRepresentation, bassRepresentation, chord));
-    }
-
-    private static NoteRepresentation? ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
+    private static (NoteRepresentation? bass, ChordParseResultError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
         var slashParts = stringRepresentation.Split('/');
         NoteRepresentation? bassRepresentation = null;
@@ -122,7 +129,7 @@ public static class ChordParser
         switch (slashParts.Length)
         {
             case 0:
-                throw new ArgumentOutOfRangeException(nameof(stringRepresentation), stringRepresentation, "An empty string could not be parsed.");
+                return (null, ChordParseResultError.EmptyString);
 
             case > 1:
                 if (NoteParser.TryParseNote(slashParts[^1], out var note, out bassRepresentation, options.NoteParsingOptions))
@@ -134,6 +141,6 @@ public static class ChordParser
                 break;
         }
 
-        return bassRepresentation;
+        return (bassRepresentation, null);
     }
 }

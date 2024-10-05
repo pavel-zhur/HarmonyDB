@@ -1,24 +1,32 @@
 using HarmonyDB.Theory.Chords.Models.Enums;
+using HarmonyDB.Theory.Chords.Models.Internal;
 using HarmonyDB.Theory.Chords.Options;
 using HarmonyDB.Theory.Chords.Parsers;
+using Newtonsoft.Json;
 using Xunit.Abstractions;
 
 namespace HarmonyDB.Theory.Chords.Tests;
 
 public class ChordParserTests(ITestOutputHelper testOutputHelper)
 {
-    public static readonly TheoryData<string, List<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, bool fromParentheses, MatchAmbiguity matchAmbiguity)>?> ParseChordTypeData = new()
+    public static readonly IEnumerable<object[]> ParseChordTypeData = new TheoryData<string, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error)>
     {
-        { "6", [(null, null, ChordTypeAdditions.Add6, null, null, false, MatchAmbiguity.Safe)] },
-        { "7", [(null, ChordTypeExtension.X7, null, null, null, false, MatchAmbiguity.Safe)] },
+        { "6", ([(new(ChordTypeAdditions.Add6), false, MatchAmbiguity.Degree)], null) },
+        { "7", ([(new(ChordTypeExtension.X7), false, MatchAmbiguity.Degree)], null) },
     };
 
     [Theory]
     [MemberData(nameof(ParseChordTypeData))]
-    public void ParseChordType(string input, List<(ChordType? type, ChordTypeExtension? extension, ChordTypeAdditions? addition, byte? fret, ChordTypeMeaninglessAddition? meaninglessAddition, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? expected)
+    public void ParseChordType(string input, object expected)
+    {
+        ParseChordTypeImplementation(input, ((List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error))expected);
+    }
+
+    internal void ParseChordTypeImplementation(string input, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error)? expected)
     {
         var actual = ChordParser.TryGetTokens(input, ChordTypeParsingOptions.MostForgiving);
-        Assert.Equal(expected, actual);
+        Assert.Equal(JsonConvert.SerializeObject(expected), JsonConvert.SerializeObject(actual));
+        testOutputHelper.WriteLine(JsonConvert.SerializeObject(actual));
     }
 
     public static readonly IEnumerable<object[]> UnwrapParenthesesData =
@@ -39,7 +47,7 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
     [MemberData(nameof(UnwrapParenthesesData))]
     public void UnwrapParentheses(string input, IReadOnlyList<(string fragment, bool fromParentheses)> expected)
     {
-        var actual = ChordParser.UnwrapParentheses(input, ChordTypeParsingOptions.MostForgiving);
+        var (actual, error) = ChordParser.TryUnwrapParentheses(input, ChordTypeParsingOptions.MostForgiving);
         Assert.Equal(expected, actual);
     }
 }
