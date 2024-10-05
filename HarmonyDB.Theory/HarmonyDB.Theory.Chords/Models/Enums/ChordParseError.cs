@@ -2,10 +2,19 @@
 
 public enum ChordParseError
 {
+    [Obsolete]
+    NotImplemented,
+
     WhitespaceFragments,
     UnexpectedChordTypeToken,
     UnreadableRoot,
     SameBass,
     EmptyString,
     BadSymbols,
+    RomansNotInParentheses,
+    RomansInParenthesesExpectedOnly,
+    OnlyIntegerInParentheses,
+    DuplicateAdditions,
+    EachExtensionTypeExpectedUnique,
+    MaxOneMajExtensionExpected,
 }

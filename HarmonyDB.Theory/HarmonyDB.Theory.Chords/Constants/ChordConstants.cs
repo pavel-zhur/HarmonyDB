@@ -33,6 +33,9 @@ public static class ChordConstants
         (ChordMainType.Dim7, "º", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordMainType.Dim7, "°", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordMainType.Dim7, "o", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordMainType.Dim7, "º7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordMainType.Dim7, "°7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordMainType.Dim7, "o7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordMainType.Sus2, "sus2", MatchCase.MatchAny, MatchAmbiguity.Safe),
         (ChordMainType.Sus2, "s2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
@@ -67,6 +70,14 @@ public static class ChordConstants
         (ChordTypeExtension.XMaj7, "MA7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
         (ChordTypeExtension.XMaj7, "7M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
+        (ChordTypeExtension.XMaj7, "Δ", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "∆", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "△", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "^", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "Δ7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "∆7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "△7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeExtension.XMaj7, "^7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordTypeExtension.XMaj9, "maj9", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
         (ChordTypeExtension.XMaj9, "ma9", MatchCase.ExactOnly, MatchAmbiguity.AlterableDegree),
@@ -133,11 +144,16 @@ public static class ChordConstants
     public static readonly IReadOnlyList<(ChordTypeAmbiguousAddition addition, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeAmbiguousAdditionRepresentations =
     [
         (ChordTypeAmbiguousAddition.HalfDiminished7, "ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAmbiguousAddition.HalfDiminished7, "Ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAmbiguousAddition.HalfDiminished7, "ø7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordTypeAmbiguousAddition.HalfDiminished7, "Ø7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
         (ChordTypeAmbiguousAddition.Sharp, "#", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Sharp, "♯", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
         (ChordTypeAmbiguousAddition.Flat, "b", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
-        (ChordTypeAmbiguousAddition.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
-        (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Flat, "♭", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
+        (ChordTypeAmbiguousAddition.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration), // generally means augmented if at the beginning and no degree follows
+        (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration), // generally means minor if at the beginning and no degree follows
 
         (ChordTypeAmbiguousAddition.Add9And11, "add9,11", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
     ];

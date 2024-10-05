@@ -6,6 +6,7 @@ public enum ChordTypeExtension
     X9,
     X11,
     X13,
+    
     XMaj7,
     XMaj9,
     XMaj11,

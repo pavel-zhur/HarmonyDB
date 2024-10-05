@@ -65,16 +65,19 @@ public static class ChordParser
     {
         var tokens = readonlyTokens.ToList();
 
+        void ReplaceWithASeparator(Func<ChordTypeToken, bool> selector)
+            => ReplaceWithASeparator2(x => selector(x.token));
+
+        void ReplaceWithASeparator2(Func<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity), bool> selector)
+        {
+            tokens = tokens
+                .Select(x => selector(x) ? (new(ChordTypeMeaninglessAddition.FragmentSeparator), false, MatchAmbiguity.Safe) : x)
+                .ToList();
+        }
+
         #region Removing stars, apostrophes, leading slashes, handling questions. No Star, Apostrophe, Question after this point. Possible middle slashes and separators.
 
         {
-            void ReplaceQuestionWithASeparator()
-            {
-                tokens = tokens
-                    .Select(x => x.token.MeaninglessAddition == ChordTypeMeaninglessAddition.Question ? (new(ChordTypeMeaninglessAddition.FragmentSeparator), false, MatchAmbiguity.Safe) : x)
-                    .ToList();
-            }
-
             switch (options.QuestionsParsingBehavior)
             {
                 case QuestionsParsingBehavior.IgnoreAndTreatOnlyAsPower:
@@ -89,14 +92,14 @@ public static class ChordParser
                     }
                     else
                     {
-                        ReplaceQuestionWithASeparator();
+                        ReplaceWithASeparator(x => x.MeaninglessAddition == ChordTypeMeaninglessAddition.Question);
                     }
 
                     break;
                 }
 
                 case QuestionsParsingBehavior.Ignore:
-                    ReplaceQuestionWithASeparator();
+                    ReplaceWithASeparator(x => x.MeaninglessAddition == ChordTypeMeaninglessAddition.Question);
                     break;
             }
 
@@ -130,6 +133,78 @@ public static class ChordParser
             {
                 return (null, ChordParseError.BadSymbols, null, 0);
             }
+        }
+
+        #endregion
+
+        byte? resultFret = null;
+        #region Parentheses content, frets. FromParentheses not needed after this point. No romans after this point.
+
+        {
+            if (tokens.Any(x => x.token.Fret.HasValue && !x.fromParentheses))
+                return (null, ChordParseError.RomansNotInParentheses, null, 1);
+
+            var meaningfulFromParentheses = tokens
+                    // separators cannot be from parentheses except when there are multiple things in them.
+                .Where(x => x.fromParentheses)
+                .ToList();
+
+            if (meaningfulFromParentheses.Any(x => x.token.Fret.HasValue))
+            {
+                if (meaningfulFromParentheses.Count > 1) 
+                    return (null, ChordParseError.RomansInParenthesesExpectedOnly, null, 2);
+                else
+                {
+                    resultFret = meaningfulFromParentheses[0].token.Fret!.Value;
+                    ReplaceWithASeparator2(x => x is { fromParentheses: true, token.Fret: not null });
+                }
+            }
+
+            if (meaningfulFromParentheses.Any(x => x.matchAmbiguity == MatchAmbiguity.AlterableInt))
+            {
+                if (meaningfulFromParentheses.Count == 1)
+                {
+                    if (!options.OnlyIntegersInParenthesesAreAddedDegrees)
+                        return (null, ChordParseError.OnlyIntegerInParentheses, null, 3);
+                }
+            }
+
+            if (tokens.Any(x => x.token.Fret.HasValue))
+                throw new("Could not have happened, all frets filtered out.");
+        }
+
+        #endregion
+
+        var allAdditions = ChordTypeAdditions.None;
+        #region Gathering all additions, checking uniqueness
+
+        {
+            foreach (var addition in tokens.Where(x => x.token.Addition.HasValue).GroupBy(x => x.token.Addition!.Value))
+            {
+                if (addition.Count() > 1)
+                    return (null, ChordParseError.DuplicateAdditions, null, 4);
+
+                allAdditions |= addition.Key;
+            }
+        }
+
+        #endregion
+
+        #region Extensions tokens unique of each extension type
+
+        {
+            if (tokens.Where(x => x.token.Extension.HasValue).GroupBy(x => x.token.Extension!.Value)
+                .Any(g => g.Count() > 1))
+                return (null, ChordParseError.EachExtensionTypeExpectedUnique, null, 5);
+        }
+
+        #endregion
+
+        #region Max one maj extension token
+
+        {
+            if (tokens.Count(x => x.token.Extension >= ChordTypeExtension.XMaj7) > 1)
+                return (null, ChordParseError.MaxOneMajExtensionExpected, null, 6);
         }
 
         #endregion
@@ -204,12 +279,10 @@ public static class ChordParser
         }
         else
         {
-            inputs =
-            [
-                (match.Groups[1].Value, false),
-                (match.Groups[2].Value, true),
-                (match.Groups[3].Value, false),
-            ];
+            inputs = match.Groups[2].Value.Split(',').Select(x => (x, true))
+                .Prepend((match.Groups[1].Value, false))
+                .Append((match.Groups[3].Value, false))
+                .ToList();
         }
 
         inputs = inputs.Where(x => x.input != string.Empty).ToList();
