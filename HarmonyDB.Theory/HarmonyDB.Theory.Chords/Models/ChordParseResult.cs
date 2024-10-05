@@ -4,27 +4,31 @@ namespace HarmonyDB.Theory.Chords.Models;
 
 public record ChordParseResult
 {
-    public ChordParseResult(ChordParseResultType resultType)
+    public ChordParseResult(ChordParseResultType type)
     {
-        if (resultType == ChordParseResultType.Success)
-            throw new ArgumentOutOfRangeException(nameof(resultType), resultType, "Use a different constructor.");
+        if (type != ChordParseResultType.SpecialNoChord)
+            throw new ArgumentOutOfRangeException(nameof(type), type, "Use a different constructor.");
 
-        ResultType = resultType;
+        Type = type;
+        Trace = new();
     }
 
-    public ChordParseResult(ChordRepresentation chord)
+    public ChordParseResult(ChordRepresentation chord, ChordParseTrace trace)
     {
-        ResultType = ChordParseResultType.Success;
+        Type = ChordParseResultType.Success;
         Chord = chord;
+        Trace = trace;
     }
 
-    public ChordParseResult(ChordParseResultError error)
+    public ChordParseResult(ChordParseError error, ChordParseTrace trace)
     {
-        ResultType = ChordParseResultType.Error;
+        Type = ChordParseResultType.Error;
         Error = error;
+        Trace = trace;
     }
 
-    public ChordParseResultType ResultType { get; }
+    public ChordParseResultType Type { get; }
     public ChordRepresentation? Chord { get; }
-    public ChordParseResultError? Error { get; }
+    public ChordParseError? Error { get; }
+    public ChordParseTrace Trace { get; }
 }

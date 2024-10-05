@@ -2,8 +2,7 @@
 
 public record ChordRepresentation(
     NoteRepresentation RootRepresentation,
-    NoteRepresentation? BassRepresentation,
-    string ChordTypeRepresentation)
+    NoteRepresentation? BassRepresentation)
 {
     public Note Root => RootRepresentation.Note;
     public Note? Bass => BassRepresentation?.Note;

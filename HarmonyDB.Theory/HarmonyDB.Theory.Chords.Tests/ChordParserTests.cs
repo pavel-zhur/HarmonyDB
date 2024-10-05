@@ -1,5 +1,5 @@
+using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;
-using HarmonyDB.Theory.Chords.Models.Internal;
 using HarmonyDB.Theory.Chords.Options;
 using HarmonyDB.Theory.Chords.Parsers;
 using Newtonsoft.Json;
@@ -9,7 +9,7 @@ namespace HarmonyDB.Theory.Chords.Tests;
 
 public class ChordParserTests(ITestOutputHelper testOutputHelper)
 {
-    public static readonly IEnumerable<object[]> ParseChordTypeData = new TheoryData<string, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error)>
+    public static readonly TheoryData<string, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseError? error)> ParseChordTypeData = new()
     {
         { "6", ([(new(ChordTypeAdditions.Add6), false, MatchAmbiguity.Degree)], null) },
         { "7", ([(new(ChordTypeExtension.X7), false, MatchAmbiguity.Degree)], null) },
@@ -17,12 +17,7 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
 
     [Theory]
     [MemberData(nameof(ParseChordTypeData))]
-    public void ParseChordType(string input, object expected)
-    {
-        ParseChordTypeImplementation(input, ((List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error))expected);
-    }
-
-    internal void ParseChordTypeImplementation(string input, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseResultError? error)? expected)
+    public void ParseChordType(string input, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseError? error)? expected)
     {
         var actual = ChordParser.TryGetTokens(input, ChordTypeParsingOptions.MostForgiving);
         Assert.Equal(JsonConvert.SerializeObject(expected), JsonConvert.SerializeObject(actual));

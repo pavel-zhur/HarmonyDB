@@ -1,9 +1,8 @@
 ﻿using HarmonyDB.Theory.Chords.Models.Enums;
-using HarmonyDB.Theory.Chords.Models.Internal.Enums;
 
-namespace HarmonyDB.Theory.Chords.Models.Internal;
+namespace HarmonyDB.Theory.Chords.Models;
 
-internal readonly record struct ChordTypeToken
+public readonly record struct ChordTypeToken
 {
     public ChordTypeToken(ChordType? Type)
     {

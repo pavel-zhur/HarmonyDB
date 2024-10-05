@@ -1,6 +1,6 @@
 ﻿namespace HarmonyDB.Theory.Chords.Models.Enums;
 
-public enum ChordParseResultError
+public enum ChordParseError
 {
     WhitespaceFragments,
     UnexpectedChordTypeToken,

@@ -1,8 +1,6 @@
 ﻿using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;
-using HarmonyDB.Theory.Chords.Models.Internal;
-using HarmonyDB.Theory.Chords.Models.Internal.Enums;
 using HarmonyDB.Theory.Chords.Options;
 using OneShelf.Common;
 
@@ -23,28 +21,37 @@ public static class ChordParser
         if (ChordConstants.NoChordVariants.Contains(stringRepresentation))
             return new(ChordParseResultType.SpecialNoChord);
 
+        var trace = new ChordParseTrace();
+
         var (bassRepresentation, error) = ExtractBass(ref stringRepresentation, out var bass, options);
         if (error.HasValue)
-            return new(error.Value);
+            return new(error.Value, trace);
 
         var prefixLength = NoteParser.TryParsePrefixNote(stringRepresentation, out var root, out var rootRepresentation, options.NoteParsingOptions);
         if (prefixLength == 0)
-            return new(ChordParseResultError.UnreadableRoot);
+            return new(ChordParseError.UnreadableRoot, trace);
 
-        var chord = stringRepresentation.Substring(prefixLength);
+        var chordType = stringRepresentation.Substring(prefixLength);
+        trace.ChordTypeRepresentation = chordType;
 
         if (bass.HasValue && root.Equals(bass.Value))
         {
             if (options.ForgiveSameBass)
                 bassRepresentation = null;
             else
-                return new(ChordParseResultError.SameBass);
+                return new(ChordParseError.SameBass, trace);
         }
 
-        return new(new ChordRepresentation(rootRepresentation, bassRepresentation, chord));
+        (var tokens, error) = TryGetTokens(chordType, options.ChordTypeParsingOptions);
+        if (error.HasValue)
+            return new(error.Value, trace);
+
+        trace.ChordTypeTokens = tokens;
+
+        return new(new ChordRepresentation(rootRepresentation, bassRepresentation), trace);
     }
 
-    internal static (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? tokens, ChordParseResultError? error) TryGetTokens(string input, ChordTypeParsingOptions options)
+    internal static (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? tokens, ChordParseError? error) TryGetTokens(string input, ChordTypeParsingOptions options)
     {
         var (fragments, error) = TryUnwrapParentheses(input, options);
         if (error.HasValue)
@@ -79,7 +86,7 @@ public static class ChordParser
 
                 if (!match.HasValue)
                 {
-                    return (null, ChordParseResultError.UnexpectedChordTypeToken);
+                    return (null, ChordParseError.UnexpectedChordTypeToken);
                 }
 
                 result.Add((match.Value.token, fromParentheses, match.Value.matchAmbiguity));
@@ -95,7 +102,7 @@ public static class ChordParser
         return (result, null);
     }
 
-    internal static (List<(string fragment, bool fromParentheses)>? fragments, ChordParseResultError? error) TryUnwrapParentheses(string input, ChordTypeParsingOptions options)
+    internal static (List<(string fragment, bool fromParentheses)>? fragments, ChordParseError? error) TryUnwrapParentheses(string input, ChordTypeParsingOptions options)
     {
         if (input == string.Empty) return (new(), null);
 
@@ -114,13 +121,13 @@ public static class ChordParser
         var trimmed = inputs.Select(x => x with { input = x.input.Trim() }).Where(x => x.input != string.Empty).ToList();
         if (!options.TrimWhitespaceFragments && (trimmed.Count != inputs.Count || trimmed.Zip(inputs).Any(x => x.First != x.Second)))
         {
-            return new(null, ChordParseResultError.WhitespaceFragments);
+            return new(null, ChordParseError.WhitespaceFragments);
         }
 
         return (trimmed, null);
     }
 
-    private static (NoteRepresentation? bass, ChordParseResultError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
+    private static (NoteRepresentation? bass, ChordParseError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
         var slashParts = stringRepresentation.Split('/');
         NoteRepresentation? bassRepresentation = null;
@@ -129,7 +136,7 @@ public static class ChordParser
         switch (slashParts.Length)
         {
             case 0:
-                return (null, ChordParseResultError.EmptyString);
+                return (null, ChordParseError.EmptyString);
 
             case > 1:
                 if (NoteParser.TryParseNote(slashParts[^1], out var note, out bassRepresentation, options.NoteParsingOptions))

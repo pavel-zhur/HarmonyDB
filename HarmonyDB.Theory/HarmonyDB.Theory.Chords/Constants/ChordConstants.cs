@@ -1,6 +1,5 @@
-﻿using HarmonyDB.Theory.Chords.Models.Enums;
-using HarmonyDB.Theory.Chords.Models.Internal;
-using HarmonyDB.Theory.Chords.Models.Internal.Enums;
+﻿using HarmonyDB.Theory.Chords.Models;
+using HarmonyDB.Theory.Chords.Models.Enums;
 using OneShelf.Common;
 
 namespace HarmonyDB.Theory.Chords.Constants;
@@ -129,7 +128,7 @@ public static class ChordConstants
         (ChordTypeAdditions.Add13, "add13", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Degree),
     ];
 
-    internal static readonly IReadOnlyList<(ChordTypeAmbiguousAddition addition, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeAmbiguousAdditionRepresentations =
+    public static readonly IReadOnlyList<(ChordTypeAmbiguousAddition addition, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeAmbiguousAdditionRepresentations =
     [
         (ChordTypeAmbiguousAddition.HalfDiminished7, "ø", MatchCase.ExactOnly, MatchAmbiguity.Safe),
 
@@ -139,7 +138,7 @@ public static class ChordConstants
         (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration),
     ];
 
-    internal static readonly IReadOnlyList<(ChordTypeMeaninglessAddition addition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
+    public static readonly IReadOnlyList<(ChordTypeMeaninglessAddition addition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
     [
         (ChordTypeMeaninglessAddition.Star, "*"),
         (ChordTypeMeaninglessAddition.Question, "?"),
@@ -152,7 +151,7 @@ public static class ChordConstants
         "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
     ];
 
-    internal static readonly IReadOnlyList<(ChordTypeToken token, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> AllRepresentations
+    public static readonly IReadOnlyList<(ChordTypeToken token, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> AllRepresentations
         = ChordTypeRepresentations
             .Select(x => (new ChordTypeToken(x.type), x.representation, x.matchCase, x.matchAmbiguity))
             .Concat(ChordTypeExtensionRepresentations

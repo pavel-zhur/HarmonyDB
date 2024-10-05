@@ -10,10 +10,12 @@ public class ChordParsingOptions
         ForgiveEdgeWhitespaces = true,
         NoteParsingOptions = NoteParsingOptions.MostForgiving,
         ForgiveRoundBraces = true,
+        ChordTypeParsingOptions = ChordTypeParsingOptions.MostForgiving,
     };
 
     public bool ForgiveSameBass { get; set; }
     public bool ForgiveEdgeWhitespaces { get; set; }
     public NoteParsingOptions NoteParsingOptions { get; set; } = NoteParsingOptions.Default;
     public bool ForgiveRoundBraces { get; set; }
+    public ChordTypeParsingOptions ChordTypeParsingOptions { get; set; } = ChordTypeParsingOptions.Default;
 }
