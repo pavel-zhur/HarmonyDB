@@ -6,4 +6,5 @@ public enum ChordTypeMeaninglessAddition
     Question,
     FragmentSeparator,
     Slash,
+    Apostrophe,
 }

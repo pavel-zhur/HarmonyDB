@@ -4,7 +4,7 @@ namespace HarmonyDB.Theory.Chords.Models;
 
 public readonly record struct ChordTypeToken
 {
-    public ChordTypeToken(ChordType? Type)
+    public ChordTypeToken(ChordMainType? Type)
     {
         this.Type = Type;
     }
@@ -34,7 +34,7 @@ public readonly record struct ChordTypeToken
         AmbiguousAddition = ambiguousAddition;
     }
 
-    public ChordType? Type { get; }
+    public ChordMainType? Type { get; }
     public ChordTypeExtension? Extension { get; }
     public ChordTypeAdditions? Addition { get; }
     public byte? Fret { get; }

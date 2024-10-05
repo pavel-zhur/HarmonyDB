@@ -1,6 +1,6 @@
 ﻿namespace HarmonyDB.Theory.Chords.Models.Enums;
 
-public enum ChordType
+public enum ChordMainType
 {
     Major,
     Minor,

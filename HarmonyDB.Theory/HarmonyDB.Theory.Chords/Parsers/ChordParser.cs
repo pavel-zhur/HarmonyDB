@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Theory.Chords.Constants;
+﻿using System.Text.RegularExpressions;
+using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;
 using HarmonyDB.Theory.Chords.Options;
@@ -31,8 +32,8 @@ public static class ChordParser
         if (prefixLength == 0)
             return new(ChordParseError.UnreadableRoot, trace);
 
-        var chordType = stringRepresentation.Substring(prefixLength);
-        trace.ChordTypeRepresentation = chordType;
+        var chordTypeRepresentation = stringRepresentation.Substring(prefixLength);
+        trace.ChordTypeRepresentation = chordTypeRepresentation;
 
         if (bass.HasValue && root.Equals(bass.Value))
         {
@@ -42,13 +43,20 @@ public static class ChordParser
                 return new(ChordParseError.SameBass, trace);
         }
 
-        (var tokens, error) = TryGetTokens(chordType, options.ChordTypeParsingOptions);
+        (var tokens, error) = TryGetTokens(chordTypeRepresentation, options.ChordTypeParsingOptions);
         if (error.HasValue)
             return new(error.Value, trace);
 
         trace.ChordTypeTokens = tokens;
 
-        return new(new ChordRepresentation(rootRepresentation, bassRepresentation), trace);
+        (var chordType, error, var logic, var branchIndex) = TryInterpretChordType(tokens!);
+        if (error.HasValue)
+            return new(error.Value, trace);
+
+        trace.ChordTypeParseLogic = logic;
+        trace.ChordTypeParseBranchIndex = branchIndex;
+
+        return new(new ChordRepresentation(rootRepresentation, bassRepresentation, chordType!), trace);
     }
 
     internal static (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? tokens, ChordParseError? error) TryGetTokens(string input, ChordTypeParsingOptions options)
@@ -75,11 +83,16 @@ public static class ChordParser
                     .FirstOrNull(x => currentFragment.Length >= x.representation.Length && x.matchCase switch
                     {
                         MatchCase.ExactOnly => currentFragment.StartsWith(x.representation),
-                        MatchCase.MatchUpperFirst => currentFragment.StartsWith(x.representation)
-                                                     || char.ToLowerInvariant(currentFragment[0]) == x.representation[0] && currentFragment[1..x.representation.Length] == x.representation[1..],
-                        MatchCase.MatchUpperFirstOrAll => currentFragment.StartsWith(x.representation)
+                        
+                        MatchCase.MatchUpperFirst => (currentFragment[0] == x.representation[0] || char.ToLowerInvariant(currentFragment[0]) == x.representation[0])
+                                                     && currentFragment[1..x.representation.Length] == x.representation[1..],
+                        
+                        MatchCase.MatchUpperFirstOrAll => currentFragment.StartsWith(x.representation) 
                                                           || char.ToLowerInvariant(currentFragment[0]) == x.representation[0] && currentFragment[1..x.representation.Length] == x.representation[1..]
-                                                          || currentFragment.ToLowerInvariant() == x.representation,
+                                                          || currentFragment.StartsWith(x.representation.ToUpperInvariant()),
+                        
+                        MatchCase.MatchAny => currentFragment.StartsWith(x.representation, StringComparison.InvariantCultureIgnoreCase),
+                        
                         _ => throw new ArgumentOutOfRangeException(),
                     });
                 // ReSharper restore AccessToModifiedClosure
@@ -104,19 +117,24 @@ public static class ChordParser
 
     internal static (List<(string fragment, bool fromParentheses)>? fragments, ChordParseError? error) TryUnwrapParentheses(string input, ChordTypeParsingOptions options)
     {
-        if (input == string.Empty) return (new(), null);
+        var match = Regex.Match(input, "^([^\\(\\)]*)\\(([^\\(\\)]+)\\)([^\\(\\)]*)$");
 
-        var inputs = (input, fromParentheses: false).Once().ToList();
-
-        if (input.EndsWith(')') && input.Count(x => x == '(') == 1 && input.Count(x => x == ')') == 1)
+        List<(string input, bool fromParentheses)> inputs;
+        if (!match.Success)
         {
-            inputs = (input[..input.IndexOf('(')], false)
-                .Once()
-                .Concat(input[(input.IndexOf('(') + 1)..^1]
-                    .Split(',')
-                    .Select(x => (x, true)))
-                .ToList();
+            inputs = [(input, false)];
         }
+        else
+        {
+            inputs =
+            [
+                (match.Groups[1].Value, false),
+                (match.Groups[2].Value, true),
+                (match.Groups[3].Value, false),
+            ];
+        }
+
+        inputs = inputs.Where(x => x.input != string.Empty).ToList();
 
         var trimmed = inputs.Select(x => x with { input = x.input.Trim() }).Where(x => x.input != string.Empty).ToList();
         if (!options.TrimWhitespaceFragments && (trimmed.Count != inputs.Count || trimmed.Zip(inputs).Any(x => x.First != x.Second)))

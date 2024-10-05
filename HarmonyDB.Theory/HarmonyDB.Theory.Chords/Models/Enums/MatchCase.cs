@@ -5,4 +5,5 @@ public enum MatchCase
     ExactOnly,
     MatchUpperFirst,
     MatchUpperFirstOrAll,
+    MatchAny,
 }
