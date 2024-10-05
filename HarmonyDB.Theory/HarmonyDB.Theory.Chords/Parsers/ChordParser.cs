@@ -49,7 +49,7 @@ public static class ChordParser
 
         trace.ChordTypeTokens = tokens;
 
-        (var chordType, error, var logic, var branchIndex) = TryInterpretChordType(tokens!);
+        (var chordType, error, var logic, var branchIndex) = TryInterpretChordType(tokens!, options.ChordTypeParsingOptions);
         if (error.HasValue)
             return new(error.Value, trace);
 
@@ -57,6 +57,84 @@ public static class ChordParser
         trace.ChordTypeParseBranchIndex = branchIndex;
 
         return new(new ChordRepresentation(rootRepresentation, bassRepresentation, chordType!), trace);
+    }
+
+    internal static (ChordType? chordType, ChordParseError? error, ChordTypeParseLogic? logic, byte branchIndex) TryInterpretChordType(
+        IReadOnlyList<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)> readonlyTokens,
+        ChordTypeParsingOptions options)
+    {
+        var tokens = readonlyTokens.ToList();
+
+        #region Removing stars, apostrophes, leading slashes, handling questions. No Star, Apostrophe, Question after this point. Possible middle slashes and separators.
+
+        {
+            void ReplaceQuestionWithASeparator()
+            {
+                tokens = tokens
+                    .Select(x => x.token.MeaninglessAddition == ChordTypeMeaninglessAddition.Question ? (new(ChordTypeMeaninglessAddition.FragmentSeparator), false, MatchAmbiguity.Safe) : x)
+                    .ToList();
+            }
+
+            switch (options.QuestionsParsingBehavior)
+            {
+                case QuestionsParsingBehavior.IgnoreAndTreatOnlyAsPower:
+                {
+                    var only = tokens.All(x => x.token.MeaninglessAddition == ChordTypeMeaninglessAddition.Question);
+                    if (only)
+                    {
+                        if (tokens.RemoveAll(x => x.token.MeaninglessAddition == ChordTypeMeaninglessAddition.Question) > 0)
+                        {
+                            tokens.Add((new(ChordMainType.Power), false, MatchAmbiguity.Safe));
+                        }
+                    }
+                    else
+                    {
+                        ReplaceQuestionWithASeparator();
+                    }
+
+                    break;
+                }
+
+                case QuestionsParsingBehavior.Ignore:
+                    ReplaceQuestionWithASeparator();
+                    break;
+            }
+
+            var newCount = tokens.Count;
+            for (var i = tokens.Count - 1; i >= 0; i--)
+            {
+                if (tokens[i].token.MeaninglessAddition switch
+                    {
+                        ChordTypeMeaninglessAddition.Star => options.IgnoreTrailingStars,
+                        ChordTypeMeaninglessAddition.Question => options.QuestionsParsingBehavior > QuestionsParsingBehavior.Error,
+                        ChordTypeMeaninglessAddition.FragmentSeparator => true,
+                        ChordTypeMeaninglessAddition.Slash => options.IgnoreTrailingSlashes,
+                        ChordTypeMeaninglessAddition.Apostrophe => options.IgnoreTrailingApostrophes,
+                        null => false,
+                        _ => throw new ArgumentOutOfRangeException(),
+                    })
+                {
+                    newCount = i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (newCount < tokens.Count)
+                tokens = tokens.Take(newCount).ToList();
+
+            if (tokens.Any(x => x.token.MeaninglessAddition is ChordTypeMeaninglessAddition.Star
+                    or ChordTypeMeaninglessAddition.Apostrophe or ChordTypeMeaninglessAddition.Question))
+            {
+                return (null, ChordParseError.BadSymbols, null, 0);
+            }
+        }
+
+        #endregion
+
+        return (null, ChordParseError.NotImplemented, null, 255);
     }
 
     internal static (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? tokens, ChordParseError? error) TryGetTokens(string input, ChordTypeParsingOptions options)

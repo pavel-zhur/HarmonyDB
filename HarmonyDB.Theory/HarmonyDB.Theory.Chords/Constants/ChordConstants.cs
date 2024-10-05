@@ -168,7 +168,24 @@ public static class ChordConstants
             .Concat(ChordTypeMeaninglessAdditionRepresentations
                 .Select(x => (new ChordTypeToken(x.addition), x.representation, MatchCase.ExactOnly, MatchAmbiguity.Safe)))
             .Concat(ChordTypeAmbiguousAdditionRepresentations
-                .Select(x => (new ChordTypeToken(x.addition), x.representation, MatchCase.ExactOnly, x.matchAmbiguity)))
+                .Select(x => (new ChordTypeToken(x.addition), x.representation, x.matchCase, x.matchAmbiguity)))
             .OrderByDescending(x => x.representation.Length)
             .ToList();
+
+    public static readonly IReadOnlyDictionary<ChordTypeToken, string> CanonicalRepresentations
+        = ChordMainTypeRepresentations
+            .Select(x => (token: new ChordTypeToken(x.type), x.representation))
+            .Concat(ChordTypeExtensionRepresentations
+                .Select(x => (token: new ChordTypeToken(x.extension), x.representation)))
+            .Concat(ChordTypeAdditionRepresentations
+                .Select(x => (token: new ChordTypeToken(x.addition), x.representation)))
+            .Concat(Romans.WithIndices()
+                .Select(x => (token: new ChordTypeToken((byte)(x.i + 1)), representation: x.x)))
+            .Concat(ChordTypeMeaninglessAdditionRepresentations
+                .Select(x => (token: new ChordTypeToken(x.addition), x.representation)))
+            .Concat(ChordTypeAmbiguousAdditionRepresentations
+                .Select(x => (token: new ChordTypeToken(x.addition), x.representation)))
+            .Prepend((new(ChordMainType.Major), string.Empty))
+            .GroupBy(x => x.token)
+            .ToDictionary(g => g.Key, g => g.First().representation);
 }

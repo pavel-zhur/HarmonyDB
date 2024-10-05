@@ -7,4 +7,5 @@ public enum ChordParseError
     UnreadableRoot,
     SameBass,
     EmptyString,
+    BadSymbols,
 }

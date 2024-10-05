@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Theory.Chords.Models.Enums;
+﻿using HarmonyDB.Theory.Chords.Constants;
+using HarmonyDB.Theory.Chords.Models.Enums;
 
 namespace HarmonyDB.Theory.Chords.Models;
 
@@ -48,4 +49,9 @@ public readonly record struct ChordTypeToken
            ?? Fret?.ToString()
            ?? MeaninglessAddition?.ToString()
            ?? AmbiguousAddition.ToString()!;
+
+    public string ToCanonical()
+    {
+        return ChordConstants.CanonicalRepresentations[this];
+    }
 }
