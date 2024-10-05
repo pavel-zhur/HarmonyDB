@@ -4,6 +4,7 @@ public enum MatchAmbiguity
 {
     Safe,
     Dangerous,
-    Degree,
+    AlterableInt,
     DegreeAlteration,
+    AlterableDegree,
 }

@@ -71,7 +71,7 @@ public static class ChordParser
         {
             if (i > 0)
             {
-                result.Add((new(ChordTypeMeaninglessAddition.FragmentSeparator), true, MatchAmbiguity.Safe));
+                result.Add((new(ChordTypeMeaninglessAddition.FragmentSeparator), false, MatchAmbiguity.Safe));
             }
 
             var currentFragment = fragment;

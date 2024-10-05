@@ -11,8 +11,8 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
 {
     public static readonly TheoryData<string, (List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? result, ChordParseError? error)> ParseChordTypeData = new()
     {
-        { "6", ([(new(ChordTypeAdditions.Add6), false, MatchAmbiguity.Degree)], null) },
-        { "7", ([(new(ChordTypeExtension.X7), false, MatchAmbiguity.Degree)], null) },
+        { "6", ([(new(ChordTypeAdditions.Add6), false, MatchAmbiguity.AlterableInt)], null) },
+        { "7", ([(new(ChordTypeExtension.X7), false, MatchAmbiguity.AlterableInt)], null) },
     };
 
     [Theory]
