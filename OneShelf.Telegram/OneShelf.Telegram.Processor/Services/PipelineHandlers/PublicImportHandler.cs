@@ -48,7 +48,8 @@ public class PublicImportHandler : PipelineHandler
 
     private bool CheckOurChat(Update update)
     {
-        if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
+        if (update.Message?.Chat.Username != _telegramOptions.PublicLibraryChatId.Substring(1)
+            && update.Message?.Chat.Username != _telegramOptions.PublicDogChatId.Substring(1)) return false;
         if (update.Message.From == null) return false;
 
         return true;
