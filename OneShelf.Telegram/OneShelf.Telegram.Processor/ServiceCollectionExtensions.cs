@@ -25,8 +25,6 @@ public static class ServiceCollectionExtensions
             .AddSongsDatabase()
             .AddTelegram<ScopedAbstractions, SingletonAbstractions>(configuration, o => 
                 o
-                    .AddCommand<Temp>()
-
                     .AddCommand<Likes>()
                     .AddCommand<FriendsLikes>()
                     .AddCommand<SongImages>()
@@ -38,7 +36,6 @@ public static class ServiceCollectionExtensions
                     .AddCommand<Start>()
                     .AddCommand<ImproveWithParameters>()
                     
-                    .AddCommand<Bowowow>()
                     .AddCommand<AddSong>()
                     .AddCommand<MergeSongs>()
                     .AddCommand<AdditionalKeywords>()

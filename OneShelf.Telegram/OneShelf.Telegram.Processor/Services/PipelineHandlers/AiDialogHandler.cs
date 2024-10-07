@@ -33,7 +33,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
     protected override bool CheckRelevant(Update update)
     {
-        if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
+        if (update.Message?.Chat.Username != _telegramOptions.PublicDogChatId.Substring(1)) return false;
         if (update.Message.MessageThreadId != _telegramOptions.OwnChatterTopicId) return false;
 
         return true;

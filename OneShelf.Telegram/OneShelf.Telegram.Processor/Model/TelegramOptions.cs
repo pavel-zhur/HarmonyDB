@@ -6,10 +6,10 @@ public record TelegramOptions : Options.TelegramOptions
 
     public string FilesChatId { get; set; } = null!;
 
-    public string PublicChatId { get; set; } = null!;
+    public string PublicLibraryChatId { get; set; } = null!;
     
-    public long PublicChatLongId { get; set; }
-
+    public string PublicDogChatId { get; set; } = null!;
+    
     public int PublicTopicId { get; set; }
 
     public int AnnouncementsTopicId { get; set; }
