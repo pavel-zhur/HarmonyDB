@@ -17,7 +17,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
     private byte[]? _session;
     private readonly AsyncLock _databaseLock = new();
 
-    public async Task UpdateLive(bool downloadMissing)
+    public async Task UpdateLive(bool downloadMissing, LiveDownloaderStatistics statistics)
     {
         await using var client = await Login();
 
@@ -27,16 +27,16 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
         {
             var chat = allChats.chats[chatId];
 
-            var topics = await ProcessChat(client, chat);
+            var topics = await ProcessChat(client, chat, statistics);
 
             if (downloadMissing)
             {
-                await Download(client, chat, topics);
+                await Download(client, chat, topics, statistics);
             }
         }
     }
 
-    private async Task<Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)>> ProcessChat(Client client, ChatBase chat)
+    private async Task<Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)>> ProcessChat(Client client, ChatBase chat, LiveDownloaderStatistics statistics)
     {
         var inputPeer = chat.ToInputPeer();
 
@@ -47,12 +47,12 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
 
         var topics = await GetTopicsAndMedia(messages);
 
-        await SaveToDatabase(chat, topics);
+        await SaveToDatabase(chat, topics, statistics);
 
         return topics;
     }
 
-    private async Task Download(Client client, ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
+    private async Task Download(Client client, ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics, LiveDownloaderStatistics statistics)
     {
         var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).Where(x => x.Id == chat.ID).SingleAsync();
         var liveMediae = liveChat.LiveTopics.SelectMany(t => t.LiveMediae).Join(topics.SelectMany(x => x.Value.media), x => x.Id, x => x.message.ID, (x, y) => (x, y)).ToList();
@@ -61,6 +61,8 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
         var success = 0;
         var failed = 0;
         var items = liveMediae.DistinctBy(x => x.x.MediaId).Where(x => !downloadedItems.TryGetValue(x.x.MediaId, out var y) || y.ThumbnailFileName == null).ToList();
+
+        statistics.ToDownload = items.Count;
 
         await Parallel.ForEachAsync(
             items,
@@ -130,11 +132,12 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
                     }
                 }
 
+                statistics.IncDownloaded();
                 logger.LogInformation("Done {value} / {total}, failed {failed}", Interlocked.Increment(ref success), items.Count, failed);
             });
     }
 
-    private async Task SaveToDatabase(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics)
+    private async Task SaveToDatabase(ChatBase chat, Dictionary<int, (string name, List<(Document? document, Photo? photo, Message message, string mediaFlags)> media)> topics, LiveDownloaderStatistics statistics)
     {
         var liveChat = await videosDatabase.LiveChats.Include(x => x.LiveTopics).ThenInclude(x => x.LiveMediae).SingleOrDefaultAsync(x => x.Id == chat.ID);
         if (liveChat == null)
@@ -146,6 +149,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
             };
 
             videosDatabase.LiveChats.Add(liveChat);
+            statistics.Chats++;
         }
 
         foreach (var liveMedia in liveChat.LiveTopics.SelectMany(x => x.LiveMediae))
@@ -167,6 +171,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
                 };
 
                 liveChat.LiveTopics.Add(liveTopic);
+                statistics.Topics++;
             }
 
             liveTopic.Title = topic.Value.name;
@@ -183,6 +188,7 @@ public class LiveDownloader(IOptions<VideosOptions> options, ILogger<LiveDownloa
                     };
 
                     liveTopic.LiveMediae.Add(liveMedia);
+                    statistics.Mediae++;
                 }
 
                 liveMedia.LastInventoryExists = true;

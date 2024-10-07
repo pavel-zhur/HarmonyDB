@@ -28,6 +28,9 @@ public static class ServiceCollectionExtensions
                     .AddCommand<GetFileSize>()
                     .AddCommand<ListAlbums>()
                     .AddCommand<GoogleLogin>()
+                    .AddCommand<Step1DownloadLive>()
+                    .AddCommand<Step2UploadLive>()
+                    .AddCommand<Step3SaveInventory>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()

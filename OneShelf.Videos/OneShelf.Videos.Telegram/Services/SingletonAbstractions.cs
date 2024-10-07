@@ -13,6 +13,11 @@ public class SingletonAbstractions : ISingletonAbstractions
             typeof(Help),     
         ],
         [
+            typeof(Step1DownloadLive),
+            typeof(Step2UploadLive),
+            typeof(Step3SaveInventory),
+        ],
+        [
             typeof(ViewTopics),
             typeof(GetFileSize),
             typeof(ListAlbums),

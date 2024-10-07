@@ -31,8 +31,10 @@ public class Service2
         return albums.Select(x => x.title).ToList();
     }
 
-    public async Task SaveInventory()
+    public async Task<int> SaveInventory()
     {
+        var added = 0;
+
         await _extendedGooglePhotosService.ExtendedLoginAsync();
         var items = await _extendedGooglePhotosService.GetMediaItemsAsync().ToListAsync();
         _logger.LogInformation("{items} found.", items.Count);
@@ -50,6 +52,7 @@ public class Service2
                     CreatedOn = DateTime.UtcNow,
                 };
 
+                added++;
                 _videosDatabase.InventoryItems.Add(item);
             }
 
@@ -81,6 +84,8 @@ public class Service2
         _logger.LogInformation("Saving...");
         await _videosDatabase.SaveChangesAsync();
         _logger.LogInformation("Saved.");
+
+        return added;
     }
 
     public async Task UploadPhotos(List<(int mediaId, string path, DateTime? exifTimestamp)> items)
