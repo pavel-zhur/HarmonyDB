@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram\OneShelf.Telegram.csproj" />
+    <ProjectReference Include="..\OneShelf.Videos.BusinessLogic\OneShelf.Videos.BusinessLogic.csproj" />
+    <ProjectReference Include="..\OneShelf.Videos.Database\OneShelf.Videos.Database.csproj" />
+  </ItemGroup>
+
+</Project>
