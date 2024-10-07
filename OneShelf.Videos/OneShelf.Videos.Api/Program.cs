@@ -10,7 +10,7 @@ var host = new HostBuilder()
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
-        services.AddProcessor(context.Configuration);
+        services.AddProcessor(context.Configuration, true);
     })
     .Build();
 

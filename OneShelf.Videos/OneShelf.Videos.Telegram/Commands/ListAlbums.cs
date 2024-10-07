@@ -1,21 +1,15 @@
-﻿using OneShelf.Telegram.Model.CommandAttributes;
+﻿using Microsoft.Extensions.Logging;
+using OneShelf.Telegram.Model.CommandAttributes;
 using OneShelf.Telegram.Model.Ios;
 using OneShelf.Telegram.Services.Base;
 using OneShelf.Videos.BusinessLogic.Services;
+using OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions.NonInteractive;
 
 namespace OneShelf.Videos.Telegram.Commands;
 
 [AdminCommand("list_albums", "Альбомы", "Посмотреть альбомы")]
-public class ListAlbums : Command
+public class ListAlbums(Io io, Service2 service2, ILogger<ListAlbums> logger) : Command(io)
 {
-    private readonly Service2 _service2;
-
-    public ListAlbums(Io io, Service2 service2) 
-        : base(io)
-    {
-        _service2 = service2;
-    }
-
     protected override async Task ExecuteQuickly()
     {
         Scheduled(List());
@@ -23,10 +17,18 @@ public class ListAlbums : Command
 
     private async Task List()
     {
-        var albums = await _service2.ListAlbums();
-        foreach (var album in albums)
+        try
         {
-            Io.WriteLine(album);
+            var albums = await service2.ListAlbums();
+
+            foreach (var album in albums)
+            {
+                Io.WriteLine(album);
+            }
+        }
+        catch (NonInteractiveAuthenticationNeededException)
+        {
+            Io.WriteLine("Нужен человеческий логин.");
         }
     }
 }

@@ -13,7 +13,7 @@ namespace OneShelf.Videos.Telegram;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddProcessor(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddProcessor(this IServiceCollection services, IConfiguration configuration, bool useNonInteractiveLogin)
     {
         services.Configure<TelegramOptions>(options => configuration.Bind(nameof(TelegramOptions), options));
 
@@ -27,13 +27,14 @@ public static class ServiceCollectionExtensions
                     .AddCommand<ViewTopics>()
                     .AddCommand<GetFileSize>()
                     .AddCommand<ListAlbums>()
+                    .AddCommand<GoogleLogin>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<DialogHandler>()
                 );
 
         services
-            .AddVideosBusinessLogic(configuration)
+            .AddVideosBusinessLogic(configuration, useNonInteractiveLogin)
             .AddScoped<Scope>();
 
         return services;

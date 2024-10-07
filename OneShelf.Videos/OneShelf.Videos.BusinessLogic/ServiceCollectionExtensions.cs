@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OneShelf.Videos.BusinessLogic.Models;
 using OneShelf.Videos.BusinessLogic.Services;
+using OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions;
+using OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions.NonInteractive;
 using OneShelf.Videos.BusinessLogic.Services.Live;
 using OneShelf.Videos.Database;
 using Polly;
@@ -13,11 +15,15 @@ namespace OneShelf.Videos.BusinessLogic;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddVideosBusinessLogic(this IServiceCollection serviceCollection, IConfiguration configuration)
+    public static IServiceCollection AddVideosBusinessLogic(this IServiceCollection serviceCollection, IConfiguration configuration, bool useNonInteractiveLogin)
     {
         return serviceCollection
             .AddVideosDatabase(configuration)
-            .Configure<VideosOptions>(o => configuration.GetSection(nameof(VideosOptions)).Bind(o))
+            .Configure<VideosOptions>(o =>
+            {
+                configuration.GetSection(nameof(VideosOptions)).Bind(o);
+                o.UseNonInteractiveLogin = useNonInteractiveLogin;
+            })
             .AddScoped<Service1>()
             .AddScoped<Service2>()
             .AddScoped<ExifService>()
@@ -25,7 +31,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<TelegramLoggerInitializer>()
             .AddSingleton<Paths>()
             .AddScoped<VideosDatabaseOperations>()
-            .AddMyGooglePhotos();
+            .AddMyGooglePhotos()
+            .AddSingleton<GoogleNonInteractiveLogin>();
     }
 
     private static IServiceCollection AddMyGooglePhotos(this IServiceCollection services)

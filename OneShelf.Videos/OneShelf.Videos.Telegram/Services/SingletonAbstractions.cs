@@ -18,6 +18,9 @@ public class SingletonAbstractions : ISingletonAbstractions
             typeof(ListAlbums),
         ],
         [
+            typeof(GoogleLogin),
+        ],
+        [
             typeof(UpdateCommands),
         ]
     ];

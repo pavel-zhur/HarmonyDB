@@ -10,7 +10,7 @@ using OneShelf.Videos.Database;
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.AddJsonFile("appsettings.Secrets.json");
 builder.Services
-    .AddVideosBusinessLogic(builder.Configuration);
+    .AddVideosBusinessLogic(builder.Configuration, false);
 using var host = builder.Build();
 
 var service1 = host.Services.GetRequiredService<Service1>();

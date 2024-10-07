@@ -2,9 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions;
 using OneShelf.Videos.Database;
-using OneShelf.Videos.Database.Models;
-using System.Globalization;
 
 namespace OneShelf.Videos.BusinessLogic.Services;
 
@@ -27,14 +26,14 @@ public class Service2
 
     public async Task<List<string>> ListAlbums()
     {
-        await _extendedGooglePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.ExtendedLoginAsync();
         var albums = await _extendedGooglePhotosService.GetAlbumsAsync();
         return albums.Select(x => x.title).ToList();
     }
 
     public async Task SaveInventory()
     {
-        await _extendedGooglePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.ExtendedLoginAsync();
         var items = await _extendedGooglePhotosService.GetMediaItemsAsync().ToListAsync();
         _logger.LogInformation("{items} found.", items.Count);
 
@@ -86,7 +85,7 @@ public class Service2
 
     public async Task UploadPhotos(List<(int mediaId, string path, DateTime? exifTimestamp)> items)
     {
-        await _extendedGooglePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.ExtendedLoginAsync();
 
         var itemsByKey = items.ToDictionary(x => x.mediaId);
         var result = await _extendedGooglePhotosService.UploadMultiple(
@@ -117,7 +116,7 @@ public class Service2
 
     public async Task UploadVideos(List<(int mediaId, string path, DateTime? exifTimestamp)> items)
     {
-        await _extendedGooglePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.ExtendedLoginAsync();
 
         var added = (await _videosDatabase.UploadedItems.Select(x => x.MediaId).ToListAsync()).ToHashSet();
         Console.WriteLine($"initial items: {items.Count}");
@@ -148,7 +147,7 @@ public class Service2
 
     public async Task CreateAlbums(List<(int albumId, string title, List<(string mediaItemId, int mediaId)> items)> albums)
     {
-        await _extendedGooglePhotosService.LoginAsync();
+        await _extendedGooglePhotosService.ExtendedLoginAsync();
         foreach (var (albumId, title, items) in albums)
         {
             _logger.LogInformation("{title} uploading...", title);

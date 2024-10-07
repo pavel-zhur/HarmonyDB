@@ -9,4 +9,6 @@ public record VideosOptions
     public required string TelegramApiHash { get; init; }
     public required string TelegramPhoneNumber { get; init; }
     public required IReadOnlyList<long> TelegramChatIds { get; init; }
+    
+    public bool UseNonInteractiveLogin { get; set; }
 }

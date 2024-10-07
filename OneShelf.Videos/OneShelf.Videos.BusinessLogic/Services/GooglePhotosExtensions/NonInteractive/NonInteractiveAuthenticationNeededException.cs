@@ -1,0 +1,3 @@
+﻿namespace OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions.NonInteractive;
+
+public class NonInteractiveAuthenticationNeededException : Exception;
