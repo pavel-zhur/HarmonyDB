@@ -271,18 +271,52 @@ public static class ChordParser
 
     internal static (NoteRepresentation? bass, byte? fret) ExtractBassAndFret(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
+        var addition = string.Empty;
+
+        void Add(ChordTypeMeaninglessAddition additionType)
+            => addition += string.Join(
+                string.Empty,
+                ChordConstants.ChordTypeMeaninglessAdditionRepresentations
+                    .Where(x => x.addition == additionType)
+                    .Select(x => $"\\{x.representation}"));
+
+        if (options.ChordTypeParsingOptions.IgnoreTrailingApostrophes) 
+            Add(ChordTypeMeaninglessAddition.Apostrophe);
+
+        if (options.ChordTypeParsingOptions.IgnoreTrailingStars) 
+            Add(ChordTypeMeaninglessAddition.Star);
+
+        if (options.ChordTypeParsingOptions.QuestionsParsingBehavior > QuestionsParsingBehavior.Error) 
+            Add(ChordTypeMeaninglessAddition.Question);
+
+        var bassAddition = addition;
+        var nonBassAddition = addition;
+        if (addition.Length > 0)
+        {
+            bassAddition = $"[{bassAddition}]*";
+            nonBassAddition = $"[^{nonBassAddition}]+";
+        }
+        else
+        {
+            nonBassAddition = ".+";
+        }
+
+        if (options.ChordTypeParsingOptions.IgnoreTrailingSlashes)
+            Add(ChordTypeMeaninglessAddition.Slash);
+
+        if (addition.Length > 0) addition = $"[{addition}]*";
+
         byte? fret = null;
-        var fretMatch = Regex.Match(stringRepresentation, @"^(.*)\(([XIV]+)\)$");
+        var fretMatch = Regex.Match(stringRepresentation, @$"^(.*)\(([XIV]+)\){addition}$");
         if (fretMatch.Success && ChordConstants.Romans.WithIndicesNullable().SingleOrDefault(x => x.x == fretMatch.Groups[2].Value).i is { } i)
         {
             fret = (byte)(i + 1);
             stringRepresentation = fretMatch.Groups[1].Value;
         }
 
-        var bassMatch = Regex.Match(stringRepresentation, @"^(.*)[/\\](.+)$");
-        
-        NoteRepresentation? bassRepresentation = null;
-        if (bassMatch.Success && NoteParser.TryParseNote(bassMatch.Groups[2].Value, out var note, out bassRepresentation, options.NoteParsingOptions))
+        var bassMatch = Regex.Match(stringRepresentation, $@"^(.*)[/\\]({nonBassAddition}){bassAddition}$");
+
+        if (bassMatch.Success && NoteParser.TryParseNote(bassMatch.Groups[2].Value, out var note, out var bassRepresentation, options.NoteParsingOptions))
         {
             bass = note;
             stringRepresentation = bassMatch.Groups[1].Value;
@@ -290,6 +324,7 @@ public static class ChordParser
         else
         {
             bass = null;
+            bassRepresentation = null;
         }
         
         return (bassRepresentation, fret);

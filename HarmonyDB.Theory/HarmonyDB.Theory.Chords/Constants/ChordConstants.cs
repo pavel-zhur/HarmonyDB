@@ -165,6 +165,7 @@ public static class ChordConstants
         (ChordTypeMeaninglessAddition.Slash, "/"),
         (ChordTypeMeaninglessAddition.Slash, "\\"),
         (ChordTypeMeaninglessAddition.Apostrophe, "'"),
+        (ChordTypeMeaninglessAddition.Apostrophe, "`"),
     ];
 
     public static readonly IReadOnlyList<string> Romans =

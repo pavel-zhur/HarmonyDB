@@ -51,8 +51,12 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
     {
         { "X", ("X", null, null, null) },
         { "/A", ("", new(NaturalNoteRepresentation.A, 0, 0), null, new((byte)NaturalNoteRepresentation.A)) },
+        { "G/A", ("G", new(NaturalNoteRepresentation.A, 0, 0), null, new((byte)NaturalNoteRepresentation.A)) },
         { "/A(III)", ("", new(NaturalNoteRepresentation.A, 0, 0), 3, new((byte)NaturalNoteRepresentation.A)) },
         { "X234\\F\\A(III)", ("X234\\F", new(NaturalNoteRepresentation.A, 0, 0), 3, new((byte)NaturalNoteRepresentation.A)) },
+        { "X234(III)", ("X234", null, 3, null) },
+        { "X234(III)*??/\\'", ("X234", null, 3, null) },
+        { "G/A*??`", ("G", new(NaturalNoteRepresentation.A, 0, 0), null, new((byte)NaturalNoteRepresentation.A)) },
     };
 
     [Theory]
