@@ -7,24 +7,15 @@ namespace HarmonyDB.Theory.Chords.Tests;
 public class AllChordsTests(ITestOutputHelper testOutputHelper)
 {
     [Fact]
-    public void LittleChordsFailed()
+    public void NoExceptions()
     {
         var success = 0;
-        var failure = 0;
         foreach (var (chord, count) in Resources.AllChords)
         {
-            try
-            {
-                ChordParser.Parse(chord, ChordParsingOptions.MostForgiving);
-                success += count;
-            }
-            catch
-            {
-                failure += count;
-                testOutputHelper.WriteLine($"{count}\t{chord}");
-            }
+            ChordParser.Parse(chord, ChordParsingOptions.MostForgiving);
+            success += count;
         }
 
-        testOutputHelper.WriteLine($"Success: {success}, failure: {failure}.");
+        testOutputHelper.WriteLine($"Success: {success}.");
     }
 }
