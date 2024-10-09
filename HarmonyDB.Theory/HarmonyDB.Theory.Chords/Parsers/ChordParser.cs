@@ -298,12 +298,12 @@ public static class ChordParser
         return (trimmed, null);
     }
 
-    private static (NoteRepresentation? bass, int? fret, ChordParseError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
+    private static (NoteRepresentation? bass, byte? fret, ChordParseError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
         var slashParts = stringRepresentation.Split('/');
         NoteRepresentation? bassRepresentation = null;
         bass = null;
-        int? fret = null;
+        byte? fret = null;
 
         switch (slashParts.Length)
         {
@@ -325,7 +325,7 @@ public static class ChordParser
                             && ChordConstants.Romans.WithIndicesNullable().SingleOrDefault(x => x.x == bassWithFret.Groups[2].Value).i is { } i)
                         {
                             stringRepresentation = string.Join(string.Empty, slashParts.SkipLast(1));
-                            fret = i + 1;
+                            fret = (byte)(i + 1);
                         }
                     }
                 }
