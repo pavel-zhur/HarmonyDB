@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;

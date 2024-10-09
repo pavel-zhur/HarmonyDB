@@ -11,7 +11,6 @@ public class ChordTypeParsingOptions
         IgnoreTrailingSlashes = true,
         IgnoreTrailingStars = true,
         QuestionsParsingBehavior = QuestionsParsingBehavior.IgnoreAndTreatOnlyAsPower,
-        OnlyIntegersInParenthesesAreAddedDegrees = true,
     };
 
     public bool TrimWhitespaceFragments { get; set; }
@@ -23,6 +22,4 @@ public class ChordTypeParsingOptions
     public bool IgnoreTrailingStars { get; set; }
     
     public QuestionsParsingBehavior QuestionsParsingBehavior { get; set; } = QuestionsParsingBehavior.Error;
-
-    public bool OnlyIntegersInParenthesesAreAddedDegrees { get; set; }
 }

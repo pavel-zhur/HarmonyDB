@@ -8,4 +8,5 @@ public enum ChordTypeAmbiguousAddition
     Flat,
     HalfDiminished7,
     Add9And11,
+    Add,
 }

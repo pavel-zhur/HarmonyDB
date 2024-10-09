@@ -156,6 +156,7 @@ public static class ChordConstants
         (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration), // generally means minor if at the beginning and no degree follows
 
         (ChordTypeAmbiguousAddition.Add9And11, "add9,11", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
+        (ChordTypeAmbiguousAddition.Add, "add", MatchCase.MatchAny, MatchAmbiguity.Safe),
     ];
 
     public static readonly IReadOnlyList<(ChordTypeMeaninglessAddition addition, string representation)> ChordTypeMeaninglessAdditionRepresentations =
