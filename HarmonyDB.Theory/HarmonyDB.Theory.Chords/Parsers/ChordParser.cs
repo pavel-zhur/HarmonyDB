@@ -242,24 +242,22 @@ public static class ChordParser
 
     internal static (List<(string fragment, bool fromParentheses)>? fragments, ChordParseError? error) TryUnwrapParentheses(string input, ChordTypeParsingOptions options)
     {
-        var match = Regex.Match(input, "^([^\\(\\)]*)\\(([^\\(\\)]+)\\)([^\\(\\)]*)$");
-
-        List<(string input, bool fromParentheses)> inputs;
-        if (!match.Success)
+        var match1 = Regex.Match(input, @"^((?<notin>[^\(\)]*)|\((?<in>[^\(\)]+)\))*$");
+        if (!match1.Success)
         {
-            inputs = [(input, false)];
-        }
-        else
-        {
-            inputs = match.Groups[2].Value.Split(',').Select(x => (x, true))
-                .Prepend((match.Groups[1].Value, false))
-                .Append((match.Groups[3].Value, false))
-                .ToList();
+            return ([(input, false)], null);
         }
 
-        inputs = inputs.Where(x => x.input != string.Empty).ToList();
+        var inputs = match1.Groups["in"].Captures.Select(c => (c, fromParentheses: true))
+            .Concat(match1.Groups["notin"].Captures.Select(c => (c, fromParentheses: false)))
+            .Where(c => c.c.Length > 0)
+            .OrderBy(c => c.c.Index)
+            .Select(c => (c.c.Value, c.fromParentheses))
+            .SelectMany(c => !c.fromParentheses ? c.Once() : c.Value.Split(',').Select(x => (Value: x, fromParentheses: true)))
+            .Where(c => c.Value != string.Empty)
+            .ToList();
 
-        var trimmed = inputs.Select(x => x with { input = x.input.Trim() }).Where(x => x.input != string.Empty).ToList();
+        var trimmed = inputs.Select(x => x with { Value = x.Value.Trim() }).Where(x => x.Value != string.Empty).ToList();
         if (!options.TrimWhitespaceFragments && (trimmed.Count != inputs.Count || trimmed.Zip(inputs).Any(x => x.First != x.Second)))
         {
             return new(null, ChordParseError.WhitespaceFragments);

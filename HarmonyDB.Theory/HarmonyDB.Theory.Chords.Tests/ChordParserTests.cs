@@ -34,6 +34,8 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
         ["ab()()", (List<(string, bool)>)[("ab()()", false)]],
         ["ab(cd)", (List<(string, bool)>)[("ab", false), ("cd", true)]],
         ["ab(c,d)", (List<(string, bool)>)[("ab", false), ("c", true), ("d", true)]],
+        ["ab(c,d)(e)f(g)h", (List<(string, bool)>)[("ab", false), ("c", true), ("d", true), ("e", true), ("f", false), ("g", true), ("h", false)]],
+        ["ab(c,d,)", (List<(string, bool)>)[("ab", false), ("c", true), ("d", true)]],
         ["ab(c,d,)", (List<(string, bool)>)[("ab", false), ("c", true), ("d", true)]],
         ["ab(c,,d)", (List<(string, bool)>)[("ab", false), ("c", true), ("d", true)]],
         ["(c,,d)", (List<(string, bool)>)[("c", true), ("d", true)]],
