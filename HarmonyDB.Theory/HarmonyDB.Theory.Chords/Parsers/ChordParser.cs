@@ -24,7 +24,7 @@ public static class ChordParser
 
         var trace = new ChordParseTrace();
 
-        var (bassRepresentation, error) = ExtractBass(ref stringRepresentation, out var bass, options);
+        var (bassRepresentation, fret, error) = ExtractBass(ref stringRepresentation, out var bass, options);
         if (error.HasValue)
             return new(error.Value, trace);
 
@@ -49,7 +49,7 @@ public static class ChordParser
 
         trace.ChordTypeTokens = tokens;
 
-        (var chordType, error, var logic, var branchIndex) = TryInterpretChordType(tokens!, options.ChordTypeParsingOptions);
+        (var chordType, error, var logic, var branchIndex) = TryInterpretChordType(tokens!, fret, options.ChordTypeParsingOptions);
         if (error.HasValue)
             return new(error.Value, trace);
 
@@ -61,6 +61,7 @@ public static class ChordParser
 
     internal static (ChordType? chordType, ChordParseError? error, ChordTypeParseLogic? logic, byte branchIndex) TryInterpretChordType(
         IReadOnlyList<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)> readonlyTokens,
+        byte? bassFret,
         ChordTypeParsingOptions options)
     {
         var tokens = readonlyTokens.ToList();
@@ -137,7 +138,7 @@ public static class ChordParser
 
         #endregion
 
-        byte? resultFret = null;
+        var resultFret = bassFret;
         #region Parentheses content, frets. FromParentheses not needed after this point. No romans after this point.
 
         {
@@ -153,11 +154,12 @@ public static class ChordParser
             {
                 if (meaningfulFromParentheses.Count > 1) 
                     return (null, ChordParseError.RomansInParenthesesExpectedOnly, null, 2);
-                else
-                {
-                    resultFret = meaningfulFromParentheses[0].token.Fret!.Value;
-                    ReplaceWithASeparator2(x => x is { fromParentheses: true, token.Fret: not null });
-                }
+
+                if (bassFret.HasValue)
+                    return (null, ChordParseError.MultipleFrets, null, 3);
+
+                resultFret = meaningfulFromParentheses[0].token.Fret!.Value;
+                ReplaceWithASeparator2(x => x is { fromParentheses: true, token.Fret: not null });
             }
 
             if (meaningfulFromParentheses.Any(x => x.matchAmbiguity == MatchAmbiguity.AlterableInt))
@@ -165,7 +167,7 @@ public static class ChordParser
                 if (meaningfulFromParentheses.Count == 1)
                 {
                     if (!options.OnlyIntegersInParenthesesAreAddedDegrees)
-                        return (null, ChordParseError.OnlyIntegerInParentheses, null, 3);
+                        return (null, ChordParseError.OnlyIntegerInParentheses, null, 4);
                 }
             }
 
@@ -182,7 +184,7 @@ public static class ChordParser
             foreach (var addition in tokens.Where(x => x.token.Addition.HasValue).GroupBy(x => x.token.Addition!.Value))
             {
                 if (addition.Count() > 1)
-                    return (null, ChordParseError.DuplicateAdditions, null, 4);
+                    return (null, ChordParseError.DuplicateAdditions, null, 5);
 
                 allAdditions |= addition.Key;
             }
@@ -195,7 +197,7 @@ public static class ChordParser
         {
             if (tokens.Where(x => x.token.Extension.HasValue).GroupBy(x => x.token.Extension!.Value)
                 .Any(g => g.Count() > 1))
-                return (null, ChordParseError.EachExtensionTypeExpectedUnique, null, 5);
+                return (null, ChordParseError.EachExtensionTypeExpectedUnique, null, 6);
         }
 
         #endregion
@@ -204,7 +206,7 @@ public static class ChordParser
 
         {
             if (tokens.Count(x => x.token.Extension >= ChordTypeExtension.XMaj7) > 1)
-                return (null, ChordParseError.MaxOneMajExtensionExpected, null, 6);
+                return (null, ChordParseError.MaxOneMajExtensionExpected, null, 7);
         }
 
         #endregion
@@ -296,16 +298,17 @@ public static class ChordParser
         return (trimmed, null);
     }
 
-    private static (NoteRepresentation? bass, ChordParseError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
+    private static (NoteRepresentation? bass, int? fret, ChordParseError? error) ExtractBass(ref string stringRepresentation, out Note? bass, ChordParsingOptions options)
     {
         var slashParts = stringRepresentation.Split('/');
         NoteRepresentation? bassRepresentation = null;
         bass = null;
+        int? fret = null;
 
         switch (slashParts.Length)
         {
             case 0:
-                return (null, ChordParseError.EmptyString);
+                return (null, null, ChordParseError.EmptyString);
 
             case > 1:
                 if (NoteParser.TryParseNote(slashParts[^1], out var note, out bassRepresentation, options.NoteParsingOptions))
@@ -313,10 +316,23 @@ public static class ChordParser
                     stringRepresentation = string.Join(string.Empty, slashParts.SkipLast(1));
                     bass = note;
                 }
+                else
+                {
+                    var bassWithFret = Regex.Match(slashParts[^1], "^([^\\(\\)]+)\\(\\)([^\\(\\)]+)$");
+                    if (bassWithFret.Success)
+                    {
+                        if (NoteParser.TryParseNote(bassWithFret.Groups[1].Value, out note, out bassRepresentation, options.NoteParsingOptions)
+                            && ChordConstants.Romans.WithIndicesNullable().SingleOrDefault(x => x.x == bassWithFret.Groups[2].Value).i is { } i)
+                        {
+                            stringRepresentation = string.Join(string.Empty, slashParts.SkipLast(1));
+                            fret = i + 1;
+                        }
+                    }
+                }
 
                 break;
         }
 
-        return (bassRepresentation, null);
+        return (bassRepresentation, fret, null);
     }
 }

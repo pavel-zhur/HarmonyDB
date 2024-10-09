@@ -17,4 +17,5 @@ public enum ChordParseError
     DuplicateAdditions,
     EachExtensionTypeExpectedUnique,
     MaxOneMajExtensionExpected,
+    MultipleFrets
 }
