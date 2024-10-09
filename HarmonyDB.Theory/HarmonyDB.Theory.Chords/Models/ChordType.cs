@@ -3,7 +3,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Theory.Chords.Models;
 
-public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, ChordTypeAdditions Additions, byte? Fret)
+public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, ChordTypeAdditions Additions)
 {
     public string ToCanonical()
     {
@@ -19,9 +19,6 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
             .Where(x => Additions.HasFlag(x))
             .Select(x => new ChordTypeToken(x)));
 
-        if (Fret.HasValue)
-            tokens.Add(new(Fret.Value));
-
-        return string.Join(string.Empty, tokens.Select(x => x.Fret.HasValue ? $"({x.ToCanonical()})" : x.ToCanonical()));
+        return string.Join(string.Empty, tokens.Select(x => x.ToCanonical()));
     }
 }

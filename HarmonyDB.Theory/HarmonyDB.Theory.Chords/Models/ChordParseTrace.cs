@@ -8,4 +8,6 @@ public record ChordParseTrace
     public List<(ChordTypeToken token, bool fromParentheses, MatchAmbiguity matchAmbiguity)>? ChordTypeTokens { get; set; }
     public ChordTypeParseLogic? ChordTypeParseLogic { get; set; }
     public byte? ChordTypeParseBranchIndex { get; set; }
+    public NoteRepresentation? BassRepresentation { get; set; }
+    public byte? Fret { get; set; }
 }

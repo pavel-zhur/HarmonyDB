@@ -20,11 +20,6 @@ public readonly record struct ChordTypeToken
         Addition = addition;
     }
 
-    public ChordTypeToken(byte? fret)
-    {
-        Fret = fret;
-    }
-
     public ChordTypeToken(ChordTypeMeaninglessAddition? meaninglessAddition)
     {
         MeaninglessAddition = meaninglessAddition;
@@ -38,7 +33,6 @@ public readonly record struct ChordTypeToken
     public ChordMainType? Type { get; }
     public ChordTypeExtension? Extension { get; }
     public ChordTypeAdditions? Addition { get; }
-    public byte? Fret { get; }
     public ChordTypeMeaninglessAddition? MeaninglessAddition { get; }
     public ChordTypeAmbiguousAddition? AmbiguousAddition { get; }
 
@@ -46,7 +40,6 @@ public readonly record struct ChordTypeToken
         => Type?.ToString()
            ?? Extension?.ToString()
            ?? Addition?.ToString()
-           ?? Fret?.ToString()
            ?? MeaninglessAddition?.ToString()
            ?? AmbiguousAddition.ToString()!;
 

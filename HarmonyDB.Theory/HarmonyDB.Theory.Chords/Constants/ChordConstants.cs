@@ -163,6 +163,7 @@ public static class ChordConstants
         (ChordTypeMeaninglessAddition.Star, "*"),
         (ChordTypeMeaninglessAddition.Question, "?"),
         (ChordTypeMeaninglessAddition.Slash, "/"),
+        (ChordTypeMeaninglessAddition.Slash, "\\"),
         (ChordTypeMeaninglessAddition.Apostrophe, "'"),
     ];
 
@@ -179,8 +180,6 @@ public static class ChordConstants
                 .Select(x => (new ChordTypeToken(x.extension), x.representation, x.matchCase, x.matchAmbiguity)))
             .Concat(ChordTypeAdditionRepresentations
                 .Select(x => (new ChordTypeToken(x.addition), x.representation, x.matchCase, x.matchAmbiguity)))
-            .Concat(Romans.WithIndices()
-                .Select(x => (new ChordTypeToken((byte)(x.i + 1)), representation: x.x, MatchCase.ExactOnly, MatchAmbiguity.Safe)))
             .Concat(ChordTypeMeaninglessAdditionRepresentations
                 .Select(x => (new ChordTypeToken(x.addition), x.representation, MatchCase.ExactOnly, MatchAmbiguity.Safe)))
             .Concat(ChordTypeAmbiguousAdditionRepresentations
@@ -195,8 +194,6 @@ public static class ChordConstants
                 .Select(x => (token: new ChordTypeToken(x.extension), x.representation)))
             .Concat(ChordTypeAdditionRepresentations
                 .Select(x => (token: new ChordTypeToken(x.addition), x.representation)))
-            .Concat(Romans.WithIndices()
-                .Select(x => (token: new ChordTypeToken((byte)(x.i + 1)), representation: x.x)))
             .Concat(ChordTypeMeaninglessAdditionRepresentations
                 .Select(x => (token: new ChordTypeToken(x.addition), x.representation)))
             .Concat(ChordTypeAmbiguousAdditionRepresentations

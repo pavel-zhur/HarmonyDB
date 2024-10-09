@@ -1,3 +1,4 @@
+using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models;
 using HarmonyDB.Theory.Chords.Models.Enums;
 using HarmonyDB.Theory.Chords.Options;
@@ -44,5 +45,22 @@ public class ChordParserTests(ITestOutputHelper testOutputHelper)
     {
         var (actual, error) = ChordParser.TryUnwrapParentheses(input, ChordTypeParsingOptions.MostForgiving);
         Assert.Equal(expected, actual);
+    }
+
+    public static readonly TheoryData<string, (string, NoteRepresentation?, byte?, Note?)> ExtractBassAndFretData = new()
+    {
+        { "X", ("X", null, null, null) },
+        { "/A", ("", new(NaturalNoteRepresentation.A, 0, 0), null, new((byte)NaturalNoteRepresentation.A)) },
+        { "/A(III)", ("", new(NaturalNoteRepresentation.A, 0, 0), 3, new((byte)NaturalNoteRepresentation.A)) },
+        { "X234\\F\\A(III)", ("X234\\F", new(NaturalNoteRepresentation.A, 0, 0), 3, new((byte)NaturalNoteRepresentation.A)) },
+    };
+
+    [Theory]
+    [MemberData(nameof(ExtractBassAndFretData))]
+    public void ExtractBassAndFret(string input, (string modified, NoteRepresentation? bass, byte? fret, Note? bassNote) expected)
+    {
+        var actual = ChordParser.ExtractBassAndFret(ref input, out var bassNote, ChordParsingOptions.MostForgiving);
+        Assert.Equal(bassNote.HasValue, actual.bass != null);
+        Assert.Equal(expected, (input, actual.bass, actual.fret, bassNote));
     }
 }

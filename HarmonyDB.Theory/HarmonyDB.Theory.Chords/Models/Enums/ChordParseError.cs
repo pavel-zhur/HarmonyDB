@@ -11,11 +11,7 @@ public enum ChordParseError
     SameBass,
     EmptyString,
     BadSymbols,
-    RomansNotInParentheses,
-    RomansInParenthesesExpectedOnly,
-    OnlyIntegerInParentheses,
     DuplicateAdditions,
     EachExtensionTypeExpectedUnique,
     MaxOneMajExtensionExpected,
-    MultipleFrets
 }
