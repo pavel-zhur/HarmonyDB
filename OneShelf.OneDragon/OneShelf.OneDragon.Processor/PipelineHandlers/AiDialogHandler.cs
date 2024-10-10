@@ -38,16 +38,16 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _options = options;
     }
 
-    protected override void OnInitializing(Update update)
+    protected override void OnInitializing(long userId, long chatId)
     {
-        _dragonDatabase.InitializeInteractionsRepositoryScope(update.Message!.From!.Id, update.Message.Chat.Id);
+        _dragonDatabase.InitializeInteractionsRepositoryScope(userId, chatId);
     }
 
-    protected override bool TraceImages => _options.Value.IsAdmin(_dragonScope.UserId);
+    protected override bool TraceImages => true;
 
     protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction
     {
-        ChatId = update.Message!.Chat.Id,
+        ChatId = update.Message?.Chat.Id ?? update.CallbackQuery!.Message!.Chat.Id,
         UpdateId = update.UpdateId,
     };
 

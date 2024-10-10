@@ -29,7 +29,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _dogContext = dogContext;
     }
 
-    protected override void OnInitializing(Update update)
+    protected override void OnInitializing(long userId, long chatId)
     {
         _dogDatabase.InitializeInteractionsRepositoryScope(_dogContext.DomainId);
     }
