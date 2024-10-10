@@ -3,6 +3,7 @@
 public enum InteractionType
 {
     AiMessage,
+    AiImageMessage,
     AiMemoryPoint,
     AiResetDialog,
     AiImagesLimit,

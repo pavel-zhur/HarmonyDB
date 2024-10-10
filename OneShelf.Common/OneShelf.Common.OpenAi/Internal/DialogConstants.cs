@@ -16,7 +16,7 @@ internal static class DialogConstants
     public const string SystemImageOpportunityMessage =
         $"If you wish to display the images to the user, call the '{IncludeImageFunctionName}' function.";
 
-    private static readonly Tool UserChangedTopicTool = new(new(
+    private static readonly Tool UserChangedTopicTool = new(new Function(
         UserChangedTopicFunctionName,
         "Call this function whenever the next user message has no relation to the previous conversation, i.e. it feels like they start the conversation anew.",
         new JsonObject
@@ -25,7 +25,7 @@ internal static class DialogConstants
             ["properties"] = new JsonObject(),
         }));
 
-    private static readonly Tool IncludeImageTool = new(new(
+    private static readonly Tool IncludeImageTool = new(new Function(
         IncludeImageFunctionName,
         "Call this function if you wish to display pictures or images to the user.",
         new JsonObject

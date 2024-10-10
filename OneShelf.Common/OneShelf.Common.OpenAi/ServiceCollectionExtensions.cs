@@ -14,7 +14,8 @@ public static class ServiceCollectionExtensions
 
         services
             .AddScoped<DialogRunner>()
-            .AddBillingApiClient(configuration);
+            .AddBillingApiClient(configuration)
+            .AddHttpClient();
 
         return services;
     }

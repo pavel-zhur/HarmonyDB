@@ -30,24 +30,55 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected readonly ILogger<AiDialogHandlerBase<TInteractionType>> _logger;
     protected readonly IInteractionsRepository<TInteractionType> _repository;
     protected readonly DialogRunner _dialogRunner;
+    protected readonly IHttpClientFactory _httpClientFactory;
 
-    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner) 
+    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, IHttpClientFactory httpClientFactory) 
         : base(scopedAbstractions)
     {
         _logger = logger;
         _repository = repository;
         _dialogRunner = dialogRunner;
+        _httpClientFactory = httpClientFactory;
     }
 
-    protected async Task Log(Update update, TInteractionType interactionType)
+    private async Task<bool> Log(Update update)
     {
-        var interaction = CreateInteraction(update);
-        interaction.CreatedOn = DateTime.Now;
-        interaction.InteractionType = interactionType;
-        interaction.UserId = update.Message!.From!.Id;
-        interaction.ShortInfoSerialized = update.Message.Text;
-        interaction.Serialized = JsonSerializer.Serialize(update);
-        await _repository.Add(interaction.Once().ToList());
+        var text = update.Message?.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            text = update.Message?.Caption;
+        }
+
+        if (string.IsNullOrWhiteSpace(text) && update.Message?.Photo == null)
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.UserId = update.Message!.From!.Id;
+            interaction.Serialized = JsonSerializer.Serialize(update);
+            interaction.InteractionType = _repository.OwnChatterMessage;
+            interaction.ShortInfoSerialized = text;
+            await _repository.Add(interaction.Once().ToList());
+        }
+
+        if (update.Message?.Photo != null)
+        {
+            var path = (await GetApi().GetFileAsync(update.Message.Photo.OrderByDescending(x => x.Height).First().FileId)).FilePath;
+            using var client = _httpClientFactory.CreateClient();
+            var bytes = await client.GetByteArrayAsync($"https://api.telegram.org/file/bot{ScopedAbstractions.GetBotToken()}/{path}");
+
+            var interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.UserId = update.Message!.From!.Id;
+            interaction.Serialized = JsonSerializer.Serialize(update);
+            interaction.InteractionType = _repository.OwnChatterImageMessage;
+            interaction.ShortInfoSerialized = Convert.ToBase64String(bytes);
+            await _repository.Add(interaction.Once().ToList());
+        }
+
+        return true;
     }
 
     protected abstract IInteraction<TInteractionType> CreateInteraction(Update update);
@@ -59,7 +90,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             while (!cancellationToken.IsCancellationRequested)
             {
                 var last = (await _repository.Get(q => q
-                        .Where(x => Equals(x.InteractionType, _repository.OwnChatterMessage))
+                        .Where(x => Equals(x.InteractionType, _repository.OwnChatterMessage) || Equals(x.InteractionType, _repository.OwnChatterImageMessage))
                         .OrderByDescending(x => x.Id)
                         .Take(1)))
                     .Single();
@@ -70,7 +101,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                     return;
                 }
 
-                await Task.Delay(500, cancellationToken);
+                await Task.Delay(100, cancellationToken);
             }
         }
         catch (TaskCanceledException)
@@ -239,9 +270,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             return true;
         }
 
-        await Log(update, _repository.OwnChatterMessage);
-
-        if (update.Message?.Text?.Length > 0)
+        var anyContent = await Log(update);
+        if (anyContent)
         {
             Queued(Respond(update));
             return true;
@@ -404,13 +434,14 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected virtual bool TraceImages => false;
 
-    protected async Task Respond(Update update)
+    private async Task Respond(Update update)
     {
         var now = DateTime.Now;
         var since = now.AddDays(-1);
 
         var interactions = await _repository.Get(q => q
             .Where(x => Equals(x.InteractionType, _repository.OwnChatterMessage) ||
+                        Equals(x.InteractionType, _repository.OwnChatterImageMessage) ||
                         Equals(x.InteractionType, _repository.OwnChatterMemoryPoint) ||
                         Equals(x.InteractionType, _repository.OwnChatterResetDialog))
             .Where(x => x.ShortInfoSerialized!.Length > 0 || Equals(x.InteractionType, _repository.OwnChatterResetDialog))
@@ -434,20 +465,23 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         using var checkingIsStillLast = new CancellationTokenSource();
         ValueHolder<bool> isPhoto = new();
         LongTyping(update.Message!.Chat.Id, update.Message.MessageThreadId, callingApis.Token, isPhoto);
-        var checking = CheckNoUpdates(checkingIsStillLast, callingApis.Token, interactions.Last(x => Equals(x.InteractionType, _repository.OwnChatterMessage)).Id);
+        var checking = CheckNoUpdates(checkingIsStillLast, callingApis.Token, interactions.Last(x => Equals(x.InteractionType, _repository.OwnChatterMessage) || Equals(x.InteractionType, _repository.OwnChatterImageMessage)).Id);
 
         ChatBotMemoryPointWithTraces newMessagePoint;
         DialogResult result;
 
         try
         {
+            await Task.Delay(update.Message.MediaGroupId != null || update.Message.Photo != null ? 500 : 220, checkingIsStillLast.Token);
+
             var existingMemory = interactions.Select(i =>
-                Equals(i.InteractionType, _repository.OwnChatterMessage)
-                    ?
-                    (MemoryPoint)new UserMessageMemoryPoint(i.ShortInfoSerialized!)
-                    : Equals(i.InteractionType, _repository.OwnChatterMemoryPoint)
-                        ? JsonSerializer.Deserialize<ChatBotMemoryPoint>(i.Serialized)!
-                        : throw new ArgumentOutOfRangeException(nameof(i))).ToList();
+                Equals(i.InteractionType, _repository.OwnChatterImageMessage)
+                    ? (MemoryPoint)new UserImageMessageMemoryPoint(i.ShortInfoSerialized!)
+                    : Equals(i.InteractionType, _repository.OwnChatterMessage)
+                        ? new UserMessageMemoryPoint(i.ShortInfoSerialized!)
+                        : Equals(i.InteractionType, _repository.OwnChatterMemoryPoint)
+                            ? JsonSerializer.Deserialize<ChatBotMemoryPoint>(i.Serialized)!
+                            : throw new ArgumentOutOfRangeException(nameof(i))).ToList();
 
             if (checkingIsStillLast.IsCancellationRequested)
             {

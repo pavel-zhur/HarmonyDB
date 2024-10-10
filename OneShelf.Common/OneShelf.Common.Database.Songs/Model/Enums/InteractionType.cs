@@ -37,4 +37,6 @@ public enum InteractionType
 
     ImagesLimit,
     ImagesSuccess,
+
+    OwnChatterImageMessage,
 }

@@ -22,15 +22,15 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     private readonly Availability _availability;
     private readonly IOptions<TelegramOptions> _options;
 
-    public AiDialogHandler(
-        IScopedAbstractions scopedAbstractions,
-        ILogger<AiDialogHandlerBase<InteractionType>> logger, 
-        DialogRunner dialogRunner, 
+    public AiDialogHandler(IScopedAbstractions scopedAbstractions,
+        ILogger<AiDialogHandlerBase<InteractionType>> logger,
+        DialogRunner dialogRunner,
         DragonDatabase dragonDatabase,
-        DragonScope dragonScope, 
+        DragonScope dragonScope,
         Availability availability,
-        IOptions<TelegramOptions> options)
-        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner)
+        IOptions<TelegramOptions> options, 
+        IHttpClientFactory httpClientFactory)
+        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner, httpClientFactory)
     {
         _dragonDatabase = dragonDatabase;
         _dragonScope = dragonScope;
@@ -76,7 +76,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var textsSince = Since(limits.Max(x => x.Window));
         var texts = (await _dragonDatabase.Interactions
                 .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.AiMessage)
+                .Where(x => x.InteractionType == InteractionType.AiMessage || x.InteractionType == InteractionType.AiImageMessage)
                 .Where(x => x.CreatedOn >= textsSince)
                 .ToListAsync())
             .Select(x => x.CreatedOn)

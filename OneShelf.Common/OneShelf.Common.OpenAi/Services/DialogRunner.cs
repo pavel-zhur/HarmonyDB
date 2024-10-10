@@ -198,7 +198,7 @@ public class DialogRunner
             new(Role.System, configuration.SystemMessage),
         };
 
-        foreach (var memoryPoint in existingMemory)
+        foreach (var (memoryPoint, i) in existingMemory.WithIndices())
         {
             switch (memoryPoint)
             {
@@ -207,6 +207,17 @@ public class DialogRunner
                     break;
                 case ChatBotMemoryPoint chatBotMemoryPoint:
                     messages.AddRange(chatBotMemoryPoint.Messages);
+                    break;
+                case UserImageMessageMemoryPoint userImageMessageMemoryPoint:
+                    var imageDetail = existingMemory.Skip(i).SkipWhile(x => x is not ChatBotMemoryPoint).Any(x => x is UserImageMessageMemoryPoint)
+                        ? ImageDetail.Low
+                        : ImageDetail.High;
+
+                    messages.Add(new(Role.User, [
+                        new ImageUrl(
+                            $"data:image/jpeg;base64,{userImageMessageMemoryPoint.Base64}",
+                            imageDetail)
+                    ]));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(memoryPoint));
