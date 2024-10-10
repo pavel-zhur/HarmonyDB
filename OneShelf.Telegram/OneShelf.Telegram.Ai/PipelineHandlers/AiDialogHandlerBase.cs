@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
 using OneShelf.Common;
 using OneShelf.Common.OpenAi.Models;
 using OneShelf.Common.OpenAi.Models.Memory;
@@ -11,13 +12,21 @@ using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.AvailableTypes;
 using Telegram.BotAPI.GettingUpdates;
+using Telegram.BotAPI.UpdatingMessages;
 
 namespace OneShelf.Telegram.Ai.PipelineHandlers;
 
 public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 {
     private TelegramBotClient? _api;
-    
+    private readonly Dictionary<long, AsyncLock> _databaseLocks = new();
+
+    private const string Numerals = "①②③④⑤⑥⑦⑧⑨⑩";
+    private const string ShowImageActionsCallbackCommand = "imagegroup";
+    private const string ImageCloseCallbackCommand = "imageclose";
+    private const string ImageCallbackCommand = "image";
+    private const string CallbackDataSeparator = ", ";
+
     protected readonly ILogger<AiDialogHandlerBase<TInteractionType>> _logger;
     protected readonly IInteractionsRepository<TInteractionType> _repository;
     protected readonly DialogRunner _dialogRunner;
@@ -185,18 +194,18 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         return (messageEntities, result);
     }
 
-    protected async Task Typing(Update update)
+    protected async Task Typing(long chatId, int? messageThreadId, ValueHolder<bool>? isPhoto = null)
     {
-        await GetApi().SendChatActionAsync(update.Message!.Chat.Id, ChatActions.Typing, messageThreadId: update.Message.MessageThreadId);
+        await GetApi().SendChatActionAsync(chatId, isPhoto?.Value == true ? ChatActions.UploadPhoto : ChatActions.Typing, messageThreadId: messageThreadId);
     }
 
-    protected async void LongTyping(Update update, CancellationToken cancellationToken)
+    protected async void LongTyping(long chatId, int? messageThreadId, CancellationToken cancellationToken, ValueHolder<bool>? isPhoto = null)
     {
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Typing(update);
+                await Typing(chatId, messageThreadId, isPhoto);
                 await Task.Delay(3000, cancellationToken);
             }
         }
@@ -211,7 +220,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected override async Task<bool> HandleSync(Update update)
     {
-        if (update.CallbackQuery?.Data?.StartsWith("image, ") == true && update.CallbackQuery.Message != null)
+        if (update.CallbackQuery is { Data: not null, Message: not null })
         {
             OnInitializing(update.CallbackQuery.From.Id, update.CallbackQuery.Message!.Chat.Id);
             return await HandleCallback(update);
@@ -245,11 +254,49 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     {
         var callbackQuery = update.CallbackQuery!;
 
-        var data = callbackQuery.Data!.Split(", ");
-        
-        if (data is not ["image", { } interactionIdValue, { } imageIndexValue, { } timesValue]
-            || !int.TryParse(interactionIdValue, out var interactionId)
-            || !int.TryParse(imageIndexValue, out var imageIndex)
+        var data = callbackQuery.Data!.Split(CallbackDataSeparator);
+
+        if (data is [ShowImageActionsCallbackCommand, { } imageGroupInteractionIdValue, { } imageGroupImageIndexValue, { } imageGroupImagesCountValue]
+            && int.TryParse(imageGroupInteractionIdValue, out var interactionId)
+            && int.TryParse(imageGroupImageIndexValue, out var imageIndex)
+            && int.TryParse(imageGroupImagesCountValue, out var imagesCount))
+        {
+            QueueApi(
+                callbackQuery.From.Id.ToString(),
+                async api => await api.EditMessageReplyMarkupAsync(
+                    callbackQuery.Message!.Chat.Id,
+                    callbackQuery.Message.MessageId,
+                    replyMarkup: new InlineKeyboardMarkup(
+                        [
+                            GetMainMarkup(imagesCount, interactionId).InlineKeyboard.Single(),
+                            [
+                                new($"✖️ {GetImageNumber(imageIndex)}") { CallbackData = GetCallbackData(ImageCloseCallbackCommand, interactionId, imagesCount) },
+                                new("👀") { CallbackData = GetCallbackData(ImageCallbackCommand, interactionId, imageIndex, 0) },
+                                new("👀↵") { CallbackData = GetCallbackData(ImageCallbackCommand, interactionId, imageIndex, -1) },
+                            ],
+                            Enumerable.Range(1, 5).Select(x => new InlineKeyboardButton($"+{x}") { CallbackData = GetCallbackData(ImageCallbackCommand, interactionId, imageIndex, x) })
+                        ])));
+
+            return true;
+        }
+
+        if (data is [ImageCloseCallbackCommand, { } imageBackInteractionIdValue, { } imageBackImagesCountValue]
+            && int.TryParse(imageBackInteractionIdValue, out interactionId)
+            && int.TryParse(imageBackImagesCountValue, out imagesCount))
+        {
+            QueueApi(
+                callbackQuery.From.Id.ToString(),
+                async api => await api.EditMessageReplyMarkupAsync(
+                    callbackQuery.Message!.Chat.Id,
+                    callbackQuery.Message.MessageId,
+                    replyMarkup: GetMainMarkup(imagesCount, interactionId)));
+
+            return true;
+        }
+
+        if (data is not [ImageCallbackCommand, { } interactionIdValue, { } imageIndexValue, { } timesValue]
+            || !int.TryParse(interactionIdValue, out interactionId)
+            || !int.TryParse(imageIndexValue, out imageIndex)
             || !int.TryParse(timesValue, out var times))
         {
             return false;
@@ -257,8 +304,10 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         var interaction = (await _repository.Get(x => x.Where(x => x.Id == interactionId))).Single();
         DateTime? imagesUnavailableUntil = null;
-        if (times != 0)
+        if (times > 0)
         {
+            var @lock = _databaseLocks.GetValueOrDefault(callbackQuery.From.Id) ?? (_databaseLocks[callbackQuery.From.Id] = new());
+            using var _ = await @lock.LockAsync();
             imagesUnavailableUntil = await GetImagesUnavailableUntil(DateTime.Now);
             if (!imagesUnavailableUntil.HasValue)
             {
@@ -272,24 +321,26 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             }
         }
 
-        QueueApi(callbackQuery.From.Id.ToString(), api => React(api, callbackQuery, interaction, imageIndex, times, imagesUnavailableUntil));
+        QueueApi(null, api => ImageCallback(api, callbackQuery, interaction, imageIndex, times, imagesUnavailableUntil));
         return true;
     }
 
-    private async Task React(TelegramBotClient api, CallbackQuery callbackQuery, IInteraction<TInteractionType> interaction, int imageIndex, int times, DateTime? imagesUnavailableUntil)
+    private async Task ImageCallback(TelegramBotClient api, CallbackQuery callbackQuery, IInteraction<TInteractionType> interaction, int imageIndex, int times, DateTime? imagesUnavailableUntil)
     {
         var prompt = JsonSerializer.Deserialize<ChatBotMemoryPointWithDeserializableTraces>(interaction.Serialized)!.ImageTraces[imageIndex];
-        var text = times == 0 
-            ? prompt 
-            : imagesUnavailableUntil.HasValue 
-                ? string.Format(RegenerationUnavailableUntilTemplate, imagesUnavailableUntil!.Value.ToString("f"))
-                : RegenerationTemplate;
+        var text = times switch
+        {
+            -1 => null,
+            0 => prompt,
+            _ when imagesUnavailableUntil.HasValue => string.Format(RegenerationUnavailableUntilTemplate, imagesUnavailableUntil.Value.ToString("f")), 
+            _ => RegenerationTemplate
+        };
 
         try
         {
             await api.AnswerCallbackQueryAsync(new AnswerCallbackQueryArgs(callbackQuery.Id)
             {
-                ShowAlert = true,
+                ShowAlert = text != null,
                 Text = text,
             });
         }
@@ -298,31 +349,47 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             _logger.LogWarning(e, "Couldn't interactively respond to the image callback query. {chat}, {user}.", callbackQuery.Message!.Chat, callbackQuery.From.Id);
         }
 
+        if (times == -1)
+        {
+            await SendMessage(callbackQuery.Message!.Chat.Id, null, callbackQuery.Message!.MessageId, $"{GetImageNumber(imageIndex)}: {prompt}", true);
+            return;
+        }
+
         if (!imagesUnavailableUntil.HasValue && times > 0)
         {
-            var aiParameters = await GetAiParameters();
-            var images = await _dialogRunner.GenerateImages(
-                Enumerable.Repeat(prompt, times).ToList(),
-                new()
-                {
-                    ImagesVersion = aiParameters.imagesVersion,
-                    UserId = callbackQuery.From.Id,
-                    DomainId = -1,
-                    Version = aiParameters.version!,
-                    ChatId = callbackQuery.Message!.Chat.Id,
-                    UseCase = "direct regeneration",
-                    AdditionalBillingInfo = "images regeneration",
-                    SystemMessage = "no message",
-                });
+            var cancellationTokenSource = new CancellationTokenSource();
+            try
+            {
+                LongTyping(callbackQuery.Message!.Chat.Id, null, cancellationTokenSource.Token, new(true));
+                var aiParameters = await GetAiParameters();
+                var images = await _dialogRunner.GenerateImages(
+                    Enumerable.Repeat(prompt, times).ToList(),
+                    new()
+                    {
+                        ImagesVersion = aiParameters.imagesVersion,
+                        UserId = callbackQuery.From.Id,
+                        DomainId = -1,
+                        Version = aiParameters.version!,
+                        ChatId = callbackQuery.Message.Chat.Id,
+                        UseCase = "direct regeneration",
+                        AdditionalBillingInfo = "images regeneration",
+                        SystemMessage = "no message",
+                    },
+                    default);
 
-            images = images.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
-            if (images.Any())
-            {
-                await SendSeparately(callbackQuery.Message!.Chat.Id, null, callbackQuery.Message!.MessageId, $"⟳ {imageIndex + 1} × {times}", images!, true);
+                images = images.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+                if (images.Any())
+                {
+                    await SendMessage(callbackQuery.Message!.Chat.Id, null, callbackQuery.Message!.MessageId, images!, true);
+                }
+                else
+                {
+                    await SendMessage(callbackQuery.Message!.Chat.Id, null, callbackQuery.Message!.MessageId, "Не получилось нарисовать новые изображения.", true);
+                }
             }
-            else
+            finally
             {
-                await SendMessage(callbackQuery.Message!.Chat.Id, null, callbackQuery.Message!.MessageId, "Не получилось нарисовать новые изображения.", true);
+                await cancellationTokenSource.CancelAsync();
             }
         }
     }
@@ -365,7 +432,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
-        LongTyping(update, callingApis.Token);
+        ValueHolder<bool> isPhoto = new();
+        LongTyping(update.Message!.Chat.Id, update.Message.MessageThreadId, callingApis.Token, isPhoto);
         var checking = CheckNoUpdates(checkingIsStillLast, callingApis.Token, interactions.Last(x => Equals(x.InteractionType, _repository.OwnChatterMessage)).Id);
 
         ChatBotMemoryPointWithTraces newMessagePoint;
@@ -394,12 +462,12 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                 FrequencyPenalty = frequencyPenalty,
                 PresencePenalty = presencePenalty,
                 ImagesVersion = imagesVersion,
-                UserId = update.Message!.From!.Id,
+                UserId = update.Message.From!.Id,
                 UseCase = "own chatter",
                 AdditionalBillingInfo = additionalBillingInfo,
                 DomainId = domainId,
-                ChatId = update.Message!.Chat.Id,
-            }, checkingIsStillLast.Token, imagesUnavailableUntil);
+                ChatId = update.Message.Chat.Id,
+            }, checkingIsStillLast.Token, imagesUnavailableUntil, isPhoto);
 
             if (checkingIsStillLast.IsCancellationRequested)
             {
@@ -465,13 +533,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                         text = "⚙ управление";
                     }
 
-                    replyMarkup = new(Enumerable.Range(0, result.Images.Count).Select(i => (InlineKeyboardButton[])[
-                        new($"👀 {i + 1}") { CallbackData = $"image, {memoryPointInteractionId}, {i}, 0" },
-                        new($"⟳ {i + 1}") { CallbackData = $"image, {memoryPointInteractionId}, {i}, 1" },
-                        new($"⟳ {i + 1} × 2") { CallbackData = $"image, {memoryPointInteractionId}, {i}, 2" },
-                        new($"⟳ {i + 1} × 3") { CallbackData = $"image, {memoryPointInteractionId}, {i}, 3" },
-                        new($"⟳ {i + 1} × 4") { CallbackData = $"image, {memoryPointInteractionId}, {i}, 4" },
-                    ]));
+                    var imagesCount = result.Images.Count;
+                    replyMarkup = GetMainMarkup(imagesCount, memoryPointInteractionId);
                 }
 
                 if (!string.IsNullOrWhiteSpace(text))
@@ -495,6 +558,20 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         {
             await SendMessage(update.Message!.Chat.Id, update.Message.MessageThreadId, update.Message.MessageId, text, false);
         }
+    }
+
+    private static InlineKeyboardMarkup GetMainMarkup(int imagesCount, int memoryPointInteractionId)
+    {
+        return new([
+            Enumerable.Range(0, imagesCount).Select(i => new InlineKeyboardButton(GetImageNumber(i)) { CallbackData = GetCallbackData(ShowImageActionsCallbackCommand, memoryPointInteractionId, i, imagesCount) })
+        ]);
+    }
+
+    private static string GetCallbackData(params object[] args) => string.Join(CallbackDataSeparator, args);
+
+    private static string GetImageNumber(int i)
+    {
+        return i < Numerals.Length ? Numerals[i].ToString() : (i + 1).ToString();
     }
 
     protected abstract bool CheckRelevant(Update update);

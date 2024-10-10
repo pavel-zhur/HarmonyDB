@@ -30,7 +30,7 @@ public class DialogRunner
     }
 
     public async Task<(DialogResult result, ChatBotMemoryPointWithTraces newMessagePoint)> Execute(
-        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default, DateTime? imagesUnavailableUntil = null)
+        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default, DateTime? imagesUnavailableUntil = null, ValueHolder<bool>? isPhoto = null)
     {
         var lastTopicChange = existingMemory.WithIndices().LastOrDefault(x => x.x is ChatBotMemoryPoint
         {
@@ -89,6 +89,8 @@ public class DialogRunner
             if (cancellationToken.IsCancellationRequested) throw new TaskCanceledException();
             if (imagesDeserialized.Any() && !imagesUnavailableUntil.HasValue)
             {
+                if (isPhoto != null) isPhoto.Value = true;
+
                 urlsTask = GenerateImages(imagesDeserialized, configuration, cancellationToken);
             }
 

@@ -43,7 +43,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _dragonDatabase.InitializeInteractionsRepositoryScope(userId, chatId);
     }
 
-    protected override bool TraceImages => _options.Value.IsAdmin(_dragonScope.UserId);
+    protected override bool TraceImages => true;
 
     protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction
     {
