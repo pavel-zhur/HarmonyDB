@@ -57,7 +57,9 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
     }
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.AiMessage;
-
+    
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterImageMessage => InteractionType.AiImageMessage;
+    
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMemoryPoint => InteractionType.AiMemoryPoint;
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterResetDialog => InteractionType.AiResetDialog;

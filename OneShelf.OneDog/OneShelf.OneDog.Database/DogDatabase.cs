@@ -54,6 +54,8 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.OwnChatterMessage;
 
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterImageMessage => InteractionType.OwnChatterImageMessage;
+
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMemoryPoint => InteractionType.OwnChatterMemoryPoint;
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterResetDialog => InteractionType.OwnChatterResetDialog;
