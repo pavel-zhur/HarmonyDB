@@ -6,10 +6,13 @@ public interface IInteractionsRepository<TInteractionType>
 
     Task Add(List<IInteraction<TInteractionType>> interactions);
 
+    Task Update(IInteraction<TInteractionType> interaction);
+
     TInteractionType OwnChatterMessage { get; }
     TInteractionType OwnChatterImageMessage { get; }
     TInteractionType OwnChatterMemoryPoint { get; }
     TInteractionType OwnChatterResetDialog { get; }
     TInteractionType ImagesLimit { get; }
     TInteractionType ImagesSuccess { get; }
+    TInteractionType Audio { get; }
 }

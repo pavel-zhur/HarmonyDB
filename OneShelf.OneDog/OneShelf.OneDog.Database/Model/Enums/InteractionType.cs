@@ -15,4 +15,6 @@ public enum InteractionType
     ImagesLimit,
 
     OwnChatterImageMessage,
+ 
+    OwnChatterAudio
 }

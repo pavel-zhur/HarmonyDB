@@ -24,8 +24,9 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         SongsDatabase songsDatabase,
         DialogRunner dialogRunner,
         IScopedAbstractions scopedAbstractions, 
-        IHttpClientFactory httpClientFactory)
-        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _songsDatabase = songsDatabase;
         _telegramOptions = telegramOptions.Value;

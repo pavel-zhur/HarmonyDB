@@ -53,6 +53,7 @@ namespace OneShelf.Billing.Api.Functions
                             "gpt-4-1106-preview" or "gpt-4-0125-preview" => .01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000,
                             "gpt-4o" when x.CreatedOn < new DateTime(2024, 10, 2) => (.01f * x.InputTokens / 1000 + .03f * x.OutputTokens / 1000) * 0.5f,
                             "gpt-4o" => .01f * x.InputTokens / 1000 / 4 + .01f * x.OutputTokens / 1000,
+                            "whisper-1" => x.Count / 60f * .006f,
                             _ => null,
                         },
                         Category = x.UseCase switch
@@ -62,6 +63,7 @@ namespace OneShelf.Billing.Api.Functions
                                 "gpt-4-1106-preview" or "gpt-4-0125-preview" or "gpt-4o" => "chat text",
                                 _ => "chat images",
                             },
+                            "audio" => "audio transcription",
                             _ => x.Model switch
                             {
                                 "gpt-4-1106-preview" or "gpt-4-0125-preview" or "gpt-4o" => "song text",

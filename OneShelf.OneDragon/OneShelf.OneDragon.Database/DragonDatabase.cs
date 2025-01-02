@@ -56,6 +56,11 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
         await SaveChangesAsync();
     }
 
+    async Task IInteractionsRepository<InteractionType>.Update(IInteraction<InteractionType> interaction)
+    {
+        await SaveChangesAsync();
+    }
+
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.AiMessage;
     
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterImageMessage => InteractionType.AiImageMessage;
@@ -67,6 +72,8 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
     InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.AiImagesLimit;
 
     InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.AiImagesSuccess;
+
+    InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.AiAudio;
 
     #endregion
 }
