@@ -39,4 +39,6 @@ public enum InteractionType
     ImagesSuccess,
 
     OwnChatterImageMessage,
+
+    OwnChatterAudio,
 }

@@ -21,9 +21,10 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         DogDatabase dogDatabase,
         DialogRunner dialogRunner,
         IScopedAbstractions scopedAbstractions,
-        DogContext dogContext, 
-        IHttpClientFactory httpClientFactory)
-        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, httpClientFactory)
+        DogContext dogContext,
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _dogDatabase = dogDatabase;
         _dogContext = dogContext;
@@ -32,6 +33,11 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     protected override void OnInitializing(long userId, long chatId)
     {
         _dogDatabase.InitializeInteractionsRepositoryScope(_dogContext.DomainId);
+    }
+
+    protected override bool TranscribeAudio(Update update)
+    {
+        return false;
     }
 
     protected override bool CheckRelevant(Update update)

@@ -8,6 +8,7 @@ public enum InteractionType
     AiResetDialog,
     AiImagesLimit,
     AiImagesSuccess,
+    AiAudio,
 
     DirectImagesSuccess,
     DirectImagesLimit,

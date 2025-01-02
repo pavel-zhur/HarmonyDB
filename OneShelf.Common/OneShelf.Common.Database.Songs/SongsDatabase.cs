@@ -223,6 +223,11 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
         await SaveChangesAsyncX();
     }
 
+    async Task IInteractionsRepository<InteractionType>.Update(IInteraction<InteractionType> interaction)
+    {
+        await SaveChangesAsyncX();
+    }
+
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.OwnChatterMessage;
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterImageMessage => InteractionType.OwnChatterImageMessage;
@@ -234,6 +239,8 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
     InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.ImagesLimit;
 
     InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.ImagesSuccess;
+
+    InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.OwnChatterAudio;
 
     #endregion
 }

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Azure.Core;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using OneShelf.Common;
@@ -7,6 +8,7 @@ using OneShelf.Common.OpenAi.Models;
 using OneShelf.Common.OpenAi.Models.Memory;
 using OneShelf.Common.OpenAi.Services;
 using OneShelf.Telegram.Ai.Model;
+using OneShelf.Telegram.Helpers;
 using OneShelf.Telegram.Services.Base;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
@@ -25,20 +27,23 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     private const string ShowImageActionsCallbackCommand = "imagegroup";
     private const string ImageCloseCallbackCommand = "imageclose";
     private const string ImageCallbackCommand = "image";
+    private const string AudioApplyCallbackCommand = "audio";
     private const string CallbackDataSeparator = ", ";
 
     protected readonly ILogger<AiDialogHandlerBase<TInteractionType>> _logger;
     protected readonly IInteractionsRepository<TInteractionType> _repository;
     protected readonly DialogRunner _dialogRunner;
     protected readonly IHttpClientFactory _httpClientFactory;
+    protected readonly Transcriber _transcriber;
 
-    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, IHttpClientFactory httpClientFactory) 
+    protected AiDialogHandlerBase(IScopedAbstractions scopedAbstractions, ILogger<AiDialogHandlerBase<TInteractionType>> logger, IInteractionsRepository<TInteractionType> repository, DialogRunner dialogRunner, IHttpClientFactory httpClientFactory, Transcriber transcriber) 
         : base(scopedAbstractions)
     {
         _logger = logger;
         _repository = repository;
         _dialogRunner = dialogRunner;
         _httpClientFactory = httpClientFactory;
+        _transcriber = transcriber;
     }
 
     private async Task<bool> Log(Update update)
@@ -65,9 +70,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         if (update.Message?.Photo != null)
         {
-            var path = (await GetApi().GetFileAsync(update.Message.Photo.OrderByDescending(x => x.Height).First().FileId)).FilePath;
-            using var client = _httpClientFactory.CreateClient();
-            var bytes = await client.GetByteArrayAsync($"https://api.telegram.org/file/bot{ScopedAbstractions.GetBotToken()}/{path}");
+            var bytes = await Download(update.Message.Photo.OrderByDescending(x => x.Height).First().FileId);
 
             var interaction = CreateInteraction(update);
             interaction.CreatedOn = DateTime.Now;
@@ -79,6 +82,13 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         }
 
         return true;
+    }
+
+    private async Task<byte[]> Download(string fileId)
+    {
+        var path = (await GetApi().GetFileAsync(fileId)).FilePath;
+        using var client = _httpClientFactory.CreateClient();
+        return await client.GetByteArrayAsync($"https://api.telegram.org/file/bot{ScopedAbstractions.GetBotToken()}/{path}");
     }
 
     protected abstract IInteraction<TInteractionType> CreateInteraction(Update update);
@@ -277,14 +287,117 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             return true;
         }
 
+        if (TranscribeAudio(update))
+        {
+            Transcribe(update);
+            return true;
+        }
+
         return false;
+    }
+
+    private void Transcribe(Update update)
+    {
+        QueueApi(update.Message!.From!.Id.ToString(), async client =>
+        {
+            var interaction = CreateInteraction(update);
+            interaction.InteractionType = _repository.Audio;
+            interaction.UserId = update.Message.From.Id;
+            interaction.CreatedOn = DateTime.Now;
+            interaction.Serialized = JsonSerializer.Serialize(update);
+            await _repository.Add([interaction]);
+
+            var autoRespond = update.Message.ForwardOrigin == null;
+            var replyMarkup = autoRespond ? null : new InlineKeyboardMarkup([[new("✅")
+            {
+                CallbackData = GetCallbackData(AudioApplyCallbackCommand, interaction.Id),
+            }]]);
+
+            var message = await client.SendMessageAsync(update.Message.Chat.Id, "Transcribing...", null,
+                update.Message.MessageThreadId, replyParameters: new()
+                {
+                    MessageId = update.Message.MessageId,
+                }, replyMarkup: replyMarkup);
+
+            try
+            {
+                var bytes = await Download(update.Message.Voice!.FileId);
+                var (additionalBillingInfo, domainId) = GetDialogConfigurationParameters();
+                var text = await _transcriber.TranscribeAudio(bytes, new()
+                {
+                    SystemMessage = null!,
+                    Version = null!,
+                    UserId = update.Message.From.Id,
+                    UseCase = "audio",
+                    AdditionalBillingInfo = additionalBillingInfo,
+                    DomainId = domainId,
+                    ChatId = update.Message.Chat.Id,
+                });
+
+                interaction.ShortInfoSerialized = text;
+                await _repository.Update(interaction);
+
+                await client.EditMessageTextAsync(message.Chat.Id, message.MessageId, string.Join("\n", text.Replace("\r\n", "\n").Split('\n').Select(x => x.ToMarkdown())).SelectSingle(x => $"`{x}`"), replyMarkup: replyMarkup, parseMode: Constants.MarkdownV2);
+
+                if (autoRespond)
+                {
+                    update.Message.Text = text;
+                    if (await Log(update))
+                    {
+                        await Respond(update, message.MessageId);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error transcribing the audio.");
+                await client.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Случилась ошибка.");
+            }
+        });
     }
 
     private async Task<bool> HandleCallback(Update update)
     {
         var callbackQuery = update.CallbackQuery!;
-
         var data = callbackQuery.Data!.Split(CallbackDataSeparator);
+
+        if (data is [AudioApplyCallbackCommand, { } audioInteractionIdValue]
+            && int.TryParse(audioInteractionIdValue, out var audioInteractionId))
+        {
+            QueueApi(
+                callbackQuery.From.Id.ToString(),
+                async api =>
+                {
+                    var interaction = (await _repository.Get(x => x.Where(x => x.Id == audioInteractionId))).Single();
+                    while (interaction.ShortInfoSerialized == null
+                           && DateTime.Now - interaction.CreatedOn < TimeSpan.FromSeconds(10))
+                    {
+                        await Task.Delay(500);
+                        interaction = (await _repository.Get(x => x.Where(x => x.Id == audioInteractionId))).Single();
+                    }
+
+                    if (interaction.ShortInfoSerialized == null)
+                    {
+                        return;
+                    }
+
+                    var text = interaction.ShortInfoSerialized;
+                    var update2 = JsonSerializer.Deserialize<Update>(interaction.Serialized);
+                    update2.Message.Text = text;
+
+                    if (callbackQuery.Message != null)
+                    {
+                        await api.EditMessageReplyMarkupAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, replyMarkup: null);
+                    }
+
+                    if (await Log(update2))
+                    {
+                        await Respond(update2, callbackQuery.Message?.MessageId);
+                    }
+                });
+
+            return true;
+        }
 
         if (data is [ShowImageActionsCallbackCommand, { } imageGroupInteractionIdValue, { } imageGroupImageIndexValue, { } imageGroupImagesCountValue]
             && int.TryParse(imageGroupInteractionIdValue, out var interactionId)
@@ -324,35 +437,37 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             return true;
         }
 
-        if (data is not [ImageCallbackCommand, { } interactionIdValue, { } imageIndexValue, { } timesValue]
-            || !int.TryParse(interactionIdValue, out interactionId)
-            || !int.TryParse(imageIndexValue, out imageIndex)
-            || !int.TryParse(timesValue, out var times))
+        if (data is [ImageCallbackCommand, { } interactionIdValue, { } imageIndexValue, { } timesValue]
+            && int.TryParse(interactionIdValue, out interactionId)
+            && int.TryParse(imageIndexValue, out imageIndex)
+            && int.TryParse(timesValue, out var times))
         {
-            return false;
-        }
-
-        var interaction = (await _repository.Get(x => x.Where(x => x.Id == interactionId))).Single();
-        DateTime? imagesUnavailableUntil = null;
-        if (times > 0)
-        {
-            var @lock = _databaseLocks.GetValueOrDefault(callbackQuery.From.Id) ?? (_databaseLocks[callbackQuery.From.Id] = new());
-            using var _ = await @lock.LockAsync();
-            imagesUnavailableUntil = await GetImagesUnavailableUntil(DateTime.Now);
-            if (!imagesUnavailableUntil.HasValue)
+            var interaction = (await _repository.Get(x => x.Where(x => x.Id == interactionId))).Single();
+            DateTime? imagesUnavailableUntil = null;
+            if (times > 0)
             {
-                var interaction2 = CreateInteraction(update);
-                interaction2.CreatedOn = DateTime.Now;
-                interaction2.InteractionType = _repository.ImagesSuccess;
-                interaction2.Serialized = timesValue;
-                interaction2.ShortInfoSerialized = callbackQuery.Data;
-                interaction2.UserId = callbackQuery.From.Id;
-                await _repository.Add(interaction2.Once().ToList());
+                var @lock = _databaseLocks.GetValueOrDefault(callbackQuery.From.Id) ??
+                            (_databaseLocks[callbackQuery.From.Id] = new());
+                using var _ = await @lock.LockAsync();
+                imagesUnavailableUntil = await GetImagesUnavailableUntil(DateTime.Now);
+                if (!imagesUnavailableUntil.HasValue)
+                {
+                    var interaction2 = CreateInteraction(update);
+                    interaction2.CreatedOn = DateTime.Now;
+                    interaction2.InteractionType = _repository.ImagesSuccess;
+                    interaction2.Serialized = timesValue;
+                    interaction2.ShortInfoSerialized = callbackQuery.Data;
+                    interaction2.UserId = callbackQuery.From.Id;
+                    await _repository.Add(interaction2.Once().ToList());
+                }
             }
+
+            QueueApi(callbackQuery.From.Id.ToString(),
+                api => ImageCallback(api, callbackQuery, interaction, imageIndex, times, imagesUnavailableUntil));
+            return true;
         }
 
-        QueueApi(null, api => ImageCallback(api, callbackQuery, interaction, imageIndex, times, imagesUnavailableUntil));
-        return true;
+        return false;
     }
 
     private async Task ImageCallback(TelegramBotClient api, CallbackQuery callbackQuery, IInteraction<TInteractionType> interaction, int imageIndex, int times, DateTime? imagesUnavailableUntil)
@@ -434,7 +549,15 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
     protected virtual bool TraceImages => false;
 
-    private async Task Respond(Update update)
+    protected virtual bool TranscribeAudio(Update update)
+    {
+        if (update.Message?.Voice == null) return false;
+        if (update.Message.Voice.Duration > 120) return false;
+
+        return true;
+    }
+
+    private async Task Respond(Update update, int? replyToMessageId = null) 
     {
         var now = DateTime.Now;
         var since = now.AddDays(-1);
@@ -573,11 +696,11 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    await SendMessage(update.Message!.Chat.Id, update.Message.MessageThreadId, update.Message.MessageId, text, result.Images, false, replyMarkup);
+                    await SendMessage(update.Message!.Chat.Id, update.Message.MessageThreadId, replyToMessageId ?? update.Message.MessageId, text, result.Images, replyToMessageId.HasValue, replyMarkup);
                 }
                 else
                 {
-                    await SendMessage(update.Message!.Chat.Id, update.Message!.MessageThreadId, update.Message!.MessageId, result.Images, false);
+                    await SendMessage(update.Message!.Chat.Id, update.Message!.MessageThreadId, replyToMessageId ?? update.Message.MessageId, result.Images, replyToMessageId.HasValue);
                 }
 
                 return;
@@ -590,7 +713,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
 
         if (!string.IsNullOrWhiteSpace(text))
         {
-            await SendMessage(update.Message!.Chat.Id, update.Message.MessageThreadId, update.Message.MessageId, text, false);
+            await SendMessage(update.Message!.Chat.Id, update.Message.MessageThreadId, replyToMessageId ?? update.Message.MessageId, text, replyToMessageId.HasValue);
         }
     }
 

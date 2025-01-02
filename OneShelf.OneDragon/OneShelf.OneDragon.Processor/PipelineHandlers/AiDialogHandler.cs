@@ -29,8 +29,9 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         DragonScope dragonScope,
         Availability availability,
         IOptions<TelegramOptions> options, 
-        IHttpClientFactory httpClientFactory)
-        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner, httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _dragonDatabase = dragonDatabase;
         _dragonScope = dragonScope;
