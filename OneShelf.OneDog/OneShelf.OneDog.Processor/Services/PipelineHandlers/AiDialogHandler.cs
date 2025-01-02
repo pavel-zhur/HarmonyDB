@@ -35,11 +35,6 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _dogDatabase.InitializeInteractionsRepositoryScope(_dogContext.DomainId);
     }
 
-    protected override bool TranscribeAudio(Update update)
-    {
-        return false;
-    }
-
     protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Id != _dogContext.Domain.ChatId) return false;

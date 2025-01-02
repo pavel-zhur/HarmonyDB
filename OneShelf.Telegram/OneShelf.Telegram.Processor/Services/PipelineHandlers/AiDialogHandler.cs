@@ -32,6 +32,11 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _telegramOptions = telegramOptions.Value;
     }
 
+    //protected override bool TranscribeAudio(Update update)
+    //{
+    //    return false;
+    //}
+
     protected override bool CheckRelevant(Update update)
     {
         if (update.Message?.Chat.Username != _telegramOptions.PublicDogChatId.Substring(1)) return false;
