@@ -22,15 +22,16 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     private readonly Availability _availability;
     private readonly IOptions<TelegramOptions> _options;
 
-    public AiDialogHandler(
-        IScopedAbstractions scopedAbstractions,
-        ILogger<AiDialogHandlerBase<InteractionType>> logger, 
-        DialogRunner dialogRunner, 
+    public AiDialogHandler(IScopedAbstractions scopedAbstractions,
+        ILogger<AiDialogHandlerBase<InteractionType>> logger,
+        DialogRunner dialogRunner,
         DragonDatabase dragonDatabase,
-        DragonScope dragonScope, 
+        DragonScope dragonScope,
         Availability availability,
-        IOptions<TelegramOptions> options)
-        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner)
+        IOptions<TelegramOptions> options, 
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, dragonDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _dragonDatabase = dragonDatabase;
         _dragonScope = dragonScope;
@@ -38,16 +39,16 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         _options = options;
     }
 
-    protected override void OnInitializing(Update update)
+    protected override void OnInitializing(long userId, long chatId)
     {
-        _dragonDatabase.InitializeInteractionsRepositoryScope(update.Message!.From!.Id, update.Message.Chat.Id);
+        _dragonDatabase.InitializeInteractionsRepositoryScope(userId, chatId);
     }
 
-    protected override bool TraceImages => _options.Value.IsAdmin(_dragonScope.UserId);
+    protected override bool TraceImages => true;
 
     protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction
     {
-        ChatId = update.Message!.Chat.Id,
+        ChatId = update.Message?.Chat.Id ?? update.CallbackQuery!.Message!.Chat.Id,
         UpdateId = update.UpdateId,
     };
 
@@ -76,7 +77,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var textsSince = Since(limits.Max(x => x.Window));
         var texts = (await _dragonDatabase.Interactions
                 .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.AiMessage)
+                .Where(x => x.InteractionType == InteractionType.AiMessage || x.InteractionType == InteractionType.AiImageMessage)
                 .Where(x => x.CreatedOn >= textsSince)
                 .ToListAsync())
             .Select(x => x.CreatedOn)

@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Azure.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Billing.Api.Client;
@@ -30,7 +31,7 @@ public class DialogRunner
     }
 
     public async Task<(DialogResult result, ChatBotMemoryPointWithTraces newMessagePoint)> Execute(
-        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default, DateTime? imagesUnavailableUntil = null)
+        IReadOnlyList<MemoryPoint> existingMemory, DialogConfiguration configuration, CancellationToken cancellationToken = default, DateTime? imagesUnavailableUntil = null, ValueHolder<bool>? isPhoto = null)
     {
         var lastTopicChange = existingMemory.WithIndices().LastOrDefault(x => x.x is ChatBotMemoryPoint
         {
@@ -89,6 +90,8 @@ public class DialogRunner
             if (cancellationToken.IsCancellationRequested) throw new TaskCanceledException();
             if (imagesDeserialized.Any() && !imagesUnavailableUntil.HasValue)
             {
+                if (isPhoto != null) isPhoto.Value = true;
+
                 urlsTask = GenerateImages(imagesDeserialized, configuration, cancellationToken);
             }
 
@@ -196,7 +199,7 @@ public class DialogRunner
             new(Role.System, configuration.SystemMessage),
         };
 
-        foreach (var memoryPoint in existingMemory)
+        foreach (var (memoryPoint, i) in existingMemory.WithIndices())
         {
             switch (memoryPoint)
             {
@@ -205,6 +208,17 @@ public class DialogRunner
                     break;
                 case ChatBotMemoryPoint chatBotMemoryPoint:
                     messages.AddRange(chatBotMemoryPoint.Messages);
+                    break;
+                case UserImageMessageMemoryPoint userImageMessageMemoryPoint:
+                    var imageDetail = existingMemory.Skip(i).SkipWhile(x => x is not ChatBotMemoryPoint).Any(x => x is UserImageMessageMemoryPoint)
+                        ? ImageDetail.Low
+                        : ImageDetail.High;
+
+                    messages.Add(new(Role.User, [
+                        new ImageUrl(
+                            $"data:image/jpeg;base64,{userImageMessageMemoryPoint.Base64}",
+                            imageDetail)
+                    ]));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(memoryPoint));

@@ -17,4 +17,8 @@
 		<None Include="..\..\nuget readme.md" Pack="true" Link="readme.md" PackagePath="\readme.md" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
+	</ItemGroup>
+
 </Project>

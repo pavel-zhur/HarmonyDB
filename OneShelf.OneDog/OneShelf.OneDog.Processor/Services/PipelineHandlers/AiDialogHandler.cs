@@ -17,19 +17,20 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     private readonly DogContext _dogContext;
     private readonly DogDatabase _dogDatabase;
 
-    public AiDialogHandler(
-        ILogger<AiDialogHandler> logger,
+    public AiDialogHandler(ILogger<AiDialogHandler> logger,
         DogDatabase dogDatabase,
-        DialogRunner dialogRunner, 
+        DialogRunner dialogRunner,
         IScopedAbstractions scopedAbstractions,
-        DogContext dogContext)
-        : base(scopedAbstractions, logger, dogDatabase, dialogRunner)
+        DogContext dogContext,
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, dogDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _dogDatabase = dogDatabase;
         _dogContext = dogContext;
     }
 
-    protected override void OnInitializing(Update update)
+    protected override void OnInitializing(long userId, long chatId)
     {
         _dogDatabase.InitializeInteractionsRepositoryScope(_dogContext.DomainId);
     }

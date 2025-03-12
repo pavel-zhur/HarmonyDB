@@ -66,3 +66,9 @@ ul.sparse li {
     writing-mode: vertical-rl;
     text-align: end;
 }
+
+table.my-sticky-header thead {
+    position: sticky;
+    top: 0px;
+    background: white;
+}

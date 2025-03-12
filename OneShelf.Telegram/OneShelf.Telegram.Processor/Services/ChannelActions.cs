@@ -37,7 +37,7 @@ public class ChannelActions
             try
             {
                 await api.DeleteMessageAsync(
-                    _telegramOptions.PublicChatId,
+                    _telegramOptions.PublicLibraryChatId,
                     messageId);
                 return true;
             }
@@ -65,7 +65,7 @@ public class ChannelActions
         {
             try
             {
-                var messageResult = await api.SendMessageAsync(new(_telegramOptions.PublicChatId, markdownV2.ToString())
+                var messageResult = await api.SendMessageAsync(new(_telegramOptions.PublicLibraryChatId, markdownV2.ToString())
                 {
                     DisableNotification = true,
                     ParseMode = Constants.MarkdownV2,
@@ -99,7 +99,7 @@ public class ChannelActions
         return await _exponentialBackOff.WithRetry(async () =>
         {
             var doc = await api.SendDocumentAsync(
-                _telegramOptions.PublicChatId,
+                _telegramOptions.PublicLibraryChatId,
                 fileId,
                 disableNotification: true,
                 caption: markdownV2.ToString(),
@@ -121,7 +121,7 @@ public class ChannelActions
             {
                 await api.EditMessageTextAsync<object>(new(markdownV2.ToString())
                 {
-                    ChatId = _telegramOptions.PublicChatId,
+                    ChatId = _telegramOptions.PublicLibraryChatId,
                     ParseMode = Constants.MarkdownV2,
                     MessageId = messageId,
                     ReplyMarkup = inlineKeyboardMarkup,
@@ -159,7 +159,7 @@ public class ChannelActions
             try
             {
                 await api.EditMessageCaptionAsync(
-                    _telegramOptions.PublicChatId,
+                    _telegramOptions.PublicLibraryChatId,
                     messageId,
                     caption: markdownV2.ToString(),
                     parseMode: Constants.MarkdownV2,
@@ -186,7 +186,7 @@ public class ChannelActions
         await _exponentialBackOff.WithRetry(async () =>
         {
             await api.PinChatMessageAsync(
-                _telegramOptions.PublicChatId,
+                _telegramOptions.PublicLibraryChatId,
                 messageId,
                 disableNotification: true);
         });
@@ -199,7 +199,7 @@ public class ChannelActions
         await _exponentialBackOff.WithRetry(async () =>
         {
             await api.UnpinChatMessageAsync(
-                _telegramOptions.PublicChatId,
+                _telegramOptions.PublicLibraryChatId,
                 messageId: messageId);
         });
     }

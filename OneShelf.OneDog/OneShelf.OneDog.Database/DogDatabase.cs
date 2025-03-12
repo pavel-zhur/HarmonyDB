@@ -52,7 +52,14 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
         await SaveChangesAsync();
     }
 
+    async Task IInteractionsRepository<InteractionType>.Update(IInteraction<InteractionType> interaction)
+    {
+        await SaveChangesAsync();
+    }
+
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMessage => InteractionType.OwnChatterMessage;
+
+    InteractionType IInteractionsRepository<InteractionType>.OwnChatterImageMessage => InteractionType.OwnChatterImageMessage;
 
     InteractionType IInteractionsRepository<InteractionType>.OwnChatterMemoryPoint => InteractionType.OwnChatterMemoryPoint;
 
@@ -61,6 +68,8 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
     InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.ImagesLimit;
 
     InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.ImagesSuccess;
+
+    InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.OwnChatterAudio;
 
     #endregion
 }

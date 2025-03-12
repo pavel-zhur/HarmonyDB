@@ -1,0 +1,22 @@
+# robots.txt for HarmonyDB.Playground.Web
+User-agent: *
+Crawl-delay: 12
+
+# Disallow song-specific endpoints to prevent indexing
+Disallow: /*/Home/Song
+Disallow: /*/Tonalities/Song
+Disallow: /*/Tonalities/Loop
+Disallow: /*/Structures/Multi
+
+# Specifically for English and Russian cultures
+Disallow: /en/Home/Song
+Disallow: /ru/Home/Song
+Disallow: /en/Tonalities/Song
+Disallow: /ru/Tonalities/Song
+Disallow: /en/Tonalities/Loop
+Disallow: /ru/Tonalities/Loop
+Disallow: /en/Structures/Multi
+Disallow: /ru/Structures/Multi
+
+# Allow everything else
+Allow: /

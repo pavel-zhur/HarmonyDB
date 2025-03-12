@@ -60,12 +60,6 @@ public class SingletonAbstractions : ISingletonAbstractions
 
 
             [
-                typeof(Temp),
-                typeof(Bowowow)
-            ],
-
-
-            [
                 typeof(AddSong)
             ],
 

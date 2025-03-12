@@ -14,7 +14,7 @@ using Telegram.BotAPI.AvailableTypes;
 
 namespace OneShelf.OneDragon.Processor.Commands;
 
-[AdminCommand("images", "Картинки", "Сделать картинки по текстовому описанию")]
+[BothCommand("images", "Картинки", "Сделать картинки по текстовому описанию")]
 public class Images : Command
 {
     private readonly DragonDatabase _dragonDatabase;

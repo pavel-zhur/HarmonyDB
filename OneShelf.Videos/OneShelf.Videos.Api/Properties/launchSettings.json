@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "OneShelf.Videos.Api": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7218",
+      "launchBrowser": false
+    }
+  }
+}

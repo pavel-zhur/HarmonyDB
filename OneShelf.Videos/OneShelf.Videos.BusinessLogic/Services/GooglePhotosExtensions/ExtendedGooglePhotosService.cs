@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using CasCap.Common.Extensions;
 using CasCap.Exceptions;
 using CasCap.Models;
@@ -6,20 +7,35 @@ using CasCap.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Videos.BusinessLogic.Models;
+using OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions.NonInteractive;
 
-namespace OneShelf.Videos.BusinessLogic.Services;
+namespace OneShelf.Videos.BusinessLogic.Services.GooglePhotosExtensions;
 
 public class ExtendedGooglePhotosService : GooglePhotosService
 {
+    private readonly GoogleNonInteractiveLogin _nonInteractiveLogin;
+    private readonly VideosOptions _videosOptions;
     private const int DefaultBatchSizeMediaItems = 50;
 
-    private readonly IOptions<VideosOptions> _videosOptions;
     private int _processed;
 
-    public ExtendedGooglePhotosService(ILogger<GooglePhotosService> logger, IOptions<GooglePhotosOptions> options, HttpClient client, IOptions<VideosOptions> videosOptions)
+    public ExtendedGooglePhotosService(ILogger<GooglePhotosService> logger, IOptions<GooglePhotosOptions> options, HttpClient client, GoogleNonInteractiveLogin nonInteractiveLogin, IOptions<VideosOptions> videosOptions)
         : base(logger, options, client)
     {
-        _videosOptions = videosOptions;
+        _nonInteractiveLogin = nonInteractiveLogin;
+        _videosOptions = videosOptions.Value;
+    }
+
+    public async Task ExtendedLoginAsync()
+    {
+        if (_videosOptions.UseNonInteractiveLogin)
+        {
+            _client.DefaultRequestHeaders.Authorization = await _nonInteractiveLogin.GetCredentials();
+        }
+        else
+        {
+            await LoginAsync();
+        }
     }
 
     public async Task AddMediaItemsToAlbumWithRetryAsync(string albumId, List<string> mediaItemIds)

@@ -574,6 +574,29 @@ namespace OneShelf.Videos.Database.Migrations.VideosDatabaseMigrations
                     b.ToTable("StaticTopics");
                 });
 
+            modelBuilder.Entity("OneShelf.Videos.Database.Models.TelegramUpdate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TelegramUpdateId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TelegramUpdates");
+                });
+
             modelBuilder.Entity("OneShelf.Videos.Database.Models.Topic", b =>
                 {
                     b.Property<int>("Id")

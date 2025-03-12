@@ -19,28 +19,34 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     private readonly SongsDatabase _songsDatabase;
     private new readonly TelegramOptions _telegramOptions;
 
-    public AiDialogHandler(
-        ILogger<AiDialogHandler> logger,
+    public AiDialogHandler(ILogger<AiDialogHandler> logger,
         IOptions<TelegramOptions> telegramOptions,
         SongsDatabase songsDatabase,
-        DialogRunner dialogRunner, 
-        IScopedAbstractions scopedAbstractions)
-        : base(scopedAbstractions, logger, songsDatabase, dialogRunner)
+        DialogRunner dialogRunner,
+        IScopedAbstractions scopedAbstractions, 
+        IHttpClientFactory httpClientFactory,
+        Transcriber transcriber)
+        : base(scopedAbstractions, logger, songsDatabase, dialogRunner, httpClientFactory, transcriber)
     {
         _songsDatabase = songsDatabase;
         _telegramOptions = telegramOptions.Value;
     }
 
+    //protected override bool TranscribeAudio(Update update)
+    //{
+    //    return false;
+    //}
+
     protected override bool CheckRelevant(Update update)
     {
-        if (update.Message?.Chat.Username != _telegramOptions.PublicChatId.Substring(1)) return false;
+        if (update.Message?.Chat.Username != _telegramOptions.PublicDogChatId.Substring(1)) return false;
         if (update.Message.MessageThreadId != _telegramOptions.OwnChatterTopicId) return false;
 
         return true;
     }
 
     protected override IInteraction<InteractionType> CreateInteraction(Update update) => new Interaction();
-
+    
     protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => default;
 
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now) => null;

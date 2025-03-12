@@ -38,6 +38,8 @@ public class VideosDatabase : DbContext
     public required DbSet<Album> Albums { get; set; }
     public required DbSet<AlbumConstraint> AlbumConstraints { get; set; }
     public required DbSet<UploadedAlbum> UploadedAlbums { get; set; }
+    
+    public required DbSet<TelegramUpdate> TelegramUpdates { get; set; }
 
     public async Task UpdateMediaTopics()
     {

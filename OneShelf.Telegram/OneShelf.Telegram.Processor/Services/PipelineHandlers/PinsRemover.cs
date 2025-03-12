@@ -26,11 +26,11 @@ public class PinsRemover : PipelineHandler
 
         var chatFound =
             update.Message.MessageThreadId == _telegramOptions.PublicTopicId || update.Message.MessageThreadId == _telegramOptions.AnnouncementsTopicId
-            && _telegramOptions.PublicChatId.Substring(1) == update.Message.Chat.Username;
+            && _telegramOptions.PublicLibraryChatId.Substring(1) == update.Message.Chat.Username;
 
         if (!chatFound) return false;
 
-        QueueApi(null, async api => await api.DeleteMessageAsync(_telegramOptions.PublicChatId, update.Message.MessageId));
+        QueueApi(null, async api => await api.DeleteMessageAsync(_telegramOptions.PublicLibraryChatId, update.Message.MessageId));
 
         _logger.LogInformation("Pin removal queued.");
 
