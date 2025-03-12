@@ -176,4 +176,8 @@ public static class Extensions
     public static T? OnceAsNullable<T>(this T value)
         where T : struct
         => value;
+
+    public static T? FirstOrNull<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+        where T : struct
+        => source.Select(x => (T?)x).FirstOrDefault(x => predicate(x!.Value));
 }
