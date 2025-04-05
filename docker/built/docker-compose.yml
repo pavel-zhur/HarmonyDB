@@ -113,8 +113,6 @@ services:
         RELEASE_VERSION: ${INDEX_API_VERSION}
         RELEASE_FILENAME: OneShelf.Collectives.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
-    ports:
-      - "${COLLECTIVES_API_PORT}:80"
     depends_on:
       - sql
       - azurite
@@ -174,8 +172,6 @@ services:
         RELEASE_VERSION: ${INDEX_API_VERSION}
         RELEASE_FILENAME: OneShelf.Frontend.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
-    ports:
-      - "${FRONTEND_API_PORT}:80"
     depends_on:
       - sql
       - azurite
@@ -189,6 +185,18 @@ services:
       - ./all.env
       - ./functions.env
       - ./configs/frontend-api.env
+
+  # Add the new API proxy service
+  api-proxy:
+    build:
+      context: .
+      dockerfile: api-proxy/Dockerfile
+    ports:
+      - "${FRONTEND_API_PORT}:13011"
+      - "${COLLECTIVES_API_PORT}:13009"
+    depends_on:
+      - frontend-api
+      - collectives-api
 
   # Frontend Services
   frontend-web:
