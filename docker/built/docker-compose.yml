@@ -32,10 +32,13 @@ services:
       - "${INDEX_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
       - collectives-api
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/index-api.env
 
@@ -51,9 +54,12 @@ services:
       - "${AUTHORIZATION_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/authorization-api.env
 
@@ -70,9 +76,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/illustrations-api.env
 
@@ -88,9 +97,12 @@ services:
       - "${BILLING_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/billing-api.env
 
@@ -106,10 +118,13 @@ services:
       - "${COLLECTIVES_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
       - authorization-api
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/collectives-api.env
 
@@ -125,10 +140,13 @@ services:
       - "${SOURCES_SELF_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
       - collectives-api
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/sources-self-api.env
 
@@ -145,6 +163,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - SyncFusionLicenseKey=${SYNC_FUSION_LICENSE_KEY}
+      - AzureWebJobsSecretStorageType=files
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/pdfs-api.env
 
@@ -160,6 +181,7 @@ services:
       - "${FRONTEND_API_PORT}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
@@ -167,6 +189,8 @@ services:
       - authorization-api
       - illustrations-api
       - billing-api
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/frontend-api.env
 
@@ -240,12 +264,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
+      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
       - illustrations-api
       - pdfs-api
       - index-api
+    volumes:
+      - ./secrets:/azure-functions-host/Secrets
     env_file:
       - ./configs/telegram-runner.env
 
