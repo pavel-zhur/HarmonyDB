@@ -74,6 +74,7 @@ public class ApiPoller : BackgroundService
             }
             catch (Exception e)
             {
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
                 _logger.LogError(e, "GetUpdates");
                 return [];
             }
