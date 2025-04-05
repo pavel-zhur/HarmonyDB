@@ -1,0 +1,24 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SqlServer": "Server=sql,1433;Initial Catalog=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True",
+    "AzureStorage": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+  },
+  "BlobStorage": {
+    "ContainerName": "illustrations",
+    "ThumbnailContainerName": "thumbnails"
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:5003",
+      "http://localhost:5004",
+      "http://localhost:5008"
+    ]
+  }
+} 

@@ -1,0 +1,19 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "Services": {
+    "IndexApi": "http://index-api",
+    "AuthorizationApi": "http://authorization-api",
+    "IllustrationsApi": "http://illustrations-api",
+    "BillingApi": "http://billing-api",
+    "CollectivesApi": "http://collectives-api",
+    "SourcesSelfApi": "http://sources-self-api",
+    "PdfsApi": "http://pdfs-api"
+  }
+} 

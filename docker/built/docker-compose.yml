@@ -1,0 +1,268 @@
+version: '3.8'
+name: HarmonyDB
+
+services:
+  # Database Services
+  sql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SQL_SERVER_PASSWORD}
+    ports:
+      - "${SQL_SERVER_PORT}:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "${AZURITE_PORT}:10000"
+    volumes:
+      - azurite-data:/data
+
+  # Backend Services (Core Microservices)
+  index-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: HarmonyDB.Index.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${INDEX_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/index-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  authorization-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${AUTHORIZATION_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Authorization.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${AUTHORIZATION_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/authorization-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  illustrations-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${ILLUSTRATIONS_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Illustrations.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${ILLUSTRATIONS_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - ConnectionStrings__AzureStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/illustrations-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  billing-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${BILLING_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Billing.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${BILLING_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/billing-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  collectives-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Collectives.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${COLLECTIVES_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/collectives-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  sources-self-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Sources.Self.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${SOURCES_SELF_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/sources-self-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  pdfs-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${PDFS_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Pdfs.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${PDFS_API_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/pdfs-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  # Frontend Services
+  frontend-web:
+    build:
+      context: .
+      dockerfile: frontend-web/Dockerfile
+      args:
+        RELEASE_VERSION: ${FRONTEND_WEB_VERSION}
+        RELEASE_FILENAME: OneShelf.Frontend.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${FRONTEND_WEB_PORT}:80"
+    environment:
+      - Services__IndexApi=http://index-api
+      - Services__AuthorizationApi=http://authorization-api
+      - Services__IllustrationsApi=http://illustrations-api
+      - Services__BillingApi=http://billing-api
+      - Services__CollectivesApi=http://collectives-api
+      - Services__SourcesSelfApi=http://sources-self-api
+      - Services__PdfsApi=http://pdfs-api
+    depends_on:
+      - index-api
+      - authorization-api
+      - illustrations-api
+      - billing-api
+      - collectives-api
+      - sources-self-api
+      - pdfs-api
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dotnet-service
+      args:
+        RELEASE_VERSION: ${ADMIN_WEB_VERSION}
+        RELEASE_FILENAME: OneShelf.Admin.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${ADMIN_WEB_PORT}:80"
+    environment:
+      - Services__IndexApi=http://index-api
+      - Services__AuthorizationApi=http://authorization-api
+      - Services__IllustrationsApi=http://illustrations-api
+      - Services__BillingApi=http://billing-api
+      - Services__CollectivesApi=http://collectives-api
+      - Services__SourcesSelfApi=http://sources-self-api
+      - Services__PdfsApi=http://pdfs-api
+    depends_on:
+      - index-api
+      - authorization-api
+      - illustrations-api
+      - billing-api
+      - collectives-api
+      - sources-self-api
+      - pdfs-api
+    volumes:
+      - ./configs/admin-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  playground-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dotnet-service
+      args:
+        RELEASE_VERSION: ${PLAYGROUND_WEB_VERSION}
+        RELEASE_FILENAME: HarmonyDB.Playground.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${PLAYGROUND_WEB_PORT}:80"
+    environment:
+      - Services__IndexApi=http://index-api
+      - Services__AuthorizationApi=http://authorization-api
+    depends_on:
+      - index-api
+      - authorization-api
+    volumes:
+      - ./configs/playground-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  telegram-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Telegram.Runner.Functions.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${TELEGRAM_RUNNER_PORT}:80"
+    environment:
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./configs/telegram-runner.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+
+  telegram-polling:
+    build:
+      context: ../..
+      dockerfile: docker/built/telegram-polling/Dockerfile
+    environment:
+      - Telegram__BotToken=${TELEGRAM_BOT_TOKEN}
+      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
+    depends_on:
+      - sql
+      - telegram-runner
+    volumes:
+      - ./configs/telegram-polling.json:/app/appsettings.json
+
+volumes:
+  sql-data:
+  azurite-data: 

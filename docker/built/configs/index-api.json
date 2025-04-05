@@ -1,0 +1,23 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SqlServer": "Server=sql,1433;Initial Catalog=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
+  },
+  "Features": {
+    "EnableFullTextSearch": true,
+    "EnableCaching": true
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:5003",
+      "http://localhost:5004",
+      "http://localhost:5008"
+    ]
+  }
+} 

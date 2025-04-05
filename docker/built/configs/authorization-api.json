@@ -1,0 +1,25 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SqlServer": "Server=sql,1433;Initial Catalog=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
+  },
+  "JwtSettings": {
+    "SecretKey": "your-secret-development-key-at-least-32-chars",
+    "Issuer": "HarmonyDB",
+    "Audience": "HarmonyDBClients",
+    "ExpirationMinutes": 60
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:5003",
+      "http://localhost:5004",
+      "http://localhost:5008"
+    ]
+  }
+} 

@@ -1,0 +1,17 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "ConnectionStrings": {
+    "SqlServer": "Server=sql;Database=HarmonyDB;User Id=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
+  },
+  "Telegram": {
+    "BotToken": "${TELEGRAM_BOT_TOKEN}",
+    "ApiEndpoint": "http://telegram-runner/api/IncomingUpdate"
+  },
+  "PollingInterval": 1000
+} 
