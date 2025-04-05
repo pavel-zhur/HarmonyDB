@@ -36,8 +36,8 @@ services:
       - sql
       - azurite
       - collectives-api
-    volumes:
-      - ./configs/index-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/index-api.env
 
   authorization-api:
     build:
@@ -54,8 +54,8 @@ services:
     depends_on:
       - sql
       - azurite
-    volumes:
-      - ./configs/authorization-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/authorization-api.env
 
   illustrations-api:
     build:
@@ -73,8 +73,8 @@ services:
     depends_on:
       - sql
       - azurite
-    volumes:
-      - ./configs/illustrations-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/illustrations-api.env
 
   billing-api:
     build:
@@ -91,8 +91,8 @@ services:
     depends_on:
       - sql
       - azurite
-    volumes:
-      - ./configs/billing-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/billing-api.env
 
   collectives-api:
     build:
@@ -110,8 +110,8 @@ services:
       - sql
       - azurite
       - authorization-api
-    volumes:
-      - ./configs/collectives-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/collectives-api.env
 
   sources-self-api:
     build:
@@ -129,8 +129,8 @@ services:
       - sql
       - azurite
       - collectives-api
-    volumes:
-      - ./configs/sources-self-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/sources-self-api.env
 
   pdfs-api:
     build:
@@ -145,8 +145,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - SyncFusionLicenseKey=${SYNC_FUSION_LICENSE_KEY}
-    volumes:
-      - ./configs/pdfs-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/pdfs-api.env
 
   frontend-api:
     build:
@@ -167,8 +167,8 @@ services:
       - authorization-api
       - illustrations-api
       - billing-api
-    volumes:
-      - ./configs/frontend-api.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/frontend-api.env
 
   # Frontend Services
   frontend-web:
@@ -246,8 +246,8 @@ services:
       - illustrations-api
       - pdfs-api
       - index-api
-    volumes:
-      - ./configs/telegram-runner.json:/home/site/wwwroot/local.settings.json
+    env_file:
+      - ./configs/telegram-runner.env
 
   telegram-polling:
     build:
