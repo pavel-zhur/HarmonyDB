@@ -2,18 +2,22 @@
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
     }
   },
   "AllowedHosts": "*",
-  "Services": {
-    "IndexApi": "http://index-api",
-    "AuthorizationApi": "http://authorization-api",
-    "IllustrationsApi": "http://illustrations-api",
-    "BillingApi": "http://billing-api",
-    "CollectivesApi": "http://collectives-api",
-    "SourcesSelfApi": "http://sources-self-api",
-    "PdfsApi": "http://pdfs-api"
-  }
+  "ConnectionStrings": {
+    "SongsDatabase": "Server=sql,1433;Database=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
+  },
+  "IllustrationsApiClientOptions": {
+    "Endpoint": "http://illustrations-api/api/"
+  },
+  "BillingApiClientOptions": {
+    "Endpoint": "http://billing-api/api/"
+  },
+  "AdminOptions": {
+    "TenantId": 1
+  },
+  "authv1": "1234567890"
 } 

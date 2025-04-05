@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "CollectivesApiClientOptions": {
+    "Endpoint": "http://collectives-api/api/"
+  },
+  "FrontendApiClientOptions": {
+    "Endpoint": "http://frontend-api/api/"
+  },
+  "HideUnstable": false,
+  "TelegramBotId": ""
+} 

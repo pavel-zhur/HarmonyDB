@@ -2,16 +2,15 @@
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
     }
   },
-  "ConnectionStrings": {
-    "SqlServer": "Server=sql;Database=HarmonyDB;User Id=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
-  },
-  "Telegram": {
-    "BotToken": "${TELEGRAM_BOT_TOKEN}",
-    "ApiEndpoint": "http://telegram-runner/api/IncomingUpdate"
+  "PollerOptions": {
+    "Token": "${TELEGRAM_BOT_TOKEN}",
+    "IncomingUpdateUrl": "http://telegram-runner/api/IncomingUpdate",
+    "WebHooksSecretToken": "abc123def456",
+    "WebHooksSecretHeader": "X-Telegram-Bot-Api-Secret-Token"
   },
   "PollingInterval": 1000
 } 

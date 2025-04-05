@@ -32,13 +32,13 @@ services:
     ports:
       - "${INDEX_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
+      - collectives-api
     volumes:
-      - ./configs/index-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/index-api.json:/home/site/wwwroot/local.settings.json
 
   authorization-api:
     build:
@@ -51,13 +51,12 @@ services:
     ports:
       - "${AUTHORIZATION_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
     volumes:
-      - ./configs/authorization-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/authorization-api.json:/home/site/wwwroot/local.settings.json
 
   illustrations-api:
     build:
@@ -70,14 +69,13 @@ services:
     ports:
       - "${ILLUSTRATIONS_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - ConnectionStrings__AzureStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
     depends_on:
       - sql
       - azurite
     volumes:
-      - ./configs/illustrations-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/illustrations-api.json:/home/site/wwwroot/local.settings.json
 
   billing-api:
     build:
@@ -90,13 +88,12 @@ services:
     ports:
       - "${BILLING_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
     volumes:
-      - ./configs/billing-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/billing-api.json:/home/site/wwwroot/local.settings.json
 
   collectives-api:
     build:
@@ -109,13 +106,13 @@ services:
     ports:
       - "${COLLECTIVES_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
+      - authorization-api
     volumes:
-      - ./configs/collectives-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/collectives-api.json:/home/site/wwwroot/local.settings.json
 
   sources-self-api:
     build:
@@ -128,13 +125,13 @@ services:
     ports:
       - "${SOURCES_SELF_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
+      - collectives-api
     volumes:
-      - ./configs/sources-self-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/sources-self-api.json:/home/site/wwwroot/local.settings.json
 
   pdfs-api:
     build:
@@ -147,13 +144,32 @@ services:
     ports:
       - "${PDFS_API_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - SyncFusionLicenseKey=${SYNC_FUSION_LICENSE_KEY}
+    volumes:
+      - ./configs/pdfs-api.json:/home/site/wwwroot/local.settings.json
+
+  frontend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Frontend.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${FRONTEND_API_PORT}:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - sql
       - azurite
+      - index-api
+      - authorization-api
+      - illustrations-api
+      - billing-api
     volumes:
-      - ./configs/pdfs-api.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/frontend-api.json:/home/site/wwwroot/local.settings.json
 
   # Frontend Services
   frontend-web:
@@ -167,21 +183,14 @@ services:
     ports:
       - "${FRONTEND_WEB_PORT}:80"
     environment:
-      - Services__IndexApi=http://index-api
-      - Services__AuthorizationApi=http://authorization-api
-      - Services__IllustrationsApi=http://illustrations-api
-      - Services__BillingApi=http://billing-api
-      - Services__CollectivesApi=http://collectives-api
-      - Services__SourcesSelfApi=http://sources-self-api
-      - Services__PdfsApi=http://pdfs-api
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - index-api
       - authorization-api
-      - illustrations-api
-      - billing-api
       - collectives-api
       - sources-self-api
-      - pdfs-api
+    volumes:
+      - ./configs/frontend-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
 
   admin-web:
     build:
@@ -194,21 +203,10 @@ services:
     ports:
       - "${ADMIN_WEB_PORT}:80"
     environment:
-      - Services__IndexApi=http://index-api
-      - Services__AuthorizationApi=http://authorization-api
-      - Services__IllustrationsApi=http://illustrations-api
-      - Services__BillingApi=http://billing-api
-      - Services__CollectivesApi=http://collectives-api
-      - Services__SourcesSelfApi=http://sources-self-api
-      - Services__PdfsApi=http://pdfs-api
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
-      - index-api
-      - authorization-api
       - illustrations-api
       - billing-api
-      - collectives-api
-      - sources-self-api
-      - pdfs-api
     volumes:
       - ./configs/admin-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
 
@@ -223,8 +221,7 @@ services:
     ports:
       - "${PLAYGROUND_WEB_PORT}:80"
     environment:
-      - Services__IndexApi=http://index-api
-      - Services__AuthorizationApi=http://authorization-api
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - index-api
       - authorization-api
@@ -242,23 +239,22 @@ services:
     ports:
       - "${TELEGRAM_RUNNER_PORT}:80"
     environment:
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
-      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
     depends_on:
       - sql
       - azurite
+      - illustrations-api
+      - pdfs-api
+      - index-api
     volumes:
-      - ./configs/telegram-runner.json:/home/site/wwwroot/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+      - ./configs/telegram-runner.json:/home/site/wwwroot/local.settings.json
 
   telegram-polling:
     build:
       context: ../..
       dockerfile: docker/built/telegram-polling/Dockerfile
-    environment:
-      - Telegram__BotToken=${TELEGRAM_BOT_TOKEN}
-      - ConnectionStrings__SqlServer=${SQL_CONNECTION_STRING}
     depends_on:
-      - sql
       - telegram-runner
     volumes:
       - ./configs/telegram-polling.json:/app/appsettings.json

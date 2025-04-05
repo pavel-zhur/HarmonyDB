@@ -7,9 +7,16 @@
     "Logging__LogLevel__Microsoft.AspNetCore": "Warning",
     "Logging__LogLevel__Microsoft.EntityFrameworkCore": "Warning",
     "AzureFunctionsJobHost__Logging__Console__IsEnabled": "true",
-    "IllustrationsApiClientOptions__Endpoint": "http://illustrations-api/api/",
     "IndexApiClientOptions__Endpoint": "http://index-api/api/",
-    "TelegramOptions__WebHooksSecretToken": "abc123def456"
+    "SourceApiClientOptions__Endpoint": "http://sources-self-api/api/",
+    "AuthorizationApiClientOptions__CheckIdentityEndpoint": "http://authorization-api/api/CheckIdentity",
+    "AuthorizationApiClientOptions__PingEndpoint": "http://authorization-api/api/Ping",
+    "IllustrationsApiClientOptions__Endpoint": "http://illustrations-api/api/",
+    "SelfApiClientOptions__Endpoint": "http://sources-self-api/api/",
+    "PdfsApiClientOptions__Endpoint": "http://pdfs-api/api/",
+    "FrontendCosmosDatabaseOptions__EndPointUri": "https://localhost:8081",
+    "FrontendCosmosDatabaseOptions__Key": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "FrontendCosmosDatabaseOptions__DatabaseName": "FrontendDB"
   },
   "ConnectionStrings": {
     "SongsDatabase": "Server=sql,1433;Database=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True"

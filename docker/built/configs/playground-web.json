@@ -2,13 +2,15 @@
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
     }
   },
   "AllowedHosts": "*",
-  "Services": {
-    "IndexApi": "http://index-api",
-    "AuthorizationApi": "http://authorization-api"
+  "IndexApiClientOptions": {
+    "Endpoint": "http://index-api/api/"
+  },
+  "AuthorizationApiClientOptions": {
+    "Endpoint": "http://authorization-api/api/"
   }
 } 

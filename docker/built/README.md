@@ -60,6 +60,7 @@ The setup uses the following files:
 - PDFs API: http://localhost:13007
 - Collectives API: http://localhost:13009
 - Sources Self API: http://localhost:13010
+- Frontend API: http://localhost:13011
 - Telegram Runner: http://localhost:13012
 
 ### Web Applications
