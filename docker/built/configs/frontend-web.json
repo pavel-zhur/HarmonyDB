@@ -1,18 +1,7 @@
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Microsoft.EntityFrameworkCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "CollectivesApiClientOptions": {
-    "Endpoint": "http://collectives-api/api/"
-  },
-  "FrontendApiClientOptions": {
-    "Endpoint": "http://frontend-api/api/"
-  },
-  "HideUnstable": false,
-  "TelegramBotId": ""
+  "CollectivesApiClientOptions:Endpoint": "http://localhost:13009/api/",
+  "FrontendApiClientOptions:Endpoint": "http://localhost:13011/api/",
+  "TelegramBotId": "234234232",
+  "FrontendOptions:LocalSourceName": "Local",
+  "FrontendOptions:AppInsightsConnectionString": null
 } 

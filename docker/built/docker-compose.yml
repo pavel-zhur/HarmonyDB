@@ -31,8 +31,7 @@ services:
     ports:
       - "${INDEX_API_PORT}:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
     depends_on:
       - sql
       - azurite
@@ -40,6 +39,8 @@ services:
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/index-api.env
 
   authorization-api:
@@ -52,15 +53,14 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${AUTHORIZATION_API_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/authorization-api.env
 
   illustrations-api:
@@ -74,15 +74,15 @@ services:
     ports:
       - "${ILLUSTRATIONS_API_PORT}:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/illustrations-api.env
 
   billing-api:
@@ -95,15 +95,14 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${BILLING_API_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/billing-api.env
 
   collectives-api:
@@ -116,9 +115,6 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${COLLECTIVES_API_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
@@ -126,6 +122,8 @@ services:
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/collectives-api.env
 
   sources-self-api:
@@ -138,9 +136,6 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${SOURCES_SELF_API_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
@@ -148,6 +143,8 @@ services:
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/sources-self-api.env
 
   pdfs-api:
@@ -161,12 +158,12 @@ services:
     ports:
       - "${PDFS_API_PORT}:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - SyncFusionLicenseKey=${SYNC_FUSION_LICENSE_KEY}
-      - AzureWebJobsSecretStorageType=files
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/pdfs-api.env
 
   frontend-api:
@@ -179,9 +176,6 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${FRONTEND_API_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
@@ -192,6 +186,8 @@ services:
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/frontend-api.env
 
   # Frontend Services
@@ -203,17 +199,16 @@ services:
         RELEASE_VERSION: ${FRONTEND_WEB_VERSION}
         RELEASE_FILENAME: OneShelf.Frontend.Web.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+        CONFIG_JSON: ./configs/frontend-web.json
     ports:
       - "${FRONTEND_WEB_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - index-api
       - authorization-api
       - collectives-api
       - sources-self-api
-    volumes:
-      - ./configs/frontend-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+    env_file:
+      - ./all.env
 
   admin-web:
     build:
@@ -225,13 +220,13 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${ADMIN_WEB_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - illustrations-api
       - billing-api
     volumes:
       - ./configs/admin-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+    env_file:
+      - ./all.env
 
   playground-web:
     build:
@@ -243,13 +238,13 @@ services:
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - "${PLAYGROUND_WEB_PORT}:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     depends_on:
       - index-api
       - authorization-api
     volumes:
       - ./configs/playground-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+    env_file:
+      - ./all.env
 
   telegram-runner:
     build:
@@ -262,9 +257,7 @@ services:
     ports:
       - "${TELEGRAM_RUNNER_PORT}:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
-      - AzureWebJobsSecretStorageType=files
     depends_on:
       - sql
       - azurite
@@ -274,6 +267,8 @@ services:
     volumes:
       - ./secrets:/azure-functions-host/Secrets
     env_file:
+      - ./all.env
+      - ./functions.env
       - ./configs/telegram-runner.env
 
   telegram-polling:
@@ -284,6 +279,8 @@ services:
       - telegram-runner
     volumes:
       - ./configs/telegram-polling.json:/app/appsettings.json
+    env_file:
+      - ./all.env
 
 volumes:
   sql-data:
