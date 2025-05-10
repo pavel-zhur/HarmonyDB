@@ -12,6 +12,33 @@ services:
     volumes:
       - sql-data:/var/opt/mssql
 
+  cosmos-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    ports:
+      - "${COSMOS_EMULATOR_PORT}:8081"
+      - "${COSMOS_EXPLORER_PORT}:1234"
+    environment:
+      - PROTOCOL=https
+    volumes:
+      - cosmos-data:/data
+
+  cosmos-proxy:
+    build:
+      context: .
+      dockerfile: cosmos-proxy/Dockerfile
+    ports:
+      - "${COSMOS_PROXY_PORT}:8081"
+    volumes:
+      - shared-certs:/shared
+    depends_on:
+      - cosmos-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "https://localhost:8081"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     ports:
@@ -76,10 +103,15 @@ services:
     environment:
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
     depends_on:
-      - sql
-      - azurite
+      cosmos-proxy:
+        condition: service_healthy
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
+      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -114,11 +146,17 @@ services:
         RELEASE_FILENAME: OneShelf.Collectives.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
-      - sql
-      - azurite
-      - authorization-api
+      cosmos-proxy:
+        condition: service_healthy
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
+      authorization-api:
+        condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
+      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -173,14 +211,23 @@ services:
         RELEASE_FILENAME: OneShelf.Frontend.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
-      - sql
-      - azurite
-      - index-api
-      - authorization-api
-      - illustrations-api
-      - billing-api
+      cosmos-proxy:
+        condition: service_healthy
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
+      index-api:
+        condition: service_started
+      authorization-api:
+        condition: service_started
+      illustrations-api:
+        condition: service_started
+      billing-api:
+        condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
+      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -292,4 +339,6 @@ services:
 
 volumes:
   sql-data:
-  azurite-data: 
+  azurite-data:
+  cosmos-data:
+  shared-certs: 

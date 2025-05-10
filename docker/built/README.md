@@ -74,6 +74,9 @@ The setup uses the following files:
 ### Infrastructure
 - SQL Server: localhost:13433
 - Azurite Storage: http://localhost:13000
+- Cosmos DB Emulator: http://localhost:13013
+- Cosmos DB Proxy: http://localhost:13014
+- Cosmos DB Explorer: http://localhost:13015
 
 ## Updating Services
 
