@@ -37,6 +37,7 @@ public abstract class CosmosDatabase : IDisposable
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
 
+            clientOptions.LimitToEndpoint = true;
             clientOptions.ConnectionMode = ConnectionMode.Gateway;
         }
 
