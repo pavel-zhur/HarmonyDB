@@ -8,9 +8,11 @@
   },
   "AllowedHosts": "*",
   "IndexApiClientOptions": {
-    "Endpoint": "http://index-api/api/"
+    "Endpoint": "http://index-api/api/",
+    "MasterCode": "52FADC67DDEEF7719243B56677677667"
   },
-  "AuthorizationApiClientOptions": {
-    "Endpoint": "http://authorization-api/api/"
+  "SourceApiClientOptions": {
+    "Endpoint": "http://index-api/api/",
+    "ServiceCode": "some-service-code"
   }
 } 

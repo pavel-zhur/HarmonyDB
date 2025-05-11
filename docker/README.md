@@ -34,20 +34,20 @@ The setup uses the following files:
 
 2. Start the environment:
    ```bash
-   cd docker/built
-   docker-compose up -d
+   cd docker
+   docker compose up -d
    ```
    
    Alternatively, use VS Code's Docker extension "Run All Services" button.
 
 3. Check the status:
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
 4. View logs:
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 ## Available Services
