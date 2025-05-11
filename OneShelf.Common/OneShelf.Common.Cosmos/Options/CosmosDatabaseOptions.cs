@@ -8,5 +8,5 @@ public class CosmosDatabaseOptions
 
     public required string DatabaseName { get; init; }
 
-    public bool AllowAnyServerCertificate { get; init; } = false;
+    public bool AllowAnyServerCertificate { get; init; }
 }
