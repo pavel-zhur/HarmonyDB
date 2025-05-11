@@ -52,6 +52,7 @@ services:
       - ./all.env
       - ./functions.env
       - ./configs/index-api.env
+      - ./configs-downstream/index-api.env
 
   authorization-api:
     build:
@@ -72,6 +73,7 @@ services:
       - ./all.env
       - ./functions.env
       - ./configs/authorization-api.env
+      - ./configs-downstream/authorization-api.env
 
   illustrations-api:
     build:
@@ -280,6 +282,7 @@ services:
       - ./configs/playground-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
     env_file:
       - ./all.env
+      - ./configs-downstream/playground-web.env
 
   telegram-runner:
     build:
