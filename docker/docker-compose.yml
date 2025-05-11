@@ -3,7 +3,8 @@ name: HarmonyDB
 services:
   # Database Services
   sql:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    build:
+      dockerfile: sql/Dockerfile
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=${SQL_SERVER_PASSWORD}
