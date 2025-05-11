@@ -124,7 +124,7 @@ services:
       context: .
       dockerfile: Dockerfile.functions
       args:
-        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_VERSION: ${COLLECTIVES_API_VERSION}
         RELEASE_FILENAME: OneShelf.Collectives.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
@@ -148,7 +148,7 @@ services:
       context: .
       dockerfile: Dockerfile.functions
       args:
-        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_VERSION: ${SOURCES_SELF_API_VERSION}
         RELEASE_FILENAME: OneShelf.Sources.Self.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
@@ -188,7 +188,7 @@ services:
       context: .
       dockerfile: Dockerfile.functions
       args:
-        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_VERSION: ${FRONTEND_API_VERSION}
         RELEASE_FILENAME: OneShelf.Frontend.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
@@ -286,7 +286,7 @@ services:
       context: .
       dockerfile: Dockerfile.functions
       args:
-        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_VERSION: ${TELEGRAM_RUNNER_VERSION}
         RELEASE_FILENAME: OneShelf.Telegram.Runner.Functions.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
