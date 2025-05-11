@@ -1,0 +1,40 @@
+FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated8.0
+
+# Arguments for release settings
+ARG RELEASE_VERSION
+ARG RELEASE_FILENAME
+ARG ASPNETCORE_ENVIRONMENT
+
+# Set the working directory
+WORKDIR /home/site/wwwroot
+
+# Install curl for downloading releases and unzip for extracting them
+USER root
+RUN apt-get update && \
+    apt-get install -y curl unzip openssl libnss3-tools && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for Functions
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=dotnet-isolated \
+    ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+
+# Download and extract the release package
+RUN if [ ! -z "$RELEASE_VERSION" ] && [ ! -z "$RELEASE_FILENAME" ]; then \
+    echo "Downloading release ${RELEASE_VERSION}/${RELEASE_FILENAME}" && \
+    curl -L \
+    "https://github.com/pavel-zhur/HarmonyDB/releases/download/${RELEASE_VERSION}/${RELEASE_FILENAME}" \
+    > /tmp/release.zip && \
+    unzip -o /tmp/release.zip -d /home/site/wwwroot && \
+    rm /tmp/release.zip && \
+    # For debugging purposes
+    echo "Files in /home/site/wwwroot:" && \
+    ls -la /home/site/wwwroot; \
+    else \
+    echo "ERROR: Required arguments missing. Set RELEASE_VERSION and RELEASE_FILENAME"; \
+    exit 1; \
+    fi
+
+ENTRYPOINT ["/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost"]

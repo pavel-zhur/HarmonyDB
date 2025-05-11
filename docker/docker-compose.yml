@@ -1,0 +1,365 @@
+name: HarmonyDB
+
+services:
+  # Database Services
+  sql:
+    build:
+      dockerfile: sql/Dockerfile
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SQL_SERVER_PASSWORD}
+    ports:
+      - "${SQL_SERVER_PORT}:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - harmonydb-network
+
+  cosmos-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    ports:
+      - "${COSMOS_EMULATOR_PORT}:8081"
+      - "${COSMOS_EXPLORER_PORT}:1234"
+    environment:
+      - PROTOCOL=https
+    volumes:
+      - cosmos-data:/data
+    networks:
+      - harmonydb-network
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "${AZURITE_PORT}:10000"
+    volumes:
+      - azurite-data:/data
+    networks:
+      - harmonydb-network
+
+  # Backend Services (Core Microservices)
+  index-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${INDEX_API_VERSION}
+        RELEASE_FILENAME: HarmonyDB.Index.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${INDEX_API_PORT}:80"
+    environment:
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
+    depends_on:
+      - sql
+      - azurite
+      - collectives-api
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/index-api.env
+      - ./configs-downstream/index-api.env
+    networks:
+      - harmonydb-network
+
+  authorization-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${AUTHORIZATION_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Authorization.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${AUTHORIZATION_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/authorization-api.env
+      - ./configs-downstream/authorization-api.env
+    networks:
+      - harmonydb-network
+
+  illustrations-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${ILLUSTRATIONS_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Illustrations.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${ILLUSTRATIONS_API_PORT}:80"
+    environment:
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
+    depends_on:
+      cosmos-emulator:
+        condition: service_started
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/illustrations-api.env
+    networks:
+      - harmonydb-network
+
+  billing-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${BILLING_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Billing.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${BILLING_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/billing-api.env
+    networks:
+      - harmonydb-network
+
+  collectives-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${COLLECTIVES_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Collectives.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    depends_on:
+      cosmos-emulator:
+        condition: service_started
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
+      authorization-api:
+        condition: service_started
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/collectives-api.env
+    networks:
+      - harmonydb-network
+
+  sources-self-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${SOURCES_SELF_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Sources.Self.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${SOURCES_SELF_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - collectives-api
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/sources-self-api.env
+    networks:
+      - harmonydb-network
+
+  pdfs-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${PDFS_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Pdfs.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${PDFS_API_PORT}:80"
+    environment:
+      - SyncFusionLicenseKey=${SYNC_FUSION_LICENSE_KEY}
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/pdfs-api.env
+    networks:
+      - harmonydb-network
+
+  frontend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${FRONTEND_API_VERSION}
+        RELEASE_FILENAME: OneShelf.Frontend.Api.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    depends_on:
+      cosmos-emulator:
+        condition: service_started
+      sql:
+        condition: service_started
+      azurite:
+        condition: service_started
+      index-api:
+        condition: service_started
+      authorization-api:
+        condition: service_started
+      illustrations-api:
+        condition: service_started
+      billing-api:
+        condition: service_started
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/frontend-api.env
+    networks:
+      - harmonydb-network
+
+  # Add the new API proxy service
+  api-proxy:
+    build:
+      context: .
+      dockerfile: api-proxy/Dockerfile
+    ports:
+      - "${FRONTEND_API_PORT}:13011"
+      - "${COLLECTIVES_API_PORT}:13009"
+    depends_on:
+      - frontend-api
+      - collectives-api
+    networks:
+      - harmonydb-network
+
+  # Frontend Services
+  frontend-web:
+    build:
+      context: .
+      dockerfile: frontend-web/Dockerfile
+      args:
+        RELEASE_VERSION: ${FRONTEND_WEB_VERSION}
+        RELEASE_FILENAME: OneShelf.Frontend.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+        CONFIG_JSON: ./configs/frontend-web.json
+    ports:
+      - "${FRONTEND_WEB_PORT}:80"
+    depends_on:
+      - index-api
+      - authorization-api
+      - collectives-api
+      - sources-self-api
+    env_file:
+      - ./all.env
+    networks:
+      - harmonydb-network
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dotnet-service
+      args:
+        RELEASE_VERSION: ${ADMIN_WEB_VERSION}
+        RELEASE_FILENAME: OneShelf.Admin.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${ADMIN_WEB_PORT}:80"
+    depends_on:
+      - illustrations-api
+      - billing-api
+    volumes:
+      - ./configs/admin-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+    env_file:
+      - ./all.env
+    networks:
+      - harmonydb-network
+
+  playground-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dotnet-service
+      args:
+        RELEASE_VERSION: ${PLAYGROUND_WEB_VERSION}
+        RELEASE_FILENAME: HarmonyDB.Playground.Web.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${PLAYGROUND_WEB_PORT}:80"
+    depends_on:
+      - index-api
+      - authorization-api
+    volumes:
+      - ./configs/playground-web.json:/app/appsettings.${ASPNETCORE_ENVIRONMENT}.json
+    env_file:
+      - ./all.env
+      - ./configs-downstream/playground-web.env
+    networks:
+      - harmonydb-network
+
+  telegram-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.functions
+      args:
+        RELEASE_VERSION: ${TELEGRAM_RUNNER_VERSION}
+        RELEASE_FILENAME: OneShelf.Telegram.Runner.Functions.zip
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "${TELEGRAM_RUNNER_PORT}:80"
+    environment:
+      - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
+    depends_on:
+      - sql
+      - azurite
+      - illustrations-api
+      - pdfs-api
+      - index-api
+    volumes:
+      - ./functions-secrets:/azure-functions-host/Secrets
+    env_file:
+      - ./all.env
+      - ./functions.env
+      - ./configs/telegram-runner.env
+    networks:
+      - harmonydb-network
+
+  telegram-polling:
+    build:
+      context: ..
+      dockerfile: docker/telegram-polling/Dockerfile
+    depends_on:
+      - telegram-runner
+    volumes:
+      - ./configs/telegram-polling.json:/app/appsettings.json
+    env_file:
+      - ./all.env
+    networks:
+      - harmonydb-network
+
+volumes:
+  sql-data:
+  azurite-data:
+  cosmos-data:
+
+networks:
+  harmonydb-network:
+    name: harmonydb-network

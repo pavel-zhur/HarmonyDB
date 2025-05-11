@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "IndexApiClientOptions": {
+    "Endpoint": "http://index-api/api/",
+    "MasterCode": "52FADC67DDEEF7719243B56677677667"
+  },
+  "SourceApiClientOptions": {
+    "Endpoint": "http://index-api/api/",
+    "ServiceCode": "some-service-code"
+  }
+} 

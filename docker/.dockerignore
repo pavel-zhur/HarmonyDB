@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE files
+.vs
+.vscode
+*.user
+*.suo
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+msbuild.log
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+
+# Documentation
+README.md
+LICENSE
+
+# Docker files except the one we're using
+docker-compose*.yml
+!docker-compose.yml
+Dockerfile*
+!Dockerfile.dotnet-service

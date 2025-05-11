@@ -20,14 +20,28 @@ public abstract class CosmosDatabase : IDisposable
         Options = options;
         Logger = logger;
 
-        Client = new(options.EndPointUri, options.PrimaryKey, new()
+        var clientOptions = new CosmosClientOptions
         {
             SerializerOptions = new()
             {
                 PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase,
             },
             AllowBulkExecution = true,
-        });
+        };
+
+        if (options.AllowAnyServerCertificate)
+        {
+            clientOptions.HttpClientFactory = () => new HttpClient(new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = 
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+
+            clientOptions.LimitToEndpoint = true;
+            clientOptions.ConnectionMode = ConnectionMode.Gateway;
+        }
+
+        Client = new(options.EndPointUri, options.PrimaryKey, clientOptions);
     }
 
     public const string IllegalIdCharacters = "/\\#?";

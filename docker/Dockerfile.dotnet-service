@@ -1,0 +1,80 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+# Arguments for release settings
+ARG GITHUB_TOKEN
+ARG RELEASE_VERSION
+ARG RELEASE_FILENAME
+ARG ASPNETCORE_ENVIRONMENT
+
+# Set the working directory
+WORKDIR /app
+
+# Install curl for downloading releases and unzip for extracting them
+RUN apt-get update && \
+    apt-get install -y curl unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+
+# Download and extract the release package
+RUN if [ ! -z "$RELEASE_VERSION" ] && [ ! -z "$RELEASE_FILENAME" ]; then \
+    echo "Downloading release ${RELEASE_VERSION}/${RELEASE_FILENAME}" && \
+    AUTH_HEADER="" && \
+    if [ ! -z "$GITHUB_TOKEN" ]; then \
+      AUTH_HEADER="-H \"Authorization: token ${GITHUB_TOKEN}\""; \
+    fi && \
+    curl -L ${AUTH_HEADER} \
+    "https://github.com/pavel-zhur/HarmonyDB/releases/download/${RELEASE_VERSION}/${RELEASE_FILENAME}" \
+    > /tmp/release.zip && \
+    unzip -o /tmp/release.zip -d /app && \
+    rm /tmp/release.zip && \
+    # Extract the application name from the zip filename (without extension)
+    APP_NAME=$(echo "${RELEASE_FILENAME}" | sed 's/\.zip$//') && \
+    echo "Looking for entry point DLL for ${APP_NAME}" && \
+    # First try to find a dll that matches the application name exactly
+    find /app -name "${APP_NAME}.dll" | head -n 1 > /app/entrypoint.txt && \
+    # If not found, look for dlls that have a similar name but not library/dependency dlls
+    if [ ! -s /app/entrypoint.txt ]; then \
+      find /app -name "*.dll" | grep -v "Microsoft\." | grep -v "System\." | grep -v "Newtonsoft\." | \
+      grep -v "Extensions\." | grep -v "\.resources\.dll" | head -n 1 >> /app/entrypoint.txt; \
+    fi && \
+    # If still not found, find any dll as a last resort
+    if [ ! -s /app/entrypoint.txt ]; then \
+      find /app -name "*.dll" | head -n 1 >> /app/entrypoint.txt; \
+    fi && \
+    if [ ! -s /app/entrypoint.txt ]; then \
+      echo "ERROR: No suitable DLL files found in the extracted contents"; \
+      ls -la /app; \
+      exit 1; \
+    fi; \
+    else \
+    echo "ERROR: Required arguments missing. Set RELEASE_VERSION and RELEASE_FILENAME"; \
+    exit 1; \
+    fi
+
+# Create a startup script to handle correct entrypoint
+RUN echo '#!/bin/bash' > /app/start.sh && \
+    echo 'if [ -s /app/entrypoint.txt ]; then' >> /app/start.sh && \
+    echo '  ENTRY_DLL=$(cat /app/entrypoint.txt)' >> /app/start.sh && \
+    echo '  echo "Starting application: $ENTRY_DLL"' >> /app/start.sh && \
+    echo '  if [[ "$ENTRY_DLL" == *"Functions"* ]]; then' >> /app/start.sh && \
+    echo '    # Special handling for Azure Functions' >> /app/start.sh && \
+    echo '    echo "Detected Azure Functions app, using func start"' >> /app/start.sh && \
+    echo '    cd $(dirname "$ENTRY_DLL")' >> /app/start.sh && \
+    echo '    exec dotnet "$ENTRY_DLL"' >> /app/start.sh && \
+    echo '  else' >> /app/start.sh && \
+    echo '    # Regular web app' >> /app/start.sh && \
+    echo '    exec dotnet "$ENTRY_DLL"' >> /app/start.sh && \
+    echo '  fi' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  echo "ERROR: No valid entry DLL found"' >> /app/start.sh && \
+    echo '  ls -la /app' >> /app/start.sh && \
+    echo '  exit 1' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Command to run the application
+ENTRYPOINT ["/app/start.sh"] 
