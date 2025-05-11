@@ -15,18 +15,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create script to trust certificate at startup - with explicit sudo and .NET trust
-RUN echo '#!/bin/bash \n\
-if [ -f "$COSMOS_CERTIFICATE_PATH" ]; then \n\
-  echo "Adding CosmosDB emulator certificate to trusted certificates" \n\
-  # Copy to system CA store \n\
-  cp "$COSMOS_CERTIFICATE_PATH" /usr/local/share/ca-certificates/cosmos-proxy.crt \n\
-  update-ca-certificates \n\
-fi \n\
-# Continue with the normal startup command \n\
-exec /azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost "$@"' > /startup-with-cert.sh && \
-chmod +x /startup-with-cert.sh
-
 # Set environment variables for Functions
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
@@ -49,5 +37,4 @@ RUN if [ ! -z "$RELEASE_VERSION" ] && [ ! -z "$RELEASE_FILENAME" ]; then \
     exit 1; \
     fi
 
-# Override the default entrypoint to use our script
-ENTRYPOINT ["/startup-with-cert.sh"] 
+ENTRYPOINT ["/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost"]

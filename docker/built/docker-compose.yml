@@ -22,23 +22,6 @@ services:
     volumes:
       - cosmos-data:/data
 
-  cosmos-proxy:
-    build:
-      context: .
-      dockerfile: cosmos-proxy/Dockerfile
-    ports:
-      - "${COSMOS_PROXY_PORT}:8081"
-    volumes:
-      - shared-certs:/shared
-    depends_on:
-      - cosmos-emulator
-    healthcheck:
-      test: ["CMD", "curl", "-f", "-k", "https://localhost:8081"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     ports:
@@ -103,15 +86,14 @@ services:
     environment:
       - OpenAiOptions__OpenAiApiKey=${OPENAI_API_KEY}
     depends_on:
-      cosmos-proxy:
-        condition: service_healthy
+      cosmos-emulator:
+        condition: service_started
       sql:
         condition: service_started
       azurite:
         condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
-      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -146,8 +128,8 @@ services:
         RELEASE_FILENAME: OneShelf.Collectives.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
-      cosmos-proxy:
-        condition: service_healthy
+      cosmos-emulator:
+        condition: service_started
       sql:
         condition: service_started
       azurite:
@@ -156,7 +138,6 @@ services:
         condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
-      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -211,8 +192,8 @@ services:
         RELEASE_FILENAME: OneShelf.Frontend.Api.zip
         ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     depends_on:
-      cosmos-proxy:
-        condition: service_healthy
+      cosmos-emulator:
+        condition: service_started
       sql:
         condition: service_started
       azurite:
@@ -227,7 +208,6 @@ services:
         condition: service_started
     volumes:
       - ./secrets:/azure-functions-host/Secrets
-      - shared-certs:/shared
     env_file:
       - ./all.env
       - ./functions.env
@@ -341,4 +321,3 @@ volumes:
   sql-data:
   azurite-data:
   cosmos-data:
-  shared-certs: 
