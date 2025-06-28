@@ -28,6 +28,8 @@ public static class ServiceCollectionExtensions
                     .AddCommand<ViewBilling>()
                     .AddCommand<Amnesia>()
                     .AddCommand<Images>()
+                    .AddCommand<Videos>()
+                    .AddCommand<Songs>()
                     
                     .AddPipelineHandlerInOrder<UpdatesCollector>()
                     .AddPipelineHandlerInOrder<UsersCollector>()

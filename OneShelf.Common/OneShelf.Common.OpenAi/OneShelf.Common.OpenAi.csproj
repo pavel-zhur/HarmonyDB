@@ -10,6 +10,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 		<PackageReference Include="OpenAI-DotNet" Version="8.3.0" />
+		<PackageReference Include="Google.Cloud.AIPlatform.V1" Version="3.21.0" />
+		<PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
 	</ItemGroup>
 
 	<ItemGroup>

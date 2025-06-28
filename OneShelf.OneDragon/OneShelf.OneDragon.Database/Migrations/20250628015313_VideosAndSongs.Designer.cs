@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.OneDragon.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.OneDragon.Database;
 namespace OneShelf.OneDragon.Database.Migrations
 {
     [DbContext(typeof(DragonDatabase))]
-    partial class DragonDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20250628015313_VideosAndSongs")]
+    partial class VideosAndSongs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,13 +50,16 @@ namespace OneShelf.OneDragon.Database.Migrations
                     b.Property<float?>("PresencePenalty")
                         .HasColumnType("real");
 
-                    b.Property<string>("SoraModel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("SystemMessage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VeoModel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("VeoVersion")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

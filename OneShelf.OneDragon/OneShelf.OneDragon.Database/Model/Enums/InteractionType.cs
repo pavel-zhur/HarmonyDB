@@ -12,4 +12,8 @@ public enum InteractionType
 
     DirectImagesSuccess,
     DirectImagesLimit,
+    DirectVideosSuccess,
+    DirectVideosLimit,
+    DirectSongsSuccess,
+    DirectSongsLimit,
 }

@@ -22,7 +22,7 @@ namespace OneShelf.Billing.Api.Functions
         }
 
         [Function(BillingApiUrls.All)]
-        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req, [FromBody] AllRequest request)
+        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] AllRequest request)
             => RunHandler(request);
 
         protected override async Task<AllResponse> Execute(AllRequest allRequest)
