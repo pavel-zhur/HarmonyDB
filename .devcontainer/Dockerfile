@@ -3,23 +3,30 @@ FROM node:20
 ARG TZ
 ENV TZ="$TZ"
 
-# Install basic development tools and iptables/ipset
-RUN apt update && apt install -y less \
-  git \
-  procps \
-  sudo \
-  fzf \
-  zsh \
-  man-db \
-  unzip \
-  gnupg2 \
-  gh \
-  iptables \
-  ipset \
-  iproute2 \
-  dnsutils \
-  aggregate \
-  jq
+# Install Microsoft package signing key and repository
+RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb
+
+# Install basic development tools, .NET SDKs, and iptables/ipset
+RUN apt-get update && apt-get install -y less \
+    git \
+    procps \
+    sudo \
+    fzf \
+    zsh \
+    man-db \
+    unzip \
+    gnupg2 \
+    gh \
+    iptables \
+    ipset \
+    iproute2 \
+    dnsutils \
+    aggregate \
+    jq \
+    dotnet-sdk-7.0 \
+    dotnet-sdk-8.0
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \

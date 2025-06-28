@@ -1,5 +1,5 @@
 {
-  "name": "Claude Code Sandbox",
+  "name": "HarmonyDB Development Environment",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
@@ -15,11 +15,18 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.dotnet-interactive-vscode",
+        "formulahendry.dotnet-test-explorer",
+        "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[csharp]": {
+          "editor.defaultFormatter": "ms-dotnettools.csharp"
+        },
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
         },
@@ -32,19 +39,25 @@
           "zsh": {
             "path": "zsh"
           }
-        }
+        },
+        "dotnet.server.useOmnisharp": true,
+        "omnisharp.enableRoslynAnalyzers": true,
+        "omnisharp.enableEditorConfigSupport": true
       }
     }
   },
   "remoteUser": "node",
   "mounts": [
     "source=claude-code-bashhistory,target=/commandhistory,type=volume",
-    "source=claude-code-config,target=/home/node/.claude,type=volume"
+    "source=claude-code-config,target=/home/node/.claude,type=volume",
+    "source=nuget-packages,target=/home/node/.nuget/packages,type=volume"
   ],
   "remoteEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "DOTNET_NOLOGO": "true",
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "true"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",

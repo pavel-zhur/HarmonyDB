@@ -56,7 +56,12 @@ for domain in \
     "api.anthropic.com" \
     "sentry.io" \
     "statsig.anthropic.com" \
-    "statsig.com"; do
+    "statsig.com" \
+    "api.nuget.org" \
+    "nuget.org" \
+    "dotnetcli.azureedge.net" \
+    "dotnetcli.blob.core.windows.net" \
+    "dc.services.visualstudio.com"; do
     echo "Resolving $domain..."
     ips=$(dig +short A "$domain")
     if [ -z "$ips" ]; then
