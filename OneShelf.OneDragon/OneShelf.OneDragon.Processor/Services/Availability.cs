@@ -19,7 +19,7 @@ public class Availability(DragonDatabase dragonDatabase, DragonScope dragonScope
         var imagesSince = Since(limits.Max(x => x.Window));
         var images = (await dragonDatabase.Interactions
                 .Where(x => x.UserId == dragonScope.UserId && x.ChatId == dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.AiImagesSuccess)
+                .Where(x => x.InteractionType == InteractionType.AiImagesSuccess || x.InteractionType == InteractionType.DirectImagesSuccess)
                 .Where(x => x.CreatedOn >= imagesSince)
                 .ToListAsync())
             .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
@@ -52,7 +52,7 @@ public class Availability(DragonDatabase dragonDatabase, DragonScope dragonScope
         var videosSince = Since(limits.Max(x => x.Window));
         var videos = (await dragonDatabase.Interactions
                 .Where(x => x.UserId == dragonScope.UserId && x.ChatId == dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.DirectVideosSuccess)
+                .Where(x => x.InteractionType == InteractionType.DirectVideosSuccess || x.InteractionType == InteractionType.AiVideosSuccess)
                 .Where(x => x.CreatedOn >= videosSince)
                 .ToListAsync())
             .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
@@ -85,7 +85,7 @@ public class Availability(DragonDatabase dragonDatabase, DragonScope dragonScope
         var songsSince = Since(limits.Max(x => x.Window));
         var songs = (await dragonDatabase.Interactions
                 .Where(x => x.UserId == dragonScope.UserId && x.ChatId == dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.DirectSongsSuccess)
+                .Where(x => x.InteractionType == InteractionType.DirectSongsSuccess || x.InteractionType == InteractionType.AiSongsSuccess)
                 .Where(x => x.CreatedOn >= songsSince)
                 .ToListAsync())
             .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))

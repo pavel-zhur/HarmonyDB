@@ -239,6 +239,10 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
     InteractionType IInteractionsRepository<InteractionType>.ImagesLimit => InteractionType.ImagesLimit;
 
     InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.ImagesSuccess;
+    InteractionType IInteractionsRepository<InteractionType>.VideosLimit => InteractionType.VideosLimit;
+    InteractionType IInteractionsRepository<InteractionType>.VideosSuccess => InteractionType.VideosSuccess;
+    InteractionType IInteractionsRepository<InteractionType>.SongsLimit => InteractionType.MusicLimit;
+    InteractionType IInteractionsRepository<InteractionType>.SongsSuccess => InteractionType.MusicSuccess;
 
     InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.OwnChatterAudio;
 

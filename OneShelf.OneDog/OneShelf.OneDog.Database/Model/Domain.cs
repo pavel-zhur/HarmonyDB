@@ -35,5 +35,13 @@ public class Domain
 
     public float? BillingRatio { get; set; }
     
-    public ImagesLimit? ImagesLimit { get; set; }
+    public MediaLimit? ImagesLimit { get; set; }
+    
+    public MediaLimit? VideosLimit { get; set; }
+    
+    public MediaLimit? MusicLimit { get; set; }
+    
+    public string? SoraModel { get; set; }
+    
+    public string? LyriaModel { get; set; }
 }

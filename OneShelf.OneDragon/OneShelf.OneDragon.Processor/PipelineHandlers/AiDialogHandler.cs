@@ -63,6 +63,12 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now)
         => await _availability.GetImagesUnavailableUntil(now);
 
+    protected override async Task<DateTime?> GetVideosUnavailableUntil(DateTime now)
+        => await _availability.GetVideosUnavailableUntil(now);
+
+    protected override async Task<DateTime?> GetMusicUnavailableUntil(DateTime now)
+        => await _availability.GetSongsUnavailableUntil(now);
+
     protected override async Task<DateTime?> GetChatUnavailableUntil()
     {
         var user = await _dragonDatabase.Users.SingleAsync(x => x.Id == _dragonScope.UserId);
@@ -102,7 +108,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
 А я пока пороюсь в мусорке, вдруг там есть ответы на все вопросы. 🐾";
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
     {
         var aiParameters = await _dragonDatabase.AiParameters.SingleAsync();
         return (
@@ -110,7 +116,9 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
             aiParameters.GptVersion,
             aiParameters.FrequencyPenalty,
             aiParameters.PresencePenalty,
-            aiParameters.DalleVersion);
+            aiParameters.DalleVersion,
+            aiParameters.SoraModel,
+            aiParameters.LyriaModel);
     }
 
     protected override (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters() => ("one dragon", -1);

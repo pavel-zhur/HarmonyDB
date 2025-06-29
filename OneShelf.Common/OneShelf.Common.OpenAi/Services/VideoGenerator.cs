@@ -69,7 +69,7 @@ public class VideoGenerator
                     if (generationId != null)
                     {
                         var videoData = await DownloadVideoData(generationId, cancellationToken);
-                        if (videoData != null && videoData.Length > 0)
+                        if (videoData is { Length: > 0 })
                         {
                             _logger.LogInformation("Video generated successfully. Took {ms} ms. Size: {size} bytes", 
                                 (DateTime.Now - started).TotalMilliseconds, videoData.Length);
@@ -161,7 +161,7 @@ public class VideoGenerator
             prompt = request.Prompt,
             width = request.Width,
             height = request.Height,
-            n_seconds = request.NSSeconds,
+            n_seconds = request.Duration,
             model = request.Model
         };
 

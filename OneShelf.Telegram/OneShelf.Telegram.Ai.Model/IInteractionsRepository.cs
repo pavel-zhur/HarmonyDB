@@ -14,5 +14,9 @@ public interface IInteractionsRepository<TInteractionType>
     TInteractionType OwnChatterResetDialog { get; }
     TInteractionType ImagesLimit { get; }
     TInteractionType ImagesSuccess { get; }
+    TInteractionType VideosLimit { get; }
+    TInteractionType VideosSuccess { get; }
+    TInteractionType SongsLimit { get; }
+    TInteractionType SongsSuccess { get; }
     TInteractionType Audio { get; }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneShelf.OneDog.Database;
 
@@ -11,9 +12,11 @@ using OneShelf.OneDog.Database;
 namespace OneShelf.OneDog.Database.Migrations
 {
     [DbContext(typeof(DogDatabase))]
-    partial class DogDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20250629015416_DogVideosAndMusic")]
+    partial class DogVideosAndMusic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

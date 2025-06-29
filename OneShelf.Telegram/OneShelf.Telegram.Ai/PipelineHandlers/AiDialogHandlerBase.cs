@@ -235,18 +235,25 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         return (messageEntities, result);
     }
 
-    protected async Task Typing(long chatId, int? messageThreadId, ValueHolder<bool>? isPhoto = null)
+    protected async Task Typing(long chatId, int? messageThreadId, ValueHolder<MediaAction>? mediaAction = null)
     {
-        await GetApi().SendChatActionAsync(chatId, isPhoto?.Value == true ? ChatActions.UploadPhoto : ChatActions.Typing, messageThreadId: messageThreadId);
+        var action = mediaAction?.Value switch
+        {
+            MediaAction.UploadPhoto => ChatActions.UploadPhoto,
+            MediaAction.RecordVideo => ChatActions.RecordVideo,
+            MediaAction.RecordVoice => ChatActions.UploadVoice,
+            _ => ChatActions.Typing
+        };
+        await GetApi().SendChatActionAsync(chatId, action, messageThreadId: messageThreadId);
     }
 
-    protected async void LongTyping(long chatId, int? messageThreadId, CancellationToken cancellationToken, ValueHolder<bool>? isPhoto = null)
+    protected async void LongTyping(long chatId, int? messageThreadId, CancellationToken cancellationToken, ValueHolder<MediaAction>? mediaAction = null)
     {
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Typing(chatId, messageThreadId, isPhoto);
+                await Typing(chatId, messageThreadId, mediaAction);
                 await Task.Delay(3000, cancellationToken);
             }
         }
@@ -505,7 +512,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             var cancellationTokenSource = new CancellationTokenSource();
             try
             {
-                LongTyping(callbackQuery.Message!.Chat.Id, null, cancellationTokenSource.Token, new(true));
+                var mediaAction = new ValueHolder<MediaAction>(MediaAction.UploadPhoto);
+                LongTyping(callbackQuery.Message!.Chat.Id, null, cancellationTokenSource.Token, mediaAction);
                 var aiParameters = await GetAiParameters();
                 var images = await _dialogRunner.GenerateImages(
                     Enumerable.Repeat(prompt, times).ToList(),
@@ -573,6 +581,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             .Take(20));
 
         var imagesUnavailableUntil = await GetImagesUnavailableUntil(now);
+        var videosUnavailableUntil = await GetVideosUnavailableUntil(now);
+        var musicUnavailableUntil = await GetMusicUnavailableUntil(now);
 
         interactions = interactions.AsEnumerable().Reverse().ToList();
 
@@ -582,12 +592,12 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var (system, version, frequencyPenalty, presencePenalty, imagesVersion) = await GetAiParameters();
+        var (system, version, frequencyPenalty, presencePenalty, imagesVersion, videoModel, musicModel) = await GetAiParameters();
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
-        ValueHolder<bool> isPhoto = new();
-        LongTyping(update.Message!.Chat.Id, update.Message.MessageThreadId, callingApis.Token, isPhoto);
+        ValueHolder<MediaAction> mediaAction = new(MediaAction.Typing);
+        LongTyping(update.Message!.Chat.Id, update.Message.MessageThreadId, callingApis.Token, mediaAction);
         var checking = CheckNoUpdates(checkingIsStillLast, callingApis.Token, interactions.Last(x => Equals(x.InteractionType, _repository.OwnChatterMessage) || Equals(x.InteractionType, _repository.OwnChatterImageMessage)).Id);
 
         ChatBotMemoryPointWithTraces newMessagePoint;
@@ -619,12 +629,14 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                 FrequencyPenalty = frequencyPenalty,
                 PresencePenalty = presencePenalty,
                 ImagesVersion = imagesVersion,
+                VideoModel = videoModel,
+                MusicModel = musicModel,
                 UserId = update.Message.From!.Id,
                 UseCase = "own chatter",
                 AdditionalBillingInfo = additionalBillingInfo,
                 DomainId = domainId,
                 ChatId = update.Message.Chat.Id,
-            }, checkingIsStillLast.Token, imagesUnavailableUntil, isPhoto);
+            }, checkingIsStillLast.Token, imagesUnavailableUntil, videosUnavailableUntil, musicUnavailableUntil, mediaAction);
 
             if (checkingIsStillLast.IsCancellationRequested)
             {
@@ -657,7 +669,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         interaction.CreatedOn = DateTime.Now;
         interaction.InteractionType = _repository.OwnChatterMemoryPoint;
         interaction.Serialized = JsonSerializer.Serialize(newMessagePoint);
-        interaction.ShortInfoSerialized = JsonSerializer.Serialize(result);
+        interaction.ShortInfoSerialized = result.ToString();
         interaction.UserId = update.Message.From.Id;
         await _repository.Add(interaction.Once().ToList());
         var memoryPointInteractionId = interaction.Id;
@@ -668,6 +680,58 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             interaction.CreatedOn = DateTime.Now;
             interaction.InteractionType = imagesUnavailableUntil.HasValue ? _repository.ImagesLimit : _repository.ImagesSuccess;
             interaction.Serialized = result.Images.Count.ToString();
+            interaction.UserId = update.Message.From.Id;
+            await _repository.Add(interaction.Once().ToList());
+        }
+
+        // Process video results
+        foreach (var video in result.Videos)
+        {
+            interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.InteractionType = _repository.VideosSuccess;
+            interaction.Serialized = video.Duration.ToString();
+            interaction.ShortInfoSerialized = video.Prompt;
+            interaction.UserId = update.Message.From.Id;
+            await _repository.Add(interaction.Once().ToList());
+            
+            await SendVideo(update.Message!.Chat.Id, update.Message.MessageThreadId, replyToMessageId ?? update.Message.MessageId, video.Data, video.Prompt, replyToMessageId.HasValue);
+        }
+
+        // Process video limits
+        foreach (var videoLimit in result.VideoLimits)
+        {
+            interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.InteractionType = _repository.VideosLimit;
+            interaction.Serialized = "limit";
+            interaction.ShortInfoSerialized = videoLimit.Prompt;
+            interaction.UserId = update.Message.From.Id;
+            await _repository.Add(interaction.Once().ToList());
+        }
+
+        // Process music results
+        foreach (var music in result.Music)
+        {
+            interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.InteractionType = _repository.SongsSuccess;
+            interaction.Serialized = "1";
+            interaction.ShortInfoSerialized = music.Prompt;
+            interaction.UserId = update.Message.From.Id;
+            await _repository.Add(interaction.Once().ToList());
+            
+            await SendMusic(update.Message!.Chat.Id, update.Message.MessageThreadId, replyToMessageId ?? update.Message.MessageId, music.Data, music.Prompt, music.Title, replyToMessageId.HasValue);
+        }
+
+        // Process music limits
+        foreach (var musicLimit in result.MusicLimits)
+        {
+            interaction = CreateInteraction(update);
+            interaction.CreatedOn = DateTime.Now;
+            interaction.InteractionType = _repository.SongsLimit;
+            interaction.Serialized = "limit";
+            interaction.ShortInfoSerialized = musicLimit.Prompt;
             interaction.UserId = update.Message.From.Id;
             await _repository.Add(interaction.Once().ToList());
         }
@@ -717,6 +781,79 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
         }
     }
 
+    protected async Task SendVideo(long chatId, int? messageThreadId, int messageId, byte[] videoData, string prompt, bool reply)
+    {
+        try
+        {
+            using var videoStream = new MemoryStream(videoData);
+            var videoFile = new InputFile(videoStream, "video.mp4");
+            await GetApi().SendVideoAsync(new(chatId, videoFile)
+            {
+                MessageThreadId = messageThreadId,
+                ReplyParameters = reply ? new()
+                {
+                    MessageId = messageId,
+                    AllowSendingWithoutReply = false,
+                } : null,
+                Caption = $"🎬 {prompt} (от Sora 🐶)"
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error sending video. Prompt: {prompt}", prompt);
+        }
+    }
+
+    private static string ValidateAndFixMusicFilename(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return "music.wav";
+        }
+
+        // Remove invalid filename characters
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var cleanTitle = title;
+        foreach (var invalidChar in invalidChars)
+        {
+            cleanTitle = cleanTitle.Replace(invalidChar, '_');
+        }
+
+        // Ensure .wav extension
+        if (!cleanTitle.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            // Remove any existing extension and add .wav
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(cleanTitle);
+            cleanTitle = $"{nameWithoutExtension}.wav";
+        }
+
+        return cleanTitle;
+    }
+
+    protected async Task SendMusic(long chatId, int? messageThreadId, int messageId, byte[] musicData, string prompt, string? title, bool reply)
+    {
+        try
+        {
+            var filename = ValidateAndFixMusicFilename(title);
+            using var audioStream = new MemoryStream(musicData);
+            var audioFile = new InputFile(audioStream, filename);
+            await GetApi().SendAudioAsync(new(chatId, audioFile)
+            {
+                MessageThreadId = messageThreadId,
+                ReplyParameters = reply ? new()
+                {
+                    MessageId = messageId,
+                    AllowSendingWithoutReply = false,
+                } : null,
+                Caption = $"🎵 {prompt} (от Lyria 🐶)"
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error sending music. Prompt: {prompt}", prompt);
+        }
+    }
+
     private static InlineKeyboardMarkup GetMainMarkup(int imagesCount, int memoryPointInteractionId)
     {
         return new([
@@ -734,10 +871,14 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     protected abstract bool CheckRelevant(Update update);
 
     protected abstract Task<DateTime?> GetImagesUnavailableUntil(DateTime now);
+
+    protected abstract Task<DateTime?> GetVideosUnavailableUntil(DateTime now);
+
+    protected abstract Task<DateTime?> GetMusicUnavailableUntil(DateTime now);
     
     protected abstract Task<DateTime?> GetChatUnavailableUntil();
 
-    protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters();
+    protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters();
 
     protected abstract (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters();
 

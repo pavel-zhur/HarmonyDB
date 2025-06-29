@@ -66,8 +66,6 @@ public class Songs : Command
 
         Io.WriteLine("Сочиняю 30-секундную музыку! 🎵");
 
-        await _api.SendChatActionAsync(_scope.ChatId, ChatActions.UploadVoice);
-
         Scheduled(Background(query, negativePrompt));
     }
 

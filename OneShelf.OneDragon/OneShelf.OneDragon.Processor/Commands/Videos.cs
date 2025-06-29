@@ -68,8 +68,6 @@ public class Videos : Command
 
         Io.WriteLine("Генерирую видео с помощью Sora! 🎬");
 
-        await _api.SendChatActionAsync(_scope.ChatId, ChatActions.RecordVideo);
-
         Scheduled(Background(query, resolutionChoice, duration));
     }
 
@@ -91,7 +89,7 @@ public class Videos : Command
             Prompt = query,
             Width = width,
             Height = height,
-            NSSeconds = duration,
+            Duration = duration,
             UserId = _scope.UserId,
             DomainId = -1,
             ChatId = _scope.ChatId,
