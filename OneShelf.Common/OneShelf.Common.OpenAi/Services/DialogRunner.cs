@@ -411,10 +411,10 @@ public class DialogRunner
 
             var (width, height) = arguments.Ratio switch
             {
-                "16:9" => (1280, 720),
-                "9:16" => (720, 1280),
-                "Square" => (720, 720),
-                _ => (720, 720)
+                "16:9" => (854, 480),
+                "9:16" => (480, 854),
+                "Square" => (480, 480),
+                _ => (480, 480)
             };
 
             var request = new VideoGenerationRequest
