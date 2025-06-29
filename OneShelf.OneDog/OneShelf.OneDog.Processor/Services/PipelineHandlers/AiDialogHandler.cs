@@ -79,17 +79,57 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         return imagesUnavailableUntil;
     }
 
+    protected override async Task<DateTime?> GetVideosUnavailableUntil(DateTime now)
+    {
+        DateTime? videosUnavailableUntil = null;
+        if (_dogContext.Domain.VideosLimit != null)
+        {
+            var videosSince = now.Add(-_dogContext.Domain.VideosLimit.Window);
+            var videos = (await _dogDatabase.Interactions
+                    .Where(x => x.InteractionType == InteractionType.VideosSuccess)
+                    .Where(x => x.CreatedOn >= videosSince)
+                    .ToListAsync())
+                .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
+                .ToList();
+
+            if (videos.Sum(x => x.count) >= _dogContext.Domain.VideosLimit.Limit)
+            {
+                videosUnavailableUntil = videos.Min(x => x.CreatedOn).Add(_dogContext.Domain.VideosLimit.Window);
+            }
+        }
+
+        return videosUnavailableUntil;
+    }
+
+    protected override async Task<DateTime?> GetMusicUnavailableUntil(DateTime now)
+    {
+        DateTime? musicUnavailableUntil = null;
+        if (_dogContext.Domain.MusicLimit != null)
+        {
+            var musicSince = now.Add(-_dogContext.Domain.MusicLimit.Window);
+            var music = (await _dogDatabase.Interactions
+                    .Where(x => x.InteractionType == InteractionType.MusicSuccess)
+                    .Where(x => x.CreatedOn >= musicSince)
+                    .ToListAsync())
+                .Select(x => (x.CreatedOn, count: int.Parse(x.Serialized)))
+                .ToList();
+
+            if (music.Sum(x => x.count) >= _dogContext.Domain.MusicLimit.Limit)
+            {
+                musicUnavailableUntil = music.Min(x => x.CreatedOn).Add(_dogContext.Domain.MusicLimit.Window);
+            }
+        }
+
+        return musicUnavailableUntil;
+    }
+
     protected override async Task<DateTime?> GetChatUnavailableUntil() => null;
 
     protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
     {
-        var system = _dogContext.Domain.SystemMessage;
-        var version = _dogContext.Domain.GptVersion;
-        var frequencyPenalty = _dogContext.Domain.FrequencyPenalty;
-        var presencePenalty = _dogContext.Domain.PresencePenalty;
-        var imagesVersion = _dogContext.Domain.DalleVersion;
-        return (system, version, frequencyPenalty, presencePenalty, imagesVersion);
+        var domain = _dogContext.Domain;
+        return (domain.SystemMessage, domain.GptVersion, domain.FrequencyPenalty, domain.PresencePenalty, domain.DalleVersion, domain.SoraModel, domain.LyriaModel);
     }
 }

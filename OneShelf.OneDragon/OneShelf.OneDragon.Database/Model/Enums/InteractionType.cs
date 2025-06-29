@@ -10,6 +10,15 @@ public enum InteractionType
     AiImagesSuccess,
     AiAudio,
 
+    AiVideosSuccess,
+    AiVideosLimit,
+    AiSongsSuccess,
+    AiSongsLimit,
+
     DirectImagesSuccess,
     DirectImagesLimit,
+    DirectVideosSuccess,
+    DirectVideosLimit,
+    DirectSongsSuccess,
+    DirectSongsLimit,
 }

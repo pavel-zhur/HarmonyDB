@@ -10,6 +10,10 @@ public class Limit
 
     public int? Texts { get; set; }
 
+    public int? Videos { get; set; }
+
+    public int? Songs { get; set; }
+
     [Column(TypeName = "bigint")]
     public required TimeSpan Window { get; set; }
 

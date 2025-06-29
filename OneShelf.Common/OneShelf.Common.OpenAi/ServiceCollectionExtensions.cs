@@ -15,6 +15,8 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<DialogRunner>()
             .AddScoped<Transcriber>()
+            .AddScoped<VideoGenerator>()
+            .AddScoped<MusicGenerator>()
             .AddBillingApiClient(configuration)
             .AddHttpClient();
 

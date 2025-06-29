@@ -41,4 +41,9 @@ public enum InteractionType
     OwnChatterImageMessage,
 
     OwnChatterAudio,
+
+    VideosSuccess,
+    VideosLimit,
+    MusicSuccess,
+    MusicLimit
 }

@@ -13,4 +13,8 @@ public class AiParameters
     public float? FrequencyPenalty { get; set; }
 
     public float? PresencePenalty { get; set; }
+
+    public required string LyriaModel { get; set; }
+
+    public required string SoraModel { get; set; }
 }

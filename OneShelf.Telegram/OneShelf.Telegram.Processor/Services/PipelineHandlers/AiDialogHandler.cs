@@ -51,11 +51,15 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
     protected override async Task<DateTime?> GetImagesUnavailableUntil(DateTime now) => null;
 
+    protected override async Task<DateTime?> GetVideosUnavailableUntil(DateTime now) => now.AddYears(1);
+
+    protected override async Task<DateTime?> GetMusicUnavailableUntil(DateTime now) => null;
+
     protected override async Task<DateTime?> GetChatUnavailableUntil() => null;
 
     protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
     {
         var parameters = await _songsDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterSystemMessage
@@ -72,7 +76,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var frequencyPenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterFrequencyPenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
         var presencePenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterPresencePenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
         var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
-        return (system, version, frequencyPenalty, presencePenalty, imagesVersion);
+        return (system, version, frequencyPenalty, presencePenalty, imagesVersion, null, null);
     }
 
     protected override string ResponseError => "Случилась ошибка. :(";

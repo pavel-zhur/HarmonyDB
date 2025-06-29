@@ -71,5 +71,13 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
 
     InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.OwnChatterAudio;
 
+    InteractionType IInteractionsRepository<InteractionType>.VideosLimit => InteractionType.VideosLimit;
+
+    InteractionType IInteractionsRepository<InteractionType>.VideosSuccess => InteractionType.VideosSuccess;
+
+    InteractionType IInteractionsRepository<InteractionType>.SongsLimit => InteractionType.MusicLimit;
+
+    InteractionType IInteractionsRepository<InteractionType>.SongsSuccess => InteractionType.MusicSuccess;
+
     #endregion
 }

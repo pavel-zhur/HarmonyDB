@@ -73,6 +73,11 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
 
     InteractionType IInteractionsRepository<InteractionType>.ImagesSuccess => InteractionType.AiImagesSuccess;
 
+    InteractionType IInteractionsRepository<InteractionType>.VideosLimit => InteractionType.AiVideosLimit;
+    InteractionType IInteractionsRepository<InteractionType>.VideosSuccess => InteractionType.AiVideosSuccess;
+    InteractionType IInteractionsRepository<InteractionType>.SongsLimit => InteractionType.AiSongsLimit;
+    InteractionType IInteractionsRepository<InteractionType>.SongsSuccess => InteractionType.AiSongsSuccess;
+
     InteractionType IInteractionsRepository<InteractionType>.Audio => InteractionType.AiAudio;
 
     #endregion
