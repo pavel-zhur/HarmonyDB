@@ -23,7 +23,7 @@ internal static class DialogConstants
     public const string SystemImageOpportunityMessage =
         $"If you wish to display the images to the user, call the '{IncludeImageFunctionName}' function.";
     public const string SystemVideoOpportunityMessage =
-        $"If you wish to generate a video for the user, you have two options: '{IncludeSoraVideoFunctionName}' (default, generates video without sound, supports custom duration and aspect ratio) or '{IncludeVeoVideoFunctionName}' (generates video with sound, always 8 seconds and 16:9). Always confirm the details before generating. For Sora, 3 seconds is the recommended default duration. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
+        $"If you wish to generate a video for the user, you have two options (confirm with the user which one he prefers, without sound, 3 seconds, square is the default): '{IncludeSoraVideoFunctionName}' (default, generates video without sound, supports custom duration and aspect ratio) or '{IncludeVeoVideoFunctionName}' (generates video with sound, always 8 seconds and 16:9). Always confirm the details before generating. For Sora, 3 seconds is the recommended default duration. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
     public const string SystemMusicOpportunityMessage =
         $"If you wish to generate music for the user, call the '{IncludeMusicFunctionName}' function. Music prompts must be in English. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
 
