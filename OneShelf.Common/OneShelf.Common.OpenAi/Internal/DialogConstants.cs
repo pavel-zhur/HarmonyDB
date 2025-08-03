@@ -7,7 +7,8 @@ internal static class DialogConstants
 {
     public const string UserChangedTopicFunctionName = "user_changed_topic";
     public const string IncludeImageFunctionName = "include_image";
-    public const string IncludeVideoFunctionName = "include_video";
+    public const string IncludeSoraVideoFunctionName = "include_sora_video";
+    public const string IncludeVeoVideoFunctionName = "include_veo_video";
     public const string IncludeMusicFunctionName = "include_music";
 
     public const string ImagesDisplayedMessage = "The images have been displayed.";
@@ -22,7 +23,7 @@ internal static class DialogConstants
     public const string SystemImageOpportunityMessage =
         $"If you wish to display the images to the user, call the '{IncludeImageFunctionName}' function.";
     public const string SystemVideoOpportunityMessage =
-        $"If you wish to generate a video for the user, call the '{IncludeVideoFunctionName}' function. Always confirm the details (prompt, ratio, duration) before generating. 5 seconds is probably the best default duration. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
+        $"If you wish to generate a video for the user, you have two options: '{IncludeSoraVideoFunctionName}' (default, generates video without sound, supports custom duration and aspect ratio) or '{IncludeVeoVideoFunctionName}' (generates video with sound, always 8 seconds and 16:9). Always confirm the details before generating. For Sora, 3 seconds is the recommended default duration. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
     public const string SystemMusicOpportunityMessage =
         $"If you wish to generate music for the user, call the '{IncludeMusicFunctionName}' function. Music prompts must be in English. If generation fails, you can try again but you are limited to 2 consecutive attempts - then you must wait.";
 
@@ -56,9 +57,9 @@ internal static class DialogConstants
             },
         }));
 
-    private static readonly Tool IncludeVideoTool = new(new Function(
-        IncludeVideoFunctionName,
-        "Call this function if you wish to generate a video for the user. Always confirm details with user first in a brief message asking about prompt, ratio, and duration. Limited to 2 consecutive attempts.",
+    private static readonly Tool IncludeSoraVideoTool = new(new Function(
+        IncludeSoraVideoFunctionName,
+        "Call this function if you wish to generate a video without sound using Sora (default). Always confirm details with user first in a brief message asking about prompt, ratio, and duration. Limited to 2 consecutive attempts.",
         new JsonObject
         {
             ["type"] = "object",
@@ -80,10 +81,32 @@ internal static class DialogConstants
                     ["type"] = "integer",
                     ["minimum"] = 1,
                     ["maximum"] = 20,
-                    ["description"] = "Video duration in seconds (1-20). 5 seconds is recommended as the default."
+                    ["description"] = "Video duration in seconds (1-20). 3 seconds is recommended as the default."
                 }
             },
             ["required"] = new JsonArray { "prompt", "ratio", "duration" }
+        }));
+
+    private static readonly Tool IncludeVeoVideoTool = new(new Function(
+        IncludeVeoVideoFunctionName,
+        "Call this function if you wish to generate a video with sound using Veo. Veo videos are always 8 seconds long and 16:9 aspect ratio. Always confirm details with user first. Limited to 2 consecutive attempts.",
+        new JsonObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JsonObject
+            {
+                ["prompt"] = new JsonObject
+                {
+                    ["type"] = "string",
+                    ["description"] = "Video generation prompt describing what the video should show"
+                },
+                ["negative_prompt"] = new JsonObject
+                {
+                    ["type"] = "string",
+                    ["description"] = "Optional negative prompt describing what should NOT be in the video"
+                }
+            },
+            ["required"] = new JsonArray { "prompt" }
         }));
 
     private static readonly Tool IncludeMusicTool = new(new Function(
@@ -116,7 +139,8 @@ internal static class DialogConstants
     public static IReadOnlyList<Tool> First { get; } = new List<Tool>
     {
         IncludeImageTool,
-        IncludeVideoTool,
+        IncludeSoraVideoTool,
+        IncludeVeoVideoTool,
         IncludeMusicTool,
     };
 
@@ -124,7 +148,8 @@ internal static class DialogConstants
     {
         UserChangedTopicTool,
         IncludeImageTool,
-        IncludeVideoTool,
+        IncludeSoraVideoTool,
+        IncludeVeoVideoTool,
         IncludeMusicTool,
     };
 }

@@ -23,5 +23,7 @@ public class User
     
     public string? LanguageCode { get; set; }
 
-    public required bool UseLimits { get; set; }
+    public bool UseLimits { get; set; }
+
+    public string Group { get; set; } = "anon";
 }

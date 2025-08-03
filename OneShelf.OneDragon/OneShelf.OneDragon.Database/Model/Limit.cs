@@ -18,4 +18,10 @@ public class Limit
     public required TimeSpan Window { get; set; }
 
     public bool IsEnabled { get; set; }
+
+    public string Group { get; set; } = "anon";
+
+    public bool IsShared { get; set; }
+
+    public string? Description { get; set; }
 }

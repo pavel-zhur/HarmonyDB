@@ -21,16 +21,18 @@ public class Videos : Command
     private readonly DragonDatabase _dragonDatabase;
     private readonly DragonScope _scope;
     private readonly Availability _availability;
-    private readonly VideoGenerator _videoGenerator;
+    private readonly SoraVideoGenerator _soraVideoGenerator;
+    private readonly VeoVideoGenerator _veoVideoGenerator;
     private readonly TelegramBotClient _api;
 
-    public Videos(Io io, DragonDatabase dragonDatabase, DragonScope scope, Availability availability, VideoGenerator videoGenerator, IOptions<TelegramOptions> options) 
+    public Videos(Io io, DragonDatabase dragonDatabase, DragonScope scope, Availability availability, SoraVideoGenerator soraVideoGenerator, VeoVideoGenerator veoVideoGenerator, IOptions<TelegramOptions> options) 
         : base(io)
     {
         _dragonDatabase = dragonDatabase;
         _scope = scope;
         _availability = availability;
-        _videoGenerator = videoGenerator;
+        _soraVideoGenerator = soraVideoGenerator;
+        _veoVideoGenerator = veoVideoGenerator;
         _api = new(options.Value.Token);
     }
 
@@ -56,47 +58,88 @@ public class Videos : Command
 
         var query = Io.FreeChoice("Какое видео хочешь?");
         
-        var resolutionChoice = Io.StrictChoice("Какой формат?", x => x, new[] { "16:9", "9:16", "Square" });
+        var providerChoice = Io.StrictChoice("Какой генератор?", x => x, new[] { "Sora", "Veo" });
         
-        var duration = Io.StrictChoice("Сколько секунд? (1-20)", int.Parse, new[] { "5", "10", "15", "20" });
-
-        if (duration is not (>= 1 and <= 20))
+        string resolutionChoice;
+        int duration;
+        string? negativePrompt = null;
+        
+        if (providerChoice == "Veo")
         {
-            Io.WriteLine("Длительность видео должна быть от 1 до 20 секунд.");
-            return;
+            // Veo: ask for negative prompt option
+            var wantNegativePrompt = Io.StrictChoice("Хочешь указать негативный промпт (что НЕ должно быть в видео)?", x => x, new[] { "Да", "Нет" });
+            if (wantNegativePrompt == "Да")
+            {
+                negativePrompt = Io.FreeChoice("Что НЕ должно быть в видео?");
+            }
+            
+            // Veo: no choices, always 8 seconds and 16:9
+            resolutionChoice = "16:9"; // Default for Veo
+            duration = 8; // Veo is always 8 seconds
+            Io.WriteLine("Генерирую видео с помощью Veo! 🎬 (8 секунд, 16:9)");
+        }
+        else
+        {
+            // Sora: full options
+            resolutionChoice = Io.StrictChoice("Какой формат?", x => x, new[] { "16:9", "9:16", "Square" });
+            duration = Io.StrictChoice("Сколько секунд? (1-20)", int.Parse, new[] { "5", "10", "15", "20" });
+
+            if (duration is not (>= 1 and <= 20))
+            {
+                Io.WriteLine("Длительность видео должна быть от 1 до 20 секунд.");
+                return;
+            }
+            
+            Io.WriteLine("Генерирую видео с помощью Sora! 🎬");
         }
 
-        Io.WriteLine("Генерирую видео с помощью Sora! 🎬");
-
-        Scheduled(Background(query, resolutionChoice, duration));
+        Scheduled(Background(query, resolutionChoice, duration, providerChoice, negativePrompt));
     }
 
-    private async Task Background(string query, string resolutionChoice, int duration)
+    private async Task Background(string query, string resolutionChoice, int duration, string providerChoice, string? negativePrompt)
     {
         var aiParameters = await _dragonDatabase.AiParameters.SingleAsync();
 
-        // Convert resolution choice to width/height
-        var (width, height) = resolutionChoice switch
+        VideoGenerationResult result;
+        if (providerChoice == "Veo")
         {
-            "16:9" => (854, 480),
-            "9:16" => (480, 854),
-            "Square" => (480, 480),
-            _ => (480, 480)
-        };
+            result = await _veoVideoGenerator.GenerateVideo(new()
+            {
+                Prompt = query,
+                NegativePrompt = negativePrompt,
+                UserId = _scope.UserId,
+                DomainId = -1,
+                ChatId = _scope.ChatId,
+                UseCase = "direct videos",
+                AdditionalBillingInfo = "one dragon",
+                Model = aiParameters.VeoModel,
+            });
+        }
+        else
+        {
+            // Convert resolution choice to width/height for Sora
+            var (width, height) = resolutionChoice switch
+            {
+                "16:9" => (854, 480),
+                "9:16" => (480, 854),
+                "Square" => (480, 480),
+                _ => (480, 480)
+            };
 
-        var result = await _videoGenerator.GenerateVideo(new()
-        {
-            Prompt = query,
-            Width = width,
-            Height = height,
-            Duration = duration,
-            UserId = _scope.UserId,
-            DomainId = -1,
-            ChatId = _scope.ChatId,
-            UseCase = "direct videos",
-            AdditionalBillingInfo = "one dragon",
-            Model = aiParameters.SoraModel,
-        });
+            result = await _soraVideoGenerator.GenerateVideo(new()
+            {
+                Prompt = query,
+                Width = width,
+                Height = height,
+                Duration = duration,
+                UserId = _scope.UserId,
+                DomainId = -1,
+                ChatId = _scope.ChatId,
+                UseCase = "direct videos",
+                AdditionalBillingInfo = "one dragon",
+                Model = aiParameters.SoraModel,
+            });
+        }
 
         if (result.Success)
         {
@@ -113,13 +156,16 @@ public class Videos : Command
 
             await _dragonDatabase.SaveChangesAsync();
 
-            // Send as video (Sora videos from Azure OpenAI)
+            // Send as video
             using var videoStream = new MemoryStream(result.VideoData);
             var videoFile = new InputFile(videoStream, "video.mp4");
             
+            var providerEmoji = providerChoice == "Veo" ? "🎯" : "🐶";
+            var providerName = providerChoice == "Veo" ? "Veo" : "Sora";
+            
             await _api.SendVideoAsync(new(_scope.ChatId, videoFile) 
             { 
-                Caption = $"🎬 {query} (от Sora 🐶)" 
+                Caption = $"🎬 {query} (от {providerName} {providerEmoji})" 
             });
         }
         else

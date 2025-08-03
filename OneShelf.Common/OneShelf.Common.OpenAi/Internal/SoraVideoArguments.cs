@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace OneShelf.Common.OpenAi.Internal;
 
-internal class VideoArguments
+internal class SoraVideoArguments
 {
     [JsonPropertyName("prompt")]
     public string? Prompt { get; set; }

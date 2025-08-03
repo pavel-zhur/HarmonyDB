@@ -7,7 +7,8 @@ public class DialogConfiguration
     public float? FrequencyPenalty { get; init; }
     public float? PresencePenalty { get; init; }
     public int? ImagesVersion { get; init; }
-    public string? VideoModel { get; init; }
+    public string? SoraModel { get; init; }
+    public string? VeoModel { get; init; }
     public string? MusicModel { get; init; }
     public required long? UserId { get; init; }
     public required string UseCase { get; init; }

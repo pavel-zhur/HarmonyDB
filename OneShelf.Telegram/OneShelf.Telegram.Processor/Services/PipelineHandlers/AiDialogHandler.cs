@@ -59,7 +59,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
     protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? soraModel, string? veoModel, string? musicModel)> GetAiParameters()
     {
         var parameters = await _songsDatabase.Interactions
             .Where(x => x.InteractionType == InteractionType.OwnChatterSystemMessage
@@ -76,7 +76,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var frequencyPenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterFrequencyPenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
         var presencePenalty = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterPresencePenalty)?.Serialized?.SelectSingle(x => float.TryParse(x, out var value) ? (float?)value : null);
         var imagesVersion = parameters.SingleOrDefault(x => x.InteractionType == InteractionType.OwnChatterImagesVersion)?.Serialized?.SelectSingle(x => int.TryParse(x, out var value) ? (int?)value : null);
-        return (system, version, frequencyPenalty, presencePenalty, imagesVersion, null, null);
+        return (system, version, frequencyPenalty, presencePenalty, imagesVersion, null, null, null);
     }
 
     protected override string ResponseError => "Случилась ошибка. :(";

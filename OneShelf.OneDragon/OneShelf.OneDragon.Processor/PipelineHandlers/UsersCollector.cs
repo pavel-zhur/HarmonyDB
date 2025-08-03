@@ -30,7 +30,6 @@ public class UsersCollector : UsersCollectorBase
                     CreatedOn = DateTime.Now,
                     Id = id,
                     Title = title,
-                    UseLimits = true,
                 };
 
                 _dragonDatabase.Users.Add(user);

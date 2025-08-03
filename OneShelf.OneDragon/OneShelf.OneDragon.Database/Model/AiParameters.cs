@@ -17,4 +17,6 @@ public class AiParameters
     public required string LyriaModel { get; set; }
 
     public required string SoraModel { get; set; }
+
+    public required string VeoModel { get; set; }
 }

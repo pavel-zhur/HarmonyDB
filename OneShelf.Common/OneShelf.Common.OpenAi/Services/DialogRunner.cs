@@ -21,16 +21,18 @@ public class DialogRunner
     private readonly BillingApiClient _billingApiClient;
     private readonly OpenAIClient _client;
     private readonly OpenAiOptions _options;
-    private readonly VideoGenerator _videoGenerator;
+    private readonly SoraVideoGenerator _soraVideoGenerator;
+    private readonly VeoVideoGenerator _veoVideoGenerator;
     private readonly MusicGenerator _musicGenerator;
 
-    public DialogRunner(IOptions<OpenAiOptions> options, ILogger<DialogRunner> logger, BillingApiClient billingApiClient, VideoGenerator videoGenerator, MusicGenerator musicGenerator)
+    public DialogRunner(IOptions<OpenAiOptions> options, ILogger<DialogRunner> logger, BillingApiClient billingApiClient, SoraVideoGenerator soraVideoGenerator, VeoVideoGenerator veoVideoGenerator, MusicGenerator musicGenerator)
     {
         _logger = logger;
         _billingApiClient = billingApiClient;
         _options = options.Value;
         _client = new(new(options.Value.OpenAiApiKey));
-        _videoGenerator = videoGenerator;
+        _soraVideoGenerator = soraVideoGenerator;
+        _veoVideoGenerator = veoVideoGenerator;
         _musicGenerator = musicGenerator;
     }
 
@@ -81,7 +83,7 @@ public class DialogRunner
         newMessagePoint.Messages.Add(message);
 
         // Process all media tools
-        var (images, videos, music, newMessages) = LookForMediaTools(message, imagesUnavailableUntil, videosUnavailableUntil, musicUnavailableUntil, newMessagePoint);
+        var (images, soraVideos, veoVideos, music, newMessages) = LookForMediaTools(message, imagesUnavailableUntil, videosUnavailableUntil, musicUnavailableUntil, newMessagePoint);
         newMessagePoint.Messages.AddRange(newMessages);
         messages.AddRange(newMessages);
 
@@ -100,14 +102,14 @@ public class DialogRunner
             }
         }
 
-        // Process videos (up to 3)
-        List<(VideoArguments args, Task<byte[]?> task)> videoTasks = new();
+        // Process Sora videos (up to 3)
+        List<(SoraVideoArguments args, Task<byte[]?> task)> soraVideoTasks = new();
         List<VideoLimitResult> videoLimits = new();
-        if (videos.Any())
+        if (soraVideos.Any())
         {
-            foreach (var video in videos.Take(3))
+            foreach (var video in soraVideos.Take(3))
             {
-                var videoDeserialized = DeserializeVideo(video);
+                var videoDeserialized = DeserializeSoraVideo(video);
                 if (videoDeserialized?.Prompt != null)
                 {
                     newMessagePoint.VideoTraces.Add(videoDeserialized.Prompt);
@@ -115,8 +117,33 @@ public class DialogRunner
                     if (!videosUnavailableUntil.HasValue)
                     {
                         mediaAction.Value = MediaAction.RecordVideo;
-                        var task = GenerateVideo(videoDeserialized, configuration, cancellationToken);
-                        videoTasks.Add((videoDeserialized, task));
+                        var task = GenerateSoraVideo(videoDeserialized, configuration, cancellationToken);
+                        soraVideoTasks.Add((videoDeserialized, task));
+                    }
+                    else
+                    {
+                        videoLimits.Add(new(videoDeserialized.Prompt));
+                    }
+                }
+            }
+        }
+
+        // Process Veo videos (up to 3)
+        List<(VeoVideoArguments args, Task<byte[]?> task)> veoVideoTasks = new();
+        if (veoVideos.Any())
+        {
+            foreach (var video in veoVideos.Take(3))
+            {
+                var videoDeserialized = DeserializeVeoVideo(video);
+                if (videoDeserialized?.Prompt != null)
+                {
+                    newMessagePoint.VideoTraces.Add(videoDeserialized.Prompt);
+
+                    if (!videosUnavailableUntil.HasValue)
+                    {
+                        mediaAction.Value = MediaAction.RecordVideo;
+                        var task = GenerateVeoVideo(videoDeserialized, configuration, cancellationToken);
+                        veoVideoTasks.Add((videoDeserialized, task));
                     }
                     else
                     {
@@ -153,11 +180,11 @@ public class DialogRunner
         }
 
         // If no content in message after media tools, request more content
-        if (string.IsNullOrWhiteSpace(message?.Content?.ToString()) && (images.Any() || videos.Any() || music.Any()))
+        if (string.IsNullOrWhiteSpace(message?.Content?.ToString()) && (images.Any() || soraVideos.Any() || veoVideos.Any() || music.Any()))
         {
             (message, _) = await Request(messages, configuration, cancellationToken, "after media tools detected", newMessagePoint, false);
-            var (moreImages, moreVideos, moreMusic, _) = LookForMediaTools(message, imagesUnavailableUntil, videosUnavailableUntil, musicUnavailableUntil, newMessagePoint);
-            if (moreImages.Any() || moreVideos.Any() || moreMusic.Any())
+            var (moreImages, moreSoraVideos, moreVeoVideos, moreMusic, _) = LookForMediaTools(message, imagesUnavailableUntil, videosUnavailableUntil, musicUnavailableUntil, newMessagePoint);
+            if (moreImages.Any() || moreSoraVideos.Any() || moreVeoVideos.Any() || moreMusic.Any())
             {
                 _logger.LogError("More media tools returned. Could not have happened. {message}",
                     JsonSerializer.Serialize(message));
@@ -184,7 +211,7 @@ public class DialogRunner
         }
 
         List<VideoResult> videoResults = new();
-        foreach (var videoTask in videoTasks)
+        foreach (var videoTask in soraVideoTasks)
         {
             try
             {
@@ -198,7 +225,25 @@ public class DialogRunner
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error completing video generation");
+                _logger.LogError(e, "Error completing Sora video generation");
+            }
+        }
+
+        foreach (var videoTask in veoVideoTasks)
+        {
+            try
+            {
+                var videoData = await videoTask.task;
+                if (videoData is { Length: > 0 })
+                {
+                    var prompt = videoTask.args.Prompt ?? "video";
+                    var duration = 8; // Veo is always 8 seconds
+                    videoResults.Add(new(videoData, prompt, duration));
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error completing Veo video generation");
             }
         }
 
@@ -403,7 +448,7 @@ public class DialogRunner
         }
     }
 
-    private async Task<byte[]?> GenerateVideo(VideoArguments arguments, DialogConfiguration configuration, CancellationToken cancellationToken)
+    private async Task<byte[]?> GenerateSoraVideo(SoraVideoArguments arguments, DialogConfiguration configuration, CancellationToken cancellationToken)
     {
         try
         {
@@ -417,7 +462,7 @@ public class DialogRunner
                 _ => (480, 480)
             };
 
-            var request = new VideoGenerationRequest
+            var request = new SoraVideoGenerationRequest
             {
                 Prompt = arguments.Prompt,
                 Width = width,
@@ -428,18 +473,18 @@ public class DialogRunner
                 ChatId = configuration.ChatId,
                 UseCase = configuration.UseCase,
                 AdditionalBillingInfo = configuration.AdditionalBillingInfo,
-                Model = configuration.VideoModel ?? "sora-turbo"
+                Model = configuration.SoraModel ?? "sora-turbo"
             };
 
-            var result = await _videoGenerator.GenerateVideo(request, cancellationToken);
+            var result = await _soraVideoGenerator.GenerateVideo(request, cancellationToken);
             if (result is { Success: true, VideoData.Length: > 0 })
             {
-                _logger.LogInformation("Video generated successfully. Prompt: {prompt}", arguments.Prompt);
+                _logger.LogInformation("Sora video generated successfully. Prompt: {prompt}", arguments.Prompt);
                 return result.VideoData;
             }
             else
             {
-                _logger.LogWarning("Video generation failed. Prompt: {prompt}, Error: {error}", arguments.Prompt, result.ErrorMessage);
+                _logger.LogWarning("Sora video generation failed. Prompt: {prompt}, Error: {error}", arguments.Prompt, result.ErrorMessage);
                 return null;
             }
         }
@@ -449,7 +494,48 @@ public class DialogRunner
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error generating video. Prompt: {prompt}", arguments.Prompt);
+            _logger.LogError(e, "Error generating Sora video. Prompt: {prompt}", arguments.Prompt);
+            return null;
+        }
+    }
+
+    private async Task<byte[]?> GenerateVeoVideo(VeoVideoArguments arguments, DialogConfiguration configuration, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(arguments.Prompt)) return null;
+
+            var request = new VeoVideoGenerationRequest
+            {
+                Prompt = arguments.Prompt,
+                NegativePrompt = arguments.NegativePrompt,
+                UserId = configuration.UserId,
+                DomainId = configuration.DomainId,
+                ChatId = configuration.ChatId,
+                UseCase = configuration.UseCase,
+                AdditionalBillingInfo = configuration.AdditionalBillingInfo,
+                Model = configuration.VeoModel ?? "veo-2"
+            };
+
+            var result = await _veoVideoGenerator.GenerateVideo(request, cancellationToken);
+            if (result is { Success: true, VideoData.Length: > 0 })
+            {
+                _logger.LogInformation("Veo video generated successfully. Prompt: {prompt}", arguments.Prompt);
+                return result.VideoData;
+            }
+            else
+            {
+                _logger.LogWarning("Veo video generation failed. Prompt: {prompt}, Error: {error}", arguments.Prompt, result.ErrorMessage);
+                return null;
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            return null;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error generating Veo video. Prompt: {prompt}", arguments.Prompt);
             return null;
         }
     }
@@ -515,15 +601,28 @@ public class DialogRunner
         return imagesDeserialized;
     }
 
-    private VideoArguments? DeserializeVideo(JsonNode video)
+    private SoraVideoArguments? DeserializeSoraVideo(JsonNode video)
     {
         try
         {
-            return JsonSerializer.Deserialize<VideoArguments>(video.ToString());
+            return JsonSerializer.Deserialize<SoraVideoArguments>(video.ToString());
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Unable to deserialize video: {obj}", video?.ToString());
+            _logger.LogError(e, "Unable to deserialize Sora video: {obj}", video?.ToString());
+            return null;
+        }
+    }
+
+    private VeoVideoArguments? DeserializeVeoVideo(JsonNode video)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<VeoVideoArguments>(video.ToString());
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Unable to deserialize Veo video: {obj}", video?.ToString());
             return null;
         }
     }
@@ -541,18 +640,20 @@ public class DialogRunner
         }
     }
 
-    private (List<JsonNode> images, List<JsonNode> videos, List<JsonNode> music, List<Message> newMessages) LookForMediaTools(Message message, DateTime? imagesUnavailableUntil, DateTime? videosUnavailableUntil, DateTime? musicUnavailableUntil, ChatBotMemoryPointWithTraces newMessagePoint)
+    private (List<JsonNode> images, List<JsonNode> soraVideos, List<JsonNode> veoVideos, List<JsonNode> music, List<Message> newMessages) LookForMediaTools(Message message, DateTime? imagesUnavailableUntil, DateTime? videosUnavailableUntil, DateTime? musicUnavailableUntil, ChatBotMemoryPointWithTraces newMessagePoint)
     {
         var messages = new List<Message>();
         var images = new List<JsonNode>();
-        var videos = new List<JsonNode>();
+        var soraVideos = new List<JsonNode>();
+        var veoVideos = new List<JsonNode>();
         var music = new List<JsonNode>();
         var imagesFound = false;
         var videosFound = false;
         var musicFound = false;
 
         // Count recent tool calls from traces
-        var recentVideoCallCount = CountRecentToolCalls(newMessagePoint, DialogConstants.IncludeVideoFunctionName);
+        var recentSoraVideoCallCount = CountRecentToolCalls(newMessagePoint, DialogConstants.IncludeSoraVideoFunctionName);
+        var recentVeoVideoCallCount = CountRecentToolCalls(newMessagePoint, DialogConstants.IncludeVeoVideoFunctionName);
         var recentMusicCallCount = CountRecentToolCalls(newMessagePoint, DialogConstants.IncludeMusicFunctionName);
 
         foreach (var tool in message.ToolCalls ?? Enumerable.Empty<Tool>())
@@ -572,19 +673,36 @@ public class DialogRunner
                     imagesFound = true;
                     break;
 
-                case DialogConstants.IncludeVideoFunctionName:
+                case DialogConstants.IncludeSoraVideoFunctionName:
                     if (videosUnavailableUntil.HasValue)
                     {
                         messages.Add(new(tool, "status = LIMIT EXCEEDED"));
                     }
-                    else if (recentVideoCallCount >= 2)
+                    else if (recentSoraVideoCallCount >= 2)
                     {
-                        messages.Add(new(tool, "status = TOO MANY ATTEMPTS - You have already tried to generate a video 2 times recently. Please wait before trying again."));
+                        messages.Add(new(tool, "status = TOO MANY ATTEMPTS - You have already tried to generate a Sora video 2 times recently. Please wait before trying again."));
                     }
                     else
                     {
                         messages.Add(new(tool, "status = SUCCESS"));
-                        videos.Add(tool.Function.Arguments);
+                        soraVideos.Add(tool.Function.Arguments);
+                        videosFound = true;
+                    }
+                    break;
+
+                case DialogConstants.IncludeVeoVideoFunctionName:
+                    if (videosUnavailableUntil.HasValue)
+                    {
+                        messages.Add(new(tool, "status = LIMIT EXCEEDED"));
+                    }
+                    else if (recentVeoVideoCallCount >= 2)
+                    {
+                        messages.Add(new(tool, "status = TOO MANY ATTEMPTS - You have already tried to generate a Veo video 2 times recently. Please wait before trying again."));
+                    }
+                    else
+                    {
+                        messages.Add(new(tool, "status = SUCCESS"));
+                        veoVideos.Add(tool.Function.Arguments);
                         videosFound = true;
                     }
                     break;
@@ -650,7 +768,7 @@ public class DialogRunner
             }
         }
 
-        return (images, videos, music, messages);
+        return (images, soraVideos, veoVideos, music, messages);
     }
 
     private int CountRecentToolCalls(ChatBotMemoryPointWithTraces memoryPoint, string functionName)
@@ -672,7 +790,7 @@ public class DialogRunner
         }
         
         // Also count from video/music traces
-        if (functionName == DialogConstants.IncludeVideoFunctionName)
+        if (functionName == DialogConstants.IncludeSoraVideoFunctionName || functionName == DialogConstants.IncludeVeoVideoFunctionName)
         {
             count += memoryPoint.VideoTraces.Count;
         }
@@ -687,7 +805,7 @@ public class DialogRunner
     private (List<JsonNode> images, List<Message> newMessages) LookForImages(Message message, DateTime? imagesUnavailableUntil)
     {
         var emptyMemoryPoint = new ChatBotMemoryPointWithTraces();
-        var (images, _, _, newMessages) = LookForMediaTools(message, imagesUnavailableUntil, null, null, emptyMemoryPoint);
+        var (images, _, _, _, newMessages) = LookForMediaTools(message, imagesUnavailableUntil, null, null, emptyMemoryPoint);
         return (images, newMessages);
     }
 
@@ -760,7 +878,8 @@ public class DialogRunner
         var validMediaFunctions = new[]
         {
             DialogConstants.IncludeImageFunctionName,
-            DialogConstants.IncludeVideoFunctionName,
+            DialogConstants.IncludeSoraVideoFunctionName,
+            DialogConstants.IncludeVeoVideoFunctionName,
             DialogConstants.IncludeMusicFunctionName
         };
 
