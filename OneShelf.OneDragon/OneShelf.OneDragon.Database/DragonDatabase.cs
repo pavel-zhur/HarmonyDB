@@ -31,6 +31,16 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
         modelBuilder.Entity<Interaction>()
             .Property(x => x.InteractionType)
             .HasConversion<string?>();
+
+        // Configure default values for User
+        modelBuilder.Entity<User>()
+            .Property(x => x.Group)
+            .HasDefaultValue("anon");
+
+        // Configure default values for Limit
+        modelBuilder.Entity<Limit>()
+            .Property(x => x.Group)
+            .HasDefaultValue("anon");
     }
 
     #region IInteractionsRepository

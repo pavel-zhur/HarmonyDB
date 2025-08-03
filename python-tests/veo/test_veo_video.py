@@ -11,9 +11,10 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
-VEO_MODEL_ID = "veo-2.0-generate-001" # @param ["veo-2.0-generate-001"] {"allow-input":true, isTemplate: true}
+# VEO_MODEL_ID = "veo-3.0-generate-preview" # @param ["veo-2.0-generate-001"] {"allow-input":true, isTemplate: true}
+VEO_MODEL_ID = "veo-3.0-fast-generate-preview" # @param ["veo-2.0-generate-001"] {"allow-input":true, isTemplate: true}
 
-prompt = "A neon hologram of a cat driving at top speed" # @param {type: "string"}
+prompt = "Концерт кавер-группы возле зеленого дома-музея РСДРП в Минске у реки. Публика апплодирует." # @param {type: "string"}
 
 # Here are a few prompts to help you get started and spark your creativity:
 # 1. Wide shot of a futuristic cityscape at dawn. Flying vehicles zip between skyscrapers. Camera pans across the skyline as the sun rises.
@@ -35,11 +36,11 @@ operation = client.models.generate_videos(
     prompt=prompt,
     config=types.GenerateVideosConfig(
     # At the moment the config must not be empty
-    person_generation=person_generation,
+    # person_generation=person_generation,
     aspect_ratio=aspect_ratio,  # 16:9 or 9:16
     number_of_videos=number_of_videos, # supported value is 1-4
     negative_prompt=negative_prompt,
-    duration_seconds=duration, # supported value is 5-8
+    # duration_seconds=duration, # supported value is 5-8
     ),
 )
 

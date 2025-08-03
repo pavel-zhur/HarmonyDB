@@ -7,14 +7,14 @@ using OneShelf.Common.OpenAi.Models;
 
 namespace OneShelf.Common.OpenAi.Services;
 
-public class VideoGenerator
+public class SoraVideoGenerator
 {
-    private readonly ILogger<VideoGenerator> _logger;
+    private readonly ILogger<SoraVideoGenerator> _logger;
     private readonly BillingApiClient _billingApiClient;
     private readonly OpenAiOptions _options;
     private readonly HttpClient _httpClient;
 
-    public VideoGenerator(IOptions<OpenAiOptions> options, ILogger<VideoGenerator> logger, BillingApiClient billingApiClient, HttpClient httpClient)
+    public SoraVideoGenerator(IOptions<OpenAiOptions> options, ILogger<SoraVideoGenerator> logger, BillingApiClient billingApiClient, HttpClient httpClient)
     {
         _logger = logger;
         _billingApiClient = billingApiClient;
@@ -22,13 +22,13 @@ public class VideoGenerator
         _httpClient = httpClient;
     }
 
-    public async Task<VideoGenerationResult> GenerateVideo(VideoGenerationRequest request, CancellationToken cancellationToken = default)
+    public async Task<VideoGenerationResult> GenerateVideo(SoraVideoGenerationRequest request, CancellationToken cancellationToken = default)
     {
         try
         {
             var started = DateTime.Now;
 
-            // Create video generation job
+            // Create video generation job (Sora/Azure OpenAI)
             var jobId = await CreateVideoJob(request, cancellationToken);
             if (jobId == null)
             {
@@ -76,7 +76,7 @@ public class VideoGenerator
 
                             await _billingApiClient.Add(new()
                             {
-                                Count = 1,
+                                Count = request.Duration,
                                 UserId = request.UserId,
                                 Model = request.Model,
                                 UseCase = request.UseCase,
@@ -152,7 +152,7 @@ public class VideoGenerator
         }
     }
 
-    private async Task<string?> CreateVideoJob(VideoGenerationRequest request, CancellationToken cancellationToken)
+    private async Task<string?> CreateVideoJob(SoraVideoGenerationRequest request, CancellationToken cancellationToken)
     {
         var url = $"{_options.AzureOpenAiEndpoint.TrimEnd('/')}/openai/v1/video/generations/jobs?api-version={_options.AzureOpenAiApiVersion}";
 

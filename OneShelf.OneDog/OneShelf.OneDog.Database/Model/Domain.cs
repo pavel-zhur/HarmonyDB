@@ -43,5 +43,7 @@ public class Domain
     
     public string? SoraModel { get; set; }
     
+    public string? VeoModel { get; set; }
+    
     public string? LyriaModel { get; set; }
 }

@@ -1,6 +1,6 @@
 namespace OneShelf.Common.OpenAi.Models;
 
-public class VideoGenerationRequest
+public class SoraVideoGenerationRequest
 {
     public required string Prompt { get; init; }
     public required int Width { get; init; } // e.g., 1280, 720, 480

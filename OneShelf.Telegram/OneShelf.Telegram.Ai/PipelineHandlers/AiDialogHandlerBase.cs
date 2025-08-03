@@ -592,7 +592,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
             interactions = interactions.Skip(reset + 1).ToList();
         }
 
-        var (system, version, frequencyPenalty, presencePenalty, imagesVersion, videoModel, musicModel) = await GetAiParameters();
+        var (system, version, frequencyPenalty, presencePenalty, imagesVersion, soraModel, veoModel, musicModel) = await GetAiParameters();
 
         using var callingApis = new CancellationTokenSource();
         using var checkingIsStillLast = new CancellationTokenSource();
@@ -629,7 +629,8 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
                 FrequencyPenalty = frequencyPenalty,
                 PresencePenalty = presencePenalty,
                 ImagesVersion = imagesVersion,
-                VideoModel = videoModel,
+                SoraModel = soraModel,
+                VeoModel = veoModel,
                 MusicModel = musicModel,
                 UserId = update.Message.From!.Id,
                 UseCase = "own chatter",
@@ -785,17 +786,15 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     {
         try
         {
+            // Send prompt as a separate text message first
+            await SendMessage(chatId, messageThreadId, messageId, $"🎬 {prompt}", reply);
+            
+            // Then send the video without the prompt
             using var videoStream = new MemoryStream(videoData);
             var videoFile = new InputFile(videoStream, "video.mp4");
             await GetApi().SendVideoAsync(new(chatId, videoFile)
             {
                 MessageThreadId = messageThreadId,
-                ReplyParameters = reply ? new()
-                {
-                    MessageId = messageId,
-                    AllowSendingWithoutReply = false,
-                } : null,
-                Caption = $"🎬 {prompt} (от Sora 🐶)"
             });
         }
         catch (Exception e)
@@ -878,7 +877,7 @@ public abstract class AiDialogHandlerBase<TInteractionType> : PipelineHandler
     
     protected abstract Task<DateTime?> GetChatUnavailableUntil();
 
-    protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters();
+    protected abstract Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? soraModel, string? veoModel, string? musicModel)> GetAiParameters();
 
     protected abstract (string? additionalBillingInfo, int? domainId) GetDialogConfigurationParameters();
 

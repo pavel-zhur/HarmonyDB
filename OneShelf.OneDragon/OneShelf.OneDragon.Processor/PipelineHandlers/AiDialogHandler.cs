@@ -74,25 +74,50 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
         var user = await _dragonDatabase.Users.SingleAsync(x => x.Id == _dragonScope.UserId);
         if (!user.UseLimits) return null;
 
-        var limits = await _dragonDatabase.Limits.Where(x => x.Texts.HasValue).ToListAsync();
+        var limits = await _dragonDatabase.Limits
+            .Where(x => x.Texts.HasValue && x.IsEnabled)
+            .Where(x => x.Group == user.Group)
+            .ToListAsync();
         if (!limits.Any()) return null;
 
         var now = DateTime.Now;
         DateTime Since(TimeSpan window) => now.Add(-window);
 
-        var textsSince = Since(limits.Max(x => x.Window));
-        var texts = (await _dragonDatabase.Interactions
-                .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
-                .Where(x => x.InteractionType == InteractionType.AiMessage || x.InteractionType == InteractionType.AiImageMessage)
-                .Where(x => x.CreatedOn >= textsSince)
-                .ToListAsync())
-            .Select(x => x.CreatedOn)
-            .ToList();
-
         DateTime? textsUnavailableUntil = null;
         foreach (var limit in limits)
         {
-            if (texts.Count(x => x >= Since(limit.Window)) >= limit.Texts!.Value)
+            // For shared limits, count all users in the group
+            // For non-shared limits, count only current user
+            List<DateTime> texts;
+            var since = Since(limit.Window);
+            if (limit.IsShared)
+            {
+                // Get all users in the same group
+                var groupUserIds = await _dragonDatabase.Users
+                    .Where(x => x.Group == user.Group)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+                
+                texts = (await _dragonDatabase.Interactions
+                        .Where(x => groupUserIds.Contains(x.UserId))
+                        .Where(x => x.InteractionType == InteractionType.AiMessage || x.InteractionType == InteractionType.AiImageMessage)
+                        .Where(x => x.CreatedOn >= since)
+                        .ToListAsync())
+                    .Select(x => x.CreatedOn)
+                    .ToList();
+            }
+            else
+            {
+                texts = (await _dragonDatabase.Interactions
+                        .Where(x => x.UserId == _dragonScope.UserId && x.ChatId == _dragonScope.ChatId)
+                        .Where(x => x.InteractionType == InteractionType.AiMessage || x.InteractionType == InteractionType.AiImageMessage)
+                        .Where(x => x.CreatedOn >= since)
+                        .ToListAsync())
+                    .Select(x => x.CreatedOn)
+                    .ToList();
+            }
+
+            if (texts.Count >= limit.Texts!.Value)
             {
                 textsUnavailableUntil ??= DateTime.MinValue;
                 var value = texts.Min().Add(limit.Window);
@@ -108,7 +133,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
 А я пока пороюсь в мусорке, вдруг там есть ответы на все вопросы. 🐾";
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? soraModel, string? veoModel, string? musicModel)> GetAiParameters()
     {
         var aiParameters = await _dragonDatabase.AiParameters.SingleAsync();
         return (
@@ -118,6 +143,7 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
             aiParameters.PresencePenalty,
             aiParameters.DalleVersion,
             aiParameters.SoraModel,
+            aiParameters.VeoModel,
             aiParameters.LyriaModel);
     }
 

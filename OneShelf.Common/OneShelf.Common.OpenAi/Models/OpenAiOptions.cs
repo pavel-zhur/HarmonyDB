@@ -15,4 +15,6 @@ public class OpenAiOptions
     public required string AzureOpenAiApiKey { get; set; }
 
     public required string AzureOpenAiApiVersion { get; set; }
+
+    public required string GoogleApiKey { get; set; }
 }

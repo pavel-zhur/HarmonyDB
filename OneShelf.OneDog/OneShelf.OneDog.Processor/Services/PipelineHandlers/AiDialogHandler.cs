@@ -127,9 +127,9 @@ public class AiDialogHandler : AiDialogHandlerBase<InteractionType>
 
     protected override string UnavailableUntilTemplate => throw new InvalidOperationException();
 
-    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? videoModel, string? musicModel)> GetAiParameters()
+    protected override async Task<(string? system, string? version, float? frequencyPenalty, float? presencePenalty, int? imagesVersion, string? soraModel, string? veoModel, string? musicModel)> GetAiParameters()
     {
         var domain = _dogContext.Domain;
-        return (domain.SystemMessage, domain.GptVersion, domain.FrequencyPenalty, domain.PresencePenalty, domain.DalleVersion, domain.SoraModel, domain.LyriaModel);
+        return (domain.SystemMessage, domain.GptVersion, domain.FrequencyPenalty, domain.PresencePenalty, domain.DalleVersion, domain.SoraModel, domain.VeoModel, domain.LyriaModel);
     }
 }
