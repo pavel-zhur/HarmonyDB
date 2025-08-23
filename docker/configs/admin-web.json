@@ -1,0 +1,25 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SongsDatabase": "Server=sql,1433;Database=HarmonyDB;User ID=sa;Password=YourStrongPassword!;TrustServerCertificate=True"
+  },
+  "IllustrationsApiClientOptions": {
+    "Endpoint": "http://illustrations-api/api/",
+    "MasterCode": "52FADC67DDEEF7719243B56677677667"
+  },
+  "BillingApiClientOptions": {
+    "Endpoint": "http://billing-api/api/",
+    "MasterCode": "52FADC67DDEEF7719243B56677677667"
+  },
+  "AdminOptions": {
+    "TenantId": 1
+  },
+  "authv1": "1234567890"
+} 

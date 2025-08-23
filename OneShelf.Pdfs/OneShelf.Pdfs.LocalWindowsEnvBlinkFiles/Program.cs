@@ -5,7 +5,7 @@ namespace OneShelf.Pdfs.LocalWindowsEnvBlinkFiles;
 
 internal class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         //Initialize HTML to PDF converter with Blink rendering engine
         HtmlToPdfConverter htmlConverter = new HtmlToPdfConverter(HtmlRenderingEngine.Blink);

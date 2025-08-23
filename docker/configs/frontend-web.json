@@ -1,0 +1,8 @@
+{
+  "CollectivesApiClientOptions:Endpoint": "http://localhost:13009/api/",
+  "FrontendApiClientOptions:Endpoint": "http://localhost:13011/api/",
+  "TelegramBotId": "234234232",
+  "FrontendOptions:LocalSourceName": "Local",
+  "FrontendOptions:AppInsightsConnectionString": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/;ApplicationId=00000000-0000-0000-0000-000000000000",
+  "BadHash": "badhash1"
+} 

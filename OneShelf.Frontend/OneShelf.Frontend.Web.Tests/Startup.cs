@@ -12,7 +12,7 @@ public class Startup
     public void ConfigureHost(IHostBuilder hostBuilder)
     {
         hostBuilder
-            .ConfigureServices(services =>
+            .ConfigureServices(_ =>
             {
             });
     }

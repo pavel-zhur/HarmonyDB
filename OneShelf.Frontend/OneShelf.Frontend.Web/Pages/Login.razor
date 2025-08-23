@@ -3,13 +3,10 @@
 @inject IJSRuntime Js
 @inject ILogger<Index> Logger
 @inject IConfiguration Configuration
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
 @using OneShelf.Frontend.Web.Interop
 @inject Receiver Receiver
 @inject NavigationManager NavigationManager
 @inject IdentityProvider IdentityProvider
-@inject IWebAssemblyHostEnvironment WebAssemblyHostEnvironment
 
 <PageTitle>Вход</PageTitle>
 
@@ -48,7 +45,7 @@
     <p>Открытый исходный код, <a target="_blank" href="https://github.com/pavel-zhur/HarmonyDB">https://github.com/pavel-zhur/HarmonyDB</a>.</p>
 </div>
 
-@if (WebAssemblyHostEnvironment.Environment.StartsWith("Development"))
+@if (BadHash() != null)
 {
     <span>Чтобы войти без телеграма (при локальной разработке вход не работает), <a href="#" @onclick="TempLogin">нажмите здесь</a>. Этот &lt;span&gt; не виден на продакшне :)</span>
 }
@@ -78,9 +75,11 @@
         }
     }
 
+    private string? BadHash() => Configuration.GetValue<string?>("BadHash");
+
     private async Task TempLogin()
     {
-        var tempAuth = $"{{\"id\":6074255334,\"first_name\":\"Кто-то\",\"username\":\"none\",\"photo_url\":\"https://t.me/i/userpic/320/q74ikpgxikYev-rFGCjqQfwDNJHUO-kW7LOzIOdQURY.jpg\",\"auth_date\":123,\"hash\":\"{Configuration.GetValue<string>("BadHash")}\"}}";
+        var tempAuth = $"{{\"id\":6074255334,\"first_name\":\"Кто-то\",\"username\":\"none\",\"photo_url\":\"https://t.me/i/userpic/320/q74ikpgxikYev-rFGCjqQfwDNJHUO-kW7LOzIOdQURY.jpg\",\"auth_date\":123,\"hash\":\"{BadHash()}\"}}";
         await IdentityProvider.Set(tempAuth);
         NavigationManager.NavigateTo("/");
     }
