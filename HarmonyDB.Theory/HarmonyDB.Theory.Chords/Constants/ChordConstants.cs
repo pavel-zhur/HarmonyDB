@@ -8,6 +8,11 @@ public static class ChordConstants
 {
     public const string NoChord = "N.C.";
 
+    /// <summary>
+    /// The maximum number of alterations (sharps, flats, pluses, minuses) in a chord type; their readings are enumerated.
+    /// </summary>
+    public const int MaxAlterations = 6;
+
     public static readonly IReadOnlyList<string> NoChordVariants =
     [
         NoChord,
@@ -40,6 +45,7 @@ public static class ChordConstants
         (ChordMainType.Sus2, "sus2", MatchCase.MatchAny, MatchAmbiguity.Safe),
         (ChordMainType.Sus2, "s2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordMainType.Sus2, "susp2", MatchCase.ExactOnly, MatchAmbiguity.Safe),
+        (ChordMainType.Sus2, "sus9", MatchCase.MatchAny, MatchAmbiguity.Safe),
 
         (ChordMainType.Sus4, "sus4", MatchCase.MatchAny, MatchAmbiguity.Safe),
         (ChordMainType.Sus4, "s4", MatchCase.ExactOnly, MatchAmbiguity.Safe),
@@ -56,19 +62,17 @@ public static class ChordConstants
 
     public static readonly IReadOnlyList<(ChordTypeExtension extension, string representation, MatchCase matchCase, MatchAmbiguity matchAmbiguity)> ChordTypeExtensionRepresentations =
     [
-        (ChordTypeExtension.X7, "add7", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
         (ChordTypeExtension.X7, "7", MatchCase.ExactOnly, MatchAmbiguity.AlterableInt),
+        (ChordTypeExtension.X7, "add7", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
         (ChordTypeExtension.X9, "9", MatchCase.ExactOnly, MatchAmbiguity.AlterableInt),
         (ChordTypeExtension.X11, "11", MatchCase.ExactOnly, MatchAmbiguity.AlterableInt),
         (ChordTypeExtension.X13, "13", MatchCase.ExactOnly, MatchAmbiguity.AlterableInt),
 
         (ChordTypeExtension.XMaj7, "maj7", MatchCase.MatchAny, MatchAmbiguity.Safe),
-        (ChordTypeExtension.XMaj7, "maj", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "ma7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "major7", MatchCase.MatchUpperFirst, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "M7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "MA7", MatchCase.ExactOnly, MatchAmbiguity.Safe),
-        (ChordTypeExtension.XMaj7, "M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
         (ChordTypeExtension.XMaj7, "7M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous),
         (ChordTypeExtension.XMaj7, "Δ", MatchCase.ExactOnly, MatchAmbiguity.Safe),
         (ChordTypeExtension.XMaj7, "∆", MatchCase.ExactOnly, MatchAmbiguity.Safe),
@@ -155,6 +159,9 @@ public static class ChordConstants
         (ChordTypeAmbiguousAddition.Plus, "+", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration), // generally means augmented if at the beginning and no degree follows
         (ChordTypeAmbiguousAddition.Minus, "-", MatchCase.ExactOnly, MatchAmbiguity.DegreeAlteration), // generally means minor if at the beginning and no degree follows
 
+        (ChordTypeAmbiguousAddition.Maj, "maj", MatchCase.MatchUpperFirstOrAll, MatchAmbiguity.Safe), // the major seventh or the major triad, see the options
+        (ChordTypeAmbiguousAddition.CapitalM, "M", MatchCase.ExactOnly, MatchAmbiguity.Dangerous), // the major seventh, the major triad or (written carelessly) the minor, see the options
+
         (ChordTypeAmbiguousAddition.Add9And11, "add9,11", MatchCase.MatchAny, MatchAmbiguity.AlterableDegree),
         (ChordTypeAmbiguousAddition.Add, "add", MatchCase.MatchAny, MatchAmbiguity.Safe),
     ];
@@ -167,6 +174,11 @@ public static class ChordConstants
         (ChordTypeMeaninglessAddition.Slash, "\\"),
         (ChordTypeMeaninglessAddition.Apostrophe, "'"),
         (ChordTypeMeaninglessAddition.Apostrophe, "`"),
+        (ChordTypeMeaninglessAddition.Punctuation, "."),
+        (ChordTypeMeaninglessAddition.Punctuation, ","),
+        (ChordTypeMeaninglessAddition.Punctuation, "!"),
+        (ChordTypeMeaninglessAddition.Punctuation, ";"),
+        (ChordTypeMeaninglessAddition.Punctuation, "|"),
     ];
 
     public static readonly IReadOnlyList<string> Romans =

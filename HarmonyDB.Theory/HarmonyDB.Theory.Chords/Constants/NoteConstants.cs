@@ -40,6 +40,14 @@ public static class NoteConstants
         "LA", "SI", "DO", "RE", "MI", "FA", "SOL",
     ];
 
+    /// <summary>
+    /// The canonical names of the notes, by <see cref="Note.Value"/>.
+    /// </summary>
+    public static readonly IReadOnlyList<string> CanonicalNames =
+    [
+        "A", "Bb", "B", "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab",
+    ];
+
     public static IReadOnlyList<NaturalNote> NaturalNotes =
     [
         NaturalNote.A,
