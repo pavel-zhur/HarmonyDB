@@ -32,6 +32,12 @@ internal class TablePlan
 
     public IReadOnlyList<ColumnPlan> Columns { get; }
 
+    /// <summary>
+    /// Whether the source model has the entity types of the table.
+    /// </summary>
+    public static bool IsInSource(ITable table, IModel sourceModel)
+        => table.EntityTypeMappings.All(x => sourceModel.FindEntityType(x.TypeBase.Name) != null);
+
     public static TablePlan Create(ITable table, IModel sourceModel)
     {
         var roots = table.EntityTypeMappings

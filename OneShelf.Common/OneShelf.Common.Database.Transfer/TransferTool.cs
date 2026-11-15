@@ -11,33 +11,39 @@ using Npgsql;
 namespace OneShelf.Common.Database.Transfer;
 
 /// <summary>
-/// Fills an empty PostgreSQL from SQL Server, context by context, through the EF Core models:
-/// the entities are read with the SQL Server provider and their rows written with a binary COPY as the PostgreSQL model maps them.
-/// Keys are kept; the identity sequences are moved past them. Then the row counts and some rows are compared.
+/// Fills an empty PostgreSQL, context by context. Every context is first made by its migrations, then filled:
+/// - a <see cref="TransferredContext{TContext}"/> from SQL Server, through the EF Core models: the entities are read with
+///   the SQL Server provider and their rows written with a binary COPY as the PostgreSQL model maps them.
+///   Keys are kept; the identity sequences are moved past them. Then the row counts and some rows are compared.
+/// - a <see cref="LoadedContext{TContext}"/> by its own loader, which checks what it loaded.
+/// Each context is filled in one transaction.
 ///
 /// Usage:
-///   (no arguments)   transfer; refuses when a target table has rows
+///   (no arguments)   fill; refuses when a target table has rows
 ///   --wipe           empty the target tables first
-///   check {context} {table} {key}...   compare these rows of a table (single-column keys) between the two databases
+///   check {context} {table} {key}...   compare these rows of a table (single-column keys) between SQL Server and PostgreSQL
 ///
 /// Settings (environment variables, ':' written as '__'), for every context:
+///   Transfer:{Name}:Target       the PostgreSQL connection string, as the context's own role, whose search_path is its schema
+/// and for a transferred context:
 ///   Transfer:{Name}:Source       the SQL Server connection string
 ///   Transfer:{Name}:SourceUser   optional: the database user to read as, whose default schema holds the context's tables
 ///                                (when the source connection is an administrator's)
-///   Transfer:{Name}:Target       the PostgreSQL connection string, as the context's own role, whose search_path is its schema
+/// A loaded context's loader reads its own settings under Transfer:{Name}.
 /// </summary>
 public static class TransferTool
 {
     private const int TrackedEntitiesLimit = 2000;
     private const int SampleRowsPerTable = 5;
 
-    public static async Task<int> RunAsync(string[] args, IServiceProvider services, params TransferredContext[] contexts)
+    public static async Task<int> RunAsync(string[] args, IServiceProvider services, params TargetContext[] contexts)
     {
         var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
 
         if (args is ["check", var contextName, var tableName, .. var keys] && keys.Any())
         {
-            var context = contexts.SingleOrDefault(x => x.Name == contextName) ?? throw new($"Unknown context {contextName}.");
+            var context = contexts.SingleOrDefault(x => x.Name == contextName && x is ITransferredContext)
+                          ?? throw new($"Unknown transferred context {contextName}.");
             return await Check(configuration, services, context, tableName, keys) ? 0 : 1;
         }
 
@@ -53,7 +59,8 @@ public static class TransferTool
         foreach (var context in contexts)
         {
             await using var connections = await Connections.Open(configuration, services, context);
-            await CheckSourceMigrations(connections.Source, context);
+            if (connections.Source != null)
+                await CheckSourceMigrations(connections.Source, context);
 
             Log($"{context.Name}: migrating the target.");
             await connections.Target.Database.MigrateAsync();
@@ -74,21 +81,27 @@ public static class TransferTool
         var success = true;
         foreach (var context in contexts)
         {
-            success &= await Transfer(configuration, services, context, wipe);
+            success &= context is ILoadedContext loaded
+                ? await Load(configuration, services, context, loaded, wipe)
+                : await Transfer(configuration, services, context, wipe);
         }
 
         Log(success ? "Done, all equal." : "Done, WITH DIFFERENCES (see above).");
         return success ? 0 : 1;
     }
 
-    private static async Task<bool> Transfer(IConfiguration configuration, IServiceProvider services, TransferredContext context, bool wipe)
+    private static async Task<bool> Transfer(IConfiguration configuration, IServiceProvider services, TargetContext context, bool wipe)
     {
         var started = Stopwatch.StartNew();
         await using var connections = await Connections.Open(configuration, services, context);
-        var (source, target) = (connections.Source, connections.Target);
+        var (source, target) = (connections.Source!, connections.Target);
 
         var tables = GetTables(target);
-        var plans = tables.Select(x => TablePlan.Create(x, source.Model)).ToList();
+        var plans = tables.Where(x => TablePlan.IsInSource(x, source.Model)).Select(x => TablePlan.Create(x, source.Model)).ToList();
+        foreach (var table in tables.Except(plans.Select(x => x.Table)))
+        {
+            Log($"{context.Name}.{table.Name}: not in the source, left empty.");
+        }
 
         await target.Database.OpenConnectionAsync();
         var connection = (NpgsqlConnection)target.Database.GetDbConnection();
@@ -98,9 +111,7 @@ public static class TransferTool
         {
             if (wipe)
             {
-                Log($"{context.Name}: emptying the target.");
-                var truncate = $"TRUNCATE {string.Join(", ", tables.Select(x => Delimit(target, x)))}";
-                await target.Database.ExecuteSqlRawAsync(truncate);
+                await Empty(target, context, tables);
             }
 
             foreach (var plan in plans)
@@ -126,6 +137,50 @@ public static class TransferTool
         }
 
         return success;
+    }
+
+    private static async Task<bool> Load(IConfiguration configuration, IServiceProvider services, TargetContext context, ILoadedContext loaded, bool wipe)
+    {
+        var started = Stopwatch.StartNew();
+        await using var connections = await Connections.Open(configuration, services, context);
+        var target = connections.Target;
+        var tables = GetTables(target);
+
+        bool success;
+        await using (var transaction = await target.Database.BeginTransactionAsync())
+        {
+            if (wipe)
+            {
+                await Empty(target, context, tables);
+            }
+
+            if (loaded.HasLoader)
+            {
+                Log($"{context.Name}: loading.");
+                success = await loaded.Load(target, configuration.GetSection($"Transfer:{context.Name}"));
+            }
+            else
+            {
+                Log($"{context.Name}: nothing to load, left empty.");
+                success = true;
+            }
+
+            await transaction.CommitAsync();
+        }
+
+        foreach (var table in tables)
+        {
+            Log($"{context.Name}.{table.Name}: {await Count(target, table)} rows.");
+        }
+
+        Log($"{context.Name}: {(success ? "loaded" : "loaded WITH DIFFERENCES (see above)")} in {started.Elapsed:hh\\:mm\\:ss}.");
+        return success;
+    }
+
+    private static async Task Empty(DbContext target, TargetContext context, IEnumerable<ITable> tables)
+    {
+        Log($"{context.Name}: emptying the target.");
+        await target.Database.ExecuteSqlRawAsync($"TRUNCATE {string.Join(", ", tables.Select(x => Delimit(target, x)))}");
     }
 
     private static async Task<List<object?[]>> Copy(DbContext source, DbContext target, NpgsqlConnection connection, TablePlan plan)
@@ -171,15 +226,16 @@ public static class TransferTool
         return samples;
     }
 
-    private static async Task<bool> Check(IConfiguration configuration, IServiceProvider services, TransferredContext context, string tableName, string[] keys)
+    private static async Task<bool> Check(IConfiguration configuration, IServiceProvider services, TargetContext context, string tableName, string[] keys)
     {
         await using var connections = await Connections.Open(configuration, services, context);
+        var source = connections.Source!;
         var table = GetTables(connections.Target).SingleOrDefault(x => x.Name == tableName) ?? throw new($"Unknown table {tableName}.");
-        var plan = TablePlan.Create(table, connections.Source.Model);
+        var plan = TablePlan.Create(table, source.Model);
         var key = plan.SourceType.FindPrimaryKey()!.Properties.Single();
         var keyValues = keys.Select(x => new object?[] { Convert.ChangeType(x, key.ClrType) }).ToList();
 
-        var differences = await Compare(connections.Source, connections.Target, plan, keyValues, show: true);
+        var differences = await Compare(source, connections.Target, plan, keyValues, show: true);
         Log(differences.Any() ? $"DIFFERENT: {string.Join("; ", differences)}" : "Equal.");
         return !differences.Any();
     }
@@ -220,7 +276,7 @@ public static class TransferTool
         return differences;
     }
 
-    private static async Task CheckSourceMigrations(DbContext source, TransferredContext context)
+    private static async Task CheckSourceMigrations(DbContext source, TargetContext context)
     {
         // applied migrations older than the model's last one may be unknown: the migrations were started anew at some point
         var last = source.Database.GetMigrations().Last();
@@ -321,27 +377,33 @@ public static class TransferTool
     private static void Log(string message) => Console.WriteLine($"{DateTime.Now:HH:mm:ss} {message}");
 
     /// <summary>
-    /// The source and target contexts of one transferred context.
+    /// The target context of one context and, for a transferred one, its source.
     /// </summary>
     private sealed class Connections : IAsyncDisposable
     {
-        private readonly DbConnection _sourceConnection;
+        private readonly DbConnection? _sourceConnection;
 
-        private Connections(DbConnection sourceConnection, DbContext source, DbContext target)
+        private Connections(DbConnection? sourceConnection, DbContext? source, DbContext target)
         {
             _sourceConnection = sourceConnection;
             Source = source;
             Target = target;
         }
 
-        public DbContext Source { get; }
+        public DbContext? Source { get; }
 
         public DbContext Target { get; }
 
-        public static async Task<Connections> Open(IConfiguration configuration, IServiceProvider services, TransferredContext context)
+        public static async Task<Connections> Open(IConfiguration configuration, IServiceProvider services, TargetContext context)
         {
             var section = configuration.GetSection($"Transfer:{context.Name}");
             string Get(string key) => section[key] is { Length: > 0 } value ? value : throw new($"The setting Transfer:{context.Name}:{key} is missing.");
+
+            var target = context.CreateTarget(services, new NpgsqlConnectionStringBuilder(Get("Target")) { CommandTimeout = 0 }.ConnectionString);
+            if (context is not ITransferredContext transferred)
+                return new(null, null, target);
+
+            target.ChangeTracker.AutoDetectChangesEnabled = false;
 
             // the reading user's security context belongs to this one connection: it is not pooled
             var sourceConnection = new SqlConnection(new SqlConnectionStringBuilder(Get("Source")) { Pooling = false }.ConnectionString);
@@ -354,21 +416,18 @@ public static class TransferTool
                 await command.ExecuteNonQueryAsync();
             }
 
-            var source = context.CreateSource(services, sourceConnection);
+            var source = transferred.CreateSource(services, sourceConnection);
             source.Database.SetCommandTimeout(TimeSpan.Zero);
             source.ChangeTracker.AutoDetectChangesEnabled = false;
-
-            var target = context.CreateTarget(services, new NpgsqlConnectionStringBuilder(Get("Target")) { CommandTimeout = 0 }.ConnectionString);
-            target.ChangeTracker.AutoDetectChangesEnabled = false;
 
             return new(sourceConnection, source, target);
         }
 
         public async ValueTask DisposeAsync()
         {
-            await Source.DisposeAsync();
+            if (Source != null) await Source.DisposeAsync();
             await Target.DisposeAsync();
-            await _sourceConnection.DisposeAsync();
+            if (_sourceConnection != null) await _sourceConnection.DisposeAsync();
         }
     }
 }
