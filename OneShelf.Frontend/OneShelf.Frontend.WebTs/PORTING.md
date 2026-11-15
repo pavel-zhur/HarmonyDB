@@ -182,9 +182,8 @@ Later, and only where it changes nothing for the user: the heavy searches over t
 - **The loading screen.** There is no .NET runtime to download, so nothing drives the loading circle: it stays empty
   with "Загрузка" until the application replaces it (as the original's does before the runtime starts loading). The
   choice between the normal and the compatible build (SIMD detection, `_frameworkCompat`, `?forceCompatMode=1`,
-  `localStorage.forceCompatMode`, `?verboseStart=1`) is gone: there is one build. The error bar keeps its
-  "попробовать совместимость" button (the original hides it after the first successful render, so it is seen only
-  when the start fails); it now only reloads the page.
+  `localStorage.forceCompatMode`, `?verboseStart=1`) is gone: there is one build. With it go what offered the
+  choice: the "Совместимость" section of the profile page and the error bar's "попробовать совместимость" button.
 - **The service worker** reads one manifest (there is no `service-worker-assets-compat.js`, no `_frameworkCompat`, no
   `wasm-feature-detect`), and when it activates it also deletes the .NET runtime's own cache, which only the original
   used.

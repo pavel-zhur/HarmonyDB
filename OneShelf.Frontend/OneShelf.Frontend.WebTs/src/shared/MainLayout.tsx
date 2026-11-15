@@ -3,7 +3,8 @@
 //
 // It cascades itself to the page (MainLayoutContext) for SecondarySidebar, whose content it shows in the secondary
 // sidebar. After every render of its own it imports MainLayout.razor.js and calls InitSecondToTop; after the first,
-// before that, MainLayoutRendered (the theme's App.initCore/initAfterLoad) and JsFunctions.FirstInitSuccessful.
+// before that, MainLayoutRendered (the theme's App.initCore/initAfterLoad). The original's
+// JsFunctions.FirstInitSuccessful, which hid the error bar's compatibility button, is left out with that button.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { MainLayoutContext, type MainLayoutCascade, type SecondarySidebarInstance } from '../components/SecondarySidebar';
@@ -21,7 +22,6 @@ export interface MainLayoutProps {
 }
 
 export function MainLayout({ body }: MainLayoutProps) {
-    const jsFunctions = services.jsFunctions;
     const stateHasChanged = useStateHasChanged();
 
     const fields = useRef({
@@ -62,7 +62,6 @@ export function MainLayout({ body }: MainLayoutProps) {
             const module = await importJsModule<MainLayoutRazorJs>('./Shared/MainLayout.razor.js');
             if (isFirstRender) {
                 await invokeJs<void>(module.MainLayoutRendered);
-                await jsFunctions.firstInitSuccessful();
             }
 
             await invokeJs<void>(module.InitSecondToTop);

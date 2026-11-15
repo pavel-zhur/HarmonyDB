@@ -28,9 +28,4 @@ export class JsFunctions {
         const module = await this.module();
         await invokeJs<void>(module.ScrollToTop);
     }
-
-    async firstInitSuccessful(): Promise<void> {
-        const module = await this.module();
-        await invokeJs<void>(module.FirstInitSuccessful);
-    }
 }

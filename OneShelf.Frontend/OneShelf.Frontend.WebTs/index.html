@@ -150,10 +150,6 @@
         Случилась ошибка.
         <span id="error-info"></span>
         <a href="" class="reload">Обновить</a>
-        <span id="error-compat-mode">
-            <span>|</span>
-            <button href="#" onclick="location.href = '?forceCompatMode=1'">попробовать совместимость</button>
-        </span>
         <a class="dismiss">🗙</a>
     </div>
     <script src="sw-registrator.js"></script>
@@ -162,12 +158,7 @@
     
     <script>
         (function () {
-            if (window.useCompatMode) {
-                document.getElementById('error-compat-mode').setAttribute('style', 'display: none');
-                document.getElementById('error-info').innerText = 'using compat ' + getWasmReleaseVersion();
-            } else {
-                document.getElementById('error-info').innerText = getWasmReleaseVersion();
-            }
+            document.getElementById('error-info').innerText = getWasmReleaseVersion();
         })();
     </script>
 </body>

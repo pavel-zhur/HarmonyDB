@@ -1,9 +1,20 @@
-// The original: Pages/ReleaseNotes.razor.
+// The original: Pages/ReleaseNotes.razor; version 1.2 is this port's own.
 
 export function ReleaseNotes() {
     return (
         <>
             <h1>Один шкаф</h1>
+
+            <h3>Версия 1.2</h3>
+
+            <div>
+                <p>15 ноября 2026.</p>
+                <ul>
+                    <li>Приложение переписано на TypeScript: открывается и работает в несколько раз быстрее, особенно на телефонах.</li>
+                    <li>Первая загрузка стала в несколько раз легче.</li>
+                    <li>Режим совместимости больше не нужен и убран.</li>
+                </ul>
+            </div>
 
             <h3>Версия 1.1</h3>
 

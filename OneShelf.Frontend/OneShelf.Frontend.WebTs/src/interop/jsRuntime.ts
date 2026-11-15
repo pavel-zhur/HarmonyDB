@@ -104,7 +104,6 @@ export interface JsFunctionsJs {
     Prompt(query: string): string | null;
     Confirm(query: string): boolean;
     ScrollToTop(): void;
-    FirstInitSuccessful(): void;
 }
 
 /** ./services-js/Player.js */
