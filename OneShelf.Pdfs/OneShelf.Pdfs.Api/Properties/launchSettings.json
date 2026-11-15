@@ -2,10 +2,10 @@
   "profiles": {
     "OneShelf.Pdfs.Api": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7110",
+      "applicationUrl": "http://localhost:7110",
       "launchBrowser": false,
       "environmentVariables": {
-        "BlinkBinariesPath": "..\\..\\..\\..\\OneShelf.Pdfs.LocalWindowsEnvBlinkFiles\\bin\\Debug\\net8.0\\runtimes\\win-x64\\native"
+        "BlinkBinariesPath": "..\\OneShelf.Pdfs.LocalWindowsEnvBlinkFiles\\bin\\Debug\\net8.0\\runtimes\\win-x64\\native"
       }
     }
   }

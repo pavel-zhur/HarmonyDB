@@ -122,7 +122,7 @@ services:
       Frontend__SelfApiClientOptions__MasterCode: *functions-key
       Frontend__IllustrationsApiClientOptions__Endpoint: &illustrations-endpoint http://api/illustrations/api/
       Frontend__IllustrationsApiClientOptions__MasterCode: *functions-key
-      Frontend__PdfsApiClientOptions__Endpoint: http://pdfs-api/api/Convert?code=${FUNCTIONS_KEY}
+      Frontend__PdfsApiClientOptions__Endpoint: http://pdfs-api/pdfs/api/Convert?code=${FUNCTIONS_KEY}
 
       # ---------- the bots ----------
       # They answer only what a poller (the "bots" profile) brings them from Telegram.
@@ -244,18 +244,16 @@ services:
     depends_on:
       - api
 
-  # Turns HTML into PDF (the books of songs): an Azure Functions app of the in-process kind, as it is deployed.
+  # Turns HTML into PDF (the books of songs). Its application runs one module, Pdfs, under the path base /pdfs, apart
+  # from the API: it carries a Chrome, and its conversions take much memory at times.
   pdfs-api:
     build:
       context: ..
       dockerfile: docker/pdfs-api/Dockerfile
     environment:
-      # the keys of the functions host come from the file below
-      AzureWebJobsSecretStorageType: files
-      SyncFusionLicenseKey: ${SYNCFUSION_LICENSE_KEY}
-    configs:
-      - source: functions-host-keys
-        target: /azure-functions-host/Secrets/host.json
+      ASPNETCORE_HTTP_PORTS: "80"
+      FunctionKeys__0: *functions-key
+      Pdfs__SyncFusionLicenseKey: ${SYNCFUSION_LICENSE_KEY}
     ports:
       - "${PDFS_API_PORT}:80"
 
@@ -294,14 +292,6 @@ configs:
         "FrontendApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/frontend-api/api/",
         "FrontendOptions:LocalSourceName": "Local",
         "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}"
-      }
-
-  functions-host-keys:
-    content: |
-      {
-        "masterKey": { "name": "master", "value": "${FUNCTIONS_KEY}", "encrypted": false },
-        "functionKeys": [ { "name": "default", "value": "${FUNCTIONS_KEY}", "encrypted": false } ],
-        "systemKeys": []
       }
 
 volumes:
