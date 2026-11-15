@@ -1,9 +1,7 @@
 ﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using OneShelf.Admin.Web.Authorization;
 using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common;
@@ -15,11 +13,8 @@ using SixLabors.ImageSharp.Processing;
 
 namespace OneShelf.Admin.Web.Controllers
 {
-    [MyAuthorizationFilter]
     public class HomeController : Controller
     {
-        public const string AuthCookieName = "authv1";
-
         private readonly ILogger<HomeController> _logger;
         private readonly IllustrationsApiClient _illustrationsApiClient;
         private readonly BillingApiClient _billingApiClient;
@@ -33,24 +28,6 @@ namespace OneShelf.Admin.Web.Controllers
             _billingApiClient = billingApiClient;
             _songsDatabase = songsDatabase;
             _adminOptions = adminOptions.Value;
-        }
-
-        [AllowAnonymous]
-        [HttpPost]
-        public IActionResult SetCookie(string cookie)
-        {
-            Response.Cookies.Append(AuthCookieName, cookie, new()
-            {
-                Expires = DateTimeOffset.Now.AddYears(10),
-            });
-
-            return RedirectToAction("Index");
-        }
-
-        [AllowAnonymous]
-        public IActionResult Login()
-        {
-            return View();
         }
 
         public IActionResult Index()

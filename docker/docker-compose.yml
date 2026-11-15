@@ -220,8 +220,6 @@ services:
       BillingApiClientOptions__Endpoint: *billing-endpoint
       BillingApiClientOptions__MasterCode: *functions-key
       AdminOptions__TenantId: ${ADMIN_TENANT_ID}
-      # what to enter on the admin's login page
-      authv1: ${ADMIN_PASSWORD}
     ports:
       - "${ADMIN_WEB_PORT}:80"
     depends_on:
