@@ -1,7 +1,6 @@
 using System.Net;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -26,8 +25,8 @@ public class IllustrationsAnonymous : FunctionBase<object, IllustrationsResponse
         _songsDatabase = songsDatabase;
     }
 
-    [Function(ApiUrls.V3IllustrationsAnonymous)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+    [Function(ApiUrls.V3IllustrationsAnonymous, AuthorizationLevel.Anonymous, "get")]
+    public async Task<IActionResult> Run(HttpRequest req)
         => await RunHandler(new());
 
     protected override async Task<IllustrationsResponse> Execute(object unused)

@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
@@ -19,24 +17,24 @@ namespace OneShelf.Collectives.Api.Functions.VInternal;
 
 public class Get : FunctionBase<GetRequest, GetResponse>
 {
-    private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
+    private readonly CollectivesDatabase _collectivesDatabase;
     private readonly UrlsManager _urlsManager;
 
     public Get(ILoggerFactory loggerFactory,
-        CollectivesCosmosDatabase collectivesCosmosDatabase, UrlsManager urlsManager)
+        CollectivesDatabase collectivesDatabase, UrlsManager urlsManager)
         : base(loggerFactory)
     {
-        _collectivesCosmosDatabase = collectivesCosmosDatabase;
+        _collectivesDatabase = collectivesDatabase;
         _urlsManager = urlsManager;
     }
 
-    [Function(CollectivesApiUrls.Get)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] GetRequest request)
+    [Function(CollectivesApiUrls.Get, AuthorizationLevel.Function, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] GetRequest request)
         => await RunHandler(request);
 
     protected override async Task<GetResponse> Execute(GetRequest request)
     {
-        var collective = await _collectivesCosmosDatabase.GetCollective(request.CollectiveId ?? _urlsManager.GetCollectiveId(request.CollectiveUri!));
+        var collective = await _collectivesDatabase.GetCollective(request.CollectiveId ?? _urlsManager.GetCollectiveId(request.CollectiveUri!));
 
         if (collective?.LatestVisibility is CollectiveVisibility.Deleted or null)
         {

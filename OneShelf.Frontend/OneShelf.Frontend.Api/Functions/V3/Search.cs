@@ -2,13 +2,12 @@ using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Common;
+using OneShelf.Common.Api;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Frontend.Api.Model.V3.Api;
 using OneShelf.Frontend.SpecificModel;
@@ -29,8 +28,8 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _songsDatabase = songsDatabase;
         }
 
-        [Function(ApiUrls.V3Search)]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] SearchRequest request) => await RunHandler(req, request);
+        [Function(ApiUrls.V3Search, AuthorizationLevel.Anonymous, "get", "post")]
+        public async Task<IActionResult> Run(HttpRequest req, [FromBody] SearchRequest request) => await RunHandler(req, request);
 
         protected override async Task<SearchResponse> Execute(HttpRequest httpRequest, SearchRequest request)
         {

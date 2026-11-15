@@ -1,30 +1,40 @@
 using System.Net;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Middleware;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace OneShelf.Common.Api;
 
-internal class ErrorHandlingMiddleware : IFunctionsWorkerMiddleware
+/// <summary>
+/// An error not handled by a function is logged and answered with 500 and no body.
+/// </summary>
+internal class ErrorHandlingMiddleware
 {
-    public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ErrorHandlingMiddleware> _logger;
+
+    public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task Invoke(HttpContext context)
     {
         try
         {
-            await next(context);
+            await _next(context);
         }
         catch (Exception e)
         {
-            try
+            _logger.LogError(e, "Uncaught error in the function execution.");
+
+            if (context.Response.HasStarted)
             {
-                context.GetLogger<ErrorHandlingMiddleware>().LogError(e, "Uncaught error in the function execution.");
-                var httpResponseData = context.GetHttpResponseData() ?? (await context.GetHttpRequestDataAsync())!.CreateResponse();
-                httpResponseData.StatusCode = HttpStatusCode.InternalServerError;
+                throw;
             }
-            catch (Exception e2)
-            {
-                context.GetLogger<ErrorHandlingMiddleware>().LogError(e2, "An error in the error handler itself.");
-            }
+
+            context.Response.Clear();
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
         }
     }
 }

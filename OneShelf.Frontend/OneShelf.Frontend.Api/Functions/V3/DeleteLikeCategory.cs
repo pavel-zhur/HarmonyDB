@@ -1,8 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -23,9 +22,9 @@ public class DeleteLikeCategory : AuthorizationFunctionBase<DeleteLikeCategoryRe
         _songsDatabase = songsDatabase;
     }
 
-    [Function(ApiUrls.V3DeleteLikeCategory)]
+    [Function(ApiUrls.V3DeleteLikeCategory, AuthorizationLevel.Anonymous, "get", "post")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] DeleteLikeCategoryRequest request) => await RunHandler(req, request);
+        HttpRequest req, [FromBody] DeleteLikeCategoryRequest request) => await RunHandler(req, request);
 
     protected override async Task<DeleteLikeCategoryResponse> Execute(HttpRequest httpRequest,
         DeleteLikeCategoryRequest request)

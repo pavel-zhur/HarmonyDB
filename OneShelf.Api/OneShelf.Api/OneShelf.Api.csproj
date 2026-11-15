@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- the workstation garbage collector, as the Azure Functions workers had: much less memory held -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api\HarmonyDB.Index.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api\OneShelf.Authorization.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Billing\OneShelf.Billing.Api\OneShelf.Billing.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Collectives\OneShelf.Collectives.Api\OneShelf.Collectives.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.Api\OneShelf.Frontend.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Api\OneShelf.Illustrations.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Runner.Functions\OneShelf.OneDog.Runner.Functions.csproj" />
+    <ProjectReference Include="..\..\OneShelf.OneDragon\OneShelf.OneDragon.Runner.Functions\OneShelf.OneDragon.Runner.Functions.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Sources\OneShelf.Sources.Self.Api\OneShelf.Sources.Self.Api.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Telegram\OneShelf.Telegram.Runner.Functions\OneShelf.Telegram.Runner.Functions.csproj" />
+  </ItemGroup>
+</Project>

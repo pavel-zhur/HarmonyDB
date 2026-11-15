@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OneShelf.Common.Api;
 using System.Net;
 using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,84 +28,54 @@ namespace OneShelf.Telegram.Runner.Functions.Functions
             _api = new(_telegramOptions.Token);
         }
 
-        [Function(nameof(Check))]
-        public async Task<HttpResponseData> Check([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(Check), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> Check(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Welcome to Azure Functions!");
-
-            return response;
+            return new ContentResult { Content = "Welcome to Azure Functions!", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(CheckDb))]
-        public async Task<HttpResponseData> CheckDb([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(CheckDb), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> CheckDb(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync($"Welcome to Azure Functions! Songs Count = {await _songsDatabase.Songs.CountAsync()}");
-
-            return response;
+            return new ContentResult { Content = $"Welcome to Azure Functions! Songs Count = {await _songsDatabase.Songs.CountAsync()}", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(MigrateDb))]
-        public async Task<HttpResponseData> MigrateDb([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(MigrateDb), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> MigrateDb(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             await _songsDatabase.Database.MigrateAsync();
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Done.");
-
-            return response;
+            return new ContentResult { Content = "Done.", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(SetWebHook))]
-        public async Task<HttpResponseData> SetWebHook([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(SetWebHook), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> SetWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync((await _api.SetWebhookAsync($"https://{req.Url.Host}/api/{nameof(BotFunctions.IncomingUpdate)}", secretToken: _telegramOptions.WebHooksSecretToken)).ToString());
-
-            return response;
+            return new ContentResult { Content = (await _api.SetWebhookAsync($"https://{req.Host.Host}{req.PathBase}/{FunctionAttribute.RoutePrefix}/{nameof(BotFunctions.IncomingUpdate)}", secretToken: _telegramOptions.WebHooksSecretToken)).ToString(), ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(DeleteWebHook))]
-        public async Task<HttpResponseData> DeleteWebHook([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(DeleteWebHook), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> DeleteWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync((await _api.DeleteWebhookAsync()).ToString());
-
-            return response;
+            return new ContentResult { Content = (await _api.DeleteWebhookAsync()).ToString(), ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(GetWebHook))]
-        public async Task<HttpResponseData> GetWebHook([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [Function(nameof(GetWebHook), AuthorizationLevel.Anonymous, "get")]
+        public async Task<IActionResult> GetWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync(JsonSerializer.Serialize(await _api.GetWebhookInfoAsync()));
-
-            return response;
+            return new ContentResult { Content = JsonSerializer.Serialize(await _api.GetWebhookInfoAsync()), ContentType = "text/plain; charset=utf-8" };
         }
     }
 }

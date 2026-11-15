@@ -1,8 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -25,9 +24,9 @@ public class UpdateLikeCategory : AuthorizationFunctionBase<UpdateLikeCategoryRe
         _songsDatabase = songsDatabase;
     }
 
-    [Function(ApiUrls.V3UpdateLikeCategory)]
+    [Function(ApiUrls.V3UpdateLikeCategory, AuthorizationLevel.Anonymous, "get", "post")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] UpdateLikeCategoryRequest request) => await RunHandler(req, request);
+        HttpRequest req, [FromBody] UpdateLikeCategoryRequest request) => await RunHandler(req, request);
 
     protected override async Task<UpdateLikeCategoryResponse> Execute(HttpRequest httpRequest,
         UpdateLikeCategoryRequest request)

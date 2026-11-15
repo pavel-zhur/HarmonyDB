@@ -22,51 +22,6 @@ public record EmModel : IEmModel
     
     IReadOnlyCollection<Loop> IEmModel.Loops => _loops.Values;
 
-    public static EmModel Deserialize(byte[] serialized)
-    {
-        using var stream = new MemoryStream(serialized);
-        using var reader = new BinaryReader(stream);
-
-        var loops = Enumerable
-            .Range(0, reader.ReadInt32())
-            .Select(_ =>
-            {
-                var id = reader.ReadString();
-                var loop = new Loop
-                {
-                    Id = id,
-                };
-
-                DeserializeSource(reader, loop);
-
-                return loop;
-            })
-            .ToList();
-
-        var songs = Enumerable
-            .Range(0, reader.ReadInt32())
-            .Select(_ =>
-            {
-                var id = reader.ReadString();
-
-                var knownTonalityByte = reader.ReadByte();
-                (byte Tonic, Scale scale)? knownTonality = knownTonalityByte == 255 ? null : ((byte)(knownTonalityByte / 2), (Scale)(knownTonalityByte % 2));
-
-                var song = new Song
-                {
-                    Id = id,
-                    KnownTonality = knownTonality,
-                };
-
-                DeserializeSource(reader, song);
-
-                return song;
-            })
-            .ToList();
-
-        return new(songs, loops);
-    }
-
     public byte[] Serialize()
     {
         using var stream = new MemoryStream();
@@ -108,19 +63,6 @@ public record EmModel : IEmModel
             for (var j = 0; j < Constants.ScaleCount; j++)
             {
                 writer.Write(source.TonalityProbabilities[i, j]);
-            }
-        }
-    }
-
-    private static void DeserializeSource(BinaryReader reader, ISource source)
-    {
-        source.Score = (reader.ReadSingle(), reader.ReadSingle());
-
-        for (var i = 0; i < Constants.TonicCount; i++)
-        {
-            for (var j = 0; j < Constants.ScaleCount; j++)
-            {
-                source.TonalityProbabilities[i, j] = reader.ReadSingle();
             }
         }
     }

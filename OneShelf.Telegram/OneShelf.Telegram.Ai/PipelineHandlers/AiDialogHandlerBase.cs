@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Azure.Core;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using OneShelf.Common;

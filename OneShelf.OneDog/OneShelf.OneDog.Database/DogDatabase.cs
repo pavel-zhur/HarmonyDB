@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using OneShelf.Common.Database;
 using OneShelf.OneDog.Database.Model;
 using OneShelf.OneDog.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
@@ -8,6 +9,8 @@ namespace OneShelf.OneDog.Database;
 
 public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
 {
+    public const string PostgreSqlMigrationsAssembly = "OneShelf.OneDog.Database.PostgreSqlMigrations";
+
     public DogDatabase(DbContextOptions<DogDatabase> options) : base(options)
     {
     }
@@ -27,6 +30,11 @@ public class DogDatabase : DbContext, IInteractionsRepository<InteractionType>
         modelBuilder.Entity<Interaction>()
             .Property(x => x.InteractionType)
             .HasConversion<string?>();
+
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.ApplyPostgreSqlStoreTypes();
+        }
     }
 
     #region IInteractionsRepository

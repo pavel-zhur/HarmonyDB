@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OneShelf.Common.Database;
 using OneShelf.OneDragon.Database.Model;
 using OneShelf.OneDragon.Database.Model.Enums;
 using OneShelf.Telegram.Ai.Model;
@@ -8,6 +9,8 @@ namespace OneShelf.OneDragon.Database;
 
 public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType>
 {
+    public const string PostgreSqlMigrationsAssembly = "OneShelf.OneDragon.Database.PostgreSqlMigrations";
+
     public DragonDatabase(DbContextOptions<DragonDatabase> options) : base(options)
     {
     }
@@ -41,6 +44,11 @@ public class DragonDatabase : DbContext, IInteractionsRepository<InteractionType
         modelBuilder.Entity<Limit>()
             .Property(x => x.Group)
             .HasDefaultValue("anon");
+
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.ApplyPostgreSqlStoreTypes();
+        }
     }
 
     #region IInteractionsRepository

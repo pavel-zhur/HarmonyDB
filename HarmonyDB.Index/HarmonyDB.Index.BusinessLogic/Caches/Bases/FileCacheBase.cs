@@ -13,6 +13,8 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
     where TPresentationModel : class
     where TFileModel : class
 {
+    private const int ReadBufferSize = 1 << 16;
+
     private readonly FileCacheBaseOptions _options;
     private readonly AsyncLock _lock = new();
     private readonly AsyncLock _containerClientLock = new();
@@ -35,7 +37,10 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
     private string FilePath => Path.Combine(_options.DiskPath ?? throw new("The file path is required in the options."), FileName);
 
-    protected abstract Task<TPresentationModel> ToPresentationModel(TFileModel fileModel);
+    /// <summary>
+    /// Reads the presentation model from the decompressed file, as it streams.
+    /// </summary>
+    protected abstract TPresentationModel ReadPresentationModel(Stream stream);
 
     public async Task Copy(Func<TFileModel, TFileModel>? updateFunc = null)
     {
@@ -85,13 +90,18 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
 
     private async Task<TFileModel?> StreamDecompressDeserialize()
     {
+        await using var stream = await OpenDecompressed();
+        return stream == null ? null : await StreamDeserialize(stream);
+    }
+
+    /// <returns>The decompressed file, or null if there is none.</returns>
+    private async Task<Stream?> OpenDecompressed()
+    {
         if (_options.ReadSource == FileCacheSource.Disk)
         {
             if (!File.Exists(FilePath)) return null;
 
-            await using var file = File.OpenRead(FilePath);
-            await using var gzip = new GZipStream(file, CompressionMode.Decompress);
-            return await StreamDeserialize(gzip);
+            return new GZipStream(File.OpenRead(FilePath), CompressionMode.Decompress);
         }
 
         if (_options.ReadSource == FileCacheSource.Storage)
@@ -101,8 +111,7 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
                 var client = await GetContainerClient();
                 var blobClient = client.GetBlobClient(FileName);
                 var stream = await blobClient.OpenReadAsync();
-                await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-                return await StreamDeserialize(gzip);
+                return new GZipStream(stream, CompressionMode.Decompress);
             }
             catch (RequestFailedException e) when (e.Status == 404)
             {
@@ -148,24 +157,24 @@ public abstract class FileCacheBase<TFileModel, TPresentationModel>
             if (_cache != null) return;
 
             var started = DateTime.Now;
-            var fileModel = await StreamDecompressDeserialize();
-            if (fileModel == null)
+            await using var stream = await OpenDecompressed();
+            if (stream == null)
             {
                 _cache = new()
                 {
                     Data = null,
                 };
+
+                return;
             }
 
-            Logger.LogInformation("Decompressing and deserializing the input model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
-            started = DateTime.Now;
-
+            await using var buffered = new BufferedStream(stream, ReadBufferSize);
             _cache = new()
             {
-                Data = await ToPresentationModel(fileModel),
+                Data = ReadPresentationModel(buffered),
             };
 
-            Logger.LogInformation("Building the presentation model for the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
+            Logger.LogInformation("Reading the {type} memory cache took {time:N0} ms", Key, (DateTime.Now - started).TotalMilliseconds);
         }
         catch (Exception e)
         {

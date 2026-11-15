@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "OneShelf.Frontend.Api": {
-      "commandName": "Project",
-      "environmentVariables": {
-      }
-    }
-  }
-}

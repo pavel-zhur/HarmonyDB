@@ -1,6 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Database.Songs;
@@ -18,25 +19,23 @@ namespace OneShelf.Frontend.Api
             _logger = loggerFactory.CreateLogger<UpgradeDatabase>();
         }
 
-        [Function("UpgradeDatabase")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        [Function("UpgradeDatabase", AuthorizationLevel.Anonymous, "get", "post")]
+        public async Task<IActionResult> Run(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
+            string result;
             try
             {
                 await _songsDatabase.Database.MigrateAsync();
-                await response.WriteStringAsync("Done");
+                result = "Done";
             }
             catch (Exception e)
             {
-                await response.WriteStringAsync(e.ToString());
+                result = e.ToString();
             }
 
-            return response;
+            return new ContentResult { Content = result, ContentType = "text/plain; charset=utf-8" };
         }
     }
 }

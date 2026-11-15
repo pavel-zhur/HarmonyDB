@@ -8,10 +8,8 @@ using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.BusinessLogic.Caches;
 using HarmonyDB.Index.DownstreamApi.Client;
-using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
@@ -44,8 +42,8 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1SongsByChords)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongsByChordsRequest request)
+    [Function(IndexApiUrls.VExternal1SongsByChords, AuthorizationLevel.Function, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] SongsByChordsRequest request)
         => RunHandler(request);
 
     protected override async Task<SongsByChordsResponse> Execute(SongsByChordsRequest request)
@@ -56,32 +54,32 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         }
 
         var progressions = await _progressionsCache.Get();
-        var headers = (await _indexHeadersCache.Get())
-            .Headers
-            .Values
-            .Select(_commonExecutions.PrepareForOutput)
-            .Where(x => x != null)
-            .Select(x => x!)
+        var headers = await _indexHeadersCache.Get();
+
+        // the headers that can be shown, in their order, with the positions of their songs' progressions
+        var shown = Enumerable.Range(0, headers.Count)
+            .Where(h => _commonExecutions.PrepareForOutput(headers.Get(h)) != null)
+            .Select(h => (h, progression: progressions.Songs.TryGetPosition(headers.Songs.GetNumber(h), out var p) ? p : (int?)null))
             .ToList();
 
         var found = _progressionsSearch.Search(
-            headers.Join(progressions, h => h.ExternalId, p => p.Key, (h, p) => (h, p))
-                .Select(x => x.p.Value),
+            progressions,
+            shown.Where(x => x.progression.HasValue).Select(x => x.progression!.Value),
             _inputParser.ParseSequence(request.Query));
 
-        var results = headers
-            .Select(h => progressions.TryGetValue(h.ExternalId, out var progression) && found.TryGetValue(progression, out var coverage)
-                ? (h, coverage).OnceAsNullable()
+        var results = shown
+            .Select(x => x.progression.HasValue && found.TryGetValue(x.progression.Value, out var coverage)
+                ? (x.h, coverage).OnceAsNullable()
                 : null)
             .Where(x => x.HasValue)
             .Select(x => x.Value)
-            .Where(x => x.coverage >= request.MinCoverage && x.h.Rating >= request.MinRating)
-            .OrderByDescending<(IndexHeader h, float coverage), int>(request.Ordering switch
+            .Where(x => x.coverage >= request.MinCoverage && headers.GetRating(x.h) >= request.MinRating)
+            .OrderByDescending<(int h, float coverage), int>(request.Ordering switch
             {
                 SongsByChordsRequestOrdering.ByRating => x =>
-                    (int)(x.h.Rating * 10 ?? 0) * 10 + (int)(x.coverage * 1000),
+                    (int)(headers.GetRating(x.h) * 10 ?? 0) * 10 + (int)(x.coverage * 1000),
                 SongsByChordsRequestOrdering.ByCoverage => x =>
-                    (int)(x.h.Rating * 10 ?? 0) + (int)(x.coverage * 1000) * 10,
+                    (int)(headers.GetRating(x.h) * 10 ?? 0) + (int)(x.coverage * 1000) * 10,
                 _ => throw new ArgumentOutOfRangeException(),
             })
             .ToList();
@@ -92,9 +90,11 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         {
             Songs = results.Skip((request.PageNumber - 1) * request.ItemsPerPage).Take(request.ItemsPerPage).Select(x => new SongsByChordsResponseSong
             {
-                Header = x.h,
+                Header = _commonExecutions.PrepareForOutput(headers.Get(x.h))!,
                 Coverage = x.coverage,
-                PredictedTonalityIndex = tonalitiesCache.Songs.GetValueOrDefault(x.h.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex(),
+                PredictedTonalityIndex = tonalitiesCache.Songs.Positions.TryGetPosition(headers.Songs.GetNumber(x.h), out var tone)
+                    ? tonalitiesCache.Songs.GetProbabilities(tone).GetPredictedTonality().ToIndex()
+                    : null,
             }).ToList(),
             Total = results.Count,
             TotalPages = results.Count / request.ItemsPerPage + (results.Count % request.ItemsPerPage == 0 ? 0 : 1),

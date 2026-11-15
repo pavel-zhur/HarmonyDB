@@ -41,23 +41,41 @@ public class ProgressionsSearch
 
     public (Dictionary<ChordsProgression, float> foundProgressionsWithCoverage, Dictionary<HarmonyGroup, bool> harmonyGroupsWithIsFirst) Search(IReadOnlyList<ChordsProgression> progressions, HarmonyMovementsSequence searchPhrase)
     {
-        var (foundProgressionsWithCoverage, harmonyGroupsWithIsFirst) = Search(progressions.AsEnumerable(), searchPhrase, true);
+        var (foundProgressionsWithCoverage, harmonyGroupsWithIsFirst) = Search<ISearchableChordsProgression, IReadOnlyList<ISearchableHarmonyMovementsSequence>, ISearchableHarmonyMovementsSequence>(
+            progressions,
+            p => (p.HarmonySequenceLength, p.ExtendedHarmonyMovementsSequences),
+            searchPhrase,
+            true);
 
         return (
             foundProgressionsWithCoverage.ToDictionary(x => (ChordsProgression)x.Key, x => x.Value),
             harmonyGroupsWithIsFirst.ToDictionary(x => ((ChordsProgression)x.Key.progression).HarmonySequence[x.Key.index].harmonyGroup, x => x.Value));
     }
 
-    public Dictionary<ISearchableChordsProgression, float> Search(IEnumerable<ISearchableChordsProgression> progressions, HarmonyMovementsSequence searchPhrase, int? top = int.MaxValue)
-        => Search(progressions, searchPhrase, false, top).foundProgressionsWithCoverage;
+    /// <summary>
+    /// Finds the songs of the progressions, given by their positions there, where the search phrase is found.
+    /// </summary>
+    /// <returns>The positions of the songs found, with their coverage.</returns>
+    public Dictionary<int, float> Search(CompactChordsProgressions progressions, IEnumerable<int> positions, HarmonyMovementsSequence searchPhrase, int? top = int.MaxValue)
+        => Search<int, ArraySegment<CompactHarmonyMovementsSlice>, CompactHarmonyMovementsSlice>(
+                positions,
+                p => (progressions.GetHarmonySequenceLength(p), progressions.GetSequences(p)),
+                searchPhrase,
+                false,
+                top)
+            .foundProgressionsWithCoverage;
 
-    private (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search(
-        IEnumerable<ISearchableChordsProgression> progressions, 
+    private (Dictionary<TProgression, float> foundProgressionsWithCoverage, Dictionary<(TProgression progression, int index), bool> harmonyGroupsWithIsFirst) Search<TProgression, TSequences, TSequence>(
+        IEnumerable<TProgression> progressions,
+        Func<TProgression, (int harmonySequenceLength, TSequences extendedHarmonyMovementsSequences)> getProgression,
         HarmonyMovementsSequence searchPhrase,
         bool harmonyGroupsToo,
         int? top = int.MaxValue)
+        where TProgression : notnull
+        where TSequences : IReadOnlyList<TSequence>
+        where TSequence : ISearchableHarmonyMovementsSequence
     {
-        (Dictionary<ISearchableChordsProgression, float> foundProgressionsWithCoverage, Dictionary<(ISearchableChordsProgression progression, int index), bool> harmonyGroupsWithIsFirst) result = (new(), new());
+        (Dictionary<TProgression, float> foundProgressionsWithCoverage, Dictionary<(TProgression progression, int index), bool> harmonyGroupsWithIsFirst) result = (new(), new());
 
         var isLoop = searchPhrase.Movements[^1].To.HarmonyRepresentation == searchPhrase.Movements[0].From.HarmonyRepresentation;
         var compactSearchPhrase = searchPhrase.Compact().Movements;
@@ -66,10 +84,12 @@ public class ProgressionsSearch
         {
             if (result.foundProgressionsWithCoverage.ContainsKey(progression)) continue;
 
+            var (harmonySequenceLength, extendedHarmonyMovementsSequences) = getProgression(progression);
+
             HashSet<int>? totalFound = null, totalFoundFirsts = null;
-            foreach (var extendedHarmonyMovementsSequence in progression.ExtendedHarmonyMovementsSequences)
+            for (var i = 0; i < extendedHarmonyMovementsSequences.Count; i++)
             {
-                var (found, foundFirsts, _) = FindMatchingSubsequences(extendedHarmonyMovementsSequence, compactSearchPhrase, isLoop);
+                var (found, foundFirsts, _) = FindMatchingSubsequences(extendedHarmonyMovementsSequences[i], compactSearchPhrase, isLoop);
                 if (found.Any())
                 {
                     totalFound ??= new();
@@ -86,7 +106,7 @@ public class ProgressionsSearch
 
             if (totalFound != null)
             {
-                result.foundProgressionsWithCoverage.Add(progression, totalFound.Count / (float)progression.HarmonySequenceLength);
+                result.foundProgressionsWithCoverage.Add(progression, totalFound.Count / (float)harmonySequenceLength);
 
                 if (harmonyGroupsToo)
                 {
@@ -101,7 +121,8 @@ public class ProgressionsSearch
         return result;
     }
 
-    private (HashSet<int> found, HashSet<int> foundFirsts, HashSet<int> foundFirstsFulls) FindMatchingSubsequences(ISearchableHarmonyMovementsSequence sequence, ReadOnlyMemory<CompactHarmonyMovement> searchPhrase, bool isLoop)
+    private (HashSet<int> found, HashSet<int> foundFirsts, HashSet<int> foundFirstsFulls) FindMatchingSubsequences<TSequence>(TSequence sequence, ReadOnlyMemory<CompactHarmonyMovement> searchPhrase, bool isLoop)
+        where TSequence : ISearchableHarmonyMovementsSequence
     {
         if (searchPhrase.IsEmpty) throw new ArgumentOutOfRangeException(nameof(searchPhrase));
 

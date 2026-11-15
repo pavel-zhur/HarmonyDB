@@ -1,94 +1,58 @@
-using System.Net;
-using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneShelf.Common.Api;
+using OneShelf.Common.Api.Background;
 using OneShelf.Telegram.Processor.Model;
 using OneShelf.Telegram.Processor.Services;
-using OneShelf.Telegram.Services;
-using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.Telegram.Runner.Functions.Functions;
 
 public class BotFunctions
 {
-    private const string QueueNameUpdates = "updates";
-    private const string QueueNameRegenerations = "regenerations";
     private const string SecretTokenHeaderName = "X-Telegram-Bot-Api-Secret-Token";
 
     private readonly ILogger<BotFunctions> _logger;
-    private readonly Pipeline _pipeline;
     private readonly DailySelection _dailySelection;
     private readonly TelegramOptions _telegramOptions;
     private readonly RegenerationQueue _regenerationQueue;
+    private readonly BackgroundQueue<string> _updates;
 
-    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, Pipeline pipeline, DailySelection dailySelection, RegenerationQueue regenerationQueue)
+    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> telegramOptions, DailySelection dailySelection, RegenerationQueue regenerationQueue, BackgroundQueue<string> updates)
     {
         _logger = logger;
-        _pipeline = pipeline;
         _dailySelection = dailySelection;
         _regenerationQueue = regenerationQueue;
+        _updates = updates;
         _telegramOptions = telegramOptions.Value;
     }
 
-    [Function("RegenerationsQueueTrigger")]
-    public async Task RegenerationsQueueTrigger(
-        [QueueTrigger(QueueNameRegenerations)] string myQueueItem)
+    [Function(nameof(Regenerate), AuthorizationLevel.Function, "get")]
+    public IActionResult Regenerate(HttpRequest req)
     {
-        if (!bool.Parse(myQueueItem)) return;
-        await _regenerationQueue.QueueUpdateAllSync();
+        _regenerationQueue.QueueUpdateAll(false);
+        return new OkResult();
     }
 
-    [Function("UpdatesQueueTrigger")]
-    public async Task UpdatesQueueTrigger(
-        [QueueTrigger(QueueNameUpdates)] string myQueueItem)
+    [Function("DailySelectionTest", AuthorizationLevel.Anonymous, "get")]
+    public async Task<IActionResult> DailySelectionTest(HttpRequest req)
     {
-        var update = JsonSerializer.Deserialize<Update>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update, 0);
+        await req.HttpContext.Response.WriteAsync(await _dailySelection.DailySelectionTest());
+        return new EmptyResult();
     }
 
-    [Function(nameof(Regenerate))]
-    [QueueOutput(QueueNameRegenerations)]
-    public async Task<bool> Regenerate(
-        [HttpTrigger(AuthorizationLevel.Function, "get")]
-        HttpRequestData req)
+    /// <summary>
+    /// Accepts an update from Telegram at once; it is processed in the background (see <see cref="Background.UpdatesWork"/>).
+    /// </summary>
+    [Function(nameof(IncomingUpdate), AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> IncomingUpdate(HttpRequest req)
     {
-        return true;
-    }
+        if (!req.Headers[SecretTokenHeaderName].Contains(_telegramOptions.WebHooksSecretToken)) throw new("Bad secret token.");
 
-    [Function("Hourly")]
-    [QueueOutput(QueueNameRegenerations)]
-    public async Task<bool> Hourly([TimerTrigger("0 15 * * * *")] TimerInfo myTimer) // Once every hour of the day at minute 15 of each hour
-    {
-        return true;
-    }
+        using var reader = new StreamReader(req.Body);
+        _updates.Enqueue(await reader.ReadToEndAsync());
 
-    [Function("DailySelection")]
-    public async Task DailySelection([TimerTrigger("0 34 9 * * *")] TimerInfo myTimer) // Daily at 9:34am UTC (12:34 utc+3)
-    {
-        await _dailySelection.DailySelectionGo();
-    }
-
-    [Function("DailySelectionTest")]
-    public async Task<HttpResponseData> DailySelectionTest([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
-    {
-        var response = await _dailySelection.DailySelectionTest();
-
-        var httpResponse = req.CreateResponse(HttpStatusCode.OK);
-        await httpResponse.WriteStringAsync(response);
-
-        return httpResponse;
-    }
-
-    [Function(nameof(IncomingUpdate))]
-    [QueueOutput(QueueNameUpdates)]
-    public async Task<string> IncomingUpdate(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
-    {
-        if (!req.Headers.GetValues(SecretTokenHeaderName).Contains(_telegramOptions.WebHooksSecretToken)) throw new("Bad secret token.");
-
-        var requestBody = await req.ReadAsStringAsync() ?? throw new("Empty request body.");
-
-        return requestBody;
+        return new OkResult();
     }
 }

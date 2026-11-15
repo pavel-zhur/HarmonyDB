@@ -10,31 +10,6 @@ public class CompactChordsProgression : ISearchableChordsProgression
 
     IReadOnlyList<ISearchableHarmonyMovementsSequence> ISearchableChordsProgression.ExtendedHarmonyMovementsSequences => ExtendedHarmonyMovementsSequences;
 
-    public static CompactChordsProgression Deserialize(BinaryData data)
-    {
-        using var stream = data.ToStream();
-        using var reader = new BinaryReader(stream);
-        return new()
-        {
-            HarmonySequenceLength = reader.ReadInt32(),
-            ExtendedHarmonyMovementsSequences = Enumerable.Repeat(0, reader.ReadInt32())
-                .Select(_ => new CompactHarmonyMovementsSequence
-                {
-                    FirstMovementFromIndex = reader.ReadInt32(),
-                    FirstRoot = reader.ReadByte(),
-                    Movements = Enumerable.Repeat(0, reader.ReadInt32())
-                        .Select(_ => new CompactHarmonyMovement
-                        {
-                            RootDelta = reader.ReadByte(),
-                            FromType = (ChordType)reader.ReadByte(),
-                            ToType = (ChordType)reader.ReadByte(),
-                        })
-                        .ToArray(),
-                })
-                .ToList(),
-        };
-    }
-
     public BinaryData Serialize()
     {
         using var stream = new MemoryStream();

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using OneShelf.Common.Database;
 
 namespace OneShelf.OneDragon.Database.Model;
 
@@ -19,6 +20,7 @@ public class Limit
 
     public bool IsEnabled { get; set; }
 
+    [CaseInsensitive]
     public string Group { get; set; } = "anon";
 
     public bool IsShared { get; set; }

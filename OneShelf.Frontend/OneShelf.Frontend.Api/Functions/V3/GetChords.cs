@@ -1,8 +1,9 @@
+using OneShelf.Common.Api;
 using System.Net;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OneShelf.Frontend.Api.Model.V3.Api;
 
@@ -19,20 +20,19 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _logger = loggerFactory.CreateLogger<GetChords>();
         }
 
-        [Function(ApiUrls.V3GetChords)]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
+        [Function(ApiUrls.V3GetChords, AuthorizationLevel.Anonymous, "post")]
+        public async Task<IActionResult> Run(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var request = await req.ReadAsStringAsync();
+            using var reader = new StreamReader(req.Body);
+            var request = await reader.ReadToEndAsync();
 
             var result = await _sourceApiClient.V1GetSongsDirect(request);
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
+            await req.HttpContext.Response.WriteAsync(result);
 
-            await response.WriteStringAsync(result);
-
-            return response;
+            return new EmptyResult();
         }
     }
 }

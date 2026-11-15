@@ -1,6 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-using Azure.Storage.Queues;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Billing.Api.Model;
@@ -10,14 +8,12 @@ namespace OneShelf.Billing.Api.Client;
 
 public class BillingApiClient : ApiClientBase<BillingApiClient>
 {
-    private readonly BillingApiClientOptions _options;
     private readonly ILogger<BillingApiClient> _logger;
 
     public BillingApiClient(IHttpClientFactory httpClientFactory, IOptions<BillingApiClientOptions> options, ILogger<BillingApiClient> logger)
         : base(options, httpClientFactory)
     {
         _logger = logger;
-        _options = options.Value;
     }
 
     public async Task<AllResponse> All(int? domainId = null, long? userId = null, long? chatId = null)
@@ -32,10 +28,7 @@ public class BillingApiClient : ApiClientBase<BillingApiClient>
     {
         try
         {
-            var serialized = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(usage)));
-            var client = new QueueClient(_options.QueueClientConnectionString, BillingApiUrls.InputQueueName);
-            await client.CreateIfNotExistsAsync();
-            await client.SendMessageAsync(serialized);
+            await PostWithCode(BillingApiUrls.Add, usage);
         }
         catch (Exception e)
         {

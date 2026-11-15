@@ -8,8 +8,4 @@ public class IllustrationHeader
     public required DateTime CreatedOn { get; set; }
     public required Guid PromptsId { get; set; }
     public required string Url { get; set; }
-    public Uri? PublicUrl1024 { get; set; }
-    public Uri? PublicUrl512 { get; set; }
-    public Uri? PublicUrl256 { get; set; }
-    public Uri? PublicUrl128 { get; set; }
 }

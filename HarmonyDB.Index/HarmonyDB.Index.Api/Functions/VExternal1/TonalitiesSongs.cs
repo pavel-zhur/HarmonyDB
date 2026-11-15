@@ -10,7 +10,6 @@ using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
@@ -40,8 +39,8 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1TonalitiesSongs)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongsRequest request)
+    [Function(IndexApiUrls.VExternal1TonalitiesSongs, AuthorizationLevel.Function, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] SongsRequest request)
         => RunHandler(request);
 
     protected override async Task<SongsResponse> Execute(SongsRequest request)
@@ -55,18 +54,19 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
         var structures = await _structuresCache.Get();
         var headers = await _indexHeadersCache.Get();
 
-        var results = tonalities.Songs
-            .Join(structures.Songs, x => x.Key, x => x.Key, (x, y) => (tone: x.Value, stats: y.Value))
-            .Join(headers.Headers.Values,
-                x => x.stats.ExternalId, 
-                x => x.ExternalId, (x, y) => (x.tone, x.stats, header: _commonExecutions.PrepareForOutput(y)))
+        var results = Enumerable.Range(0, tonalities.Songs.Count)
+            .Select(tone => (tone, found: structures.TryGetSong(tonalities.Songs.Positions.GetNumber(tone), out var stats), stats))
+            .Where(x => x.found)
+            .Select(x => (x.tone, x.stats, found: headers.Songs.TryGetPosition(tonalities.Songs.Positions.GetNumber(x.tone), out var header), header))
+            .Where(x => x.found)
+            .Select(x => (x.tone, x.stats, header: _commonExecutions.PrepareForOutput(headers.Get(x.header))))
             .Where(x => x.header != null)
             .Select(x => new Song(
                 x.stats.ExternalId,
                 x.stats.TotalLoops,
-                x.tone.TonalityProbabilities.ToLinear(),
-                x.tone.Score.TonicScore,
-                x.tone.Score.ScaleScore,
+                tonalities.Songs.GetProbabilities(x.tone),
+                tonalities.Songs.GetScore(x.tone).TonicScore,
+                tonalities.Songs.GetScore(x.tone).ScaleScore,
                 x.header!,
                 x.header!.BestTonality?.Tonality.TryParseBestTonality()?.ToIndex()))
             .ToList();

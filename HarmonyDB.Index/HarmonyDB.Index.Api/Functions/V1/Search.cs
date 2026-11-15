@@ -4,11 +4,10 @@ using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Common;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.V1
@@ -23,9 +22,9 @@ namespace HarmonyDB.Index.Api.Functions.V1
             _downstreamApiClient = downstreamApiClient;
         }
 
-        [Function(SourceApiUrls.V1Search)]
+        [Function(SourceApiUrls.V1Search, AuthorizationLevel.Anonymous, "post")]
         public Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] SearchRequest request)
+            HttpRequest req, [FromBody] SearchRequest request)
             => RunHandler(req, request);
 
         protected override async Task<SearchResponse> Execute(HttpRequest httpRequest, SearchRequest request)

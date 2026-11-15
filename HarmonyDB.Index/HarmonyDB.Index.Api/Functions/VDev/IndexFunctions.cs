@@ -8,9 +8,9 @@ using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.VInternal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 
 namespace HarmonyDB.Index.Api.Functions.VDev;
@@ -42,8 +42,8 @@ public class IndexFunctions
         securityContext.InitService();
     }
 
-    [Function(nameof(VDevSaveProgressionsIndex))]
-    public async Task<IActionResult> VDevSaveProgressionsIndex([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, CancellationToken cancellationToken)
+    [Function(nameof(VDevSaveProgressionsIndex), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevSaveProgressionsIndex(HttpRequest req, CancellationToken cancellationToken)
     {
         await _progressionsCache.Save((await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreProgressionsProvidedForIndexing)
                 .Select(async i =>
@@ -76,12 +76,10 @@ public class IndexFunctions
         return new OkResult();
     }
 
-    [Function(nameof(VDevSaveIndexHeaders))]
-    public async Task<IActionResult> VDevSaveIndexHeaders([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, CancellationToken cancellationToken)
+    [Function(nameof(VDevSaveIndexHeaders), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevSaveIndexHeaders(HttpRequest req, CancellationToken cancellationToken)
     {
-        await _indexHeadersCache.Save(new IndexHeaders
-        {
-            Headers = (await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreSongsProvidedForIndexResults)
+        await _indexHeadersCache.Save(IndexHeaders.Serialize((await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreSongsProvidedForIndexResults)
                     .Select(async i =>
                     {
                         List<IndexHeader> headers = new();
@@ -105,59 +103,59 @@ public class IndexFunctions
                     })))
                 .SelectMany(x => x)
                 .ToDictionary(x => x.ExternalId)
-        }.Serialize());
+                .Values));
 
         return new OkResult();
     }
 
-    [Function(nameof(VDevGetProgressionsCacheItemsCount))]
-    public async Task<IActionResult> VDevGetProgressionsCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetProgressionsCacheItemsCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevGetProgressionsCacheItemsCount(HttpRequest req)
     {
         return new OkObjectResult((await _progressionsCache.Get()).Count);
     }
 
-    [Function(nameof(VDevProgressionsCacheCopy))]
-    public async Task<IActionResult> VDevProgressionsCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevProgressionsCacheCopy), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevProgressionsCacheCopy(HttpRequest req)
     {
         await _progressionsCache.Copy();
         return new OkResult();
     }
 
-    [Function(nameof(VDevStructuresCacheCopy))]
-    public async Task<IActionResult> VDevStructuresCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevStructuresCacheCopy), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevStructuresCacheCopy(HttpRequest req)
     {
         await _structuresCache.Copy();
         return new OkResult();
     }
 
-    [Function(nameof(VDevTonalitiesCacheCopy))]
-    public async Task<IActionResult> VDevTonalitiesCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevTonalitiesCacheCopy), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevTonalitiesCacheCopy(HttpRequest req)
     {
         await _tonalitiesCache.Copy();
         return new OkResult();
     }
 
-    [Function(nameof(VDevIndexHeadersCacheCopy))]
-    public async Task<IActionResult> VDevIndexHeadersCacheCopy([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevIndexHeadersCacheCopy), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevIndexHeadersCacheCopy(HttpRequest req)
     {
         await _indexHeadersCache.Copy();
         return new OkResult();
     }
 
-    [Function(nameof(VDevGetIndexHeadersItemsCount))]
-    public async Task<IActionResult> VDevGetIndexHeadersItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetIndexHeadersItemsCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevGetIndexHeadersItemsCount(HttpRequest req)
     {
-        return new OkObjectResult((await _indexHeadersCache.Get()).Headers.Count);
+        return new OkObjectResult((await _indexHeadersCache.Get()).Count);
     }
 
-    [Function(nameof(VDevGetStructuresCacheLinksCount))]
-    public async Task<IActionResult> VDevGetStructuresCacheLinksCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetStructuresCacheLinksCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevGetStructuresCacheLinksCount(HttpRequest req)
     {
-        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+        return new OkObjectResult((await _structuresCache.Get()).Links.Length);
     }
 
-    [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount))]
-    public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevGetTonalitiesIndexCacheItemsCount(HttpRequest req)
     {
         var tonalitiesIndex = await _tonalitiesCache.Get();
         return new OkObjectResult(new
@@ -167,15 +165,15 @@ public class IndexFunctions
         });
     }
 
-    [Function(nameof(VDevRebuildStructuresCache))]
-    public async Task<IActionResult> VDevRebuildStructuresCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevRebuildStructuresCache), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevRebuildStructuresCache(HttpRequest req)
     {
         await _structuresCache.Rebuild();
-        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+        return new OkObjectResult((await _structuresCache.Get()).Links.Length);
     }
 
-    [Function(nameof(VDevRebuildTonalitiesCache))]
-    public async Task<IActionResult> VDevRebuildTonalitiesCache([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    [Function(nameof(VDevRebuildTonalitiesCache), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevRebuildTonalitiesCache(HttpRequest req)
     {
         await _tonalitiesCache.Rebuild();
         var tonalitiesIndex = await _tonalitiesCache.Get();
@@ -186,14 +184,15 @@ public class IndexFunctions
         });
     }
 
-    [Function(nameof(VDevFindAndCount))]
-    public async Task<IActionResult> VDevFindAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
+    [Function(nameof(VDevFindAndCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevFindAndCount(HttpRequest req, string searchQuery)
     {
-        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.ParseSequence(searchQuery)).Count);
+        var progressions = await _progressionsCache.Get();
+        return new OkObjectResult(_progressionsSearch.Search(progressions, Enumerable.Range(0, progressions.Count), _inputParser.ParseSequence(searchQuery)).Count);
     }
 
-    [Function(nameof(VDevFindHeaderAndCount))]
-    public async Task<IActionResult> VDevFindHeaderAndCount([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req, string searchQuery)
+    [Function(nameof(VDevFindHeaderAndCount), AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> VDevFindHeaderAndCount(HttpRequest req, string searchQuery)
     {
         var fullTextSearch = await _fullTextSearchCache.Get();
         var found = fullTextSearch.Find(searchQuery);

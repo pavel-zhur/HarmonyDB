@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OneShelf.Common.Api;
 using System.Net;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.DownstreamApi.Client;
 using HarmonyDB.Source.Api.Client;
 using HarmonyDB.Source.Api.Model;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Api.WithAuthorization;
 
@@ -23,8 +24,8 @@ namespace HarmonyDB.Index.Api.Functions.V1
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
-        [Function(SourceApiUrls.V1Ping)]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        [Function(SourceApiUrls.V1Ping, AuthorizationLevel.Anonymous, "get", "post")]
+        public async Task<IActionResult> Run(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -34,12 +35,7 @@ namespace HarmonyDB.Index.Api.Functions.V1
 
             await _downstreamApiClient.PingAll();
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Welcome to Azure Functions!");
-
-            return response;
+            return new ContentResult { Content = "Welcome to Azure Functions!", ContentType = "text/plain; charset=utf-8" };
         }
     }
 }

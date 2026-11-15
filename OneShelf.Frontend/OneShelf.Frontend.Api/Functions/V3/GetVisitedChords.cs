@@ -1,8 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -26,40 +25,13 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _songsDatabase = songsDatabase;
         }
 
-        [Function(ApiUrls.V3GetVisitedChords)]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] GetVisitedChordsRequest request) => await RunHandler(req, request);
+        [Function(ApiUrls.V3GetVisitedChords, AuthorizationLevel.Anonymous, "get", "post")]
+        public async Task<IActionResult> Run(HttpRequest req, [FromBody] GetVisitedChordsRequest request) => await RunHandler(req, request);
 
         protected override async Task<GetVisitedChordsResponse> Execute(HttpRequest httpRequest,
             GetVisitedChordsRequest request)
         {
-            var source = _songsDatabase.VisitedChords.FromSqlRaw(@"
-
-select [Id]
-      ,[ViewedOn]
-      ,[UserId]
-      ,[Uri]
-      ,[SongId]
-      ,[ExternalId]
-      ,[SearchQuery]
-      ,[Transpose]
-      ,[Artists]
-      ,[Title]
-      ,[Source]
-from (
-
-	select 
-		*, 
-		lead(c) over (partition by userid order by viewedon, id) c2, 
-		lead(viewedon) over (partition by userid order by viewedon, id) v2
-	from (
-		select checksum(uri, songid, externalid, SearchQuery, Artists, title, source) c, *
-		from visitedchords
-	) x
-
-) x
-where c <> isnull(c2, 0) or DATEDIFF(minute, v2, viewedon) < -10 
-
-");
+            var source = _songsDatabase.GetVisitedChordsWithoutRepeats();
 
             var count = await source.CountAsync(x => x.UserId == request.Identity.Id && x.User.TenantId == SecurityContext.TenantId);
 

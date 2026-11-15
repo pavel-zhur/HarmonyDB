@@ -4,5 +4,5 @@ public static class BillingApiUrls
 {
     public const string All = nameof(All);
 
-    public const string InputQueueName = "billing-input-queue";
+    public const string Add = nameof(Add);
 }

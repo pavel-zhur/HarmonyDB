@@ -25,15 +25,13 @@ namespace OneShelf.Admin.Web.Controllers
         private readonly BillingApiClient _billingApiClient;
         private readonly SongsDatabase _songsDatabase;
         private readonly AdminOptions _adminOptions;
-        private readonly IHttpClientFactory _httpClientFactory;
         
-        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions, IHttpClientFactory httpClientFactory)
+        public HomeController(ILogger<HomeController> logger, IllustrationsApiClient illustrationsApiClient, BillingApiClient billingApiClient, SongsDatabase songsDatabase, IOptions<AdminOptions> adminOptions)
         {
             _logger = logger;
             _illustrationsApiClient = illustrationsApiClient;
             _billingApiClient = billingApiClient;
             _songsDatabase = songsDatabase;
-            _httpClientFactory = httpClientFactory;
             _adminOptions = adminOptions.Value;
         }
 
@@ -131,9 +129,7 @@ namespace OneShelf.Admin.Web.Controllers
 
         public async Task<IActionResult> Png(PngModel pngModel)
         {
-            using var httpClient = _httpClientFactory.CreateClient();
-            await using var stream = await httpClient.GetStreamAsync(pngModel.Url1024);
-            using var image = await Image.LoadAsync(stream);
+            using var image = Image.Load(await _illustrationsApiClient.GetImageCopy(pngModel.Id, 1024));
 
             foreach (var (compressionLevel, isLast) in new List<PngCompressionLevel> {
                          PngCompressionLevel.Level6,

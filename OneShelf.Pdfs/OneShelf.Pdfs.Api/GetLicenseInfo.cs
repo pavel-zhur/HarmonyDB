@@ -1,10 +1,5 @@
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api;
 using Syncfusion.Licensing;
 
 namespace OneShelf.Pdfs.Api
@@ -12,18 +7,18 @@ namespace OneShelf.Pdfs.Api
     public class GetLicenseInfo
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<GetLicenseInfo> _logger;
 
-        public GetLicenseInfo(IConfiguration configuration)
+        public GetLicenseInfo(IConfiguration configuration, ILogger<GetLicenseInfo> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
-        [FunctionName("GetLicenseInfo")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
-            ILogger log)
+        [Function("GetLicenseInfo", AuthorizationLevel.Function, "get")]
+        public IActionResult Run()
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             FusionLicenseProvider.IsBoldLicenseValidation = true;
 

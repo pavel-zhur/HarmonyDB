@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Frontend.Api.Model.V3.Api;
 using OneShelf.Frontend.Api.Services;
@@ -19,8 +19,8 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _illustrationsReader = illustrationsReader;
         }
 
-        [Function(ApiUrls.V3Illustrations)]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
+        [Function(ApiUrls.V3Illustrations, AuthorizationLevel.Anonymous, "post")]
+        public async Task<IActionResult> Run(HttpRequest req,
             [FromBody] IllustrationsRequest request)
             => await RunHandler(req, request);
 

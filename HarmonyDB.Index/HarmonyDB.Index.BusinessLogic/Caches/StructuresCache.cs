@@ -1,5 +1,4 @@
-﻿using HarmonyDB.Index.Analysis.Models.CompactV1;
-using HarmonyDB.Index.Analysis.Models.Index;
+﻿using HarmonyDB.Index.Analysis.Models.Ids;
 using HarmonyDB.Index.Analysis.Models.Structure;
 using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.BusinessLogic.Caches.Bases;
@@ -13,20 +12,23 @@ public class StructuresCache : BytesFileCacheBase<Structures>
 {
     private readonly ProgressionsCache _progressionsCache;
     private readonly IndexExtractor _indexExtractor;
+    private readonly IndexIds _ids;
 
     public StructuresCache(
         ILogger<FileCacheBase<byte[], Structures>> logger,
-        IOptions<FileCacheBaseOptions> options, 
+        IOptions<FileCacheBaseOptions> options,
         ProgressionsCache progressionsCache,
-        IndexExtractor indexExtractor) : base(logger, options)
+        IndexExtractor indexExtractor,
+        IndexIds ids) : base(logger, options)
     {
         _progressionsCache = progressionsCache;
         _indexExtractor = indexExtractor;
+        _ids = ids;
     }
 
     protected override string Key => "Structures";
 
-    protected override async Task<Structures> ToPresentationModel(byte[] fileModel) => Structures.Deserialize(fileModel);
+    protected override Structures ReadPresentationModel(Stream stream) => Structures.Read(stream, _ids);
 
     public async Task Rebuild()
     {
@@ -36,9 +38,10 @@ public class StructuresCache : BytesFileCacheBase<Structures>
         var cf = 0;
         List<StructureLink> result = new();
 
-        await Parallel.ForEachAsync(progressions, (x, _) =>
+        await Parallel.ForEachAsync(Enumerable.Range(0, progressions.Count), (position, _) =>
         {
-            var (externalId, compactChordsProgression) = x;
+            var externalId = progressions.GetExternalId(position);
+            var compactChordsProgression = progressions.Get(position);
             try
             {
                 var items = _indexExtractor.FindStructureLinks(externalId, compactChordsProgression);

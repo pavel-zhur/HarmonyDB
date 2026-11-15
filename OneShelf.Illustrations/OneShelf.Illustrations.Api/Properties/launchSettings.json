@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "OneShelf.Illustrations.Api": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7059",
-      "launchBrowser": false
-    }
-  }
-}

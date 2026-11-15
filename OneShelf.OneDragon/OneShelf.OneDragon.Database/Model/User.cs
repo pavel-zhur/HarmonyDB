@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using OneShelf.Common.Database;
 
 namespace OneShelf.OneDragon.Database.Model;
 
@@ -25,5 +26,6 @@ public class User
 
     public bool UseLimits { get; set; }
 
+    [CaseInsensitive]
     public string Group { get; set; } = "anon";
 }

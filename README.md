@@ -1,7 +1,7 @@
 ﻿# Harmony DB
 Welcome to this repository, a personal project with mixed purposes that has changed and evolved over time, along with my interests in music and .Net.
 
-The project is up and running, hosted on Azure. It's still a work in progress, but I've made a part of it accessible for anyone curious. You can check out the current versions here:
+The project is up and running. It's still a work in progress, but I've made a part of it accessible for anyone curious. You can check out the current versions here:
 - https://p.harmonydb.com/ - a playground that allows you to query the Harmony DB (under active development),
 - https://c.harmonydb.com/ - a web and mobile application, a chord library for jamming and personal use.
 
@@ -70,10 +70,11 @@ Moving forward, I plan to develop an open source harmonic database index engine 
   - Gathers chord links from the telegram group and adds them to the library on behalf of the user who posted the link.
 
 ## Technical features
-- The backend is hosted on Azure, using functions. Consumption plan. Currently it is fully within the lifetime free tier. The backend hosts the frontend and the telegram bots for the clubs.
-- Functions are always kept hot.
-- Full CI/CD with Azure pipelines.
-- Data is stored in Cosmos DB, Azure SQL, Azure Storage. Queues are used for the telegram bot.
+- The backend is a set of ordinary ASP.NET Core applications run with Docker Compose (see `docker/`). The services that used to be separate apps — the index, authorization, billing, collectives, the frontend API, illustrations, the song sources, the Telegram bots — are modules of one application: each keeps its own endpoints, settings and client, and they still talk to each other over HTTP with keys, so any of them can be split off again.
+- Data is stored in one PostgreSQL database, a schema per service.
+- The index keeps its data fully in memory in compact arrays (about 1.3 GB for 1.2 million songs).
+- Telegram updates are received either by webhooks or by a small poller application, so everything can run on a developer machine.
+- The whole stack builds from source on Linux, including the Blazor WebAssembly frontend with AOT.
 - Front end:
   - Indexed DB.
   - Notification of new version when it is ready. The service worker code is tweaked a bit to make the updates arrive faster.
@@ -83,8 +84,15 @@ Moving forward, I plan to develop an open source harmonic database index engine 
   - Chat optimization to keep API usage costs low in an infinite dialog. GPT functions are used to detect when users change topics and the context can be cut.
 - Chords and lyrics:
   - A unified model suitable for songs from different sources.
-- All front ends are hosted statically, ASP.Net is not used.
-- Nuget packages are built for the custom .Net song sources services.
+- The front end is a static site.
+
+### How it was hosted before
+Until 2026 the project lived on Azure:
+- The backend was about fifteen Azure Functions apps on the consumption plan, kept hot by timers that called them every few minutes.
+- Data was spread over Azure SQL, Cosmos DB and Azure Storage; storage queues carried the Telegram updates, and a storage account served the generated illustrations.
+- GitHub Actions built the function apps and the frontends and published them as releases.
+
+It was given up for a plain Docker setup: the cold starts stayed noticeable despite the warm-ups, the index needed more memory than the consumption plan gives, and three kinds of storage plus queues were more moving parts than the project needs. Along the way went the warm-up timers, the queues, Cosmos DB, the storage-hosted pictures and the Windows-only pieces of the build. The story is told step by step in [docs/database-move.md](docs/database-move.md).
 
 ## Projects and resources used
 - The online tuner based on web audio api, https://github.com/qiuxiang/tuner

@@ -1,6 +1,7 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OneShelf.Common.Api;
 using System.Net;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Database.Songs;
@@ -18,19 +19,14 @@ namespace OneShelf.Authorization.Api.Functions
             _logger = loggerFactory.CreateLogger<Ping>();
         }
 
-        [Function("Ping")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        [Function("Ping", AuthorizationLevel.Anonymous, "get", "post")]
+        public async Task<IActionResult> Run(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             await _songsDatabase.Users.CountAsync();
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Welcome to Azure Functions!");
-
-            return response;
+            return new ContentResult { Content = "Welcome to Azure Functions!", ContentType = "text/plain; charset=utf-8" };
         }
     }
 }

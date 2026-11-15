@@ -1,13 +1,6 @@
-using System;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api;
 using Syncfusion.Drawing;
 using Syncfusion.HtmlConverter;
 using Syncfusion.Licensing;
@@ -22,14 +15,16 @@ public class Convert
     private const string BlinkBinariesPath = nameof(BlinkBinariesPath);
 
     private readonly IConfiguration _configuration;
+    private readonly ILogger<Convert> _logger;
 
-    public Convert(IConfiguration configuration)
+    public Convert(IConfiguration configuration, ILogger<Convert> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
     
-    [FunctionName("Convert")]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log, ExecutionContext executionContext)
+    [Function("Convert", AuthorizationLevel.Function, "post")]
+    public async Task<IActionResult> Run(HttpRequest req)
     {
         try
         {
@@ -38,7 +33,7 @@ public class Convert
             string blinkBinariesPath;
             try
             {
-                blinkBinariesPath = SetupBlinkBinaries(executionContext);
+                blinkBinariesPath = SetupBlinkBinaries();
             }
             catch (Exception e)
             {
@@ -99,7 +94,7 @@ public class Convert
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error converting the html.");
+            _logger.LogError(e, "Error converting the html.");
             return new ContentResult
             {
                 StatusCode = 500,
@@ -115,12 +110,13 @@ public class Convert
         SyncfusionLicenseProvider.RegisterLicense(_configuration.GetValue<string>(SyncFusionLicenseKey));
     }
 
-    private string SetupBlinkBinaries(ExecutionContext executionContext)
+    private string SetupBlinkBinaries()
     {
         var path = _configuration.GetValue<string>(BlinkBinariesPath);
         if (path != null) return path;
 
-        var blinkAppDir = Path.Combine(executionContext.FunctionAppDirectory, "bin/runtimes/linux/native");
+        // the Chrome the converter's package carries, published with the application
+        var blinkAppDir = Path.Combine(AppContext.BaseDirectory, "runtimes/linux/native");
         var tempBlinkDir = Path.GetTempPath();
         var chromePath = Path.Combine(tempBlinkDir, "chrome");
 

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -10,6 +9,7 @@ using OneShelf.Collectives.Api.Model.V2.Sub;
 using OneShelf.Collectives.Api.Services;
 using OneShelf.Collectives.Api.Tools;
 using OneShelf.Collectives.Database;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
@@ -18,24 +18,24 @@ namespace OneShelf.Collectives.Api.Functions.V2;
 
 public class Update : AuthorizationFunctionBase<UpdateRequest, UpdateResponse>
 {
-    private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
+    private readonly CollectivesDatabase _collectivesDatabase;
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
-    public Update(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+    public Update(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesDatabase collectivesDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
         : base(loggerFactory, authorizationApiClient, securityContext)
     {
-        _collectivesCosmosDatabase = collectivesCosmosDatabase;
+        _collectivesDatabase = collectivesDatabase;
         _songsOperations = songsOperations;
         _urlsManager = urlsManager;
     }
 
-    [Function(CollectivesApiUrls.V2Update)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] UpdateRequest request) => await RunHandler(req, request);
+    [Function(CollectivesApiUrls.V2Update, AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] UpdateRequest request) => await RunHandler(req, request);
 
     protected override async Task<UpdateResponse> Execute(HttpRequest httpRequest, UpdateRequest request)
     {
-        var collective = await _collectivesCosmosDatabase.GetCollective(request.CollectiveId);
+        var collective = await _collectivesDatabase.GetCollective(request.CollectiveId);
         if (collective == null)
         {
             throw new($"The collective {request.CollectiveId} is not found.");
@@ -91,7 +91,7 @@ public class Update : AuthorizationFunctionBase<UpdateRequest, UpdateResponse>
                 : SongStatus.Draft;
         }
 
-        await _collectivesCosmosDatabase.UpsertCollective(collective);
+        await _collectivesDatabase.UpsertCollective(collective);
         await _songsOperations.SongsDatabase.SaveChangesAsyncX();
 
         return new()

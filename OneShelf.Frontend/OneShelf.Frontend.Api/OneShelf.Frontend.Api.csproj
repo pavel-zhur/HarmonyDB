@@ -1,19 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-    <OutputType>Exe</OutputType>
 	  <ImplicitUsings>enable</ImplicitUsings>
 	  <Nullable>enable</Nullable>
 	  <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
 	  <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.1.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.2.1" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.17.2" OutputItemType="Analyzer" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.22.0" />
   </ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Client\HarmonyDB.Source.Api.Client.csproj" />
@@ -32,19 +25,6 @@
 		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Volumes\OneShelf.Pdfs.Generation.Volumes.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.SpecificModel\OneShelf.Pdfs.SpecificModel.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Sources\OneShelf.Sources.Self.Api.Client\OneShelf.Sources.Self.Api.Client.csproj" />
-		<ProjectReference Include="..\OneShelf.Frontend.Database.Cosmos\OneShelf.Frontend.Database.Cosmos.csproj" />
-	</ItemGroup>
-  <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="local.settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
-	<ItemGroup>
-		<Using Include="Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute" Alias="FromBodyAttribute" />
-		<Using Include="Microsoft.Azure.Functions.Worker.Http" />
+		<ProjectReference Include="..\OneShelf.Frontend.Database\OneShelf.Frontend.Database.csproj" />
 	</ItemGroup>
 </Project>

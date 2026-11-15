@@ -47,6 +47,12 @@ public class IllustrationsApiClient : ApiClientBase<IllustrationsApiClient>
             Id = id,
         });
 
+    /// <summary>
+    /// A copy of an illustration (see <see cref="IllustrationsApiUrls.Images"/>), as JPEG.
+    /// </summary>
+    public async Task<byte[]> GetImageCopy(Guid id, int size)
+        => await GetBytes($"{IllustrationsApiUrls.Images}/{id}/{size}");
+
     public string? GetGetImagePublicUrl(Guid id)
     {
         return _options.GetImagePublicCode == null ? null : $"{new Uri(_options.Endpoint, IllustrationsApiUrls.GetImagePublic)}?code={_options.GetImagePublicCode}&id={id}";

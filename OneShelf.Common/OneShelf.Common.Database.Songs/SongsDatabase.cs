@@ -12,6 +12,8 @@ namespace OneShelf.Common.Database.Songs;
 
 public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
 {
+    public const string PostgreSqlMigrationsAssembly = "OneShelf.Common.Database.Songs.PostgreSqlMigrations";
+
     private readonly SongsDatabaseMemory _songsDatabaseMemory;
     private readonly int _versionCopy;
 
@@ -53,12 +55,124 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
     
     public required DbSet<BillingUsage> BillingUsages { get; set; }
 
+    /// <summary>
+    /// Takes the next song index of the tenant. The tenant's row stays locked until the transaction ends.
+    /// </summary>
     public async Task<int> GetNextSongIndex(int tenantId)
     {
+        if (Database.IsNpgsql())
+        {
+            return (await Database.SqlQuery<int>($"""
+                update "Tenants" set "LatestUsedIndex" = "LatestUsedIndex" + 1 where "Id" = {tenantId}
+                returning "LatestUsedIndex" as "Value"
+                """).ToListAsync()).Single();
+        }
+
         return (await Database.SqlQuery<int>($"exec getnextsongindex @tenantid={new SqlParameter("tenantid", SqlDbType.Int)
         {
             Value = tenantId
         }}").ToListAsync()).Single();
+    }
+
+    /// <summary>
+    /// The chords views of all users, without a view followed by the same chords within ten minutes
+    /// (by minute boundaries crossed, as T-SQL's DATEDIFF counts them). The letter case does not matter.
+    /// </summary>
+    public IQueryable<VisitedChords> GetVisitedChordsWithoutRepeats()
+    {
+        if (Database.IsNpgsql())
+        {
+            return VisitedChords.FromSqlRaw("""
+                select "Id", "ViewedOn", "UserId", "Uri", "SongId", "ExternalId", "SearchQuery", "Transpose", "Artists", "Title", "Source"
+                from (
+                	select
+                		*,
+                		row(lower("Uri"), "SongId", lower("ExternalId"), lower("SearchQuery"), lower("Artists"), lower("Title"), lower("Source")) as chords,
+                		lead(row(lower("Uri"), "SongId", lower("ExternalId"), lower("SearchQuery"), lower("Artists"), lower("Title"), lower("Source"))) over w as next,
+                		lead("ViewedOn") over w as next_viewed_on
+                	from "VisitedChords"
+                	window w as (partition by "UserId" order by "ViewedOn", "Id")
+                ) x
+                where chords is distinct from next
+                	or date_trunc('minute', next_viewed_on) - date_trunc('minute', "ViewedOn") > interval '10 minutes'
+                """);
+        }
+
+        return VisitedChords.FromSqlRaw(@"
+
+select [Id]
+      ,[ViewedOn]
+      ,[UserId]
+      ,[Uri]
+      ,[SongId]
+      ,[ExternalId]
+      ,[SearchQuery]
+      ,[Transpose]
+      ,[Artists]
+      ,[Title]
+      ,[Source]
+from (
+
+	select
+		*,
+		lead(c) over (partition by userid order by viewedon, id) c2,
+		lead(viewedon) over (partition by userid order by viewedon, id) v2
+	from (
+		select checksum(uri, songid, externalid, SearchQuery, Artists, title, source) c, *
+		from visitedchords
+	) x
+
+) x
+where c <> isnull(c2, 0) or DATEDIFF(minute, v2, viewedon) < -10
+
+");
+    }
+
+    /// <summary>
+    /// The searches of all users, without a search followed within ten minutes by one that continues or shortens it
+    /// (by minute boundaries crossed, as T-SQL's DATEDIFF counts them). The letter case does not matter.
+    /// </summary>
+    public IQueryable<VisitedSearch> GetVisitedSearchesWithoutRepeats()
+    {
+        if (Database.IsNpgsql())
+        {
+            return VisitedSearches.FromSqlRaw("""
+                select "Id", "SearchedOn", "Query", "UserId"
+                from (
+                	select
+                		*,
+                		lower("Query") as lower_query,
+                		lead(lower("Query")) over w as next_lower_query,
+                		lead("SearchedOn") over w as next_searched_on
+                	from "VisitedSearches"
+                	window w as (partition by "UserId" order by "SearchedOn", "Id")
+                ) x
+                where next_lower_query is null
+                	or not (starts_with(lower_query, next_lower_query) or starts_with(next_lower_query, lower_query))
+                	or date_trunc('minute', next_searched_on) - date_trunc('minute', "SearchedOn") > interval '10 minutes'
+                """);
+        }
+
+        return VisitedSearches.FromSqlRaw(@"
+
+select Id, SearchedOn, Query, UserId
+from (
+
+	select
+		*,
+		lead(Query) over (partition by userid order by SearchedOn, id) q2,
+		lead(SearchedOn) over (partition by userid order by SearchedOn, id) v2
+	from VisitedSearches x
+
+) x
+where q2 is null or
+(
+	left(query, case when len(query) < len(q2) then len(query) else len(q2) end) <>
+	left(q2,	case when len(query) < len(q2) then len(query) else len(q2) end)
+)
+or DATEDIFF(minute, v2, SearchedOn) < -10
+
+");
     }
 
     public Task<int> SaveChangesAsyncX(bool fullTextSearchReset = false, CancellationToken cancellationToken = new())
@@ -190,19 +304,35 @@ public class SongsDatabase : DbContext, IInteractionsRepository<InteractionType>
                 x.Id, x.SongId,
             });
 
-        modelBuilder.Entity<Like>()
+        // one song like per user and category, and only one without a category: here NULL equals NULL, as SQL Server has it
+        var songLikes = modelBuilder.Entity<Like>()
             .HasIndex(x => new
             {
                 x.SongId,
                 x.UserId,
                 x.LikeCategoryId,
             })
-            .IsUnique()
-            .HasFilter("[VersionId] IS NULL");
+            .IsUnique();
+
+        if (Database.IsNpgsql())
+        {
+            songLikes
+                .HasFilter("\"VersionId\" IS NULL")
+                .AreNullsDistinct(false);
+        }
+        else
+        {
+            songLikes.HasFilter("[VersionId] IS NULL");
+        }
 
         modelBuilder.Entity<Version>()
             .Property(x => x.CollectiveType)
             .HasConversion<string?>();
+
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.ApplyPostgreSqlStoreTypes();
+        }
     }
 
     #region IInteractionsRepository

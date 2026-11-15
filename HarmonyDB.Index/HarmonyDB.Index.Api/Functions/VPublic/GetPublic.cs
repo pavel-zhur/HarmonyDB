@@ -5,8 +5,6 @@ using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Collectives.Api.Client;
 using OneShelf.Collectives.Api.Model.V2.Sub;
@@ -32,8 +30,8 @@ public class GetPublic : AnonymousFunctionBase<GetPublicRequest, GetPublicRespon
         _commonExecutions = commonExecutions;
     }
 
-    [Function(nameof(IndexApiUrls.VPublicGetPublic))]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetPublicRequest request)
+    [Function(nameof(IndexApiUrls.VPublicGetPublic), AuthorizationLevel.Anonymous, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] GetPublicRequest request)
         => RunHandler(request);
 
     protected override async Task<GetPublicResponse> Execute(GetPublicRequest getPublicRequest)

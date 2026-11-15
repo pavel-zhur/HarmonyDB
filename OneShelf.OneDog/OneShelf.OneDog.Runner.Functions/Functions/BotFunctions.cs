@@ -1,44 +1,38 @@
-using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OneShelf.Common.Api;
+using OneShelf.Common.Api.Background;
 using OneShelf.OneDog.Database;
-using OneShelf.OneDog.Processor.Services;
-using OneShelf.Telegram.Services;
+using OneShelf.OneDog.Runner.Functions.Background;
 using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDog.Runner.Functions.Functions;
 
 public class BotFunctions
 {
-    private const string QueueNameUpdates = "updates";
     private const string SecretTokenHeaderName = "X-Telegram-Bot-Api-Secret-Token";
 
     private readonly ILogger<BotFunctions> _logger;
-    private readonly Pipeline _pipeline;
     private readonly DogDatabase _dogDatabase;
+    private readonly BackgroundQueue<DomainUpdate> _updates;
 
-    public BotFunctions(ILogger<BotFunctions> logger, Pipeline pipeline, DogDatabase dogDatabase)
+    public BotFunctions(ILogger<BotFunctions> logger, DogDatabase dogDatabase, BackgroundQueue<DomainUpdate> updates)
     {
         _logger = logger;
-        _pipeline = pipeline;
         _dogDatabase = dogDatabase;
+        _updates = updates;
     }
-    
-    [Function("UpdatesQueueTrigger")]
-    public async Task UpdatesQueueTrigger(
-        [QueueTrigger(QueueNameUpdates)] string myQueueItem)
+
+    /// <summary>
+    /// Accepts an update from Telegram for the bot (domain) whose secret token it carries at once; it is processed in
+    /// the background (see <see cref="UpdatesWork"/>).
+    /// </summary>
+    [Function(nameof(IncomingUpdate), AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> IncomingUpdate(HttpRequest req)
     {
-        var update = JsonSerializer.Deserialize<QueueMessage>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update.Update, update.DomainId);
-    }
-    
-    [Function(nameof(IncomingUpdate))]
-    [QueueOutput(QueueNameUpdates)]
-    public async Task<string> IncomingUpdate(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
-    {
-        var headers = req.Headers.GetValues(SecretTokenHeaderName).ToList();
+        var headers = req.Headers[SecretTokenHeaderName].ToList();
         if (headers.Count != 1) throw new("The secret token header is expected.");
 
         var secretToken = headers.Single();
@@ -47,17 +41,12 @@ public class BotFunctions
 
         var requestBody = await req.ReadFromJsonAsync<Update>() ?? throw new("Empty request body.");
 
-        return JsonSerializer.Serialize(new QueueMessage
+        _updates.Enqueue(new()
         {
             Update = requestBody,
             DomainId = domain.Id,
         });
-    }
 
-    private class QueueMessage
-    {
-        public required Update Update { get; init; }
-
-        public required int DomainId { get; init; }
+        return new OkResult();
     }
 }

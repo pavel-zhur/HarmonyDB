@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Fills PostgreSQL: the songs, dog and dragon databases from SQL Server, the collectives and illustrations from
+       an export of Cosmos DB, the frontend's database made empty; run by hand. See TransferTool and CosmosExport. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\OneShelf.Common.Database.Transfer\OneShelf.Common.Database.Transfer.csproj" />
+	  <ProjectReference Include="..\OneShelf.Common.Database.Songs.PostgreSqlMigrations\OneShelf.Common.Database.Songs.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Database.PostgreSqlMigrations\OneShelf.OneDog.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.OneDragon\OneShelf.OneDragon.Database.PostgreSqlMigrations\OneShelf.OneDragon.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Collectives\OneShelf.Collectives.Database.PostgreSqlMigrations\OneShelf.Collectives.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Database.PostgreSqlMigrations\OneShelf.Illustrations.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.Database.PostgreSqlMigrations\OneShelf.Frontend.Database.PostgreSqlMigrations.csproj" />
+	</ItemGroup>
+
+</Project>
