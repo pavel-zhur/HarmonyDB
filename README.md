@@ -100,6 +100,7 @@ It was given up for a plain Docker setup: the cold starts stayed noticeable desp
 - Limitless - Responsive Web Application Kit, https://themeforest.net/item/limitless-responsive-web-application-kit/13080328
 - Materials from https://muzland.info/, https://muzland.ru/
 - Playing guitar chords in the browser with the Web Audio API: https://codepen.io/johnslipper/embed/eYgZMRL/
+- Browser SIMD support auto-detect and version switching (.Net 8 Blazor wasm fix for older iPhones and other devices): https://github.com/LostBeard/BlazorWASMSIMDDetectExample
 - Free 1-minute testing on iPhones and other mobile versions: https://live.browserstack.com/
 
 ## Thanks for the inspiration
