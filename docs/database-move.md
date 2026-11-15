@@ -73,8 +73,9 @@ was uploaded.
   containers (a file per container, a document per line), through the stores' own methods, so every picture gets its
   copies as a new one does; the PDF cache starts empty. One command fills an empty PostgreSQL completely, and with
   `--wipe` can be run again.
-- Nothing in the services uses Cosmos DB any more. `OneShelf.Common.Cosmos` stays only as a package for code
-  outside this repository that still uses it.
+- Nothing in the services uses Cosmos DB any more. `OneShelf.Common.Cosmos`, the shared base of the Cosmos DB
+  clients, was kept for a while as a package for code outside this repository, and then removed (see "What was
+  removed after the move").
 
 **Why.** The stores are small and document-shaped; `jsonb` keeps their shape without a redesign, and relational columns
 hold what is looked up (owner, visibility, address of the song, id). Keeping the copies of the pictures in the database
@@ -132,9 +133,9 @@ clients. What the Functions host and worker gave them:
   modules still call each other over HTTP, through their clients, with their keys, as separate applications do, so
   any of them can be run alone again.
 - `OneShelf.Api` is the application that runs them all.
-- `OneShelf.Common.Api.Functions` keeps what an Azure Functions app still needs from the old setup: `ConfigureApi`, the
-  Functions host's setup with its error-handling middleware. It is a package for Functions apps outside these services
-  that still use it; nothing in this repository depends on it.
+- `OneShelf.Common.Api.Functions` kept what an Azure Functions app still needed from the old setup (`ConfigureApi`, the
+  Functions host's setup with its error-handling middleware), as a package for a Functions app outside these services.
+  It was removed later (see "What was removed after the move").
 - The admin site's PNG of an illustration takes the picture's copy from the Illustrations module through
   `IllustrationsApiClient.GetImageCopy`, at the module's endpoint in its settings, not at the address meant for
   browsers, which a server may not reach.
@@ -149,10 +150,10 @@ clients. What the Functions host and worker gave them:
 - The webhook addresses the bots give Telegram (`SetWebHook`) include the module's path base.
 - The API runs with the workstation garbage collector, as the Functions workers did: the server collector of an
   ASP.NET application would hold much more memory.
-- `docker/` describes the stack on PostgreSQL: the database, the API, the PDF service (the in-process Functions app,
-  as it is deployed, now without a storage account), the two web sites, the site, and the pollers (profile `bots`,
-  not started by default). Nothing of SQL Server, Cosmos DB or Azure Storage serves it any more. The project name and
-  the ports come from `.env`, so several stacks can run side by side. It is started with
+- `docker/` describes the stack on PostgreSQL: the database, the API, the PDF service (at this stage still the
+  in-process Functions app, without a storage account; see stage five), the two web sites, the site, and the pollers
+  (profile `bots`, not started by default). Nothing of SQL Server, Cosmos DB or Azure Storage serves it any more. The
+  project name and the ports come from `.env`, so several stacks can run side by side. It is started with
   `docker compose --env-file .env up -d` in `docker/`. A new database gets its roles and schemas with
   `CreateServiceRole.sql`, and its data from the transfer, run by hand.
 - The applications' images start the application's own executable, not `sh -c "exec dotnet ..."`: the shell silently
@@ -251,3 +252,57 @@ stack must load the Index without running out of memory.
   lists, dictionaries and lookups by string, and no longer has `Reduce`; `EmModel.Deserialize` and
   `CompactChordsProgression.Deserialize` are gone (the caches read the files into the compact forms);
   `ProgressionsSearch` searches compact progressions by position instead of any `ISearchableChordsProgression`.
+
+## Stage five: the PDF service as an ASP.NET application
+
+**What there was.** `OneShelf.Pdfs.Api`, the last Azure Functions app of the stack: an in-process app on .NET 6 with two
+functions, `Convert` (the HTML in the body, the PDF back, its page count in the download file name `{pages}.pdf`) and
+`GetLicenseInfo`, both of the `Function` level. It turns HTML into PDF with Syncfusion's HTML converter and the Chrome
+its package carries. Its image was the Functions host's, on Debian 11, whose packages had moved to Debian's archive, so
+the image read them from there.
+
+**What there is.**
+
+- `OneShelf.Pdfs.Api` is an ASP.NET Core application on .NET 8. It runs one module, `PdfsModule`, as the API runs its
+  modules (stage three): under the path base `/pdfs` (`http://<host>/pdfs/api/Convert`), with the keys of its setting
+  `FunctionKeys`, the module's own settings in the section `Pdfs` (`Pdfs:SyncFusionLicenseKey`, and
+  `Pdfs:BlinkBinariesPath` when the Chrome to use is elsewhere). It stays an application of its own, apart from the
+  API: it carries a Chrome, and a conversion takes much memory for a moment.
+- The two functions are the same: the same converter settings (the viewport, A4, the margins, the "Page x/y" footer,
+  JavaScript off, Chrome's command-line arguments, the license registered on every call), the same answers, an error
+  of the conversion answered with 500 and its text, as before. The Chrome is taken from the application's folder
+  (`runtimes/linux/native`) and copied, with its files made executable, to the temporary folder, as before.
+- The Syncfusion package keeps its version (23.2.6); it runs on .NET 8 as it is.
+- The image (`docker/pdfs-api/Dockerfile`) is on `mcr.microsoft.com/dotnet/aspnet:8.0`, as the other applications,
+  with the libraries Chrome needs and the same fonts as before (Liberation, DejaVu). The site's module finds the
+  service at `http://pdfs-api/pdfs/api/Convert` (`Frontend:PdfsApiClientOptions:Endpoint`).
+- `OneShelf.Pdfs.LocalWindowsEnvBlinkFiles` stays: built on Windows, it brings the Windows Chrome of the converter's
+  Windows package, which the application's launch settings point `BlinkBinariesPath` at, to run the service locally on
+  Windows.
+
+Measured with the old image and the new one side by side, on a page of a songbook as the site sends it (in one column,
+two pages, and in two columns, one page):
+
+- The PDFs are the same: the same page count and page size (A4), the same text and fonts; drawn at 150 dpi their pages
+  are identical pixel for pixel.
+- A conversion takes the same time, about 2.2 seconds.
+- The image: 2.27 GB before, 0.93 GB after.
+- The container's memory at rest, just started: 87 MB before, 30 MB after; during conversions (sampled about once a
+  second) at the highest 205 MB before, 144 MB after; 30 seconds after three conversions, 145 MB before, 77 MB after.
+
+**Why.** It was the one service still needing the Functions host, an image on an outdated Debian and .NET 6, which is
+out of support.
+
+**What behaves differently.**
+
+- The functions are reached under `/pdfs` (`/pdfs/api/Convert`, `/pdfs/api/GetLicenseInfo`).
+- `Convert` called with another method than POST gets 405, not 404.
+- The body must not be sent as a form (`application/x-www-form-urlencoded`): ASP.NET Core reads a form before the
+  function, which then gets no HTML. The client sends it as text.
+
+## What was removed after the move
+
+- `OneShelf.Common.Cosmos` and `OneShelf.Common.Api.Functions`: kept for a while as packages for code outside this
+  repository (the shared base of the Cosmos DB clients, and the setup of an Azure Functions app); no longer needed.
+- The GitHub workflows: they published the Azure Functions apps and the sites as releases, or had been failing for a
+  long time; nothing is deployed that way any more.
