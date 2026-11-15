@@ -3,7 +3,7 @@
 // - The environment name comes from the "Blazor-Environment" (or "DotNet-Environment") response header the server
 //   sends with the boot files, "Production" when there is none. The original reads it from the response to
 //   _framework/blazor.boot.json; here it is read from the response to appsettings.json (the servers set the header on
-//   every file they serve: the .NET development server, docker/frontend-web/nginx.conf.template).
+//   every file they serve: the original's .NET development server; here docker/frontend-web/nginx.conf.template).
 // - appsettings.json, then appsettings.{Environment}.json on top of it, each loaded only if it was among the site's
 //   files when it was built (the boot manifest lists them), fetched without the HTTP cache.
 // - Each file is read by the JSON configuration provider: comments and trailing commas allowed, objects flattened to

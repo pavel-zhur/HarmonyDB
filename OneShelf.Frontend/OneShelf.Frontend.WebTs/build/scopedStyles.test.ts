@@ -7,7 +7,6 @@ import { computeCssScope } from './cssScope';
 import { buildScopedStylesBundle, describeScopedStyleFile, findScopedStyleFiles, scopedJsx } from './scopedStyles';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const original = path.join(root, '..', 'OneShelf.Frontend.Web');
 
 describe('scope', () => {
     it('is "b-" and ten base-36 characters, from the original file\'s path, ignoring its case', () => {
@@ -21,23 +20,6 @@ describe('scope', () => {
         const file = describeScopedStyleFile(root, path.join(root, 'src', 'shared', 'CircleOfFifths.scoped.less'));
         expect(file.itemSpec).toBe('Shared\\CircleOfFifths.razor.css');
         expect(() => describeScopedStyleFile(root, path.join(root, 'src', 'components', 'X.scoped.scss'))).toThrow();
-    });
-});
-
-describe('the scoped style files', () => {
-    it('are the original\'s, every one, unchanged', () => {
-        const originals = ['Pages', 'Shared'].flatMap(folder => fs.readdirSync(path.join(original, folder))
-            .filter(name => /\.razor\.(scss|less)$/.test(name))
-            .map(name => ({ folder, name })));
-        const here = findScopedStyleFiles(root);
-
-        expect(here.map(x => x.itemSpec).sort()).toEqual(
-            originals.map(x => `${x.folder}\\${x.name.replace(/\.(scss|less)$/, '.css')}`).sort());
-
-        for (const { folder, name } of originals) {
-            const copy = path.join(root, 'src', folder.toLowerCase(), name.replace('.razor.', '.scoped.'));
-            expect(fs.readFileSync(copy), copy).toEqual(fs.readFileSync(path.join(original, folder, name)));
-        }
     });
 });
 

@@ -14,5 +14,7 @@ public static class ServiceCollectionExtensions
         .AddSingleton<InputParser>()
         .AddSingleton<ProgressionsSearch>()
         .AddSingleton<PathsSearcher>()
+        .AddSingleton<CircleOfFifthsHighlighter>()
+        .AddSingleton<SongLoopsSearch>()
         .AddIndexAnalysisEm();
 }

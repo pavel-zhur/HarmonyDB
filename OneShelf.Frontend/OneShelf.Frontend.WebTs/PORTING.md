@@ -1,6 +1,8 @@
 # OneShelf.Frontend.WebTs
 
-The frontend site, the same as `OneShelf.Frontend.Web` (Blazor WebAssembly), written in TypeScript.
+The frontend site. It is a one-to-one port to TypeScript of the Blazor WebAssembly site `OneShelf.Frontend.Web`,
+"the original" below, which it replaced. The original is no longer in the repository (it is in its history, up to
+the commit that removed it); this file keeps what the port had to keep and where it departs.
 
 The reason: the .NET runtime in the browser is some ten megabytes to download and seconds to start, and on some
 phones it is painful. This project is meant to load at once and to be, for the person using it, the very same site.
@@ -20,13 +22,16 @@ phones it is painful. This project is meant to load at once and to be, for the p
   fix behaviour. If something cannot be done the same way in a browser without .NET, write it down in "Departures" at
   the end of this file, with the reason, and bring it to Pavel.
 
-The original stays as it is; nothing in `OneShelf.Frontend.Web` or in the C# libraries is changed by this work.
+The C# libraries the original used stay in .NET as they were. What the original alone knew about chords was moved
+into them when it was removed: the guitar fingerings into a library of their own, the circle-of-fifths marking and
+the showing of a loop into `HarmonyDB.Index.Analysis`, the rule of the "simpler" modes into
+`HarmonyDB.Common.Representations.OneShelf`.
 
 ## How it is built
 
 TypeScript (strict), React, Vite, React Router, Vitest. No other framework or state library.
 
-The structure follows the original file by file, so that either can be read against the other:
+The structure follows the original file by file, so that either could be read against the other:
 
 | Original | Here |
 |---|---|
@@ -160,14 +165,14 @@ The published site installs and works offline as the original does, and moves to
 
 ## Building and deploying
 
-- **Docker**: `docker/frontend-web-ts` and the service `frontend-web-ts` in `docker/docker-compose.yml` (port
-  `FRONTEND_WEB_TS_PORT`), the same as `frontend-web` for the original: `npm ci`, `{#CACHE_VERSION#}` from the build
+- **Docker**: `docker/frontend-web` and the service `frontend-web` in `docker/docker-compose.yml` (port
+  `FRONTEND_WEB_PORT`): `npm ci`, `{#CACHE_VERSION#}` from the build
   argument `CACHE_VERSION`, `npm run build` (which type-checks; the tests are not run in the image); at start
   `configure.sh` puts the given settings in place of `appsettings.json` and `appsettings.Development.json` and updates
   their hashes in the manifest, and with `ALLOW_BAD_HASH=true` adds `BadHash` and `/enter.html`. nginx serves the
   site's files compressed with gzip: the text files compressed at build time (`gzip_static`), the files changed at
-  start compressed when sent; fonts and pictures as they are. The calls to the services pass as for the original.
-  `docker compose ... up -d --no-deps --build frontend-web-ts`.
+  start compressed when sent; fonts and pictures as they are. The browser's calls to the API pass through the same
+  address (`/frontend-api/`, `/collectives-api/`).
 - **A release**: `npm ci`, the `{#CACHE_VERSION#}` replacement, `npm run build`; the site is `dist`. The per-deployment
   replacement of `appsettings.json` is done with the scripts in `post-publish` — the original's, run in the same way
   in the published folder (`substitite1.ps1` before the settings file is replaced, `substitite2.ps1` after), without

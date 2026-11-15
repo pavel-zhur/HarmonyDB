@@ -1,51 +1,25 @@
 # syntax=docker/dockerfile:1
-# OneShelf.Frontend.Web (Blazor WebAssembly), built on Linux.
+# The site: OneShelf.Frontend.WebTs (TypeScript + React), built with Node and served by nginx.
 # Build context: the repository root (without the docker folder, see .dockerignore);
 # the additional context "assets": this folder.
 
-# The styles. On Windows the BuildWebCompiler2022 package compiles them during the build; it does not run on Linux,
-# so compile-styles.js does the same with the same compiler versions (see that file).
-FROM node:16.6.0-slim AS styles
-WORKDIR /styles
-COPY --from=assets package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-COPY --from=assets compile-styles.js ./
-COPY OneShelf.Frontend/OneShelf.Frontend.Web /project
-RUN node compile-styles.js /project /styles/node_modules
-
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-# python3 is what the wasm-tools (emscripten) need on Linux for the AOT compilation
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 \
-    && rm -rf /var/lib/apt/lists/* \
-    && dotnet workload install wasm-tools
+FROM node:22.19.0-slim AS build
 WORKDIR /src
-COPY . .
-COPY --from=styles /project/ OneShelf.Frontend/OneShelf.Frontend.Web/
-WORKDIR /src/OneShelf.Frontend/OneShelf.Frontend.Web
+COPY OneShelf.Frontend/OneShelf.Frontend.WebTs/package.json OneShelf.Frontend/OneShelf.Frontend.WebTs/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY OneShelf.Frontend/OneShelf.Frontend.WebTs/ ./
 
-# the version the service worker's cache and the page are marked with
+# the version the service worker names its cache by (see PORTING.md, "The service worker")
 ARG CACHE_VERSION=local
-RUN sed -i "s/{#CACHE_VERSION#}/${CACHE_VERSION}/g" wwwroot/service-worker.published.js wwwroot/index.html
+RUN sed -i "s/{#CACHE_VERSION#}/${CACHE_VERSION}/g" public/service-worker.published.js index.html
 
-RUN dotnet restore -p:RunWebCompiler=False
+# type-checks and builds into dist (with the service worker and its manifest, build/serviceWorker.ts)
+RUN npm run build
 
-# What follows is publish.ps1.
-
-# Normal build with SIMD and BlazorWebAssemblyJiterpreter enabled
-RUN dotnet publish --nologo --no-restore --configuration Release --output /publish -p:RunWebCompiler=False
-
-# Prepare the build with SIMD and BlazorWebAssemblyJiterpreter disabled (the project file is UTF-16)
-RUN iconv -f UTF-16 -t UTF-8 OneShelf.Frontend.Web.csproj \
-        | sed -e 's/compatiblity/no/g' -e 's/encoding="utf-16"/encoding="utf-8"/' > OneShelf.Frontend.Web.csproj.compat \
-    && mv OneShelf.Frontend.Web.csproj.compat OneShelf.Frontend.Web.csproj
-
-# Compat build with SIMD and BlazorWebAssemblyJiterpreter disabled
-RUN dotnet publish --nologo --no-restore --configuration Release --output /publish-compat -p:RunWebCompiler=False
-
-# Combine builds
-RUN cp -r /publish-compat/wwwroot/_framework /publish/wwwroot/_frameworkCompat \
-    && cp /publish-compat/wwwroot/service-worker-assets.js /publish/wwwroot/service-worker-assets-compat.js
+# The compressed copies nginx serves to browsers that accept them (gzip_static); the files already compressed in
+# their own format (fonts, pictures) are served as they are.
+RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.html' -o -name '*.svg' \
+        -o -name '*.ttf' -o -name '*.eot' -o -name '*.scss' \) -exec gzip -k -n -9 {} +
 
 FROM nginx:1.27-alpine
 RUN apk add --no-cache openssl jq
@@ -53,4 +27,4 @@ RUN apk add --no-cache openssl jq
 COPY --from=assets nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=assets configure.sh /docker-entrypoint.d/40-configure.sh
 RUN chmod +x /docker-entrypoint.d/40-configure.sh
-COPY --from=build /publish/wwwroot /usr/share/nginx/html
+COPY --from=build /src/dist /usr/share/nginx/html

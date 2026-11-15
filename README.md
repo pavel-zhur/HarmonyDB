@@ -7,7 +7,7 @@ The project is up and running. It's still a work in progress, but I've made a pa
 
 ## History
 Originally started as a Telegram bot to keep track of songs for our jam sessions and a PDF generator for songbooks, this repository has grown into a diverse collection of tools, including:
-- A mobile-friendly Blazor web assembly application that allows musicians to search and manage chords even offline, with features like fingerings view and a circle of fifts.
+- A mobile-friendly web application that allows musicians to search and manage chords even offline, with features like fingerings view and a circle of fifts.
 - Some musical harmony analysis features, like chord progression and loop detection, a degree view mode, and a (key-insensitive) song search based on progressions.
 - A GPT-powered chatbot that loves to chat about music and create song images from lyrics.
 - Support for private and shared playlists, plus a multi-tenancy setup for clubs seeking a digital home (if you're interested in setting up your space, just let me know!).
@@ -24,7 +24,7 @@ Moving forward, I plan to develop an open source harmonic database index engine 
 - An open source backend for the distributed song chord library exchange network, with optional pluggable sources and conditional access or distribution rules, allowing any existing song chord collection to join the index network and/or use the index features to provide more functionality to their users (the index comes with the LGPL license).
 
 ## Front end features in detail
-- Works as an app on Android, IPhone, desktop browsers (.Net 8 Blazor web assembly app).
+- Works as an app on Android, IPhone, desktop browsers (a TypeScript and React app).
 - Responsive layout on mobile and desktop. On PC monitors, a library is displayed along with the chords (two-column layout). Quick jump to the top icons are provided. Loading indicators are shown, the app is responsive to user interaction.
 - Allows to download the library offline (including shortlists, ratings, etc). Download works in the background, manually initiated, with progress displayed in the header.
 - Search for songs - in the local library and in the index sources.
@@ -56,7 +56,7 @@ Moving forward, I plan to develop an open source harmonic database index engine 
 - Keywords are highlighted in search results. Local library search works instantly, no connection required. The search query is split into words as keywords, whole phrases or whole words are not needed.
 - I couldn't choose a logo, so 27 logos switch automatically with the nice header animation.
 - Flexible library filters and views: by user shortlists, tags, artist grouping, club rating, personal rating, with or without illustrations, with personal versions, etc.
-- Permanent links for club songs without the webassembly, with a separate static website.
+- Permanent links for club songs without the app, with a separate static website.
 
 ## Other features
 - A Telegram Bot that:
@@ -74,8 +74,9 @@ Moving forward, I plan to develop an open source harmonic database index engine 
 - Data is stored in one PostgreSQL database, a schema per service.
 - The index keeps its data fully in memory in compact arrays (about 1.3 GB for 1.2 million songs).
 - Telegram updates are received either by webhooks or by a small poller application, so everything can run on a developer machine.
-- The whole stack builds from source on Linux, including the Blazor WebAssembly frontend with AOT.
+- The whole stack builds from source on Linux.
 - Front end:
+  - TypeScript and React, built with Vite; a one-to-one port of the earlier Blazor WebAssembly app (see `OneShelf.Frontend/OneShelf.Frontend.WebTs/PORTING.md`), with its libraries checked against the .NET originals.
   - Indexed DB.
   - Notification of new version when it is ready. The service worker code is tweaked a bit to make the updates arrive faster.
   - Library updates only when changed (hash comparison saves traffic).
@@ -92,14 +93,13 @@ Until 2026 the project lived on Azure:
 - Data was spread over Azure SQL, Cosmos DB and Azure Storage; storage queues carried the Telegram updates, and a storage account served the generated illustrations.
 - GitHub Actions built the function apps and the frontends and published them as releases.
 
-It was given up for a plain Docker setup: the cold starts stayed noticeable despite the warm-ups, the index needed more memory than the consumption plan gives, and three kinds of storage plus queues were more moving parts than the project needs. Along the way went the warm-up timers, the queues, Cosmos DB, the storage-hosted pictures and the Windows-only pieces of the build. The story is told step by step in [docs/database-move.md](docs/database-move.md).
+It was given up for a plain Docker setup: the cold starts stayed noticeable despite the warm-ups, the index needed more memory than the consumption plan gives, and three kinds of storage plus queues were more moving parts than the project needs. Along the way went the warm-up timers, the queues, Cosmos DB, the storage-hosted pictures and the Windows-only pieces of the build. The frontend, a Blazor WebAssembly app until then, was rewritten in TypeScript to load fast on phones. The story is told step by step in [docs/database-move.md](docs/database-move.md).
 
 ## Projects and resources used
 - The online tuner based on web audio api, https://github.com/qiuxiang/tuner
 - Limitless - Responsive Web Application Kit, https://themeforest.net/item/limitless-responsive-web-application-kit/13080328
 - Materials from https://muzland.info/, https://muzland.ru/
 - Playing guitar chords in the browser with the Web Audio API: https://codepen.io/johnslipper/embed/eYgZMRL/
-- Browser SIMD support auto-detect and version switching (.Net 8 Blazor wasm fix for older iPhones and other devices): https://github.com/LostBeard/BlazorWASMSIMDDetectExample
 - Free 1-minute testing on iPhones and other mobile versions: https://live.browserstack.com/
 
 ## Thanks for the inspiration

@@ -1,6 +1,5 @@
 // Compiles a style file the way the original's build does: the BuildWebCompiler2022 package (1.14.10), driven by the
-// original's compilerconfig.json, with the compilers it bundles (sass 1.56.1, less 4.1.3) and the same arguments
-// (see docker/frontend-web/compile-styles.js, which repeats that package on Linux).
+// original's compilerconfig.json, with the compilers it bundles (sass 1.56.1, less 4.1.3) and the same arguments.
 //
 //   sass --no-source-map --quiet --quiet-deps --style=expanded <input>         (its standard output)
 //   lessc --no-color --js --rewrite-urls=all <input>                          (its standard output, trimmed)

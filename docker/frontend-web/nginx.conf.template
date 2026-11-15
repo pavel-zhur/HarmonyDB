@@ -27,11 +27,19 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # the navigation fallback of staticwebapp.config.json
+    # the navigation fallback: an address that is not a file is the site itself
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache";
         # the environment the application starts in
         add_header Blazor-Environment "${BLAZOR_ENVIRONMENT}";
+
+        # the copies compressed at build time (see the Dockerfile); the files changed at start (configure.sh) have
+        # none and are compressed when sent
+        gzip_static on;
+        gzip on;
+        gzip_vary on;
+        gzip_comp_level 6;
+        gzip_types application/javascript application/json text/css;
     }
 }

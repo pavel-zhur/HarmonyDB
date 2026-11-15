@@ -5,8 +5,8 @@
 //   hash = SHA256(UTF8(relativePath + targetName))
 //   "b-" + ten base-36 digits, least significant first, of |new BigInteger(hash[0..9])|
 //
-// The item spec is the style file's path in the project as MSBuild sees it on Windows, where the original is built
-// and published (.github/workflows/frontend.yml), e.g. "Pages\Artists.razor.css"; the target name is the assembly name.
+// The item spec is the style file's path in the project as MSBuild sees it on Windows, where the original was built
+// and published, e.g. "Pages\Artists.razor.css"; the target name is the assembly name.
 
 import { createHash } from 'node:crypto';
 
