@@ -29,16 +29,6 @@ public enum ChordParseError
     AddWithoutDegree,
 
     /// <summary>
-    /// A degree that cannot be added: "add5".
-    /// </summary>
-    UnsupportedAddedDegree,
-
-    /// <summary>
-    /// A bare "5" next to something that already defines the chord: "Cm5", "C7/5".
-    /// </summary>
-    UnexpectedFifth,
-
-    /// <summary>
     /// Qualities that exclude each other: "Cmaug", "Cdimaug", "Cmsus4".
     /// </summary>
     IncompatibleQualities,
@@ -52,6 +42,11 @@ public enum ChordParseError
     /// Too many alterations to read: more than <see cref="Constants.ChordConstants.MaxAlterations"/>.
     /// </summary>
     TooManyAlterations,
+
+    /// <summary>
+    /// A fifth after a leading minus: "A-5-5" (a tab fragment).
+    /// </summary>
+    UnexpectedFifth,
 
     /// <summary>
     /// The same degree written twice: "C7/7", "E-5-5-5" (usually a tab fragment).

@@ -1,4 +1,4 @@
-﻿namespace HarmonyDB.Theory.Chords.Options;
+namespace HarmonyDB.Theory.Chords.Options;
 
 public class ChordTypeParsingOptions
 {
@@ -11,7 +11,9 @@ public class ChordTypeParsingOptions
         IgnoreTrailingSlashes = true,
         IgnoreTrailingStars = true,
         IgnoreTrailingPunctuation = true,
+        IgnoreVariantNumbers = true,
         ForgiveUnclosedParentheses = true,
+        ForgiveSwallowedAdd = true,
         QuestionsParsingBehavior = QuestionsParsingBehavior.IgnoreAndTreatOnlyAsPower,
         ForgiveMisplacedRootAccidental = true,
     };
@@ -25,14 +27,25 @@ public class ChordTypeParsingOptions
     public bool IgnoreTrailingStars { get; set; }
 
     /// <summary>
-    /// Ignore the periods, commas, exclamation marks, semicolons and bar lines after the chord: "G.", "Am,", "C|".
+    /// Ignore the periods, commas, exclamation marks, semicolons, bar lines after the chord ("G.", "Am,", "C|"),
+    /// and a trailing minus that alters nothing, a hold mark ("Em7-", "Aadd9-").
     /// </summary>
     public bool IgnoreTrailingPunctuation { get; set; }
+
+    /// <summary>
+    /// Ignore the variant number 1 after the chord: "G1" is G (the first of the variants G1, G2, G3 of a song).
+    /// </summary>
+    public bool IgnoreVariantNumbers { get; set; }
 
     /// <summary>
     /// Read a parenthesis left open at the end of the chord type as closed: "C(9" is C(9), "Dm7(4" is Dm7(4).
     /// </summary>
     public bool ForgiveUnclosedParentheses { get; set; }
+
+    /// <summary>
+    /// Read "dd" right after the root as "add": "Fdd9" is Fadd9 (a conversion from solfège took the "a" of "Fadd9" for "Fa").
+    /// </summary>
+    public bool ForgiveSwallowedAdd { get; set; }
 
     public QuestionsParsingBehavior QuestionsParsingBehavior { get; set; } = QuestionsParsingBehavior.Error;
 
@@ -42,24 +55,19 @@ public class ChordTypeParsingOptions
     /// </summary>
     public bool ForgiveMisplacedRootAccidental { get; set; }
 
-    /// <summary>
-    /// Whether a plus or a minus may alter the degree written before it: "C75+" is C7(#5), "C9-" is C7(b9), "Cadd11+" is Cadd(#11).
-    /// When false, a plus not followed by a degree is the augmented fifth ("C9+" is C9(#5)), and a minus not followed by a degree is an error.
-    /// The alterations written before the degree ("C7#5", "C7-9") are always read.
-    /// </summary>
-    public bool AlterationsAfterDegrees { get; set; } = true;
-
     public PlusSeventhMeaning PlusSeventhMeaning { get; set; } = PlusSeventhMeaning.MajorSeventh;
-
-    public LeadingMinusMeaning LeadingMinusMeaning { get; set; } = LeadingMinusMeaning.Flat;
 
     public BareSecondMeaning BareSecondMeaning { get; set; } = BareSecondMeaning.Suspended;
 
     public BareFourthMeaning BareFourthMeaning { get; set; } = BareFourthMeaning.Suspended;
+
+    public BareNinthMeaning BareNinthMeaning { get; set; } = BareNinthMeaning.Dominant;
 
     public MajWithoutDegreeMeaning MajWithoutDegreeMeaning { get; set; } = MajWithoutDegreeMeaning.MajorSeventh;
 
     public CapitalMWithoutDegreeMeaning CapitalMWithoutDegreeMeaning { get; set; } = CapitalMWithoutDegreeMeaning.MajorSeventh;
 
     public DimWithoutSeventhMeaning DimWithoutSeventhMeaning { get; set; } = DimWithoutSeventhMeaning.Triad;
+
+    internal ChordTypeParsingOptions Clone() => (ChordTypeParsingOptions)MemberwiseClone();
 }

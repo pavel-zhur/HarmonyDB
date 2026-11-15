@@ -16,4 +16,11 @@ public enum HHandling
     /// Strict English variant. H is prohibited.
     /// </summary>
     HProhibited,
+
+    /// <summary>
+    /// Decided for each song from its chords: German (<see cref="BbMeansH"/>) when the song uses H or German note names,
+    /// or when its chords with the bare B make sense only as B flat; English (<see cref="BMeansH"/>) otherwise.
+    /// Parsing needs the song's chords (<see cref="Parsers.ChordParser.ParseSong"/>).
+    /// </summary>
+    Detect,
 }

@@ -87,4 +87,44 @@ public enum ChordTypeParseLogic
     /// "dim" without a seventh was read according to <see cref="Options.DimWithoutSeventhMeaning"/>.
     /// </summary>
     DimWithoutSeventh = 1 << 15,
+
+    /// <summary>
+    /// The plus raised the seventh: "C7+", "C+7" (see <see cref="Options.PlusSeventhMeaning"/>).
+    /// </summary>
+    PlusRaisedSeventh = 1 << 16,
+
+    /// <summary>
+    /// A bare ninth without a seventh was read according to <see cref="Options.BareNinthMeaning"/>: "C9".
+    /// </summary>
+    BareNinth = 1 << 17,
+
+    /// <summary>
+    /// A minus at the end that alters nothing was ignored as a hold mark: "Em7-".
+    /// </summary>
+    TrailingMinusIgnored = 1 << 18,
+
+    /// <summary>
+    /// "add" without its degree added the bare degree before it or the ninth: "C9add", "Cadd".
+    /// </summary>
+    AddWithoutDegree = 1 << 19,
+
+    /// <summary>
+    /// The fifth was written though it is there anyway: "G#75", "Gadd5", "D9/5".
+    /// </summary>
+    RedundantFifth = 1 << 20,
+
+    /// <summary>
+    /// The fifth over the minor was read as the power chord: "Em5" is E5.
+    /// </summary>
+    PowerOverMinor = 1 << 21,
+
+    /// <summary>
+    /// The fifth written after a slash over the minor seventh was read as the flat fifth: "Bm7/5" is Bm7b5.
+    /// </summary>
+    FlatFifthAfterMinorSeventh = 1 << 22,
+
+    /// <summary>
+    /// An altered fifth beside the power chord was added to it: "A5#5" is A, E, F.
+    /// </summary>
+    AlteredFifthAddedToPower = 1 << 23,
 }

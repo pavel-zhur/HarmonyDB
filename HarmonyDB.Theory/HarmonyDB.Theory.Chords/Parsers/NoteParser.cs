@@ -25,25 +25,70 @@ public static class NoteParser
         if (string.IsNullOrWhiteSpace(noteRepresentation))
             return 0;
 
+        if (options.Solfege == NotationUse.Detect || options.GermanNoteNames == NotationUse.Detect || options.HHandling == HHandling.Detect)
+            throw new InvalidOperationException("The options leave the notation to be detected from the song: parse the song's chords together.");
+
         int toSkip;
         NaturalNoteRepresentation naturalNoteRepresentation;
-        var solfegeMatch = lettersOnly || !options.Solfege
+        var solfegeMatch = lettersOnly || options.Solfege == NotationUse.Never
             ? null
             : NoteConstants.NaturalNoteSolfegeNames.WithIndicesNullable().FirstOrDefault(x => MatchesSolfege(noteRepresentation, x.x, options)).i;
+        var sharps = 0;
+        var flats = 0;
         if (solfegeMatch.HasValue)
         {
             toSkip = NoteConstants.NaturalNoteSolfegeNames[solfegeMatch.Value].Length;
             naturalNoteRepresentation = NaturalNoteRepresentation.La + (sbyte)solfegeMatch.Value;
         }
-        else if (!TryParseNaturalNote(noteRepresentation[0], out _, out naturalNoteRepresentation, options))
-            return 0;
         else
         {
-            toSkip = 1;
-        }
+            // The German names may be written in lower case (the minor chords: "fis", "a").
+            var letter = options.GermanNoteNames == NotationUse.Always && noteRepresentation[0] is >= 'a' and <= 'h'
+                ? char.ToUpperInvariant(noteRepresentation[0])
+                : noteRepresentation[0];
 
-        var sharps = 0;
-        var flats = 0;
+            if (!TryParseNaturalNote(letter, out _, out naturalNoteRepresentation, options))
+                return 0;
+
+            toSkip = 1;
+
+            // The German suffixes: "is" is a sharp ("Fis", "Fisis"), "es" a flat ("Des", "Hes"), "s" after A and E ("As", "Es") — but not "Esus4".
+            if (options.GermanNoteNames == NotationUse.Always)
+            {
+                var rest = noteRepresentation[1..];
+                while (rest.StartsWith("is"))
+                {
+                    sharps++;
+                    rest = rest[2..];
+                }
+
+                if (sharps == 0)
+                {
+                    if (letter is 'A' or 'E' && rest.StartsWith('s') && !rest.StartsWith("su"))
+                    {
+                        flats++;
+                        rest = rest[1..];
+                    }
+
+                    while (rest.StartsWith("es") && !rest.StartsWith("esu"))
+                    {
+                        flats++;
+                        rest = rest[2..];
+                    }
+                }
+
+                toSkip = noteRepresentation.Length - rest.Length;
+                if (sharps + flats > 0 && naturalNoteRepresentation == NaturalNoteRepresentation.GermanB)
+                    naturalNoteRepresentation = NaturalNoteRepresentation.B;
+
+                if (sharps + flats > 0)
+                {
+                    result = new(naturalNoteRepresentation, sharps, flats);
+                    note = result.Note;
+                    return toSkip;
+                }
+            }
+        }
         foreach (var @char in noteRepresentation.Skip(toSkip))
         {
             if (!TryParseAlteration(@char, out var alteration))
@@ -124,8 +169,8 @@ public static class NoteParser
         if (!options.CaseSensitive)
             character = char.ToUpperInvariant(character);
 
-        if (options.ForgiveRussianC && character == 'С')
-            character = 'C';
+        if (options.ForgiveCyrillicLetters)
+            character = character switch { 'А' => 'A', 'В' => 'B', 'С' => 'C', 'Е' => 'E', 'Н' => 'H', _ => character };
 
         note = default;
         naturalNoteRepresentation = default;

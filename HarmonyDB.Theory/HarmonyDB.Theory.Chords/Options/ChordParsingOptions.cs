@@ -22,17 +22,21 @@ public class ChordParsingOptions
     public ChordTypeParsingOptions ChordTypeParsingOptions { get; set; } = ChordTypeParsingOptions.Default;
 
     /// <summary>
-    /// When parsing a chord together with the other chords of its song, decide what the bare B means from the song:
-    /// when the song uses H, or when the chords with the bare B are all out of the key the other chords make and all fit it with the other reading of B,
-    /// the other <see cref="Models.Enums.HHandling"/> is used for the song (B flat instead of B natural, or the other way round).
-    /// See <see cref="Parsers.ChordParser.DetectHHandling"/>.
+    /// Whether some meanings are left to be decided from the song (<see cref="NotationUse.Detect"/> and the like):
+    /// such options parse only with the song's chords (<see cref="Parsers.ChordParser.ParseSong"/>).
     /// </summary>
-    public bool DetectHHandlingFromSong { get; set; }
+    public bool NeedsSong
+        => NoteParsingOptions.HHandling == HHandling.Detect
+           || NoteParsingOptions.Solfege == NotationUse.Detect
+           || NoteParsingOptions.GermanNoteNames == NotationUse.Detect
+           || ChordTypeParsingOptions.PlusSeventhMeaning == PlusSeventhMeaning.Detect
+           || ChordTypeParsingOptions.BareNinthMeaning == BareNinthMeaning.Detect;
 
-    public ChordParsingOptions WithHHandling(HHandling hHandling)
+    internal ChordParsingOptions Clone()
     {
         var result = (ChordParsingOptions)MemberwiseClone();
-        result.NoteParsingOptions = NoteParsingOptions.WithHHandling(hHandling);
+        result.NoteParsingOptions = NoteParsingOptions.Clone();
+        result.ChordTypeParsingOptions = ChordTypeParsingOptions.Clone();
         return result;
     }
 }

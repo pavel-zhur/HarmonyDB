@@ -12,4 +12,9 @@ public enum ChordTypeMeaninglessAddition
     /// A period, a comma, an exclamation mark, a semicolon or a bar line after the chord: "G.", "Am,", "C|".
     /// </summary>
     Punctuation,
+
+    /// <summary>
+    /// The number of a variant after the chord: "G1".
+    /// </summary>
+    VariantNumber,
 }

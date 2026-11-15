@@ -40,8 +40,8 @@ public class NoteParserTests
     {
         Assert.Equal(0, NoteParser.TryParsePrefixNote("la", out _));
         Assert.Equal(2, NoteParser.TryParsePrefixNote("la", out _, NoteParsingOptions.MostForgiving));
-        Assert.Equal(0, NoteParser.TryParsePrefixNote("LA", out _, new NoteParsingOptions { Solfege = false }));
-        Assert.Equal(1, NoteParser.TryParsePrefixNote("DO", out var d, new NoteParsingOptions { Solfege = false }));
+        Assert.Equal(0, NoteParser.TryParsePrefixNote("LA", out _, new NoteParsingOptions { Solfege = NotationUse.Never }));
+        Assert.Equal(1, NoteParser.TryParsePrefixNote("DO", out var d, new NoteParsingOptions { Solfege = NotationUse.Never }));
         Assert.Equal("D", NoteConstants.CanonicalNames[d.Value]);
     }
 

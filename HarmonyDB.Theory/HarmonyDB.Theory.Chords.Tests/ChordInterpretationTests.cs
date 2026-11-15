@@ -241,16 +241,51 @@ public class ChordInterpretationTests(ITestOutputHelper testOutputHelper)
         { "A-2-2-2", ChordParseError.DuplicateAdditions },
         { "BE", ChordParseError.UnexpectedChordTypeToken },
         { "CD", ChordParseError.UnexpectedChordTypeToken },
-        { "G1", ChordParseError.UnexpectedChordTypeToken },
         { "G3", ChordParseError.UnexpectedChordTypeToken },
-        { "Fdd9", ChordParseError.UnexpectedChordTypeToken },
-        { "Cadd", ChordParseError.AddWithoutDegree },
-        { "Em5", ChordParseError.UnexpectedFifth },
-        { "Bm7/5", ChordParseError.UnexpectedFifth },
-        { "Em7-", ChordParseError.UnboundAlteration },
-        { "E7-", ChordParseError.UnboundAlteration },
+        { "A-5-5", ChordParseError.DuplicateDegrees },
+        { "D-7-", ChordParseError.UnboundAlteration },
         { "R", ChordParseError.UnreadableRoot },
     };
+
+    /// <summary>
+    /// Odd notations, all of them from <see cref="Resources.AllChords"/>, read by what their authors meant (see the songs in the research notes).
+    /// </summary>
+    public static readonly TheoryData<string, string> OddNotationsData = new()
+    {
+        { "Em5", "E5" },
+        { "Bm5", "B5" },
+        { "Bm7/5", "Bm7b5" },
+        { "Dm7/5", "Dm7b5" },
+        { "G#75", "Ab7" },
+        { "D5maj7", "Dmaj7no3" },
+        { "E5(7", "E7no3" },
+        { "C(add", "Cadd9" },
+        { "G#maj75", "Abmaj7" },
+        { "D9/5", "D9" },
+        { "Gadd5", "G" },
+        { "Cadd5", "C" },
+        { "A5#5", "A5(b6)" },
+        { "F5(b5)", "F5add#11" },
+        { "Cadd", "Cadd9" },
+        { "C9add", "Cadd9" },
+        { "Esus4add", "Esus4add9" },
+        { "Eadd(#11)", "Eadd#11" },
+        { "Em7-", "Em7" },
+        { "Am7-", "Am7" },
+        { "Fdd9", "Fadd9" },
+        { "G1", "G" },
+        { "A1", "A" },
+        { "С#m", "C#m" },
+    };
+
+    [Theory]
+    [MemberData(nameof(OddNotationsData))]
+    public void OddNotations(string input, string expected)
+    {
+        var result = ChordParser.Parse(input, ChordParsingOptions.MostForgiving);
+        Assert.Equal(ChordParseResultType.Success, result.Type);
+        Assert.Equal(expected, result.Chord!.ToCanonical());
+    }
 
     [Theory]
     [MemberData(nameof(ErrorsData))]
@@ -303,14 +338,13 @@ public class ChordInterpretationTests(ITestOutputHelper testOutputHelper)
         ["C7+9", WithChordType(x => x.PlusSeventhMeaning = PlusSeventhMeaning.AugmentedFifth), "C7#9"],
 
         ["C9+", WithChordType(_ => { }), "C7#9"],
-        ["C9+", WithChordType(x => x.AlterationsAfterDegrees = false), "C9#5"],
-        ["C7+5", WithChordType(x => x.AlterationsAfterDegrees = false), "C7#5"],
-
         ["C-9", WithChordType(_ => { }), "C7b9"],
-        ["C-9", WithChordType(x => x.LeadingMinusMeaning = LeadingMinusMeaning.Minor), "Cm9"],
-        ["C-6", WithChordType(x => x.LeadingMinusMeaning = LeadingMinusMeaning.Minor), "Cm6"],
-        ["C-5", WithChordType(x => x.LeadingMinusMeaning = LeadingMinusMeaning.Minor), "C(b5)"],
         ["C-7", WithChordType(_ => { }), "Cm7"],
+
+        ["C9", WithChordType(_ => { }), "C9"],
+        ["C9", WithChordType(x => x.BareNinthMeaning = BareNinthMeaning.Added), "Cadd9"],
+        ["Cm9", WithChordType(x => x.BareNinthMeaning = BareNinthMeaning.Added), "Cm9"],
+        ["C7/9", WithChordType(x => x.BareNinthMeaning = BareNinthMeaning.Added), "C9"],
 
         ["C2", WithChordType(_ => { }), "Csus2"],
         ["C2", WithChordType(x => x.BareSecondMeaning = BareSecondMeaning.Added), "Cadd9"],
@@ -352,7 +386,7 @@ public class ChordInterpretationTests(ITestOutputHelper testOutputHelper)
     public void Solfege()
     {
         Assert.Equal("C", ChordParser.Parse("Do").Chord!.ToCanonical());
-        Assert.Equal("Ddim7", ChordParser.Parse("Do", new() { NoteParsingOptions = new() { Solfege = false } }).Chord!.ToCanonical());
+        Assert.Equal("Ddim7", ChordParser.Parse("Do", new() { NoteParsingOptions = new() { Solfege = NotationUse.Never } }).Chord!.ToCanonical());
         Assert.Equal("Bbm", ChordParser.Parse("Sibm").Chord!.ToCanonical());
         Assert.Equal("Ab", ChordParser.Parse("LAb").Chord!.ToCanonical());
         Assert.Equal("F#m7", ChordParser.Parse("Fa#m7").Chord!.ToCanonical());
@@ -370,5 +404,47 @@ public class ChordInterpretationTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("B", ChordParser.Parse("B").Chord!.ToCanonical());
         Assert.Equal("Bm", ChordParser.Parse("Hm").Chord!.ToCanonical());
         Assert.Equal(ChordParseError.UnreadableRoot, ChordParser.Parse("Hm", new() { NoteParsingOptions = new() { HHandling = HHandling.HProhibited } }).Error);
+    }
+
+    public static readonly TheoryData<string, string> GermanNamesData = new()
+    {
+        { "fis", "F#m" },
+        { "Fism", "F#m" },
+        { "cis", "C#m" },
+        { "h", "Bm" },
+        { "Fis", "F#" },
+        { "Es", "Eb" },
+        { "As7", "Ab7" },
+        { "Des", "C#" },
+        { "Esus4", "Esus4" },
+        { "a7", "Am7" },
+        { "B", "Bb" },
+        { "H7", "B7" },
+    };
+
+    [Theory]
+    [MemberData(nameof(GermanNamesData))]
+    public void GermanNames(string input, string expected)
+    {
+        var options = new ChordParsingOptions { NoteParsingOptions = new() { GermanNoteNames = NotationUse.Always, HHandling = HHandling.BbMeansH } };
+        Assert.Equal(expected, ChordParser.Parse(input, options).Chord!.ToCanonical());
+    }
+
+    [Fact]
+    public void CyrillicLetters()
+    {
+        var options = new ChordParsingOptions { NoteParsingOptions = new() { ForgiveCyrillicLetters = true } };
+        Assert.Equal("C#m", ChordParser.Parse("С#m", options).Chord!.ToCanonical());
+        Assert.Equal("Am", ChordParser.Parse("Ам", options).Chord!.ToCanonical());
+        Assert.Equal("Em", ChordParser.Parse("Еm", options).Chord!.ToCanonical());
+        Assert.Equal("B7", ChordParser.Parse("Н7", options).Chord!.ToCanonical());
+        Assert.Equal(ChordParseError.UnreadableRoot, ChordParser.Parse("Аm").Error);
+    }
+
+    [Fact]
+    public void DetectNeedsTheSong()
+    {
+        Assert.Throws<InvalidOperationException>(() => ChordParser.Parse("C7+", new() { ChordTypeParsingOptions = new() { PlusSeventhMeaning = PlusSeventhMeaning.Detect } }));
+        Assert.Throws<InvalidOperationException>(() => ChordParser.Parse("B", new() { NoteParsingOptions = new() { HHandling = HHandling.Detect } }));
     }
 }

@@ -179,6 +179,7 @@ public static class ChordConstants
         (ChordTypeMeaninglessAddition.Punctuation, "!"),
         (ChordTypeMeaninglessAddition.Punctuation, ";"),
         (ChordTypeMeaninglessAddition.Punctuation, "|"),
+        (ChordTypeMeaninglessAddition.VariantNumber, "1"),
     ];
 
     public static readonly IReadOnlyList<string> Romans =

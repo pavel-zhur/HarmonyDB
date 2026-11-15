@@ -9,7 +9,7 @@ public class NoteParsingOptions
     public static readonly NoteParsingOptions MostForgiving = new()
     {
         CaseSensitive = false,
-        ForgiveRussianC = true,
+        ForgiveCyrillicLetters = true,
     };
 
     /// <summary>
@@ -19,19 +19,24 @@ public class NoteParsingOptions
 
     public HHandling HHandling { get; set; } = HHandling.BMeansH;
 
-    public bool ForgiveRussianC { get; set; }
+    /// <summary>
+    /// Read the Cyrillic letters that look like Latin ones as those: А, В, С, Е, Н in the notes, м, о in the chord type ("Ам", "Н7", "Вb").
+    /// </summary>
+    public bool ForgiveCyrillicLetters { get; set; }
 
     /// <summary>
     /// Read the solfège names (Do, Re, Mi, Fa, Sol, La, Si) as notes.
     /// They collide with the letters: "Do" may also be D with the diminished symbol "o", and "DO" — D with "O".
-    /// When true, the solfège reading wins; a letter reading is tried only when the solfège one leaves an unreadable rest ("Fadd9").
+    /// When read, the solfège reading wins; a letter reading is tried only when the solfège one leaves an unreadable rest ("Fadd9").
+    /// <see cref="NotationUse.Detect"/>: read in the songs that use the other solfège names (Re, Mi, Fa, Sol, La, Si).
     /// </summary>
-    public bool Solfege { get; set; } = true;
+    public NotationUse Solfege { get; set; } = NotationUse.Always;
 
-    public NoteParsingOptions WithHHandling(HHandling hHandling)
-    {
-        var result = (NoteParsingOptions)MemberwiseClone();
-        result.HHandling = hHandling;
-        return result;
-    }
+    /// <summary>
+    /// Read the German note names: the sharps and flats as suffixes (Fis, Cis, Es, As, Des, Bes), the lower case letters as minor chords (fis, a, h).
+    /// <see cref="NotationUse.Detect"/>: read in the songs that use German names that are not English words (Fis, Cis, Gis, Dis, Des, Ges, fis, h…).
+    /// </summary>
+    public NotationUse GermanNoteNames { get; set; } = NotationUse.Never;
+
+    internal NoteParsingOptions Clone() => (NoteParsingOptions)MemberwiseClone();
 }

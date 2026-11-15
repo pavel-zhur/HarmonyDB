@@ -13,8 +13,14 @@ public static partial class ChordParser
     {
         options ??= ChordParsingOptions.Default;
 
+        if (options.NeedsSong)
+            throw new InvalidOperationException("The options leave some meanings to be detected from the song: use ParseSong with the song's chords.");
+
         if (options.ForgiveEdgeWhitespaces)
             stringRepresentation = stringRepresentation.Trim();
+
+        if (options.NoteParsingOptions.ForgiveCyrillicLetters)
+            stringRepresentation = stringRepresentation.Replace('м', 'm').Replace('о', 'o');
 
         // The chord in round braces: "(Am)"; or one of the chords written in braces together, split apart: "(F", "G)".
         if (options.ForgiveRoundBraces && stringRepresentation.Length > 1)
@@ -57,7 +63,16 @@ public static partial class ChordParser
             if (prefixLength == 0)
                 return firstFailure ?? new(ChordParseError.UnreadableRoot, attemptTrace);
 
-            var result = TryParseAfterRoot(stringRepresentation.Substring(prefixLength), rootRepresentation, bassRepresentation, bass, attemptTrace, options);
+            var chordTypeRepresentation = stringRepresentation.Substring(prefixLength);
+
+            // In the German notation a lower case root is the minor chord: "fis", "a7".
+            var germanMinor = options.NoteParsingOptions.GermanNoteNames == NotationUse.Always
+                              && stringRepresentation[0] is >= 'a' and <= 'h'
+                              && rootRepresentation.NaturalNoteRepresentation is not (>= NaturalNoteRepresentation.La and <= NaturalNoteRepresentation.Sol);
+            if (germanMinor && !chordTypeRepresentation.StartsWith('m'))
+                chordTypeRepresentation = "m" + chordTypeRepresentation;
+
+            var result = TryParseAfterRoot(chordTypeRepresentation, rootRepresentation, bassRepresentation, bass, attemptTrace, options);
             if (result.Type == ChordParseResultType.Success)
             {
                 if (lettersOnly)
@@ -84,6 +99,9 @@ public static partial class ChordParser
         ChordParsingOptions options)
     {
         trace.ChordTypeRepresentation = chordTypeRepresentation;
+
+        if (options.ChordTypeParsingOptions.ForgiveSwallowedAdd && chordTypeRepresentation.StartsWith("dd"))
+            chordTypeRepresentation = "a" + chordTypeRepresentation;
 
         var (tokens, error) = TryGetTokens(chordTypeRepresentation, options.ChordTypeParsingOptions);
         if (error.HasValue)
@@ -118,6 +136,7 @@ public static partial class ChordParser
         BeforeDegree,
         AfterDegree,
         Standalone,
+        Ignored,
     }
 
     private enum DegreeKind : byte
@@ -224,6 +243,7 @@ public static partial class ChordParser
                         ChordTypeMeaninglessAddition.Slash => options.IgnoreTrailingSlashes,
                         ChordTypeMeaninglessAddition.Apostrophe => options.IgnoreTrailingApostrophes,
                         ChordTypeMeaninglessAddition.Punctuation => options.IgnoreTrailingPunctuation,
+                        ChordTypeMeaninglessAddition.VariantNumber => options.IgnoreVariantNumbers,
                         null => false,
                         _ => throw new ArgumentOutOfRangeException(),
                     })
@@ -240,7 +260,7 @@ public static partial class ChordParser
                 tokens = tokens.Take(newCount).ToList();
 
             if (tokens.Any(x => x.token.MeaninglessAddition is ChordTypeMeaninglessAddition.Star
-                    or ChordTypeMeaninglessAddition.Apostrophe or ChordTypeMeaninglessAddition.Question or ChordTypeMeaninglessAddition.Punctuation))
+                    or ChordTypeMeaninglessAddition.Apostrophe or ChordTypeMeaninglessAddition.Question or ChordTypeMeaninglessAddition.Punctuation or ChordTypeMeaninglessAddition.VariantNumber))
             {
                 return (null, 0, ChordParseError.BadSymbols, ChordTypeParseLogic.None, 0);
             }
@@ -297,9 +317,17 @@ public static partial class ChordParser
                             possible: i > 0
                                       && tokens[i - 1].matchAmbiguity is MatchAmbiguity.AlterableInt or MatchAmbiguity.AlterableDegree
                                       && (tokens[i].token.AmbiguousAddition is ChordTypeAmbiguousAddition.Plus or ChordTypeAmbiguousAddition.Minus
-                                          ? options.AlterationsAfterDegrees
-                                          : Separated(i - 1))),
+                                          || Separated(i - 1))),
                         (binding: AlterationBinding.Standalone, possible: true),
+
+                        // A minus at the very end that alters nothing is a hold mark ("Em7-", "Aadd9-");
+                        // with other minuses in the chord type it is a tab fragment rather ("D-7-", "E-5-5-").
+                        (binding: AlterationBinding.Ignored,
+                            possible: options.IgnoreTrailingPunctuation
+                                      && i == tokens.Count - 1
+                                      && i > 0
+                                      && tokens[i].token.AmbiguousAddition == ChordTypeAmbiguousAddition.Minus
+                                      && tokens.Count(x => x.token.AmbiguousAddition == ChordTypeAmbiguousAddition.Minus) == 1),
                     }
                     .Where(x => x.possible)
                     .Select(x => x.binding)
@@ -386,11 +414,11 @@ public static partial class ChordParser
                 case AlterationBinding.BeforeDegree:
                     boundAlterations[index + 1] = token.AmbiguousAddition!.Value;
                     logic |= ChordTypeParseLogic.AlterationBeforeDegree;
+                    break;
 
-                    // The minus right after the root, when read as the minor, is preferred over flattening the degree.
-                    if (index == 0 && token.AmbiguousAddition == ChordTypeAmbiguousAddition.Minus && options.LeadingMinusMeaning == LeadingMinusMeaning.Minor)
-                        cost += 20;
-
+                case AlterationBinding.Ignored:
+                    logic |= ChordTypeParseLogic.TrailingMinusIgnored;
+                    cost += 15;
                     break;
 
                 case AlterationBinding.AfterDegree:
@@ -416,7 +444,7 @@ public static partial class ChordParser
 
                             qualities.Add(ChordMainType.Minor);
                             logic |= ChordTypeParseLogic.MinusAsMinor;
-                            cost += options.LeadingMinusMeaning == LeadingMinusMeaning.Minor ? 0 : 10;
+                            cost += 10;
                             break;
 
                         default:
@@ -449,13 +477,19 @@ public static partial class ChordParser
             if (IsAlteration(token))
                 continue;
 
-            if (token.MeaninglessAddition.HasValue || token.AmbiguousAddition == ChordTypeAmbiguousAddition.Add)
+            // "add" may be separated from its degree: "Cadd(9)", "Eadd(#11)".
+            if (token.MeaninglessAddition.HasValue)
+            {
+                afterSeparator = true;
+                continue;
+            }
+
+            if (token.AmbiguousAddition == ChordTypeAmbiguousAddition.Add)
             {
                 if (pendingAdd)
                     return Fail(ChordParseError.AddWithoutDegree, 6);
 
-                pendingAdd = token.AmbiguousAddition == ChordTypeAmbiguousAddition.Add;
-                afterSeparator |= token.MeaninglessAddition.HasValue;
+                pendingAdd = true;
                 continue;
             }
 
@@ -536,8 +570,17 @@ public static partial class ChordParser
             }
         }
 
+        // "add" at the end, without its degree: it adds the bare degree written right before it ("C9add" is Cadd9), or the ninth ("Cadd" is Cadd9).
         if (pendingAdd)
-            return Fail(ChordParseError.AddWithoutDegree, 6);
+        {
+            logic |= ChordTypeParseLogic.AddWithoutDegree;
+            var last = degrees.Count - 1;
+            if (last >= 0 && degrees[last] is { kind: DegreeKind.Bare, alteration: null, degree: 2 or 4 or 6 or 9 or 11 or 13 }
+                && GetDegree(tokens[^1]) == null && tokens[^1].token.AmbiguousAddition == ChordTypeAmbiguousAddition.Add)
+                degrees[last] = degrees[last] with { kind = DegreeKind.Added };
+            else
+                degrees.Add((9, DegreeKind.Added, null, false));
+        }
 
         // A degree is written once the same way: altered differently it may repeat ("C7(b9,#9)"),
         // and the seventh may be written both plain and as major ("C7maj", "C7M7").
@@ -554,7 +597,10 @@ public static partial class ChordParser
         var majorSeventh = false;
         var alteredBareNinth = false;
         var bareUpper = new List<(byte degree, bool separated)>();
-        bool bareSecond = false, bareFourth = false, bareFifth = false;
+        bool bareSecond = false, bareFourth = false, bareFifth = false, bareFifthSeparated = false;
+
+        // The fifth written first names the power chord: "E5(7)", "D5maj7" have no third; written after the seventh it is just the fifth: "G#75".
+        var bareFifthFirst = degrees.FirstOrDefault() is { degree: 5, kind: DegreeKind.Bare, alteration: null };
 
         foreach (var (degree, kind, alteration, separated) in degrees)
         {
@@ -571,6 +617,7 @@ public static partial class ChordParser
 
                     extensionDegrees.Add(7);
                     majorSeventh = true;
+                    logic |= ChordTypeParseLogic.PlusRaisedSeventh;
                     continue;
                 }
 
@@ -612,8 +659,10 @@ public static partial class ChordParser
                     extensionDegrees.Add(7);
                     break;
 
+                // "Gadd5": the fifth is there anyway.
                 case (DegreeKind.Added, 5):
-                    return Fail(ChordParseError.UnsupportedAddedDegree, 8);
+                    logic |= ChordTypeParseLogic.RedundantFifth;
+                    break;
 
                 case (DegreeKind.Added, _):
                     additions |= degree switch
@@ -643,6 +692,7 @@ public static partial class ChordParser
 
                 case (DegreeKind.Bare, 5):
                     bareFifth = true;
+                    bareFifthSeparated = separated;
                     break;
             }
         }
@@ -668,6 +718,15 @@ public static partial class ChordParser
                 logic |= ChordTypeParseLogic.ParenthesizedDegreeAdded;
                 foreach (var (degree, _) in bareUpper)
                     additions |= AddedUpperDegree(degree);
+            }
+            else if (!hasSeventh && bareUpper.All(x => x.degree == 9) && !qualities.Overlaps([ChordMainType.Minor, ChordMainType.Dim, ChordMainType.Dim7, ChordMainType.Sus2, ChordMainType.Sus4]))
+            {
+                // A bare ninth without a seventh: "C9" — the dominant ninth or the added ninth, see the options.
+                logic |= ChordTypeParseLogic.BareNinth;
+                if (options.BareNinthMeaning == BareNinthMeaning.Added)
+                    additions |= ChordTypeAdditions.Add9;
+                else
+                    extensionDegrees.Add(9);
             }
             else
             {
@@ -699,10 +758,45 @@ public static partial class ChordParser
 
         if (bareFifth)
         {
-            if (thirdWritten || extensionDegrees.Any())
-                return Fail(ChordParseError.UnexpectedFifth, 10);
+            // The minor written as "m" (a leading minus with a fifth is a tab fragment rather: "A-5-5").
+            var onlyMinor = minor && !(majorWord || dim || dim7 || aug || halfDiminished) && !logic.HasFlag(ChordTypeParseLogic.MinusAsMinor);
+            if (!thirdWritten && (!extensionDegrees.Any() || bareFifthFirst))
+            {
+                power = true;
 
-            power = true;
+                // The power chord with an altered fifth written beside it: "A5#5" is A, E, F; "F5(b5)" is F, C, B.
+                if ((additions & (ChordTypeAdditions.Flat5 | ChordTypeAdditions.Sharp5)) != 0)
+                {
+                    logic |= ChordTypeParseLogic.AlteredFifthAddedToPower;
+                    if (additions.HasFlag(ChordTypeAdditions.Flat5))
+                        additions = additions & ~ChordTypeAdditions.Flat5 | ChordTypeAdditions.Sharp11;
+                    if (additions.HasFlag(ChordTypeAdditions.Sharp5))
+                        additions = additions & ~ChordTypeAdditions.Sharp5 | ChordTypeAdditions.Flat13;
+                }
+            }
+            else if (logic.HasFlag(ChordTypeParseLogic.MinusAsMinor))
+            {
+                return Fail(ChordParseError.UnexpectedFifth, 10);
+            }
+            else if (onlyMinor && !extensionDegrees.Any())
+            {
+                // "Em5" is the power chord E5, named from the minor shape.
+                logic |= ChordTypeParseLogic.PowerOverMinor;
+                minor = false;
+                thirdWritten = false;
+                power = true;
+            }
+            else if (onlyMinor && bareFifthSeparated && extensionDegrees.Any() && !majorSeventh)
+            {
+                // "Bm7/5" is Bm7/5- with the minus lost: the half-diminished chord.
+                logic |= ChordTypeParseLogic.FlatFifthAfterMinorSeventh;
+                additions |= ChordTypeAdditions.Flat5;
+            }
+            else
+            {
+                // "G#75", "Gmaj75", "D9/5": the fifth is there anyway.
+                logic |= ChordTypeParseLogic.RedundantFifth;
+            }
         }
 
         if (bareSecond)
@@ -962,6 +1056,7 @@ public static partial class ChordParser
 
         if (options.ChordTypeParsingOptions.IgnoreTrailingPunctuation)
             Add(ChordTypeMeaninglessAddition.Punctuation);
+
 
         var bassAddition = addition;
         var nonBassAddition = addition;
