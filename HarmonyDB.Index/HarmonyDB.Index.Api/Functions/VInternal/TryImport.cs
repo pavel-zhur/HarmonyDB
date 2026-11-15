@@ -4,7 +4,6 @@ using HarmonyDB.Index.Api.Model.VInternal;
 using HarmonyDB.Index.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Common.Api;
@@ -24,8 +23,8 @@ public class TryImport : ServiceFunctionBase<TryImportRequest, TryImportResponse
         _commonExecutions = commonExecutions;
     }
 
-    [Function(IndexApiUrls.VInternalTryImport)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] TryImportRequest request)
+    [Function(IndexApiUrls.VInternalTryImport, AuthorizationLevel.Function, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] TryImportRequest request)
         => RunHandler(request);
 
     protected override async Task<TryImportResponse> Execute(TryImportRequest request)

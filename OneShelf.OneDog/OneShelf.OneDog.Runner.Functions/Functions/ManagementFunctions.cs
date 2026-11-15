@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OneShelf.Common.Api;
 using System.Net;
 using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.OneDog.Database;
@@ -21,92 +23,64 @@ namespace OneShelf.OneDog.Runner.Functions.Functions
             _logger = logger;
         }
 
-        [Function(nameof(Check))]
-        public async Task<HttpResponseData> Check([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(Check), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> Check(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Welcome to Azure Functions!");
-
-            return response;
+            return new ContentResult { Content = "Welcome to Azure Functions!", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(CheckDb))]
-        public async Task<HttpResponseData> CheckDb([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(CheckDb), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> CheckDb(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync($"Welcome to Azure Functions! Domains Count = {await _dogDatabase.Domains.CountAsync()}");
-
-            return response;
+            return new ContentResult { Content = $"Welcome to Azure Functions! Domains Count = {await _dogDatabase.Domains.CountAsync()}", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(MigrateDb))]
-        public async Task<HttpResponseData> MigrateDb([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(MigrateDb), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> MigrateDb(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             await _dogDatabase.Database.MigrateAsync();
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await response.WriteStringAsync("Done.");
-
-            return response;
+            return new ContentResult { Content = "Done.", ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(SetWebHook))]
-        public async Task<HttpResponseData> SetWebHook([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(SetWebHook), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> SetWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
             var (domainClient, domain) = await CreateDomainClient(GetDomainId(req));
             var secretToken = Guid.NewGuid().ToString();
 
-            await response.WriteStringAsync((await domainClient.SetWebhookAsync($"https://{req.Url.Host}/api/{nameof(BotFunctions.IncomingUpdate)}", secretToken: secretToken)).ToString());
+            var result = (await domainClient.SetWebhookAsync($"https://{req.Host.Host}{req.PathBase}/{FunctionAttribute.RoutePrefix}/{nameof(BotFunctions.IncomingUpdate)}", secretToken: secretToken)).ToString();
 
             domain.WebHooksSecretToken = secretToken;
             await _dogDatabase.SaveChangesAsync();
 
-            return response;
+            return new ContentResult { Content = result, ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(DeleteWebHook))]
-        public async Task<HttpResponseData> DeleteWebHook([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(DeleteWebHook), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> DeleteWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
             var (domainClient, _) = await CreateDomainClient(GetDomainId(req));
-            await response.WriteStringAsync((await domainClient.DeleteWebhookAsync()).ToString());
-
-            return response;
+            return new ContentResult { Content = (await domainClient.DeleteWebhookAsync()).ToString(), ContentType = "text/plain; charset=utf-8" };
         }
 
-        [Function(nameof(GetWebHook))]
-        public async Task<HttpResponseData> GetWebHook([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        [Function(nameof(GetWebHook), AuthorizationLevel.Function, "get")]
+        public async Task<IActionResult> GetWebHook(HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
             var (domainClient, _) = await CreateDomainClient(GetDomainId(req));
-            await response.WriteStringAsync(JsonSerializer.Serialize(await domainClient.GetWebhookInfoAsync()));
-
-            return response;
+            return new ContentResult { Content = JsonSerializer.Serialize(await domainClient.GetWebhookInfoAsync()), ContentType = "text/plain; charset=utf-8" };
         }
 
         private async Task<(TelegramBotClient api, Domain domain)> CreateDomainClient(int domainId)
@@ -115,7 +89,7 @@ namespace OneShelf.OneDog.Runner.Functions.Functions
             return (new(domain.BotToken), domain);
         }
 
-        private static int GetDomainId(HttpRequestData req)
+        private static int GetDomainId(HttpRequest req)
         {
             var domainId = int.TryParse(req.Query["domainId"], out var x)
                 ? x

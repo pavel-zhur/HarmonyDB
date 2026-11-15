@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Net.Http.Headers;
+using OneShelf.Common.Api;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
 
@@ -13,9 +13,9 @@ namespace OneShelf.Illustrations.Api.Functions;
 /// </summary>
 public class Images(IllustrationsDatabase illustrationsDatabase)
 {
-    [Function(IllustrationsApiUrls.Images)]
+    [Function(IllustrationsApiUrls.Images, AuthorizationLevel.Anonymous, "get", Route = $"{IllustrationsApiUrls.Images}/{{id:guid}}/{{size:int}}")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = $"{IllustrationsApiUrls.Images}/{{id:guid}}/{{size:int}}")] HttpRequest req,
+        HttpRequest req,
         Guid id,
         int size)
     {

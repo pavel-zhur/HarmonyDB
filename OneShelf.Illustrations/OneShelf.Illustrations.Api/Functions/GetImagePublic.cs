@@ -1,6 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
@@ -18,20 +19,15 @@ public class GetImagePublic
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.GetImagePublic)]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, Guid id)
+    [Function(IllustrationsApiUrls.GetImagePublic, AuthorizationLevel.Function, "get")]
+    public async Task<IActionResult> Run(HttpRequest req, Guid id)
     {
         var illustration = await _illustrationsDatabase.GetIllustration(id);
         if (illustration == null)
         {
-            return req.CreateResponse(HttpStatusCode.NotFound);
+            return new NotFoundResult();
         }
 
-        var response = req.CreateResponse(HttpStatusCode.OK);
-
-        response.Headers.Add("Content-Type", "image/jpeg");
-
-        await response.WriteBytesAsync(illustration.Image);
-        return response;
+        return new FileContentResult(illustration.Image, "image/jpeg");
     }
 }

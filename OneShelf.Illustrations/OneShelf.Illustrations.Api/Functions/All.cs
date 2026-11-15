@@ -1,5 +1,3 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
@@ -27,8 +25,8 @@ namespace OneShelf.Illustrations.Api.Functions
             _allReader = allReader;
         }
 
-        [Function(IllustrationsApiUrls.All)]
-        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req, [FromBody] AllRequest request) => RunHandler(request);
+        [Function(IllustrationsApiUrls.All, AuthorizationLevel.Function, "get", "post")]
+        public Task<IActionResult> Run(HttpRequest req, [FromBody] AllRequest request) => RunHandler(request);
 
         protected override async Task<AllResponse> Execute(AllRequest allRequest)
         {

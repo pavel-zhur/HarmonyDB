@@ -1,9 +1,6 @@
 using System.Drawing.Imaging;
 using System.Drawing;
 using System.Net;
-using Azure.Core;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
@@ -24,8 +21,8 @@ public class GetImage : FunctionBase<GetImageRequest>
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.GetImage)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req, [FromBody] GetImageRequest request) => RunHandler(request);
+    [Function(IllustrationsApiUrls.GetImage, AuthorizationLevel.Function, "get", "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] GetImageRequest request) => RunHandler(request);
 
     protected override async Task<IActionResult> ExecuteSuccessful(GetImageRequest request)
     {

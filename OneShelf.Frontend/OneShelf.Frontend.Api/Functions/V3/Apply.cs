@@ -3,8 +3,6 @@ using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -44,9 +42,9 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _frontendOptions = frontendOptions.Value;
         }
 
-        [Function(ApiUrls.V3Apply)]
+        [Function(ApiUrls.V3Apply, AuthorizationLevel.Anonymous, "get", "post")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] ApplyRequest request) => await RunHandler(req, request);
+            HttpRequest req, [FromBody] ApplyRequest request) => await RunHandler(req, request);
 
         protected override async Task<ApplyResponse> Execute(HttpRequest httpRequest, ApplyRequest request)
         {

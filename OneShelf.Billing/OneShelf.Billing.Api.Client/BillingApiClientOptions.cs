@@ -2,7 +2,4 @@
 
 namespace OneShelf.Billing.Api.Client;
 
-public class BillingApiClientOptions : ApiClientOptions<BillingApiClient>
-{
-    public required string QueueClientConnectionString { get; set; }
-}
+public class BillingApiClientOptions : ApiClientOptions<BillingApiClient>;

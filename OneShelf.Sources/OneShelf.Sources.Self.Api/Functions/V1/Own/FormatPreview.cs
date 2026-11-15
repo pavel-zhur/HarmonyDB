@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Api;
 using OneShelf.Sources.Self.Api.Model;
@@ -19,8 +18,8 @@ namespace OneShelf.Sources.Self.Api.Functions.V1.Own
             _structureParser = structureParser;
         }
 
-        [Function(SelfApiUrls.V1FormatPreview)]
-        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] FormatPreviewRequest request) => RunHandler(request);
+        [Function(SelfApiUrls.V1FormatPreview, AuthorizationLevel.Function, "post")]
+        public Task<IActionResult> Run(HttpRequest req, [FromBody] FormatPreviewRequest request) => RunHandler(request);
 
         protected override async Task<FormatPreviewResponse> Execute(FormatPreviewRequest request) =>
             new()

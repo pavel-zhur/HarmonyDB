@@ -3,7 +3,6 @@ using HarmonyDB.Index.Api.Model.VInternal;
 using HarmonyDB.Index.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common;
 using OneShelf.Common.Api;
@@ -21,8 +20,8 @@ public class GetLyrics : ServiceFunctionBase<GetLyricsRequest, GetLyricsResponse
         _commonExecutions = commonExecutions;
     }
 
-    [Function(IndexApiUrls.VInternalGetLyrics)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] GetLyricsRequest request)
+    [Function(IndexApiUrls.VInternalGetLyrics, AuthorizationLevel.Function, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] GetLyricsRequest request)
         => RunHandler(request);
 
     protected override async Task<GetLyricsResponse> Execute(GetLyricsRequest request)

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Model;
 using OneShelf.Authorization.Api.Services;
@@ -18,8 +17,8 @@ namespace OneShelf.Authorization.Api.Functions
             _authorizationChecker = authorizationChecker;
         }
 
-        [Function(nameof(CheckIdentity))]
-        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] Identity identity) => await RunHandler(identity);
+        [Function(nameof(CheckIdentity), AuthorizationLevel.Function, "post")]
+        public async Task<IActionResult> Run(HttpRequest req, [FromBody] Identity identity) => await RunHandler(identity);
 
         protected override async Task<CheckIdentityResponse> Execute(Identity request)
         {

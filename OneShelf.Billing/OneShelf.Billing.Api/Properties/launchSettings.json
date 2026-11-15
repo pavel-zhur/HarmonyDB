@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "OneShelf.Billing.Api": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7155",
-      "launchBrowser": false
-    }
-  }
-}

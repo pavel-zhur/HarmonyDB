@@ -1,8 +1,5 @@
-using Azure.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
@@ -32,8 +29,8 @@ public class ListAll : FunctionBase<ListAllRequest, ListAllResponse>
         _urlsManager = urlsManager;
     }
 
-    [Function(CollectivesApiUrls.ListAll)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] ListAllRequest request) => await RunHandler(request);
+    [Function(CollectivesApiUrls.ListAll, AuthorizationLevel.Function, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] ListAllRequest request) => await RunHandler(request);
 
     protected override async Task<ListAllResponse> Execute(ListAllRequest request)
     {

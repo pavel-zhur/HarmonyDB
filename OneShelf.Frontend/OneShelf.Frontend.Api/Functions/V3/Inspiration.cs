@@ -1,9 +1,8 @@
+using OneShelf.Common.Api;
 using System.Net;
 using HarmonyDB.Index.Api.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
@@ -25,8 +24,8 @@ public class Inspiration : AuthorizationFunctionBase<InspirationRequest>
         _inspirationGeneration = inspirationGeneration;
     }
 
-    [Function(ApiUrls.V3Inspiration)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] InspirationRequest request) => await RunHandler(req, request);
+    [Function(ApiUrls.V3Inspiration, AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] InspirationRequest request) => await RunHandler(req, request);
 
     protected override async Task<IActionResult> ExecuteSuccessful(HttpRequest httpRequest, InspirationRequest request)
     {

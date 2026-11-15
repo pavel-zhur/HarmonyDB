@@ -1,47 +1,39 @@
-using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneShelf.Common.Api;
+using OneShelf.Common.Api.Background;
 using OneShelf.OneDragon.Processor.Model;
-using OneShelf.Telegram.Services;
-using Telegram.BotAPI.GettingUpdates;
 
 namespace OneShelf.OneDragon.Runner.Functions.Functions;
 
 public class BotFunctions
 {
-    private const string QueueNameUpdates = "updates";
     private const string SecretTokenHeaderName = "X-Telegram-Bot-Api-Secret-Token";
 
     private readonly ILogger<BotFunctions> _logger;
-    private readonly Pipeline _pipeline;
     private readonly TelegramOptions _options;
+    private readonly BackgroundQueue<string> _updates;
 
-    public BotFunctions(ILogger<BotFunctions> logger, Pipeline pipeline, IOptions<TelegramOptions> options)
+    public BotFunctions(ILogger<BotFunctions> logger, IOptions<TelegramOptions> options, BackgroundQueue<string> updates)
     {
         _logger = logger;
-        _pipeline = pipeline;
+        _updates = updates;
         _options = options.Value;
     }
 
-    [Function("UpdatesQueueTrigger")]
-    public async Task UpdatesQueueTrigger(
-        [QueueTrigger(QueueNameUpdates)] string myQueueItem)
+    /// <summary>
+    /// Accepts an update from Telegram at once; it is processed in the background (see <see cref="Background.UpdatesWork"/>).
+    /// </summary>
+    [Function(nameof(IncomingUpdate), AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> IncomingUpdate(HttpRequest req)
     {
-        var update = JsonSerializer.Deserialize<Update>(myQueueItem) ?? throw new("Empty request body.");
-        await await _pipeline.ProcessSyncSafeAndDispose(update, -1);
-    }
+        if (!req.Headers[SecretTokenHeaderName].Contains(_options.WebHooksSecretToken)) throw new("Bad secret token.");
 
-    [Function(nameof(IncomingUpdate))]
-    [QueueOutput(QueueNameUpdates)]
-    public async Task<string> IncomingUpdate(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
-    {
-        if (!req.Headers.GetValues(SecretTokenHeaderName).Contains(_options.WebHooksSecretToken)) throw new("Bad secret token.");
+        using var reader = new StreamReader(req.Body);
+        _updates.Enqueue(await reader.ReadToEndAsync());
 
-        var requestBody = await req.ReadAsStringAsync() ?? throw new("Empty request body.");
-
-        return requestBody;
+        return new OkResult();
     }
 }

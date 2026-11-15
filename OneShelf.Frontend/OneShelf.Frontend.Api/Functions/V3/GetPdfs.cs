@@ -1,3 +1,4 @@
+using OneShelf.Common.Api;
 using System.Net;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Source.Api.Client;
@@ -5,8 +6,6 @@ using HarmonyDB.Source.Api.Model.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OneShelf.Authorization.Api.Client;
@@ -58,8 +57,8 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         _sourceApiClient = sourceApiClient;
     }
 
-    [Function(ApiUrls.V3GetPdfs)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] GetPdfsRequest request) => await RunHandler(req, request);
+    [Function(ApiUrls.V3GetPdfs, AuthorizationLevel.Anonymous, "get", "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] GetPdfsRequest request) => await RunHandler(req, request);
 
     protected override async Task<GetPdfsResponse> Execute(HttpRequest httpRequest, GetPdfsRequest request)
     {

@@ -1,8 +1,7 @@
+using OneShelf.Common.Api;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -27,9 +26,9 @@ namespace OneShelf.Frontend.Api.Functions.V3
             _songsDatabase = songsDatabase;
         }
 
-        [Function(ApiUrls.V3GetVisitedSearches)]
+        [Function(ApiUrls.V3GetVisitedSearches, AuthorizationLevel.Anonymous, "get", "post")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req, [FromBody] GetVisitedSearchesRequest request) => await RunHandler(req, request);
+            HttpRequest req, [FromBody] GetVisitedSearchesRequest request) => await RunHandler(req, request);
 
         protected override async Task<GetVisitedSearchesResponse> Execute(HttpRequest httpRequest,
             GetVisitedSearchesRequest request)

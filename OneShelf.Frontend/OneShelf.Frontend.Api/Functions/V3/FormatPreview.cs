@@ -1,8 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Api;
 using OneShelf.Frontend.Api.Model.V3.Api;
@@ -20,8 +18,8 @@ public class FormatPreview : FunctionBase<FormatPreviewRequest, FormatPreviewRes
         _selfApiClient = selfApiClient;
     }
 
-    [Function(ApiUrls.V3FormatPreview)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] FormatPreviewRequest request) => await RunHandler(request);
+    [Function(ApiUrls.V3FormatPreview, AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] FormatPreviewRequest request) => await RunHandler(request);
 
     protected override async Task<FormatPreviewResponse> Execute(FormatPreviewRequest request) =>
         new()

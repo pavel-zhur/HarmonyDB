@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
@@ -8,6 +7,7 @@ using OneShelf.Collectives.Api.Model;
 using OneShelf.Collectives.Api.Model.V2;
 using OneShelf.Collectives.Api.Services;
 using OneShelf.Collectives.Database;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs.Model.Enums;
 using OneShelf.Common.Database.Songs.Services;
@@ -28,8 +28,8 @@ public class Delete : AuthorizationFunctionBase<DeleteRequest, DeleteResponse>
         _logger = loggerFactory.CreateLogger<Delete>();
     }
 
-    [Function(CollectivesApiUrls.V2Delete)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] DeleteRequest request) => await RunHandler(req, request);
+    [Function(CollectivesApiUrls.V2Delete, AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] DeleteRequest request) => await RunHandler(req, request);
 
     protected override async Task<DeleteResponse> Execute(HttpRequest httpRequest, DeleteRequest request)
     {

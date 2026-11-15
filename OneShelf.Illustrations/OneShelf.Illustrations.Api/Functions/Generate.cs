@@ -1,5 +1,3 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
@@ -41,8 +39,8 @@ namespace OneShelf.Illustrations.Api.Functions
             _indexApiClient = indexApiClient;
         }
 
-        [Function(IllustrationsApiUrls.Generate)]
-        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req, [FromBody] GenerateRequest request) => RunHandler(request);
+        [Function(IllustrationsApiUrls.Generate, AuthorizationLevel.Function, "get", "post")]
+        public Task<IActionResult> Run(HttpRequest req, [FromBody] GenerateRequest request) => RunHandler(request);
 
         protected override async Task<AllResponse?> Execute(GenerateRequest generateRequest)
         {

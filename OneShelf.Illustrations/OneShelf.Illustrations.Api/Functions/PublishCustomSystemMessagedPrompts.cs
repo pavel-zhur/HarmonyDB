@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Api;
 using OneShelf.Illustrations.Api.Constants;
@@ -21,8 +19,8 @@ public class PublishCustomSystemMessagedPrompts : FunctionBase<PublishCustomSyst
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.PublishCustomSystemMessagedPrompts)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req, [FromBody] PublishCustomSystemMessagedPromptsRequest request) => RunHandler(request);
+    [Function(IllustrationsApiUrls.PublishCustomSystemMessagedPrompts, AuthorizationLevel.Function, "get", "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] PublishCustomSystemMessagedPromptsRequest request) => RunHandler(request);
 
     protected override async Task<PublishCustomSystemMessagedPromptsResponse> Execute(
         PublishCustomSystemMessagedPromptsRequest request)

@@ -1,33 +1,33 @@
 using System.Text.Json;
-using Azure.Storage.Queues.Models;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OneShelf.Billing.Api.Model;
+using OneShelf.Common.Api;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Common.Database.Songs.Model;
 
 namespace OneShelf.Billing.Api.Functions
 {
-    public class Add
+    public class Add : FunctionBase<Usage>
     {
-        private readonly ILogger<Add> _logger;
         private readonly SongsDatabase _songsDatabase;
 
-        public Add(ILogger<Add> logger, SongsDatabase songsDatabase)
+        public Add(ILoggerFactory loggerFactory, SongsDatabase songsDatabase)
+            : base(loggerFactory)
         {
-            _logger = logger;
             _songsDatabase = songsDatabase;
         }
 
-        [Function(nameof(Add))]
-        public async Task Run([QueueTrigger(BillingApiUrls.InputQueueName)] QueueMessage message)
+        [Function(BillingApiUrls.Add, AuthorizationLevel.Function, "post")]
+        public Task<IActionResult> Run(HttpRequest req, [FromBody] Usage usage) => RunHandler(usage);
+
+        protected override async Task<IActionResult> ExecuteSuccessful(Usage usage)
         {
-            _logger.LogInformation($"C# Queue trigger function processed: {message.MessageText}");
+            Logger.LogInformation("Adding the usage: {usage}", JsonSerializer.Serialize(usage));
 
-            var usage = JsonSerializer.Deserialize<Usage>(message.MessageText);
-
-            if (usage!.UserId.HasValue)
+            if (usage.UserId.HasValue)
             {
                 var existingUser = await _songsDatabase.Users.SingleOrDefaultAsync(x => x.Id == usage.UserId);
                 if (existingUser == null)
@@ -63,6 +63,8 @@ namespace OneShelf.Billing.Api.Functions
             });
 
             await _songsDatabase.SaveChangesAsyncX();
+
+            return new OkResult();
         }
     }
 }

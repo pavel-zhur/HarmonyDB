@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Authorization.Api.Model;
@@ -30,8 +28,8 @@ public class Get : FunctionBase<GetRequest, GetResponse>
         _urlsManager = urlsManager;
     }
 
-    [Function(CollectivesApiUrls.Get)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] GetRequest request)
+    [Function(CollectivesApiUrls.Get, AuthorizationLevel.Function, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] GetRequest request)
         => await RunHandler(request);
 
     protected override async Task<GetResponse> Execute(GetRequest request)

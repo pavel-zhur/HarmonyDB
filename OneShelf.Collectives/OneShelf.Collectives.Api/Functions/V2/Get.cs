@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using OneShelf.Authorization.Api.Client;
 using OneShelf.Collectives.Api.Model;
@@ -9,6 +8,7 @@ using OneShelf.Collectives.Api.Services;
 using OneShelf.Collectives.Api.Tools;
 using OneShelf.Collectives.Database;
 using OneShelf.Collectives.Database.Models;
+using OneShelf.Common.Api;
 using OneShelf.Common.Api.WithAuthorization;
 using OneShelf.Common.Database.Songs.Services;
 
@@ -28,8 +28,8 @@ public class Get : AuthorizationFunctionBase<GetRequest, GetResponse>
         _urlsManager = urlsManager;
     }
 
-    [Function(CollectivesApiUrls.V2Get)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [FromBody] GetRequest request) => await RunHandler(req, request);
+    [Function(CollectivesApiUrls.V2Get, AuthorizationLevel.Anonymous, "post")]
+    public async Task<IActionResult> Run(HttpRequest req, [FromBody] GetRequest request) => await RunHandler(req, request);
 
     protected override async Task<GetResponse> Execute(HttpRequest httpRequest, GetRequest request)
     {

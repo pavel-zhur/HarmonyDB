@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Billing.Api.Model;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +19,8 @@ namespace OneShelf.Billing.Api.Functions
             _songsDatabase = songsDatabase;
         }
 
-        [Function(BillingApiUrls.All)]
-        public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] AllRequest request)
+        [Function(BillingApiUrls.All, AuthorizationLevel.Function, "post")]
+        public Task<IActionResult> Run(HttpRequest req, [FromBody] AllRequest request)
             => RunHandler(request);
 
         protected override async Task<AllResponse> Execute(AllRequest allRequest)

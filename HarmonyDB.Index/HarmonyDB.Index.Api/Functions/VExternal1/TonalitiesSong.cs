@@ -10,7 +10,6 @@ using HarmonyDB.Index.Api.Tools;
 using HarmonyDB.Index.BusinessLogic.Caches;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneShelf.Common;
@@ -42,8 +41,8 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1TonalitiesSong)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req, [FromBody] SongRequest request)
+    [Function(IndexApiUrls.VExternal1TonalitiesSong, AuthorizationLevel.Function, "post")]
+    public Task<IActionResult> Run(HttpRequest req, [FromBody] SongRequest request)
         => RunHandler(request);
 
     protected override async Task<SongResponse> Execute(SongRequest request)

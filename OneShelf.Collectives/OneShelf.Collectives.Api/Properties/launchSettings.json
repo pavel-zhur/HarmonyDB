@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "OneShelf.Collectives.Api": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7284",
-      "launchBrowser": false
-    }
-  }
-}

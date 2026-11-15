@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Telegram.Runner.Functions": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7286",
-      "launchBrowser": false
-    }
-  }
-}

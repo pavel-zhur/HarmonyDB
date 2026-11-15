@@ -2,8 +2,6 @@
 using System.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OneShelf.Authorization.Api.Client;
@@ -31,8 +29,8 @@ public class PreviewPdf : FunctionBase<PreviewPdfRequest>
         _authorizationQuickChecker = authorizationQuickChecker;
     }
 
-    [Function(ApiUrls.V3PreviewPdf)]
-    public Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, [FromQuery] string x)
+    [Function(ApiUrls.V3PreviewPdf, AuthorizationLevel.Anonymous, "get")]
+    public Task<IActionResult> Run(HttpRequest req, [FromQuery] string x)
     {
         return RunHandler(JsonConvert.DeserializeObject<PreviewPdfRequest>(x)!);
     }
