@@ -32,34 +32,7 @@ namespace OneShelf.Frontend.Api.Functions.V3
         protected override async Task<GetVisitedChordsResponse> Execute(HttpRequest httpRequest,
             GetVisitedChordsRequest request)
         {
-            var source = _songsDatabase.VisitedChords.FromSqlRaw(@"
-
-select [Id]
-      ,[ViewedOn]
-      ,[UserId]
-      ,[Uri]
-      ,[SongId]
-      ,[ExternalId]
-      ,[SearchQuery]
-      ,[Transpose]
-      ,[Artists]
-      ,[Title]
-      ,[Source]
-from (
-
-	select 
-		*, 
-		lead(c) over (partition by userid order by viewedon, id) c2, 
-		lead(viewedon) over (partition by userid order by viewedon, id) v2
-	from (
-		select checksum(uri, songid, externalid, SearchQuery, Artists, title, source) c, *
-		from visitedchords
-	) x
-
-) x
-where c <> isnull(c2, 0) or DATEDIFF(minute, v2, viewedon) < -10 
-
-");
+            var source = _songsDatabase.GetVisitedChordsWithoutRepeats();
 
             var count = await source.CountAsync(x => x.UserId == request.Identity.Id && x.User.TenantId == SecurityContext.TenantId);
 

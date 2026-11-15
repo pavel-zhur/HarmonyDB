@@ -18,6 +18,7 @@ public class Version : IValidatableObject
     public Song Song { get; set; } = null!;
 
     [Column(TypeName = "nvarchar(1000)")]
+    [CaseInsensitive]
     public Uri Uri { get; set; } = null!;
 
     public long UserId { get; set; }

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The PostgreSQL migrations of SongsDatabase; its SQL Server migrations stay in its own assembly. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\nuget readme.md" Pack="true" Link="nuget readme.md" PackagePath="\readme.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\OneShelf.Common.Database.Songs\OneShelf.Common.Database.Songs.csproj" />
+	</ItemGroup>
+
+</Project>

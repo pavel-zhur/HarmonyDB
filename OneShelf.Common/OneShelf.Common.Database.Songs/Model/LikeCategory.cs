@@ -17,6 +17,7 @@ public class LikeCategory : IValidatableObject
 
     public User User { get; set; } = null!;
 
+    [CaseInsensitive]
     public required string Name { get; set; }
 
     public required string CssColor { get; set; }
