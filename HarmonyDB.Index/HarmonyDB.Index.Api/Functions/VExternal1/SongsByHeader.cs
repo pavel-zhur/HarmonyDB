@@ -1,4 +1,5 @@
-﻿using HarmonyDB.Index.Analysis.Services;
+﻿using HarmonyDB.Index.Analysis.Models.Ids;
+using HarmonyDB.Index.Analysis.Services;
 using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
@@ -26,14 +27,16 @@ public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHe
     private readonly FullTextSearchCache _fullTextSearchCache;
     private readonly CommonExecutions _commonExecutions;
     private readonly TonalitiesCache _tonalitiesCache;
+    private readonly IndexIds _ids;
 
-    public SongsByHeader(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, FullTextSearchCache fullTextSearchCache, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache)
+    public SongsByHeader(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, FullTextSearchCache fullTextSearchCache, CommonExecutions commonExecutions, TonalitiesCache tonalitiesCache, IndexIds ids)
         : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
         _fullTextSearchCache = fullTextSearchCache;
         _commonExecutions = commonExecutions;
         _tonalitiesCache = tonalitiesCache;
+        _ids = ids;
         _options = options.Value;
     }
 
@@ -64,7 +67,11 @@ public class SongsByHeader : ServiceFunctionBase<SongsByHeaderRequest, SongsByHe
             Songs = results
                 .Skip((request.PageNumber - 1) * request.ItemsPerPage)
                 .Take(request.ItemsPerPage)
-                .Select(x => new SongsByHeaderResponseSong(x, tonalitiesCache.Songs.GetValueOrDefault(x.ExternalId)?.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex()))
+                .Select(x => new SongsByHeaderResponseSong(
+                    x,
+                    _ids.Songs.TryGetNumber(x.ExternalId, out var song) && tonalitiesCache.Songs.Positions.TryGetPosition(song, out var tone)
+                        ? tonalitiesCache.Songs.GetProbabilities(tone).GetPredictedTonality().ToIndex()
+                        : null))
                 .ToList(),
             Total = results.Count,
             TotalPages = results.Count / request.ItemsPerPage + (results.Count % request.ItemsPerPage == 0 ? 0 : 1),

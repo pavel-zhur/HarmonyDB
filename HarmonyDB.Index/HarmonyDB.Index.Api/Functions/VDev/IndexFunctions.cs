@@ -79,9 +79,7 @@ public class IndexFunctions
     [Function(nameof(VDevSaveIndexHeaders), AuthorizationLevel.Function, "get")]
     public async Task<IActionResult> VDevSaveIndexHeaders(HttpRequest req, CancellationToken cancellationToken)
     {
-        await _indexHeadersCache.Save(new IndexHeaders
-        {
-            Headers = (await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreSongsProvidedForIndexResults)
+        await _indexHeadersCache.Save(IndexHeaders.Serialize((await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(x => x.AreSongsProvidedForIndexResults)
                     .Select(async i =>
                     {
                         List<IndexHeader> headers = new();
@@ -105,7 +103,7 @@ public class IndexFunctions
                     })))
                 .SelectMany(x => x)
                 .ToDictionary(x => x.ExternalId)
-        }.Serialize());
+                .Values));
 
         return new OkResult();
     }
@@ -147,13 +145,13 @@ public class IndexFunctions
     [Function(nameof(VDevGetIndexHeadersItemsCount), AuthorizationLevel.Function, "get")]
     public async Task<IActionResult> VDevGetIndexHeadersItemsCount(HttpRequest req)
     {
-        return new OkObjectResult((await _indexHeadersCache.Get()).Headers.Count);
+        return new OkObjectResult((await _indexHeadersCache.Get()).Count);
     }
 
     [Function(nameof(VDevGetStructuresCacheLinksCount), AuthorizationLevel.Function, "get")]
     public async Task<IActionResult> VDevGetStructuresCacheLinksCount(HttpRequest req)
     {
-        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+        return new OkObjectResult((await _structuresCache.Get()).Links.Length);
     }
 
     [Function(nameof(VDevGetTonalitiesIndexCacheItemsCount), AuthorizationLevel.Function, "get")]
@@ -171,7 +169,7 @@ public class IndexFunctions
     public async Task<IActionResult> VDevRebuildStructuresCache(HttpRequest req)
     {
         await _structuresCache.Rebuild();
-        return new OkObjectResult((await _structuresCache.Get()).Links.Count);
+        return new OkObjectResult((await _structuresCache.Get()).Links.Length);
     }
 
     [Function(nameof(VDevRebuildTonalitiesCache), AuthorizationLevel.Function, "get")]
@@ -189,7 +187,8 @@ public class IndexFunctions
     [Function(nameof(VDevFindAndCount), AuthorizationLevel.Function, "get")]
     public async Task<IActionResult> VDevFindAndCount(HttpRequest req, string searchQuery)
     {
-        return new OkObjectResult(_progressionsSearch.Search((await _progressionsCache.Get()).Values, _inputParser.ParseSequence(searchQuery)).Count);
+        var progressions = await _progressionsCache.Get();
+        return new OkObjectResult(_progressionsSearch.Search(progressions, Enumerable.Range(0, progressions.Count), _inputParser.ParseSequence(searchQuery)).Count);
     }
 
     [Function(nameof(VDevFindHeaderAndCount), AuthorizationLevel.Function, "get")]

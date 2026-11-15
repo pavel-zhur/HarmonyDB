@@ -1,13 +1,75 @@
-﻿using HarmonyDB.Source.Api.Model.V1;
-using OneShelf.Common;
+﻿using System.Text;
+using HarmonyDB.Index.Analysis.Models.Ids;
+using HarmonyDB.Source.Api.Model.V1;
 
 namespace HarmonyDB.Index.BusinessLogic.Models;
 
+/// <summary>
+/// The songs' headers in arrays, in the order they were serialized: each distinct source, title, artist and tonality
+/// kept once, each header a small record of their indices. An <see cref="IndexHeader"/> is made when asked for.
+/// </summary>
 public class IndexHeaders
 {
-    public required IReadOnlyDictionary<string, IndexHeader> Headers { get; set; }
+    private const byte UnknownTonality = 2;
 
-    public byte[] Serialize()
+    private readonly IdTable _songIds;
+    private readonly string?[] _sources;
+    private readonly string?[] _titles;
+    private readonly string?[] _artists;
+    private readonly string?[] _bestTonalities;
+    private readonly Header[] _headers;
+    private readonly int[] _headersArtists;
+
+    private IndexHeaders(IdTable songIds, IdPositions songs, string?[] sources, string?[] titles, string?[] artists, string?[] bestTonalities, Header[] headers, int[] headersArtists)
+    {
+        _songIds = songIds;
+        Songs = songs;
+        _sources = sources;
+        _titles = titles;
+        _artists = artists;
+        _bestTonalities = bestTonalities;
+        _headers = headers;
+        _headersArtists = headersArtists;
+    }
+
+    /// <summary>
+    /// The songs (numbers of the songs' ids) in the headers' order.
+    /// </summary>
+    public IdPositions Songs { get; }
+
+    public int Count => Songs.Count;
+
+    public float? GetRating(int position) => ToRating(_headers[position].Rating);
+
+    public IndexHeader Get(int position)
+    {
+        ref readonly var header = ref _headers[position];
+        var artists = new string[header.ArtistsCount];
+        for (var i = 0; i < artists.Length; i++)
+        {
+            artists[i] = _artists[_headersArtists[header.ArtistsStart + i]]!;
+        }
+
+        return new()
+        {
+            ExternalId = _songIds[Songs.GetNumber(position)],
+            Source = _sources[header.Source]!,
+            Title = _titles[header.Title],
+            Rating = ToRating(header.Rating),
+            Artists = artists,
+            BestTonality = header.BestTonalityReliability switch
+            {
+                UnknownTonality => null,
+                _ => new()
+                {
+                    IsReliable = header.BestTonalityReliability == 1,
+                    Tonality = _bestTonalities[header.BestTonality]!,
+                },
+            },
+        };
+    }
+
+    public static byte[] Serialize(IReadOnlyCollection<IndexHeader> headers)
     {
         var sources = new Dictionary<string, int>();
         var titles = new Dictionary<string, int>();
@@ -23,8 +85,8 @@ public class IndexHeaders
         using var writer1 = new BinaryWriter(stream1);
         using var writer2 = new BinaryWriter(stream2);
 
-        writer1.Write(Headers.Count);
-        foreach (var header in Headers.Values)
+        writer1.Write(headers.Count);
+        foreach (var header in headers)
         {
             writer1.Write(header.ExternalId);
             writer1.Write(Add(header.Source, sources));
@@ -67,55 +129,69 @@ public class IndexHeaders
         return stream2.ToArray().Concat(stream1.ToArray()).ToArray();
     }
 
-    public static IndexHeaders Deserialize(byte[] fileModel)
+    /// <summary>
+    /// Reads what <see cref="Serialize"/> wrote, straight into the final arrays.
+    /// </summary>
+    /// <exception cref="ArgumentException">An external id repeats.</exception>
+    public static IndexHeaders Read(Stream stream, IdTable songIds)
     {
-        using var stream = new MemoryStream(fileModel);
-        using var reader = new BinaryReader(stream);
+        using var reader = new BinaryReader(stream, Encoding.UTF8, true);
 
-        List<string?> Read1()
+        string?[] ReadCatalog()
         {
-            var count1 = reader.ReadInt32();
-            var result1 = new List<string?>();
-            for (var i = 0; i < count1; i++)
+            var result = new string?[reader.ReadInt32()];
+            for (var i = 0; i < result.Length; i++)
             {
-                result1.Add(reader.ReadString().SelectSingle(x => x == string.Empty ? null : x));
+                var value = reader.ReadString();
+                result[i] = value == string.Empty ? null : value;
             }
 
-            return result1;
+            return result;
         }
 
-        var sources = Read1();
-        var titles = Read1();
-        var artists = Read1();
-        var bestTonalities = Read1();
+        var sources = ReadCatalog();
+        var titles = ReadCatalog();
+        var artists = ReadCatalog();
+        var bestTonalities = ReadCatalog();
 
         var count = reader.ReadInt32();
-        var result = new List<IndexHeader>();
+        var numbers = new int[count];
+        var headers = new Header[count];
+        var headersArtists = new List<int>();
         for (var i = 0; i < count; i++)
         {
-            byte tonality;
-            result.Add(new()
+            numbers[i] = songIds.GetOrAdd(reader.ReadString());
+            var source = reader.ReadInt32();
+            var title = reader.ReadInt32();
+            var rating = reader.ReadSingle();
+
+            var artistsStart = headersArtists.Count;
+            var artistsCount = reader.ReadInt32();
+            for (var j = 0; j < artistsCount; j++)
             {
-                ExternalId = reader.ReadString(),
-                Source = sources[reader.ReadInt32()]!,
-                Title = titles[reader.ReadInt32()],
-                Rating = reader.ReadSingle().SelectSingle(x => x == -1f ? (float?)null : x),
-                Artists = Enumerable.Range(0, reader.ReadInt32()).Select(_ => artists[reader.ReadInt32()]!).ToList(),
-                BestTonality = (tonality = reader.ReadByte()) switch
-                {
-                    2 => null,
-                    _ => new()
-                    {
-                        IsReliable = tonality == 1,
-                        Tonality = bestTonalities[reader.ReadInt32()]!,
-                    }
-                },
-            });
+                headersArtists.Add(Check(reader.ReadInt32(), artists));
+            }
+
+            var bestTonalityReliability = reader.ReadByte();
+            var bestTonality = bestTonalityReliability == UnknownTonality ? -1 : Check(reader.ReadInt32(), bestTonalities);
+
+            headers[i] = new(Check(source, sources), Check(title, titles), rating, artistsStart, artistsCount, bestTonality, bestTonalityReliability);
         }
 
-        return new()
-        {
-            Headers = result.ToDictionary(x => x.ExternalId),
-        };
+        return new(songIds, new(numbers), sources, titles, artists, bestTonalities, headers, headersArtists.ToArray());
     }
+
+    private static float? ToRating(float rating) => rating == -1f ? null : rating;
+
+    private static int Check(int index, string?[] catalog)
+        => index >= 0 && index < catalog.Length ? index : throw new ArgumentOutOfRangeException(nameof(index), index, "The index is out of the catalog.");
+
+    private readonly record struct Header(
+        int Source,
+        int Title,
+        float Rating,
+        int ArtistsStart,
+        int ArtistsCount,
+        int BestTonality,
+        byte BestTonalityReliability);
 }

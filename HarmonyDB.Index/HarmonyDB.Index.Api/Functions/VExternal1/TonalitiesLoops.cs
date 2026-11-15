@@ -48,8 +48,9 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
         var tonalities = await _tonalitiesCache.Get();
         var structures = await _structuresCache.Get();
 
-        var results = tonalities.Loops
-            .Join(structures.Loops, x => x.Key, x => x.Key, (x, y) => (tone: x.Value, stats: y.Value))
+        var results = Enumerable.Range(0, tonalities.Loops.Count)
+            .Select(tone => (tone, found: structures.TryGetLoop(tonalities.Loops.Positions.GetNumber(tone), out var stats), stats))
+            .Where(x => x.found)
             .Select(x => new Loop(
                 x.stats.Normalized,
                 x.stats.Length,
@@ -57,9 +58,9 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
                 x.stats.TotalSuccessions,
                 x.stats.AverageCoverage,
                 x.stats.TotalSongs,
-                x.tone.TonalityProbabilities.ToLinear(),
-                x.tone.Score.ScaleScore,
-                x.tone.Score.TonicScore))
+                tonalities.Loops.GetProbabilities(x.tone),
+                tonalities.Loops.GetScore(x.tone).ScaleScore,
+                tonalities.Loops.GetScore(x.tone).TonicScore))
             .ToList();
 
         var loops = results

@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Common.Representations.OneShelf;
+using HarmonyDB.Index.Analysis.Models.Ids;
 using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
@@ -26,8 +27,9 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
     private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly CommonExecutions _commonExecutions;
+    private readonly IndexIds _ids;
 
-    public TonalitiesLoop(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions)
+    public TonalitiesLoop(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions, IndexIds ids)
         : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
@@ -35,6 +37,7 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
         _tonalitiesCache = tonalitiesCache;
         _indexHeadersCache = indexHeadersCache;
         _commonExecutions = commonExecutions;
+        _ids = ids;
         _options = options.Value;
     }
 
@@ -53,8 +56,9 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
         var structures = await _structuresCache.Get();
         var headers = await _indexHeadersCache.Get();
 
-        var stats = structures.Loops[request.Normalized];
-        var tone = tonalities.Loops[request.Normalized];
+        var loop = _ids.Loops.GetNumber(request.Normalized);
+        var stats = structures.GetLoop(loop);
+        var tone = tonalities.Loops.Positions.GetPosition(loop);
 
         return new()
         {
@@ -65,20 +69,20 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
                 stats.TotalSuccessions,
                 stats.AverageCoverage,
                 stats.TotalSongs,
-                tone.TonalityProbabilities.ToLinear(),
-                tone.Score.ScaleScore,
-                tone.Score.TonicScore),
+                tonalities.Loops.GetProbabilities(tone),
+                tonalities.Loops.GetScore(tone).ScaleScore,
+                tonalities.Loops.GetScore(tone).TonicScore),
 
-            LinkStatistics = structures.LinksByLoopId[request.Normalized]
-                .Where(x => tonalities.Songs.ContainsKey(x.ExternalId))
-                .Where(x => headers.Headers.ContainsKey(x.ExternalId))
+            LinkStatistics = structures.GetLinksByLoop(loop)
+                .Where(x => tonalities.Songs.Positions.Contains(x.Song))
+                .Where(x => headers.Songs.Contains(x.Song))
                 .Select(link =>
                 {
-                    var tone = tonalities.Songs[link.ExternalId];
-                    var stats = structures.Songs[link.ExternalId];
-                    var header = headers.Headers[link.ExternalId];
-                    var known = tone.KnownTonality?.FromEm().ToIndex();
-                    var predicted = tone.TonalityProbabilities.ToLinear().GetPredictedTonality().ToIndex();
+                    var tone = tonalities.Songs.Positions.GetPosition(link.Song);
+                    var stats = structures.GetSong(link.Song);
+                    var header = headers.Get(headers.Songs.GetPosition(link.Song));
+                    var known = tonalities.Songs.GetKnownTonality(tone)?.FromEm().ToIndex();
+                    var predicted = tonalities.Songs.GetProbabilities(tone).GetPredictedTonality().ToIndex();
                     var normalizationRoot = link.NormalizationRoot;
                     return (
                         link,
@@ -104,9 +108,9 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
                     g.Sum(x => x.link.Occurrences),
                     g.Sum(x => x.link.Successions),
                     g.Average(x => x.link.Coverage),
-                    g.Average(x => tonalities.Songs[x.link.ExternalId].Score.TonicScore),
-                    g.Average(x => tonalities.Songs[x.link.ExternalId].Score.ScaleScore),
-                    g.Key.derivedFromKnown ? 1 : g.Average(x => tonalities.Songs[x.link.ExternalId].TonalityProbabilities.ToLinear().TonalityConfidence()),
+                    g.Average(x => tonalities.Songs.GetScore(x.tone).TonicScore),
+                    g.Average(x => tonalities.Songs.GetScore(x.tone).ScaleScore),
+                    g.Key.derivedFromKnown ? 1 : g.Average(x => tonalities.Songs.GetProbabilities(x.tone).TonalityConfidence()),
                     g
                         .OrderByDescending(x => x.header.Rating)
                         .ThenBy(_ => Random.Shared.NextDouble())
@@ -117,12 +121,12 @@ public class TonalitiesLoop : ServiceFunctionBase<LoopRequest, LoopResponse>
                             new(
                                 x.outputHeader!.ExternalId,
                                 x.x.stats.TotalLoops,
-                                x.x.tone.TonalityProbabilities.ToLinear(),
-                                x.x.tone.Score.TonicScore,
-                                x.x.tone.Score.ScaleScore,
+                                tonalities.Songs.GetProbabilities(x.x.tone),
+                                tonalities.Songs.GetScore(x.x.tone).TonicScore,
+                                tonalities.Songs.GetScore(x.x.tone).ScaleScore,
                                 x.outputHeader,
-                                x.x.tone.KnownTonality?.FromEm().ToIndex()),
-                            x.x.link.ToModel()))
+                                tonalities.Songs.GetKnownTonality(x.x.tone)?.FromEm().ToIndex()),
+                            structures.ToStructureLink(x.x.link).ToModel()))
                         .ToList()))
                 .ToList(),
         };

@@ -1,4 +1,5 @@
 ﻿using HarmonyDB.Index.Analysis.Em.Models;
+using HarmonyDB.Index.Analysis.Models.Ids;
 using HarmonyDB.Index.Analysis.Tools;
 using HarmonyDB.Index.Api.Client;
 using HarmonyDB.Index.Api.Model;
@@ -29,8 +30,9 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
     private readonly TonalitiesCache _tonalitiesCache;
     private readonly IndexHeadersCache _indexHeadersCache;
     private readonly CommonExecutions _commonExecutions;
+    private readonly IndexIds _ids;
 
-    public TonalitiesSong(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions)
+    public TonalitiesSong(ILoggerFactory loggerFactory, SecurityContext securityContext, ConcurrencyLimiter concurrencyLimiter, IOptions<IndexApiOptions> options, IndexApiClient indexApiClient, StructuresCache structuresCache, TonalitiesCache tonalitiesCache, IndexHeadersCache indexHeadersCache, CommonExecutions commonExecutions, IndexIds ids)
         : base(loggerFactory, securityContext, options.Value.LimitConcurrency ? concurrencyLimiter : null)
     {
         _indexApiClient = indexApiClient;
@@ -38,6 +40,7 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
         _tonalitiesCache = tonalitiesCache;
         _indexHeadersCache = indexHeadersCache;
         _commonExecutions = commonExecutions;
+        _ids = ids;
         _options = options.Value;
     }
 
@@ -56,42 +59,43 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
         var structures = await _structuresCache.Get();
         var headers = await _indexHeadersCache.Get();
 
-        var structureSong = structures.Songs[request.ExternalId];
-        var songTonality = tonalities.Songs.TryGetValue(request.ExternalId, out var value) ? value : throw new CacheItemNotFoundException();
-        var header = headers.Headers[request.ExternalId];
+        var song = _ids.Songs.GetNumber(request.ExternalId);
+        var structureSong = structures.GetSong(song);
+        var songTonality = tonalities.Songs.Positions.TryGetPosition(song, out var value) ? value : throw new CacheItemNotFoundException();
+        var header = headers.Get(headers.Songs.GetPosition(song));
         header = _commonExecutions.PrepareForOutput(header) ?? throw new("The song header is not available.");
 
         return new()
         {
             Song = new(
-                songTonality.Id,
+                tonalities.Songs.GetId(songTonality),
                 structureSong.TotalLoops,
-                songTonality.TonalityProbabilities.ToLinear(),
-                songTonality.Score.TonicScore,
-                songTonality.Score.ScaleScore,
+                tonalities.Songs.GetProbabilities(songTonality),
+                tonalities.Songs.GetScore(songTonality).TonicScore,
+                tonalities.Songs.GetScore(songTonality).ScaleScore,
                 header,
-                songTonality.KnownTonality?.FromEm().ToIndex()),
+                tonalities.Songs.GetKnownTonality(songTonality)?.FromEm().ToIndex()),
 
-            Links = structures.LinksBySongId[request.ExternalId].Select(x => x.ToModel()).ToList(),
+            Links = structures.GetLinksBySong(song).Select(x => structures.ToStructureLink(x).ToModel()).ToList(),
 
-            Loops = structures.LinksBySongId[request.ExternalId]
-                .Select(x => x.Normalized)
+            Loops = structures.GetLinksBySong(song)
+                .Select(x => x.Loop)
                 .Distinct()
-                .Select(normalized =>
+                .Select(loop =>
                 {
-                    var stats = structures.Loops[normalized];
-                    var tone = tonalities.Loops[normalized];
+                    var stats = structures.GetLoop(loop);
+                    var tone = tonalities.Loops.Positions.GetPosition(loop);
 
                     return new Loop(
-                        normalized,
+                        stats.Normalized,
                         stats.Length,
                         stats.TotalOccurrences,
                         stats.TotalSuccessions,
                         stats.AverageCoverage,
                         stats.TotalSongs,
-                        tone.TonalityProbabilities.ToLinear(),
-                        tone.Score.ScaleScore,
-                        tone.Score.TonicScore
+                        tonalities.Loops.GetProbabilities(tone),
+                        tonalities.Loops.GetScore(tone).ScaleScore,
+                        tonalities.Loops.GetScore(tone).TonicScore
                     );
                 })
                 .ToList(),
