@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The reference for the TypeScript ports in src/lib: runs the real C# libraries on cases and writes what they return.
+    Not part of the solution. Runs like the original site: .NET 9 (OneShelf.Frontend.Web is net9.0), invariant
+    globalization (as the site's <InvariantGlobalization>true</InvariantGlobalization>).
+    Built and run in Docker by ../reference.ps1.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\HarmonyDB.Index\HarmonyDB.Index.Analysis\HarmonyDB.Index.Analysis.csproj" />
+    <ProjectReference Include="..\..\..\..\..\HarmonyDB.Common\HarmonyDB.Common.FullTextSearch\HarmonyDB.Common.FullTextSearch.csproj" />
+    <ProjectReference Include="..\..\..\..\..\OneShelf.Common\OneShelf.Common.Songs\OneShelf.Common.Songs.csproj" />
+    <ProjectReference Include="..\..\..\..\..\OneShelf.Frontend\OneShelf.Frontend.Api.Model\OneShelf.Frontend.Api.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\..\OneShelf.Frontend\OneShelf.Frontend.SpecificModel\OneShelf.Frontend.SpecificModel.csproj" />
+    <ProjectReference Include="..\..\..\..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\..\OneShelf.Collectives\OneShelf.Collectives.Api.Model\OneShelf.Collectives.Api.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\..\OneShelf.Authorization\OneShelf.Authorization.Api.Model\OneShelf.Authorization.Api.Model.csproj" />
+  </ItemGroup>
+
+</Project>

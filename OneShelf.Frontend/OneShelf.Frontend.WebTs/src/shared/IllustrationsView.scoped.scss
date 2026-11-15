@@ -1,0 +1,14 @@
+.img-box {
+
+    padding: 1em;
+
+    img {
+        max-width: 100%;
+        min-width: 100%;
+        cursor: pointer;
+    }
+
+    span {
+        display: none;
+    }
+}

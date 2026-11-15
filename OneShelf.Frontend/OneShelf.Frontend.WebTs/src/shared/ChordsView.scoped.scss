@@ -1,0 +1,59 @@
+span.transpose.transpose-highlighted {
+   // background-color: lightskyblue;
+}
+.likes-links {
+    .transposelabel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-right: 0;
+    }
+
+ 
+}
+
+.transpose-group {
+    .transpose {
+        width: 50px;
+        height: 38px;
+        line-height: 20px;
+        text-align: center;
+        border-color: #7c83ff;
+    }
+
+    .btn.btn-outline-secondary {
+        border-color: #7c83ff;
+        color: #333;
+    }
+
+    button:hover {
+        .btn.btn-secondary:hover {
+            background-color: #7c83ff;
+            border-color: #7c83ff;
+            box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.3);
+        }
+    }
+}
+
+.songsconstants {
+    .btn.btn-outline-secondary {
+        color: #333;
+        border-color: #7c83ff;
+        background-color: transparent;
+    }
+
+
+
+    .btn-check:checked + .btn-outline-secondary, .btn-outline-secondary:hover {
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3) !important;
+        background-color: #7c83ff;
+        border-color: #7c83ff;
+        color: #fff;
+        box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.search-note {
+    white-space: normal;
+    text-align: left;
+}

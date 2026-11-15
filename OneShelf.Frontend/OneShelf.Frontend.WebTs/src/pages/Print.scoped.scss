@@ -1,0 +1,49 @@
+td.error {
+    color: red;
+}
+
+a:link.success, a:visited.success, a.success {
+    color: green;
+}
+
+td {
+    padding: 2px;
+}
+
+td.gray {
+    color: gray;
+}
+
+td.success {
+    color: green;
+}
+
+tr.header {
+    font-weight: bold;
+}
+
+td.transpose {
+    text-align: right;
+}
+
+td.with-checkbox {
+    text-align: center;
+}
+
+td {
+    height: 42px;
+}
+
+td.empty {
+    background-color: lightblue;
+    text-align: center;
+    font-size: 80%;
+}
+
+td.opportunity-used {
+    background-color: lightgreen;
+}
+
+td.opportunity-unused {
+    background-color: lightcoral;
+}

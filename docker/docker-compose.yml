@@ -521,6 +521,32 @@ services:
     networks:
       - harmonydb
 
+  # The same site in TypeScript (OneShelf.Frontend.WebTs), beside the original, on the same services; served the same way.
+  frontend-web-ts:
+    build:
+      context: ..
+      dockerfile: docker/frontend-web-ts/Dockerfile
+      additional_contexts:
+        assets: frontend-web-ts
+    environment:
+      # as for frontend-web
+      BLAZOR_ENVIRONMENT: ${FRONTEND_ENVIRONMENT}
+      ALLOW_BAD_HASH: ${ALLOW_BAD_HASH:-false}
+      BAD_HASH: ${BAD_HASH:-}
+      LOCAL_IDENTITY_ID: ${LOCAL_IDENTITY_ID:-}
+      LOCAL_IDENTITY_FIRST_NAME: ${LOCAL_IDENTITY_FIRST_NAME:-}
+      LOCAL_IDENTITY_USERNAME: ${LOCAL_IDENTITY_USERNAME:-}
+    configs:
+      - source: frontend-web-ts-settings
+        target: /config/appsettings.json
+    ports:
+      - "${FRONTEND_WEB_TS_PORT}:80"
+    depends_on:
+      - frontend-api
+      - collectives-api
+    networks:
+      - harmonydb
+
 configs:
   frontend-web-settings:
     content: |
@@ -529,6 +555,17 @@ configs:
         "HideUnstable": false,
         "CollectivesApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/collectives-api/api/",
         "FrontendApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/frontend-api/api/",
+        "FrontendOptions:LocalSourceName": "Local",
+        "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}"
+      }
+
+  frontend-web-ts-settings:
+    content: |
+      {
+        "TelegramBotId": "${TELEGRAM_BOT_USERNAME}",
+        "HideUnstable": false,
+        "CollectivesApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_TS_PORT}/collectives-api/api/",
+        "FrontendApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_TS_PORT}/frontend-api/api/",
         "FrontendOptions:LocalSourceName": "Local",
         "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}"
       }

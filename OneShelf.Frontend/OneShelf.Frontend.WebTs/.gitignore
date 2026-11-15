@@ -1,0 +1,3 @@
+node_modules
+# the build's output; not public/dist, which is the theme's
+/dist

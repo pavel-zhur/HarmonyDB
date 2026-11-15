@@ -1,0 +1,30 @@
+div.chords-block {
+
+    .chord.no-click {
+        cursor: default;
+    }
+}
+
+.chord.chord-error, .chord-error {
+    background: #f9d1d7;
+}
+
+.chord.chord-yellow, .chord-yellow {
+    background: lightyellow;
+}
+
+.element {
+    white-space: nowrap;
+}
+
+.my-header-fixed {
+    position: fixed;
+    background: white;
+    margin: -20px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+ul {
+    user-select: text;
+}

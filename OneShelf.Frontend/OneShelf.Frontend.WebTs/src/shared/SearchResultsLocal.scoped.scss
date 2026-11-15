@@ -1,0 +1,70 @@
+table.songs {
+
+    thead {
+        font-weight: bolder;
+    }
+
+    td {
+        padding: 5px;
+        vertical-align: top;
+    }
+}
+
+.last-highlighted {
+
+        background-color: #ebf1fb !important;
+
+}
+
+span.source {
+    color: gray;
+}
+.search-result-section-content {
+    .btn.btn-likes.btn-likes-close {
+        border-radius: 40px !important;
+        box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        line-height: 32px;
+        justify-content: center;
+        margin-top: 1px;
+        max-width: 32px;
+
+        svg {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .btn.btn-likes.btn-likes-close:hover,
+    .btn.btn-likes.btn-likes-close:active,
+    .btn.btn-likes.btn-likes-close:focus {
+        box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.3);
+    }
+}
+.search-result-section-content .input-group {
+    .selectusers {
+        margin-right:0;
+    }
+    .btn-likes-close {
+        margin-left: 15px;
+    }
+}
+
+.my-dropdown-top {
+    max-width: 153px;
+    padding: 4px;
+    color: rgb(92,107,192);
+}
+
+.flyout-heart {
+    position: relative;
+
+    span {
+        position: absolute;
+        left: -23px;
+    }
+}

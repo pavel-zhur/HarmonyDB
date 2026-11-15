@@ -1,0 +1,39 @@
+# The frontend site and, on the same address, the two services it calls from the browser
+# (so that the browser does not make cross-origin requests; in Azure the services allow them themselves).
+# As docker/frontend-web/nginx.conf.template, and the site's files are served compressed.
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 50m;
+
+    location /frontend-api/ {
+        proxy_pass http://frontend-api/;
+        proxy_read_timeout 300s;
+    }
+
+    location /collectives-api/ {
+        proxy_pass http://collectives-api/;
+        proxy_read_timeout 300s;
+    }
+
+    # the navigation fallback of staticwebapp.config.json
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+        # the environment the application starts in
+        add_header Blazor-Environment "${BLAZOR_ENVIRONMENT}";
+
+        # the copies compressed at build time (see the Dockerfile); the files changed at start (configure.sh) have
+        # none and are compressed when sent
+        gzip_static on;
+        gzip on;
+        gzip_vary on;
+        gzip_comp_level 6;
+        gzip_types application/javascript application/json text/css;
+    }
+}

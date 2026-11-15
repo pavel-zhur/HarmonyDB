@@ -1,0 +1,20 @@
+img.pic {
+    width: 83px;
+    aspect-ratio: auto 83 / 70;
+    height: 70px;
+}
+
+div.pic {
+    padding: 1em 0.5em;
+    display: inline-flex;
+    flex-direction: column;
+
+    > span {
+        font-size: smaller;
+        margin-top: 0.5em;
+    }
+}
+
+div.pic.my-loading {
+    background-color: antiquewhite;
+}
