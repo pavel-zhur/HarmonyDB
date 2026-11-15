@@ -128,13 +128,13 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
         Replace(ChordTypeAdditions.Add4, ChordTypeAdditions.Add11);
         Replace(ChordTypeAdditions.Sharp4, ChordTypeAdditions.Sharp11);
 
-        if (type == ChordMainType.Minor && additions.HasFlag(ChordTypeAdditions.Flat5) && !additions.HasFlag(ChordTypeAdditions.Sharp5))
+        if (type == ChordMainType.Minor && additions.HasFlag(ChordTypeAdditions.Flat5))
         {
             type = ChordMainType.Dim;
             Take(ChordTypeAdditions.Flat5);
         }
 
-        if (type == ChordMainType.Major && additions.HasFlag(ChordTypeAdditions.Sharp5) && !additions.HasFlag(ChordTypeAdditions.Flat5))
+        if (type == ChordMainType.Major && additions.HasFlag(ChordTypeAdditions.Sharp5))
         {
             type = ChordMainType.Aug;
             Take(ChordTypeAdditions.Sharp5);
@@ -171,6 +171,9 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
                 _ => 13,
             };
 
+            Replace(ChordTypeAdditions.Add6, ChordTypeAdditions.Add13);
+            Replace(ChordTypeAdditions.Flat6, ChordTypeAdditions.Flat13);
+
             if (degree == 7 && Take(ChordTypeAdditions.Add9))
                 degree = 9;
 
@@ -188,6 +191,16 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
                 degree = 13;
                 additions |= ChordTypeAdditions.Add11;
             }
+
+            // The top degree of the extension, when altered, is not there: 9 with b9 is 7b9, 13 with b13 is 9b13.
+            if (degree == 13 && (additions & (ChordTypeAdditions.Flat13 | ChordTypeAdditions.Sharp13)) != 0)
+                degree = 9;
+
+            if (degree == 11 && (additions & (ChordTypeAdditions.Flat11 | ChordTypeAdditions.Sharp11)) != 0)
+                degree = 9;
+
+            if (degree == 9 && (additions & (ChordTypeAdditions.Flat9 | ChordTypeAdditions.Sharp9)) != 0)
+                degree = 7;
 
             if (degree >= 9)
                 Take(ChordTypeAdditions.Add9);
@@ -209,9 +222,6 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
                 (11, true) => ChordTypeExtension.XMaj11,
                 _ => ChordTypeExtension.XMaj13,
             };
-
-            Replace(ChordTypeAdditions.Add6, ChordTypeAdditions.Add13);
-            Replace(ChordTypeAdditions.Flat6, ChordTypeAdditions.Flat13);
         }
         else
         {
@@ -221,6 +231,10 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
             // The diminished triad with the sixth sounds as the diminished seventh chord.
             if (type == ChordMainType.Dim && Take(ChordTypeAdditions.Add6))
                 type = ChordMainType.Dim7;
+
+            // The sixth is the diminished seventh itself.
+            if (type == ChordMainType.Dim7)
+                Take(ChordTypeAdditions.Add6);
         }
 
         return new(type, extension, additions);
@@ -246,7 +260,8 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
             ChordMainType.Dim7 => "dim7",
             ChordMainType.Sus2 => extension + "sus2",
             ChordMainType.Sus4 => extension + "sus4",
-            ChordMainType.Power when Extension.HasValue => extension + "no3",
+            // "C5" names the fifth itself, so with the fifth altered the power chord is named by the missing third.
+            ChordMainType.Power when Extension.HasValue || (Additions & (ChordTypeAdditions.Flat5 | ChordTypeAdditions.Sharp5)) != 0 => extension + "no3",
             ChordMainType.Power => "5",
             _ => throw new ArgumentOutOfRangeException(),
         };

@@ -27,4 +27,11 @@ public class NoteParsingOptions
     /// When true, the solfège reading wins; a letter reading is tried only when the solfège one leaves an unreadable rest ("Fadd9").
     /// </summary>
     public bool Solfege { get; set; } = true;
+
+    public NoteParsingOptions WithHHandling(HHandling hHandling)
+    {
+        var result = (NoteParsingOptions)MemberwiseClone();
+        result.HHandling = hHandling;
+        return result;
+    }
 }

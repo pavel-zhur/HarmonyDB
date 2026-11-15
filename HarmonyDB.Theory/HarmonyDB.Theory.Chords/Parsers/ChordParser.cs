@@ -7,7 +7,7 @@ using OneShelf.Common;
 
 namespace HarmonyDB.Theory.Chords.Parsers;
 
-public static class ChordParser
+public static partial class ChordParser
 {
     public static ChordParseResult Parse(string stringRepresentation, ChordParsingOptions? options = null)
     {
@@ -539,8 +539,11 @@ public static class ChordParser
         if (pendingAdd)
             return Fail(ChordParseError.AddWithoutDegree, 6);
 
-        // A degree is written once; only the seventh may be written both plain and as major ("C7maj", "C7M7").
-        if (degrees.GroupBy(x => x.degree).Any(g => g.Count() > 1 && (g.Key != 7 || g.Count() > 2 || g.Count(x => x.kind == DegreeKind.Major) != 1)))
+        // A degree is written once the same way: altered differently it may repeat ("C7(b9,#9)"),
+        // and the seventh may be written both plain and as major ("C7maj", "C7M7").
+        if (degrees
+            .GroupBy(x => (x.degree, raised: x.alteration.HasValue ? IsRaising(new(x.alteration)) : (bool?)null))
+            .Any(g => g.Count() > 1 && (g.Key.degree != 7 || g.Count() > 2 || g.Count(x => x.kind == DegreeKind.Major) != 1)))
             return Fail(ChordParseError.DuplicateDegrees, 6);
 
         #endregion
