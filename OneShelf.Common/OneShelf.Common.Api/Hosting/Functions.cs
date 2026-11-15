@@ -105,7 +105,8 @@ internal class BindingFailureFilter : IActionFilter
 
     public void OnActionExecuting(ActionExecutingContext context)
     {
-        if (context.ModelState.IsValid) return;
+        // The values bound are not validated (see NoObjectModelValidator), so only the binding errors count.
+        if (context.ModelState.ErrorCount == 0) return;
 
         _logger.LogError("The request could not be bound: {errors}",
             string.Join("; ", context.ModelState.SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.Exception?.Message ?? e.ErrorMessage}"))));
