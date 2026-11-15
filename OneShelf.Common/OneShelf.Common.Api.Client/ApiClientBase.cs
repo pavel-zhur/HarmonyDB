@@ -200,6 +200,14 @@ public class ApiClientBase<TClient>
         return response;
     }
 
+    protected async Task<byte[]> GetBytes(string url, string? conditionalStreamId = null)
+    {
+        using var client = _httpClientFactory.CreateClient();
+        using var response = await client.GetAsync(new Uri(Options.GetEndpoint(conditionalStreamId), url));
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsByteArrayAsync();
+    }
+
     protected async Task Ping(string url, string? conditionalStreamId = null)
     {
         using var client = _httpClientFactory.CreateClient();
