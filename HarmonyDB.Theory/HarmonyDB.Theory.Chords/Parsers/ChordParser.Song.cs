@@ -98,11 +98,18 @@ public static partial class ChordParser
         if (bestFit < MinKeyFit * notesCount)
             return current;
 
-        var keys = fits.Where(x => x.fit >= bestFit - 1).Select(x => x.key).ToList();
-
-        // In each of these keys, all the chords with the bare B are out of the key (by their roots and basses), and all fit it with the other meaning of B.
         bool InKey(HashSet<byte> key, ChordRepresentation chord) => key.Contains(chord.Root.Value) && (!chord.Bass.HasValue || key.Contains(chord.Bass.Value.Value));
 
+        var keys = fits
+            .Where(x => x.fit >= bestFit - 1)
+            .Select(x => x.key)
+            .ToList();
+
+        // In at least one of these keys all the other chords stand on the degrees of the key: in a song that modulates or wanders, a B out of the key tells nothing.
+        if (!keys.Any(key => others.All(x => InKey(key, x))))
+            return current;
+
+        // In each of these keys, all the chords with the bare B are out of the key (by their roots and basses), and all fit it with the other meaning of B.
         return keys.All(key => affected.All(x => !InKey(key, x.current) && InKey(key, x.alternative))) ? alternative : current;
     }
 
