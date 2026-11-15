@@ -239,6 +239,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Api", "OneShelf.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Api", "OneShelf.Api\OneShelf.Api\OneShelf.Api.csproj", "{0893671A-F915-42FC-8CD1-F4AF06C88B8E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Common.Api.Functions", "OneShelf.Common\OneShelf.Common.Api.Functions\OneShelf.Common.Api.Functions.csproj", "{EE13AFD1-A017-4336-BA48-C88D8715EE18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -601,6 +603,10 @@ Global
 		{0893671A-F915-42FC-8CD1-F4AF06C88B8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0893671A-F915-42FC-8CD1-F4AF06C88B8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0893671A-F915-42FC-8CD1-F4AF06C88B8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE13AFD1-A017-4336-BA48-C88D8715EE18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE13AFD1-A017-4336-BA48-C88D8715EE18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE13AFD1-A017-4336-BA48-C88D8715EE18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE13AFD1-A017-4336-BA48-C88D8715EE18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -696,6 +702,7 @@ Global
 		{0BF14E2E-0843-437D-897E-748EA746D621} = {C19032B9-925A-405A-AABF-8AA4C1883CC9}
 		{B2E7F522-4102-411F-B987-A170ACF1DACB} = {EDC67D14-C978-46D5-A98B-743C1480C1A8}
 		{0893671A-F915-42FC-8CD1-F4AF06C88B8E} = {E13BF766-7FFA-432D-8598-5CFC38DB7336}
+		{EE13AFD1-A017-4336-BA48-C88D8715EE18} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}
