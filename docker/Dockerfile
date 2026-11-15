@@ -3,6 +3,7 @@
 # Build context: the repository root.
 #   --target functions --build-arg PROJECT=<project name>   an Azure Functions app
 #   --target app       --build-arg PROJECT=<project name>   an ASP.NET or worker app
+#   --target transfer                                       the tool that fills PostgreSQL from SQL Server
 #
 # All of them are published in one stage, as .github/workflows/microservices.yml publishes them one after another;
 # every image then takes its own project out of that stage.
@@ -30,6 +31,17 @@ RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
         ; do \
         dotnet publish "$project" --configuration Release --output "/publish/$(basename "$project")"; \
     done
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS transfer-build
+WORKDIR /src
+COPY . .
+RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
+    dotnet publish OneShelf.Common/OneShelf.Common.Database.Transfer.Tool --configuration Release --output /publish
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS transfer
+WORKDIR /app
+COPY --from=transfer-build /publish .
+ENTRYPOINT ["dotnet", "OneShelf.Common.Database.Transfer.Tool.dll"]
 
 FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated8.0 AS functions
 ARG PROJECT

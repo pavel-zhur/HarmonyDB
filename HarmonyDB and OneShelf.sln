@@ -225,6 +225,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDog.Database.Po
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.OneDragon.Database.PostgreSqlMigrations", "OneShelf.OneDragon\OneShelf.OneDragon.Database.PostgreSqlMigrations\OneShelf.OneDragon.Database.PostgreSqlMigrations.csproj", "{AED27901-353D-4299-9737-4CB8302ED569}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Common.Database.Transfer", "OneShelf.Common\OneShelf.Common.Database.Transfer\OneShelf.Common.Database.Transfer.csproj", "{400EF405-7513-4350-9008-D82D6D73593E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Common.Database.Transfer.Tool", "OneShelf.Common\OneShelf.Common.Database.Transfer.Tool\OneShelf.Common.Database.Transfer.Tool.csproj", "{F918A315-456C-44AD-BF2D-0B96F12BA8A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -563,6 +567,14 @@ Global
 		{AED27901-353D-4299-9737-4CB8302ED569}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AED27901-353D-4299-9737-4CB8302ED569}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AED27901-353D-4299-9737-4CB8302ED569}.Release|Any CPU.Build.0 = Release|Any CPU
+		{400EF405-7513-4350-9008-D82D6D73593E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{400EF405-7513-4350-9008-D82D6D73593E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{400EF405-7513-4350-9008-D82D6D73593E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{400EF405-7513-4350-9008-D82D6D73593E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F918A315-456C-44AD-BF2D-0B96F12BA8A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F918A315-456C-44AD-BF2D-0B96F12BA8A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F918A315-456C-44AD-BF2D-0B96F12BA8A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F918A315-456C-44AD-BF2D-0B96F12BA8A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -652,6 +664,8 @@ Global
 		{490629E3-F72F-4E51-AFE5-BECD6DC7D160} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
 		{5F0F2F97-70A2-4910-BC02-1A3162563878} = {375D266D-823B-4D3C-A6BC-9A06A0D4E670}
 		{AED27901-353D-4299-9737-4CB8302ED569} = {950D96F8-860E-4EE6-A8EC-8ECCC6BE480F}
+		{400EF405-7513-4350-9008-D82D6D73593E} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
+		{F918A315-456C-44AD-BF2D-0B96F12BA8A9} = {2AD8DB5A-A1C3-4116-B8C5-D8DA505B1CC5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}
