@@ -173,3 +173,81 @@ split off into an application of its own again, and the clients and the frontend
 - An update or a rebuild being processed, or waiting in the queue, when the application stops is lost; the storage
   queue kept it. A billing usage that fails to be written is not tried again.
 - The warm-up timers are gone. A schedule that was due while the application was down is not run when it starts.
+
+## Stage four: the Index's caches compact in memory
+
+**What there was.** The Index keeps what it searches in memory, read from files built on a workstation and copied to
+the server: the songs' headers, their chord progressions, the loops found in them (the structures) and the tonalities
+of the songs and the loops; the full-text search over the headers is built from the headers. Each was a graph of .NET
+objects: a dictionary keyed by the song's external id in every cache, so the same id string was kept four times; an
+object for every header, for every song's progression and every sequence in it, for every one of the 7.3 million
+links between the songs and the loops (each with two strings), two lookups over all the links, an object with a
+two-dimensional array for every tonality. A file was first read whole (its decompressed bytes, or for the
+progressions the whole JSON into a dictionary of byte arrays) and only then turned into the objects, so loading took
+about twice the memory of the result. With all the caches loaded the API process held about 4.0 GB, and up to
+6.2 GB while answering.
+
+**What there is.**
+
+- The same data, fully in memory, in arrays of small structs; the files and what is written to them are the same.
+- `IndexIds` (in `HarmonyDB.Index.Analysis`, one instance for all the caches) keeps every song's external id and every
+  loop's normalized progression once (`IdTable`) and gives each a number. The caches refer to songs and loops by
+  these numbers; each cache knows the position of each of its songs or loops by number (`IdPositions`), so the
+  caches meet by array lookups, not by strings.
+- Headers (`IndexHeaders`): each distinct source, title, artist and tonality is kept once, as in the file; a header
+  is a small struct of their indices. An `IndexHeader` is made when one is asked for.
+- Full-text search (`FullTextSearch`): each word once, and the positions of the headers of each word in one array, in
+  the order the lookup had them.
+- Progressions (`CompactChordsProgressions`): a struct per sequence in one array; the movements of all the
+  sequences (3 bytes each) in blocks of a million, each sequence a slice of a block, so the memory grows by blocks
+  while the file is read and nothing is copied. `ProgressionsSearch` searches them by position through the same
+  search as before, made generic over how a progression gives its sequences.
+- Structures (`Structures`): the links as one array of 24-byte structs, with the numbers of their loop and song;
+  the links of each loop and of each song as arrays of link indices, in the links' order; the statistics of the
+  loops and of the songs computed while reading, as the LINQ of before computed them (sums and averages of the
+  floats in doubles, in the links' order).
+- Tonalities (`Tonalities`): the scores and the probabilities of the loops and of the songs in float arrays.
+- Loading: each file is read as a stream, decompressed and buffered, straight into the final arrays; the
+  progressions' JSON is read a part at a time.
+- Rebuilding: the structures are rebuilt from the compact progressions, the tonalities from the compact headers and
+  structures; the rebuild of the tonalities builds the EM model's objects as before, for the time of the rebuild
+  only.
+
+Measured on the production files, as the resident memory of the API process of the stack on PostgreSQL (all its
+modules; 0.12 GB at start), the caches loaded one after another:
+
+| | before | after |
+|---|---|---|
+| headers | +0.49 GB, 2.5 s | +0.24 GB, 1.6 s |
+| progressions | +0.88 GB, 7.0 s | +0.39 GB, 2.3 s |
+| structures | +1.58 GB (+1.64 GB at the highest), 14.7 s | +0.32 GB, 2.8 s |
+| tonalities | +0.71 GB, 2.9 s | +0.14 GB, 1.9 s |
+| full-text search | +0.20 GB, 7.9 s | +0.07 GB, 3.2 s |
+| all loaded | 3.99 GB | 1.27 GB |
+| after 120 requests, twice | 3.88 GB | 2.05 GB |
+| the highest while answering them | 6.20 GB | 2.90 GB |
+
+The requests got faster: the songs by chords 6.6 s on average before, 2.8 s after; the tonalities of songs 9.3 s and
+6.3 s; the loops 0.42 s and 0.28 s; a loop 0.69 s and 0.39 s; the songs by title 0.95 s and 0.63 s, though two
+searches with many results became slower, 0.2 s and 0.33 s, since their headers are made when asked for.
+
+The answers of 120 requests covering every function that reads the caches are byte for byte the same as before,
+apart from what was random before too (the order of the examples with equal ratings in a loop's statistics, and the
+random orderings).
+
+The rebuilds, run on copies of the production files with the code of before and of after, give the same: the
+structures the same links (in another order, as each rebuild does: it runs in parallel), the tonalities a byte for
+byte identical file. The full rebuild of the tonalities took the same time (5.5 minutes) and at the highest 3.3 GB
+instead of 5.0 GB.
+
+**Why.** The data itself is small: most of the memory went to the objects' headers and references, to the same
+strings kept again in every cache, and to loading through whole intermediate copies. A server of 8 GB for the whole
+stack must load the Index without running out of memory.
+
+**What behaves differently.**
+
+- A cache file that is missing is no longer logged as an error; the cache is empty, as it was.
+- `HarmonyDB.Index.Analysis`: `Structures` gives its links, loops and songs through methods by number instead of
+  lists, dictionaries and lookups by string, and no longer has `Reduce`; `EmModel.Deserialize` and
+  `CompactChordsProgression.Deserialize` are gone (the caches read the files into the compact forms);
+  `ProgressionsSearch` searches compact progressions by position instead of any `ISearchableChordsProgression`.
