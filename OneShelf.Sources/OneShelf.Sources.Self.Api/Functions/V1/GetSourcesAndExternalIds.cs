@@ -1,4 +1,4 @@
-using HarmonyDB.Source.Api.Model;
+﻿using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +19,7 @@ public class GetSourcesAndExternalIds : AuthorizationFunctionBase<GetSourcesAndE
     private readonly SelfApiOptions _options;
 
     public GetSourcesAndExternalIds(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, IOptions<SelfApiOptions> options, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext) 
-        : base(loggerFactory, authorizationApiClient, securityContext)
+        : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode: true)
     {
         _metadataBuilder = metadataBuilder;
         _options = options.Value;

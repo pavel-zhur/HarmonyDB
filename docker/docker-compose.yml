@@ -82,6 +82,8 @@ services:
       SourcesSelf__CollectivesApiClientOptions__MasterCode: *functions-key
       SourcesSelf__AuthorizationApiClientOptions__CheckIdentityEndpoint: *check-identity
       SourcesSelf__AuthorizationApiClientOptions__PingEndpoint: *authorization-ping
+      # the Index asks this source as the service when it shows a public link
+      SourcesSelf__AuthorizationApiClientOptions__ServiceCode: ${SERVICE_CODE}
 
       # ---------- Index ----------
       # Its downstream sources are a list ordered by their numbers; this file gives it the collectives as number 9,

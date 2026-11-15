@@ -17,7 +17,13 @@ using SecurityContext = OneShelf.Common.Api.WithAuthorization.SecurityContext;
 
 namespace HarmonyDB.Index.Api.Functions.VPublic;
 
-public class GetPublic : AnonymousFunctionBase<GetPublicRequest, GetPublicResponse>
+/// <summary>
+/// The chords at a public link, for anyone. The Index asks the sources for them as the service: a visitor has no
+/// identity to ask with. What a visitor gets is decided here: the chords of a source that marks them public, by the
+/// exact address of their latest version (the address is what gives the access, whatever the visibility); an
+/// address of an earlier version leads to the latest one, unless the chords have become private.
+/// </summary>
+public class GetPublic : ServiceFunctionBase<GetPublicRequest, GetPublicResponse>
 {
     private readonly CommonExecutions _commonExecutions;
     private readonly CollectivesApiClient _collectivesApiClient;

@@ -1,4 +1,4 @@
-using HarmonyDB.Source.Api.Model;
+﻿using HarmonyDB.Source.Api.Model;
 using HarmonyDB.Source.Api.Model.V1.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,7 @@ namespace OneShelf.Sources.Self.Api.Functions.V1
         private readonly StructureParser _structureParser;
 
         public GetSong(ILoggerFactory loggerFactory, MetadataBuilder metadataBuilder, CollectivesApiClient collectivesApiClient, StructureParser structureParser, AuthorizationApiClient authorizationApiClient, SecurityContext securityContext)
-            : base(loggerFactory, authorizationApiClient, securityContext)
+            : base(loggerFactory, authorizationApiClient, securityContext, respectServiceCode: true)
         {
             _metadataBuilder = metadataBuilder;
             _collectivesApiClient = collectivesApiClient;
