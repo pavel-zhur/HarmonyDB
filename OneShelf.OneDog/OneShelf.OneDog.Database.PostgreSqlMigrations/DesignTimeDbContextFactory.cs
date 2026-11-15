@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.DependencyInjection;
+using OneShelf.Common.Database;
 
 namespace OneShelf.OneDog.Database.PostgreSqlMigrations;
 
@@ -12,7 +13,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DogDatabas
     public DogDatabase CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<DogDatabase>()
-            .UseNpgsql(o => o.MigrationsAssembly(DogDatabase.PostgreSqlMigrationsAssembly))
+            .UseDatabase(DatabaseProvider.PostgreSql, null, DogDatabase.PostgreSqlMigrationsAssembly)
             .Options;
 
         return ActivatorUtilities.CreateInstance<DogDatabase>(new ServiceCollection().BuildServiceProvider(), options);

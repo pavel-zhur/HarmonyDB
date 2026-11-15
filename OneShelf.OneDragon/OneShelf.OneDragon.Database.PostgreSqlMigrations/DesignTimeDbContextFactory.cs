@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.DependencyInjection;
+using OneShelf.Common.Database;
 
 namespace OneShelf.OneDragon.Database.PostgreSqlMigrations;
 
@@ -12,7 +13,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DragonData
     public DragonDatabase CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<DragonDatabase>()
-            .UseNpgsql(o => o.MigrationsAssembly(DragonDatabase.PostgreSqlMigrationsAssembly))
+            .UseDatabase(DatabaseProvider.PostgreSql, null, DragonDatabase.PostgreSqlMigrationsAssembly)
             .Options;
 
         return ActivatorUtilities.CreateInstance<DragonDatabase>(new ServiceCollection().BuildServiceProvider(), options);

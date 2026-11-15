@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 
 namespace OneShelf.Common.Database;
@@ -34,10 +35,12 @@ public static class DbContextOptionsBuilderExtensions
         {
             DatabaseProvider.SqlServer => options.UseSqlServer(connectionString,
                 o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)),
-            DatabaseProvider.PostgreSql => options.UseNpgsql(connectionString,
-                o => o
-                    .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
-                    .MigrationsAssembly(postgreSqlMigrationsAssembly)),
+            DatabaseProvider.PostgreSql => options
+                .UseNpgsql(connectionString,
+                    o => o
+                        .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                        .MigrationsAssembly(postgreSqlMigrationsAssembly))
+                .ReplaceService<IHistoryRepository, SearchPathHistoryRepository>(),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null),
         };
 }

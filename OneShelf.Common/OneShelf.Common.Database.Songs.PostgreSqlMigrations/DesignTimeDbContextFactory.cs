@@ -13,7 +13,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<SongsDatab
     public SongsDatabase CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<SongsDatabase>()
-            .UseNpgsql(o => o.MigrationsAssembly(SongsDatabase.PostgreSqlMigrationsAssembly))
+            .UseDatabase(DatabaseProvider.PostgreSql, null, SongsDatabase.PostgreSqlMigrationsAssembly)
             .Options;
 
         var services = new ServiceCollection()
