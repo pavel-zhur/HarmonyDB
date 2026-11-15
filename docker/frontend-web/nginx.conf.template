@@ -1,4 +1,4 @@
-# The frontend site and, on the same address, the two services it calls from the browser
+# The frontend site and, on the same address, the two modules of the API it calls from the browser
 # (so that the browser does not make cross-origin requests; in Azure the services allow them themselves).
 
 server {
@@ -11,12 +11,12 @@ server {
     client_max_body_size 50m;
 
     location /frontend-api/ {
-        proxy_pass http://frontend-api/;
+        proxy_pass http://api/frontend/;
         proxy_read_timeout 300s;
     }
 
     location /collectives-api/ {
-        proxy_pass http://collectives-api/;
+        proxy_pass http://api/collectives/;
         proxy_read_timeout 300s;
     }
 
