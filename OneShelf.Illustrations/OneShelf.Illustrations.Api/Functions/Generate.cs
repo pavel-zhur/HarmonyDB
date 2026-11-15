@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Database;
 using OneShelf.Illustrations.Database.Models;
+using OneShelf.Illustrations.Database.Services;
 using System.Drawing;
 using System.Text.Json;
 using Grpc.Net.Client.Configuration;
@@ -22,17 +23,17 @@ namespace OneShelf.Illustrations.Api.Functions
 {
     public class Generate : FunctionBase<GenerateRequest, AllResponse?>
     {
-        private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+        private readonly IllustrationsDatabase _illustrationsDatabase;
         private readonly IndexApiClient _indexApiClient;
         private readonly DialogRunner _dialogRunner;
         private readonly HttpClient _httpClient;
         private readonly ImagesProcessor _imagesProcessor;
         private readonly AllReader _allReader;
 
-        public Generate(ILoggerFactory loggerFactory, IllustrationsCosmosDatabase illustrationsCosmosDatabase, DialogRunner dialogRunner, HttpClient httpClient, ImagesProcessor imagesProcessor, AllReader allReader, IndexApiClient indexApiClient)
+        public Generate(ILoggerFactory loggerFactory, IllustrationsDatabase illustrationsDatabase, DialogRunner dialogRunner, HttpClient httpClient, ImagesProcessor imagesProcessor, AllReader allReader, IndexApiClient indexApiClient)
            : base(loggerFactory)
         {
-            _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
+            _illustrationsDatabase = illustrationsDatabase;
             _dialogRunner = dialogRunner;
             _httpClient = httpClient;
             _imagesProcessor = imagesProcessor;
@@ -55,7 +56,7 @@ namespace OneShelf.Illustrations.Api.Functions
                 throw new($"The {nameof(generateRequest.SpecialSystemMessage)} is required when the {nameof(generateRequest.AlterationKey)} is set.");
 
             var url = generateRequest.Url;
-            var allIllustrationsPrompts = await _illustrationsCosmosDatabase.GetPrompts(url);
+            var allIllustrationsPrompts = await _illustrationsDatabase.GetPrompts(url);
             var illustrationsPrompts = allIllustrationsPrompts.FirstOrDefault(x => x.SpecialSystemMessage == generateRequest.SpecialSystemMessage
                 && x.CustomSystemMessage == generateRequest.CustomSystemMessage
                 && x.AlterationKey == generateRequest.AlterationKey);
@@ -92,7 +93,7 @@ namespace OneShelf.Illustrations.Api.Functions
                     AlterationKey = generateRequest.AlterationKey,
                 };
 
-                await _illustrationsCosmosDatabase.AddPrompts(illustrationsPrompts);
+                await _illustrationsDatabase.AddPrompts(illustrationsPrompts);
                 allIllustrationsPrompts.Add(illustrationsPrompts);
             }
 
@@ -118,7 +119,7 @@ namespace OneShelf.Illustrations.Api.Functions
                     {
                         var bytes = await _httpClient.GetByteArrayAsync(remoteUrl);
                         bytes = _imagesProcessor.ConvertToJpeg(bytes);
-                        await _illustrationsCosmosDatabase.AddIllustration(new()
+                        await _illustrationsDatabase.AddIllustration(new()
                         {
                             Id = Guid.NewGuid(),
                             CreatedOn = DateTime.Now,

@@ -20,8 +20,8 @@ using OneShelf.Frontend.Api.AuthorizationQuickCheck;
 using OneShelf.Frontend.Api.Model;
 using OneShelf.Frontend.Api.Model.V3.Api;
 using OneShelf.Frontend.Api.Services;
-using OneShelf.Frontend.Database.Cosmos;
-using OneShelf.Frontend.Database.Cosmos.Models;
+using OneShelf.Frontend.Database;
+using OneShelf.Frontend.Database.Models;
 using OneShelf.Pdfs.Api.Client;
 using OneShelf.Pdfs.Generation.Inspiration.Models;
 using OneShelf.Pdfs.Generation.Inspiration.Services;
@@ -39,13 +39,13 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
     private readonly VolumesGeneration _volumesGeneration;
     private readonly InspirationGeneration _inspirationGeneration;
     private readonly PdfsApiClient _pdfsApiClient;
-    private readonly FrontendCosmosDatabase _frontendCosmosDatabase;
+    private readonly FrontendDatabase _frontendDatabase;
     private readonly AuthorizationQuickChecker _authorizationQuickChecker;
     private readonly SourceApiClient _sourceApiClient;
 
     public const string Version = "1";
 
-    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient, SecurityContext securityContext)
+    public GetPdfs(ILoggerFactory loggerFactory, SongsDatabase songsDatabase, CollectionReaderV3 collectionReaderV3, AuthorizationApiClient authorizationApiClient, VolumesGeneration volumesGeneration, InspirationGeneration inspirationGeneration, PdfsApiClient pdfsApiClient, FrontendDatabase frontendDatabase, AuthorizationQuickChecker authorizationQuickChecker, SourceApiClient sourceApiClient, SecurityContext securityContext)
         : base(loggerFactory, authorizationApiClient, securityContext)
     {
         _songsDatabase = songsDatabase;
@@ -53,7 +53,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         _volumesGeneration = volumesGeneration;
         _inspirationGeneration = inspirationGeneration;
         _pdfsApiClient = pdfsApiClient;
-        _frontendCosmosDatabase = frontendCosmosDatabase;
+        _frontendDatabase = frontendDatabase;
         _authorizationQuickChecker = authorizationQuickChecker;
         _sourceApiClient = sourceApiClient;
     }
@@ -159,8 +159,8 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
         var requests = files.ToDictionary(x => x.ExternalId);
 
         var externalIdsAndConfigurations = files.Select(x => Pdf.GetId((x.ExternalId, configurations[x.ExternalId], Version))).ToList();
-        var pdfs = !includeData ? null : await _frontendCosmosDatabase.GetPdfs(externalIdsAndConfigurations);
-        var pageCounts = includeData ? null : await _frontendCosmosDatabase.GetPageCounts(externalIdsAndConfigurations);
+        var pdfs = !includeData ? null : await _frontendDatabase.GetPdfs(externalIdsAndConfigurations);
+        var pageCounts = includeData ? null : await _frontendDatabase.GetPageCounts(externalIdsAndConfigurations);
 
         var result = new Dictionary<string, GetPdfsChunkResponseFile>();
 
@@ -231,7 +231,7 @@ public class GetPdfs : AuthorizationFunctionBase<GetPdfsRequest, GetPdfsResponse
             };
         }
 
-        await _frontendCosmosDatabase.AddOrUpdatePdfs(tasks.Select(x => new Pdf
+        await _frontendDatabase.AddOrUpdatePdfs(tasks.Select(x => new Pdf
         {
             Id = Pdf.GetId((x.Key, configurations[x.Key], Version)),
             ExternalId = x.Key,

@@ -9,19 +9,19 @@ namespace OneShelf.Illustrations.Api.Functions;
 
 public class GetImagePublic
 {
-    private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+    private readonly IllustrationsDatabase _illustrationsDatabase;
     private readonly ILogger<GetImagePublic> _logger;
 
-    public GetImagePublic(ILoggerFactory loggerFactory, IllustrationsCosmosDatabase illustrationsCosmosDatabase)
+    public GetImagePublic(ILoggerFactory loggerFactory, IllustrationsDatabase illustrationsDatabase)
     {
         _logger = loggerFactory.CreateLogger<GetImagePublic>();
-        _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
+        _illustrationsDatabase = illustrationsDatabase;
     }
 
     [Function(IllustrationsApiUrls.GetImagePublic)]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req, Guid id)
     {
-        var illustration = await _illustrationsCosmosDatabase.GetIllustration(id);
+        var illustration = await _illustrationsDatabase.GetIllustration(id);
         if (illustration == null)
         {
             return req.CreateResponse(HttpStatusCode.NotFound);

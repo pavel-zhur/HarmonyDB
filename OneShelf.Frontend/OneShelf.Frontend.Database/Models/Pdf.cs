@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace OneShelf.Frontend.Database.Cosmos.Models;
+namespace OneShelf.Frontend.Database.Models;
 
 public class Pdf : IValidatableObject
 {

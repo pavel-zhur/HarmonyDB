@@ -12,5 +12,10 @@ public static class IllustrationsApiUrls
     public const string GetImagePublic = nameof(GetImagePublic);
     public const string GetNonEmptyUrls = nameof(GetNonEmptyUrls);
 
+    /// <summary>
+    /// The copies of the illustrations, open to anyone: {Images}/{illustration id}/{size}.
+    /// </summary>
+    public const string Images = "images";
+
     public const string PublishCustomSystemMessagedPrompts = nameof(PublishCustomSystemMessagedPrompts);
 }

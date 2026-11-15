@@ -10,7 +10,7 @@ using OneShelf.Common.Database.Songs;
 using OneShelf.Frontend.Api.AuthorizationQuickCheck;
 using OneShelf.Frontend.Api.Model;
 using OneShelf.Frontend.Api.Services;
-using OneShelf.Frontend.Database.Cosmos;
+using OneShelf.Frontend.Database;
 using OneShelf.Illustrations.Api.Client;
 using OneShelf.Pdfs.Api.Client;
 using OneShelf.Pdfs.Generation.Inspiration;
@@ -32,7 +32,7 @@ var host = new HostBuilder()
         .AddPdfsGenerationVolumes()
         .AddPdfsApiClient(context.Configuration)
         .AddIllustrationsApiClient(context.Configuration)
-        .AddFrontendCosmosDatabase(context.Configuration)
+        .AddFrontendDatabase(context.Configuration)
         .AddSelfApiClient(context.Configuration)
         .AddSecurityContext())
     .Build();

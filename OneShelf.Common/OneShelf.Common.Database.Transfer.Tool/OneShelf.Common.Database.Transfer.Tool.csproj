@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Copies the songs, dog and dragon databases from SQL Server to PostgreSQL; run by hand. See TransferTool. -->
+  <!-- Fills PostgreSQL: the songs, dog and dragon databases from SQL Server, the collectives and illustrations from
+       an export of Cosmos DB, the frontend's database made empty; run by hand. See TransferTool and CosmosExport. -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -15,6 +16,9 @@
 	  <ProjectReference Include="..\OneShelf.Common.Database.Songs.PostgreSqlMigrations\OneShelf.Common.Database.Songs.PostgreSqlMigrations.csproj" />
 	  <ProjectReference Include="..\..\OneShelf.OneDog\OneShelf.OneDog.Database.PostgreSqlMigrations\OneShelf.OneDog.Database.PostgreSqlMigrations.csproj" />
 	  <ProjectReference Include="..\..\OneShelf.OneDragon\OneShelf.OneDragon.Database.PostgreSqlMigrations\OneShelf.OneDragon.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Collectives\OneShelf.Collectives.Database.PostgreSqlMigrations\OneShelf.Collectives.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Database.PostgreSqlMigrations\OneShelf.Illustrations.Database.PostgreSqlMigrations.csproj" />
+	  <ProjectReference Include="..\..\OneShelf.Frontend\OneShelf.Frontend.Database.PostgreSqlMigrations\OneShelf.Frontend.Database.PostgreSqlMigrations.csproj" />
 	</ItemGroup>
 
 </Project>

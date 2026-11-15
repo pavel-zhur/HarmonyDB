@@ -11,12 +11,12 @@ namespace OneShelf.Illustrations.Api.Functions;
 
 public class GetNonEmptyUrls : FunctionBase<GetNonEmptyUrlsRequest, GetNonEmptyUrlsResponse>
 {
-    private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+    private readonly IllustrationsDatabase _illustrationsDatabase;
 
-    public GetNonEmptyUrls(ILoggerFactory loggerFactory, IllustrationsCosmosDatabase illustrationsCosmosDatabase)
+    public GetNonEmptyUrls(ILoggerFactory loggerFactory, IllustrationsDatabase illustrationsDatabase)
         : base(loggerFactory)
     {
-        _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
+        _illustrationsDatabase = illustrationsDatabase;
     }
 
     [Function(IllustrationsApiUrls.GetNonEmptyUrls)]
@@ -26,7 +26,7 @@ public class GetNonEmptyUrls : FunctionBase<GetNonEmptyUrlsRequest, GetNonEmptyU
     {
         return new()
         {
-            Urls = await _illustrationsCosmosDatabase.GetNonEmptyUrls(),
+            Urls = await _illustrationsDatabase.GetNonEmptyUrls(),
         };
     }
 }

@@ -19,15 +19,15 @@ namespace OneShelf.Collectives.Api.Functions.VInternal;
 
 public class ListAll : FunctionBase<ListAllRequest, ListAllResponse>
 {
-    private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
+    private readonly CollectivesDatabase _collectivesDatabase;
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
     public ListAll(ILoggerFactory loggerFactory,
-        CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager)
+        CollectivesDatabase collectivesDatabase, SongsOperations songsOperations, UrlsManager urlsManager)
         : base(loggerFactory)
     {
-        _collectivesCosmosDatabase = collectivesCosmosDatabase;
+        _collectivesDatabase = collectivesDatabase;
         _songsOperations = songsOperations;
         _urlsManager = urlsManager;
     }
@@ -37,7 +37,7 @@ public class ListAll : FunctionBase<ListAllRequest, ListAllResponse>
 
     protected override async Task<ListAllResponse> Execute(ListAllRequest request)
     {
-        var collectives = await _collectivesCosmosDatabase.GetCollectives();
+        var collectives = await _collectivesDatabase.GetCollectives();
 
         return new()
         {

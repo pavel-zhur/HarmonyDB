@@ -14,20 +14,20 @@ using OneShelf.Common.Compression;
 using OneShelf.Frontend.Api.AuthorizationQuickCheck;
 using OneShelf.Frontend.Api.Model.V3.Api;
 using OneShelf.Frontend.Api.Tools;
-using OneShelf.Frontend.Database.Cosmos;
-using OneShelf.Frontend.Database.Cosmos.Models;
+using OneShelf.Frontend.Database;
+using OneShelf.Frontend.Database.Models;
 
 namespace OneShelf.Frontend.Api.Functions.V3;
 
 public class PreviewPdf : FunctionBase<PreviewPdfRequest>
 {
-    private readonly FrontendCosmosDatabase _frontendCosmosDatabase;
+    private readonly FrontendDatabase _frontendDatabase;
     private readonly AuthorizationQuickChecker _authorizationQuickChecker;
 
-    public PreviewPdf(ILoggerFactory loggerFactory, FrontendCosmosDatabase frontendCosmosDatabase, AuthorizationQuickChecker authorizationQuickChecker)
+    public PreviewPdf(ILoggerFactory loggerFactory, FrontendDatabase frontendDatabase, AuthorizationQuickChecker authorizationQuickChecker)
         : base(loggerFactory)
     {
-        _frontendCosmosDatabase = frontendCosmosDatabase;
+        _frontendDatabase = frontendDatabase;
         _authorizationQuickChecker = authorizationQuickChecker;
     }
 
@@ -46,7 +46,7 @@ public class PreviewPdf : FunctionBase<PreviewPdfRequest>
 
         if (!isSuccess) return new UnauthorizedObjectResult("BadHash");
 
-        return new FileContentResult(await CompressionTools.DecompressToBytes((await _frontendCosmosDatabase.GetPdfs(
+        return new FileContentResult(await CompressionTools.DecompressToBytes((await _frontendDatabase.GetPdfs(
             new()
             {
                 Pdf.GetId((request.File.ExternalId, request.File.ToPdfConfiguration(), GetPdfs.Version))

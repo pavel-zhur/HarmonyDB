@@ -4,7 +4,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using OneShelf.Common.Api;
-using OneShelf.Common.Cosmos;
 using OneShelf.Illustrations.Api.Constants;
 using OneShelf.Illustrations.Api.Model;
 using OneShelf.Illustrations.Api.Services;
@@ -14,12 +13,12 @@ namespace OneShelf.Illustrations.Api.Functions;
 
 public class PublishCustomSystemMessagedPrompts : FunctionBase<PublishCustomSystemMessagedPromptsRequest, PublishCustomSystemMessagedPromptsResponse>
 {
-    private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+    private readonly IllustrationsDatabase _illustrationsDatabase;
 
-    public PublishCustomSystemMessagedPrompts(ILoggerFactory loggerFactory, IllustrationsCosmosDatabase illustrationsCosmosDatabase)
+    public PublishCustomSystemMessagedPrompts(ILoggerFactory loggerFactory, IllustrationsDatabase illustrationsDatabase)
         : base(loggerFactory)
     {
-        _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
+        _illustrationsDatabase = illustrationsDatabase;
     }
 
     [Function(IllustrationsApiUrls.PublishCustomSystemMessagedPrompts)]
@@ -36,7 +35,7 @@ public class PublishCustomSystemMessagedPrompts : FunctionBase<PublishCustomSyst
 
         try
         {
-            await _illustrationsCosmosDatabase.PublishCustomSystemMessage(request.IllustrationId,
+            await _illustrationsDatabase.PublishCustomSystemMessage(request.IllustrationId,
                 request.SpecialSystemMessage, request.AlterationKey);
         }
         catch (SupportedException e)

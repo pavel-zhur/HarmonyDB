@@ -20,14 +20,14 @@ namespace OneShelf.Collectives.Api.Functions.V2
 {
     public class Insert : AuthorizationFunctionBase<InsertRequest, InsertResponse>
     {
-        private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
+        private readonly CollectivesDatabase _collectivesDatabase;
         private readonly SongsOperations _songsOperations;
         private readonly UrlsManager _urlsManager;
 
-        public Insert(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+        public Insert(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesDatabase collectivesDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
             : base(loggerFactory, authorizationApiClient, securityContext)
         {
-            _collectivesCosmosDatabase = collectivesCosmosDatabase;
+            _collectivesDatabase = collectivesDatabase;
             _songsOperations = songsOperations;
             _urlsManager = urlsManager;
         }
@@ -126,7 +126,7 @@ namespace OneShelf.Collectives.Api.Functions.V2
                 });
             }
 
-            await _collectivesCosmosDatabase.UpsertCollective(collective);
+            await _collectivesDatabase.UpsertCollective(collective);
             await _songsOperations.SongsDatabase.SaveChangesAsyncX();
 
             return new()

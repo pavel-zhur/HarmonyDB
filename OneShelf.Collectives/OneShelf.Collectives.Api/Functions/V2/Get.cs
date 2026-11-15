@@ -16,14 +16,14 @@ namespace OneShelf.Collectives.Api.Functions.V2;
 
 public class Get : AuthorizationFunctionBase<GetRequest, GetResponse>
 {
-    private readonly CollectivesCosmosDatabase _collectivesCosmosDatabase;
+    private readonly CollectivesDatabase _collectivesDatabase;
     private readonly SongsOperations _songsOperations;
     private readonly UrlsManager _urlsManager;
 
-    public Get(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesCosmosDatabase collectivesCosmosDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
+    public Get(ILoggerFactory loggerFactory, AuthorizationApiClient authorizationApiClient, CollectivesDatabase collectivesDatabase, SongsOperations songsOperations, UrlsManager urlsManager, SecurityContext securityContext) 
         : base(loggerFactory, authorizationApiClient, securityContext)
     {
-        _collectivesCosmosDatabase = collectivesCosmosDatabase;
+        _collectivesDatabase = collectivesDatabase;
         _songsOperations = songsOperations;
         _urlsManager = urlsManager;
     }
@@ -33,7 +33,7 @@ public class Get : AuthorizationFunctionBase<GetRequest, GetResponse>
 
     protected override async Task<GetResponse> Execute(HttpRequest httpRequest, GetRequest request)
     {
-        var collective = await _collectivesCosmosDatabase.GetCollective(request.CollectiveId);
+        var collective = await _collectivesDatabase.GetCollective(request.CollectiveId);
 
         if (collective?.LatestVisibility is CollectiveVisibility.Deleted or null)
             throw new($"Not found: {request.CollectiveId}, {request.Identity.Id}.");

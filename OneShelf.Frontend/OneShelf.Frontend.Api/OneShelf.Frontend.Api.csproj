@@ -32,7 +32,7 @@
 		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.Generation.Volumes\OneShelf.Pdfs.Generation.Volumes.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Pdfs\OneShelf.Pdfs.SpecificModel\OneShelf.Pdfs.SpecificModel.csproj" />
 		<ProjectReference Include="..\..\OneShelf.Sources\OneShelf.Sources.Self.Api.Client\OneShelf.Sources.Self.Api.Client.csproj" />
-		<ProjectReference Include="..\OneShelf.Frontend.Database.Cosmos\OneShelf.Frontend.Database.Cosmos.csproj" />
+		<ProjectReference Include="..\OneShelf.Frontend.Database\OneShelf.Frontend.Database.csproj" />
 	</ItemGroup>
   <ItemGroup>
     <None Update="host.json">

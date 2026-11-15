@@ -1,23 +1,27 @@
-﻿using OneShelf.Common;
+﻿using Microsoft.Extensions.Options;
+using OneShelf.Common;
 using OneShelf.Illustrations.Api.Constants;
 using OneShelf.Illustrations.Api.Model;
+using OneShelf.Illustrations.Api.Options;
 using OneShelf.Illustrations.Database;
 
 namespace OneShelf.Illustrations.Api.Services;
 
 public class AllReader
 {
-    private readonly IllustrationsCosmosDatabase _illustrationsCosmosDatabase;
+    private readonly IllustrationsDatabase _illustrationsDatabase;
+    private readonly IllustrationsApiOptions _options;
 
-    public AllReader(IllustrationsCosmosDatabase illustrationsCosmosDatabase)
+    public AllReader(IllustrationsDatabase illustrationsDatabase, IOptions<IllustrationsApiOptions> options)
     {
-        _illustrationsCosmosDatabase = illustrationsCosmosDatabase;
+        _illustrationsDatabase = illustrationsDatabase;
+        _options = options.Value;
     }
 
     public async Task<AllResponse> Read(string? url = null)
     {
-        var allIllustrationsPrompts = (await _illustrationsCosmosDatabase.GetPrompts(url)).ToLookup(x => x.Url);
-        var allIllustrations = (await _illustrationsCosmosDatabase.GetIllustrationHeaders(url)).ToLookup(x => x.Url);
+        var allIllustrationsPrompts = (await _illustrationsDatabase.GetPrompts(url)).ToLookup(x => x.Url);
+        var allIllustrations = (await _illustrationsDatabase.GetIllustrationHeaders(url)).ToLookup(x => x.Url);
 
         Dictionary<int, AlteredVersion> alterations = new();
         Dictionary<(int specialSystemMessage, string alterationKey), int> alterationsBack = new();
@@ -90,10 +94,10 @@ public class AllReader
                             promptsById[header.PromptsId].publicUrls[header.AttemptIndex][header.PhotoIndex].Add(new()
                             {
                                 Id = header.Id,
-                                Url1024 = header.PublicUrl1024,
-                                Url128 = header.PublicUrl128,
-                                Url256 = header.PublicUrl256,
-                                Url512 = header.PublicUrl512,
+                                Url1024 = GetPublicUrl(header.Id, 1024),
+                                Url128 = GetPublicUrl(header.Id, 128),
+                                Url256 = GetPublicUrl(header.Id, 256),
+                                Url512 = GetPublicUrl(header.Id, 512),
                             });
                         }
 
@@ -112,4 +116,6 @@ public class AllReader
                     }),
         };
     }
+
+    private Uri GetPublicUrl(Guid id, int size) => new(_options.PublicEndpoint!, $"{IllustrationsApiUrls.Images}/{id}/{size}");
 }

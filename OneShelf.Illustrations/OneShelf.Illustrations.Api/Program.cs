@@ -16,12 +16,11 @@ var host = new HostBuilder()
         services.AddOpenAi(host.Configuration);
         services.AddIllustrationsDatabase(host.Configuration);
 
+        services.AddScoped<AllReader>();
         services
-            .AddScoped<StorageAccountUploader>()
-            .AddScoped<ImagesProcessor>()
-            .AddScoped<AllReader>()
-            .AddScoped<AutoUploader>()
-            .Configure<IllustrationsApiOptions>(o => host.Configuration.GetSection(nameof(IllustrationsApiOptions)).Bind(o));
+            .AddOptions<IllustrationsApiOptions>()
+            .Bind(host.Configuration.GetSection(nameof(IllustrationsApiOptions)))
+            .Validate(x => x.PublicEndpoint != null, $"{nameof(IllustrationsApiOptions)}:{nameof(IllustrationsApiOptions.PublicEndpoint)} is required.");
 
     })
     .Build();

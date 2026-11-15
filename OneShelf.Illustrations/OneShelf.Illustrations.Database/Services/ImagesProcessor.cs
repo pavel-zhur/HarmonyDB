@@ -2,7 +2,7 @@
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 
-namespace OneShelf.Illustrations.Api.Services;
+namespace OneShelf.Illustrations.Database.Services;
 
 public class ImagesProcessor
 {
