@@ -377,3 +377,5 @@ FodyWeavers.xsd
 /OneShelf.Telegram/OneShelf.Telegram.Polling/appsettings.videos.json
 /OneShelf.Videos/OneShelf.Videos.Telegram.Functions/local.settings.json
 .env
+
+local.settings.json
