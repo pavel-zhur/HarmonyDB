@@ -9,7 +9,8 @@
 
     <script>
         $(document).ready(function () {
-            var url = 'http://localhost:7213/api/VPublicGetPublic';
+            // the Index's function, reached on the page's own address (see docker/static-web/nginx.conf)
+            var url = '/index/api/VPublicGetPublic';
             var urlParams = new URLSearchParams(window.location.search);
             var tonality = 0;
             $('#minus').click(function () {

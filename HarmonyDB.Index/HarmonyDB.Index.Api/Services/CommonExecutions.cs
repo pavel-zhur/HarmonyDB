@@ -30,11 +30,12 @@ public class CommonExecutions
 
     public async Task<GetSourcesAndExternalIdsResponse> GetSourcesAndExternalIds(IReadOnlyList<Uri> uris)
     {
+        // each answer with the index of the source it came from: the sources not available to the tenant are skipped,
+        // so the position of an answer is not the index of its source
         var results = await Task.WhenAll(_downstreamApiClient.GetDownstreamSourceIndices(_ => true)
-            .Select(x => _downstreamApiClient.V1GetSourcesAndExternalIds(x, uris)));
+            .Select(async i => (i, x: await _downstreamApiClient.V1GetSourcesAndExternalIds(i, uris))));
 
         var all = results
-            .WithIndices()
             .SelectMany(s => s.x
                 .Where(x => _downstreamApiClient.GetDownstreamSourceIndexBySourceKey(x.Value.Source) == s.i)
                 .Select(x =>
