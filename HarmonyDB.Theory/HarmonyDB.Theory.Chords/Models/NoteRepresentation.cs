@@ -1,4 +1,4 @@
-﻿using HarmonyDB.Theory.Chords.Constants;
+using HarmonyDB.Theory.Chords.Constants;
 using HarmonyDB.Theory.Chords.Models.Enums;
 
 namespace HarmonyDB.Theory.Chords.Models;
@@ -10,7 +10,7 @@ public record NoteRepresentation(NaturalNoteRepresentation NaturalNoteRepresenta
         >= 0 => (byte)NaturalNoteRepresentation,
         NaturalNoteRepresentation.GermanB => NoteConstants.GermanBNote.Value,
         NaturalNoteRepresentation.H => (byte)NoteConstants.HSynonym,
-        >= NaturalNoteRepresentation.La and <= NaturalNoteRepresentation.Sol => NaturalNoteRepresentation - NaturalNoteRepresentation.La,
+        >= NaturalNoteRepresentation.La and <= NaturalNoteRepresentation.Sol => (byte)NoteConstants.NaturalNotes[NaturalNoteRepresentation - NaturalNoteRepresentation.La],
         _ => throw new ArgumentOutOfRangeException(nameof(NaturalNoteRepresentation), NaturalNoteRepresentation, "The representation is out of range."),
     }) + Sharps - Flats);
 }
