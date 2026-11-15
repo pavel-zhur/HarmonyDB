@@ -48,7 +48,7 @@ RUN cp -r /publish-compat/wwwroot/_framework /publish/wwwroot/_frameworkCompat \
     && cp /publish-compat/wwwroot/service-worker-assets.js /publish/wwwroot/service-worker-assets-compat.js
 
 FROM nginx:1.27-alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl jq
 # the nginx image fills the template from the environment and runs the script at start
 COPY --from=assets nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=assets configure.sh /docker-entrypoint.d/40-configure.sh

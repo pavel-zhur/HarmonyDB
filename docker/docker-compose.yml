@@ -76,9 +76,10 @@ services:
     environment:
       <<: *functions-environment
       ConnectionStrings__SongsDatabase: *songs-database
-      # the frontend's "enter without Telegram" path
-      AuthorizationOptions__AllowBadHash: "true"
-      AuthorizationOptions__BadHash: ${BAD_HASH}
+      # The local way in without Telegram, off unless ALLOW_BAD_HASH is true: a login of any user is accepted
+      # when it carries BAD_HASH in place of Telegram's hash.
+      AuthorizationOptions__AllowBadHash: ${ALLOW_BAD_HASH:-false}
+      AuthorizationOptions__BadHash: ${BAD_HASH:-}
       # the bot whose Telegram logins are accepted
       AuthorizationOptions__BotTokens__0: ${TELEGRAM_BOT_TOKEN}
     configs: *functions-configs
@@ -502,11 +503,16 @@ services:
     environment:
       # "Development" shows the "enter without Telegram" link on the login page
       BLAZOR_ENVIRONMENT: ${FRONTEND_ENVIRONMENT}
+      # With ALLOW_BAD_HASH true the site gets BAD_HASH in its settings and the page /enter.html, which logs
+      # the browser in as the local identity (see frontend-web/configure.sh). Otherwise it gets neither.
+      ALLOW_BAD_HASH: ${ALLOW_BAD_HASH:-false}
+      BAD_HASH: ${BAD_HASH:-}
+      LOCAL_IDENTITY_ID: ${LOCAL_IDENTITY_ID:-}
+      LOCAL_IDENTITY_FIRST_NAME: ${LOCAL_IDENTITY_FIRST_NAME:-}
+      LOCAL_IDENTITY_USERNAME: ${LOCAL_IDENTITY_USERNAME:-}
     configs:
       - source: frontend-web-settings
         target: /config/appsettings.json
-      - source: frontend-web-local-identity
-        target: /config/local-identity.json
     ports:
       - "${FRONTEND_WEB_PORT}:80"
     depends_on:
@@ -524,13 +530,8 @@ configs:
         "CollectivesApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/collectives-api/api/",
         "FrontendApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/frontend-api/api/",
         "FrontendOptions:LocalSourceName": "Local",
-        "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}",
-        "BadHash": "${BAD_HASH}"
+        "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}"
       }
-  # who the site's enter.html page logs the browser in as (see frontend-web/configure.sh)
-  frontend-web-local-identity:
-    content: |
-      { "id": ${LOCAL_IDENTITY_ID}, "first_name": "${LOCAL_IDENTITY_FIRST_NAME}", "username": "${LOCAL_IDENTITY_USERNAME}", "auth_date": 123, "hash": "${BAD_HASH}" }
 
   functions-host-keys:
     content: |
