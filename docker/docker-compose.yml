@@ -1,0 +1,551 @@
+name: harmonydb
+
+# The services of this repository with local stand-ins for SQL Server, Cosmos DB and Azure Storage.
+# Settings that are not secret are here; secrets and local choices come from .env (see .env.example).
+
+x-functions-build: &functions-build
+  context: ..
+  dockerfile: docker/Dockerfile
+  target: functions
+
+x-app-build: &app-build
+  context: ..
+  dockerfile: docker/Dockerfile
+  target: app
+
+# what every functions app needs
+x-functions-environment: &functions-environment
+  AzureWebJobsStorage: &storage "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=${AZURITE_ACCOUNT_KEY};BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1"
+  # the keys of the functions host come from the file below instead of Azure Storage
+  AzureWebJobsSecretStorageType: files
+  Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+
+x-functions-configs: &functions-configs
+  - source: functions-host-keys
+    target: /azure-functions-host/Secrets/host.json
+
+x-songs-database: &songs-database "Server=sql;Initial Catalog=${SQL_DATABASE};User ID=${SQL_USER_SONGS};Password=${SQL_PASSWORD_SONGS};TrustServerCertificate=True"
+
+services:
+
+  # ---------- stand-ins ----------
+
+  sql:
+    build:
+      context: sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD}
+      MSSQL_COLLATION: Cyrillic_General_CI_AS
+    ports:
+      - "${SQL_PORT}:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - harmonydb
+
+  cosmos:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    environment:
+      PROTOCOL: https
+    ports:
+      - "${COSMOS_PORT}:8081"
+      - "${COSMOS_EXPLORER_PORT}:1234"
+    volumes:
+      - cosmos-data:/data
+    networks:
+      - harmonydb
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --skipApiVersionCheck
+    ports:
+      - "${AZURITE_BLOB_PORT}:10000"
+    volumes:
+      - azurite-data:/data
+    networks:
+      - harmonydb
+
+  # ---------- services ----------
+
+  authorization-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Authorization.Api
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__SongsDatabase: *songs-database
+      # the frontend's "enter without Telegram" path
+      AuthorizationOptions__AllowBadHash: "true"
+      AuthorizationOptions__BadHash: ${BAD_HASH}
+      # the bot whose Telegram logins are accepted
+      AuthorizationOptions__BotTokens__0: ${TELEGRAM_BOT_TOKEN}
+    configs: *functions-configs
+    ports:
+      - "${AUTHORIZATION_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+    networks:
+      - harmonydb
+
+  billing-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Billing.Api
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__SongsDatabase: *songs-database
+    configs: *functions-configs
+    ports:
+      - "${BILLING_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+    networks:
+      - harmonydb
+
+  collectives-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Collectives.Api
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__SongsDatabase: *songs-database
+      CollectivesOptions__UrlTemplate: ${COLLECTIVES_URL_TEMPLATE}
+      CollectivesOptions__UrlIdPattern: ${COLLECTIVES_URL_ID_PATTERN}
+      CollectivesCosmosDatabaseOptions__EndPointUri: &cosmos-endpoint https://cosmos:8081
+      CollectivesCosmosDatabaseOptions__PrimaryKey: ${COSMOS_KEY}
+      CollectivesCosmosDatabaseOptions__DatabaseName: ${COSMOS_DATABASE}
+      CollectivesCosmosDatabaseOptions__ContainerNamePostfix: ${COLLECTIVES_CONTAINER_POSTFIX}
+      CollectivesCosmosDatabaseOptions__AllowAnyServerCertificate: "true"
+      AuthorizationApiClientOptions__CheckIdentityEndpoint: &check-identity http://authorization-api/api/CheckIdentity?code=${FUNCTIONS_KEY}
+      AuthorizationApiClientOptions__PingEndpoint: &authorization-ping http://authorization-api/api/Ping
+    configs: *functions-configs
+    ports:
+      - "${COLLECTIVES_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - cosmos
+      - authorization-api
+    networks:
+      - harmonydb
+
+  # The source of the songs people add themselves (the collectives).
+  sources-self-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Sources.Self.Api
+    environment:
+      <<: *functions-environment
+      SelfApiOptions__SourceName: ${SELF_SOURCE_NAME}
+      SelfApiOptions__ShortSourceName: ${SELF_SHORT_SOURCE_NAME}
+      SelfApiOptions__Hosts__0: ${SELF_HOST}
+      CollectivesApiClientOptions__Endpoint: &collectives-endpoint http://collectives-api/api/
+      CollectivesApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      AuthorizationApiClientOptions__CheckIdentityEndpoint: *check-identity
+      AuthorizationApiClientOptions__PingEndpoint: *authorization-ping
+    configs: *functions-configs
+    ports:
+      - "${SOURCES_SELF_API_PORT}:80"
+    depends_on:
+      - azurite
+      - collectives-api
+      - authorization-api
+    networks:
+      - harmonydb
+
+  # The index. Its downstream sources are a list ordered by their numbers; this file gives it the collectives
+  # as number 9, leaving the lower numbers free: the sources that support search have to come first.
+  index-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: HarmonyDB.Index.Api
+    environment:
+      <<: *functions-environment
+      AuthorizationApiClientOptions__CheckIdentityEndpoint: *check-identity
+      AuthorizationApiClientOptions__PingEndpoint: *authorization-ping
+      AuthorizationApiClientOptions__ServiceCode: ${SERVICE_CODE}
+      CollectivesApiClientOptions__Endpoint: *collectives-endpoint
+      CollectivesApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      IndexApiOptions__LimitConcurrency: "true"
+      FileCacheBaseOptions__ReadSource: Disk
+      FileCacheBaseOptions__WriteSource: Disk
+      FileCacheBaseOptions__DiskPath: /cache
+      DownstreamApiClientOptions__DownstreamSources__9__Sources__0__Key: ${SELF_SOURCE_NAME}
+      DownstreamApiClientOptions__DownstreamSources__9__Sources__0__Title: ${SELF_SOURCE_NAME}
+      DownstreamApiClientOptions__DownstreamSources__9__ExternalIdPrefixes__0: ${SELF_EXTERNAL_ID_PREFIX}
+      DownstreamApiClientOptions__DownstreamSources__9__Endpoint: http://sources-self-api/api/
+      DownstreamApiClientOptions__DownstreamSources__9__MasterCode: ${FUNCTIONS_KEY}
+      DownstreamApiClientOptions__DownstreamSources__9__ServiceCode: ${SERVICE_CODE}
+      DownstreamApiClientOptions__DownstreamSources__9__IsSearchSupported: "false"
+    configs: *functions-configs
+    ports:
+      - "${INDEX_API_PORT}:80"
+    volumes:
+      - index-cache:/cache
+    depends_on:
+      - azurite
+      - authorization-api
+      - collectives-api
+      - sources-self-api
+    networks:
+      - harmonydb
+
+  illustrations-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Illustrations.Api
+    environment:
+      <<: *functions-environment
+      OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
+      # music (Google Vertex AI): the key file of a service account, as one line of JSON
+      OpenAiOptions__GoogleServiceAccountJson: ${GOOGLE_SERVICE_ACCOUNT_JSON}
+      OpenAiOptions__GoogleCloudProjectId: ${GOOGLE_CLOUD_PROJECT_ID}
+      OpenAiOptions__GoogleCloudLocation: ${GOOGLE_CLOUD_LOCATION}
+      # videos (Google Veo, Azure OpenAI Sora)
+      OpenAiOptions__GoogleApiKey: ${GOOGLE_API_KEY}
+      OpenAiOptions__AzureOpenAiEndpoint: ${AZURE_OPENAI_ENDPOINT}
+      OpenAiOptions__AzureOpenAiApiKey: ${AZURE_OPENAI_API_KEY}
+      OpenAiOptions__AzureOpenAiApiVersion: ${AZURE_OPENAI_API_VERSION}
+      BillingApiClientOptions__Endpoint: &billing-endpoint http://billing-api/api/
+      BillingApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      BillingApiClientOptions__QueueClientConnectionString: *storage
+      IndexApiClientOptions__Endpoint: &index-endpoint http://index-api/api/
+      IndexApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      IllustrationsCosmosDatabaseOptions__EndPointUri: *cosmos-endpoint
+      IllustrationsCosmosDatabaseOptions__PrimaryKey: ${COSMOS_KEY}
+      IllustrationsCosmosDatabaseOptions__DatabaseName: ${COSMOS_DATABASE}
+      IllustrationsCosmosDatabaseOptions__AllowAnyServerCertificate: "true"
+    configs: *functions-configs
+    ports:
+      - "${ILLUSTRATIONS_API_PORT}:80"
+    depends_on:
+      - azurite
+      - cosmos
+      - billing-api
+      - index-api
+    networks:
+      - harmonydb
+
+  frontend-api:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Frontend.Api
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__SongsDatabase: *songs-database
+      AuthorizationApiClientOptions__CheckIdentityEndpoint: *check-identity
+      AuthorizationApiClientOptions__PingEndpoint: *authorization-ping
+      AuthorizationQuickCheckOptions__Secret: ${QUICK_CHECK_SECRET}
+      SourceApiClientOptions__Endpoint: *index-endpoint
+      IndexApiClientOptions__Endpoint: *index-endpoint
+      IndexApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      SelfApiClientOptions__Endpoint: http://sources-self-api/api/
+      SelfApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      IllustrationsApiClientOptions__Endpoint: &illustrations-endpoint http://illustrations-api/api/
+      IllustrationsApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      PdfsApiClientOptions__Endpoint: http://pdfs-api/api/Convert?code=${FUNCTIONS_KEY}
+      FrontendCosmosDatabaseOptions__EndPointUri: *cosmos-endpoint
+      FrontendCosmosDatabaseOptions__PrimaryKey: ${COSMOS_KEY}
+      FrontendCosmosDatabaseOptions__DatabaseName: ${COSMOS_DATABASE}
+      FrontendCosmosDatabaseOptions__AllowAnyServerCertificate: "true"
+    configs: *functions-configs
+    ports:
+      - "${FRONTEND_API_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - cosmos
+      - authorization-api
+      - index-api
+      - sources-self-api
+      - illustrations-api
+      - pdfs-api
+    networks:
+      - harmonydb
+
+  # The bots. They answer only what a poller (the "bots" profile) brings them from Telegram.
+
+  # The library bot. Its two timers are switched off: the hourly rebuild of the library in the chat
+  # and the daily selection sent to the users.
+  telegram-runner:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.Telegram.Runner.Functions
+    environment:
+      <<: *functions-environment
+      AzureWebJobs_Hourly_Disabled: "true"
+      AzureWebJobs_DailySelection_Disabled: "true"
+      ConnectionStrings__SongsDatabase: *songs-database
+      TelegramOptions__AdminId: ${TELEGRAM_ADMIN_ID}
+      TelegramOptions__TenantId: ${TELEGRAM_TENANT_ID}
+      TelegramOptions__Token: ${TELEGRAM_BOT_TOKEN}
+      TelegramOptions__BotUsername: ${TELEGRAM_BOT_USERNAME}
+      TelegramOptions__WebHooksSecretToken: ${TELEGRAM_WEBHOOK_SECRET}
+      TelegramOptions__FilesChatId: ${TELEGRAM_FILES_CHAT_ID}
+      TelegramOptions__PublicLibraryChatId: ${TELEGRAM_PUBLIC_LIBRARY_CHAT_ID}
+      TelegramOptions__PublicDogChatId: ${TELEGRAM_PUBLIC_DOG_CHAT_ID}
+      TelegramOptions__PublicTopicId: ${TELEGRAM_PUBLIC_TOPIC_ID}
+      TelegramOptions__AnnouncementsTopicId: ${TELEGRAM_ANNOUNCEMENTS_TOPIC_ID}
+      TelegramOptions__OwnChatterTopicId: ${TELEGRAM_OWN_CHATTER_TOPIC_ID}
+      TelegramOptions__NeverPromoteResponseStickerFileId: ${TELEGRAM_NEVER_PROMOTE_STICKER_FILE_ID}
+      # the addresses of chords the bot picks up from the chat
+      TelegramOptions__ReactToUrls__0: ${TELEGRAM_REACT_TO_URL_0}
+      TelegramOptions__ReactToUrls__1: ${TELEGRAM_REACT_TO_URL_1}
+      TelegramOptions__ReactToUrls__2: ${TELEGRAM_REACT_TO_URL_2}
+      TelegramOptions__ReactToUrls__3: ${TELEGRAM_REACT_TO_URL_3}
+      TelegramOptions__ReactToUrls__4: ${TELEGRAM_REACT_TO_URL_4}
+      IndexApiClientOptions__Endpoint: *index-endpoint
+      IndexApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      IllustrationsApiClientOptions__Endpoint: *illustrations-endpoint
+      IllustrationsApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
+      # music (Google Vertex AI): the key file of a service account, as one line of JSON
+      OpenAiOptions__GoogleServiceAccountJson: ${GOOGLE_SERVICE_ACCOUNT_JSON}
+      OpenAiOptions__GoogleCloudProjectId: ${GOOGLE_CLOUD_PROJECT_ID}
+      OpenAiOptions__GoogleCloudLocation: ${GOOGLE_CLOUD_LOCATION}
+      # videos (Google Veo, Azure OpenAI Sora)
+      OpenAiOptions__GoogleApiKey: ${GOOGLE_API_KEY}
+      OpenAiOptions__AzureOpenAiEndpoint: ${AZURE_OPENAI_ENDPOINT}
+      OpenAiOptions__AzureOpenAiApiKey: ${AZURE_OPENAI_API_KEY}
+      OpenAiOptions__AzureOpenAiApiVersion: ${AZURE_OPENAI_API_VERSION}
+      BillingApiClientOptions__Endpoint: *billing-endpoint
+      BillingApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      BillingApiClientOptions__QueueClientConnectionString: *storage
+    configs: *functions-configs
+    ports:
+      - "${TELEGRAM_RUNNER_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - billing-api
+      - index-api
+      - illustrations-api
+    networks:
+      - harmonydb
+
+  telegram-poller:
+    profiles: ["bots"]
+    build:
+      <<: *app-build
+      args:
+        PROJECT: OneShelf.Telegram.Polling
+    environment:
+      PollerOptions__Token: ${TELEGRAM_BOT_TOKEN}
+      PollerOptions__IncomingUpdateUrl: http://telegram-runner/api/IncomingUpdate
+      PollerOptions__WebHooksSecretHeader: X-Telegram-Bot-Api-Secret-Token
+      PollerOptions__WebHooksSecretToken: ${TELEGRAM_WEBHOOK_SECRET}
+    depends_on:
+      - telegram-runner
+    networks:
+      - harmonydb
+
+  onedog-runner:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.OneDog.Runner.Functions
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__DogDatabase: "Server=sql;Initial Catalog=${SQL_DATABASE};User ID=${SQL_USER_ONEDOG};Password=${SQL_PASSWORD_ONEDOG};TrustServerCertificate=True"
+      TelegramOptions__AdminId: ${TELEGRAM_ADMIN_ID}
+      OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
+      # music (Google Vertex AI): the key file of a service account, as one line of JSON
+      OpenAiOptions__GoogleServiceAccountJson: ${GOOGLE_SERVICE_ACCOUNT_JSON}
+      OpenAiOptions__GoogleCloudProjectId: ${GOOGLE_CLOUD_PROJECT_ID}
+      OpenAiOptions__GoogleCloudLocation: ${GOOGLE_CLOUD_LOCATION}
+      # videos (Google Veo, Azure OpenAI Sora)
+      OpenAiOptions__GoogleApiKey: ${GOOGLE_API_KEY}
+      OpenAiOptions__AzureOpenAiEndpoint: ${AZURE_OPENAI_ENDPOINT}
+      OpenAiOptions__AzureOpenAiApiKey: ${AZURE_OPENAI_API_KEY}
+      OpenAiOptions__AzureOpenAiApiVersion: ${AZURE_OPENAI_API_VERSION}
+      BillingApiClientOptions__Endpoint: *billing-endpoint
+      BillingApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      BillingApiClientOptions__QueueClientConnectionString: *storage
+    configs: *functions-configs
+    ports:
+      - "${ONEDOG_RUNNER_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - billing-api
+    networks:
+      - harmonydb
+
+  onedragon-runner:
+    build:
+      <<: *functions-build
+      args:
+        PROJECT: OneShelf.OneDragon.Runner.Functions
+    environment:
+      <<: *functions-environment
+      ConnectionStrings__DragonDatabase: "Server=sql;Initial Catalog=${SQL_DATABASE};User ID=${SQL_USER_ONEDRAGON};Password=${SQL_PASSWORD_ONEDRAGON};TrustServerCertificate=True"
+      TelegramOptions__AdminId: ${TELEGRAM_ADMIN_ID}
+      TelegramOptions__Token: ${ONEDRAGON_BOT_TOKEN}
+      TelegramOptions__WebHooksSecretToken: ${ONEDRAGON_WEBHOOK_SECRET}
+      OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
+      # music (Google Vertex AI): the key file of a service account, as one line of JSON
+      OpenAiOptions__GoogleServiceAccountJson: ${GOOGLE_SERVICE_ACCOUNT_JSON}
+      OpenAiOptions__GoogleCloudProjectId: ${GOOGLE_CLOUD_PROJECT_ID}
+      OpenAiOptions__GoogleCloudLocation: ${GOOGLE_CLOUD_LOCATION}
+      # videos (Google Veo, Azure OpenAI Sora)
+      OpenAiOptions__GoogleApiKey: ${GOOGLE_API_KEY}
+      OpenAiOptions__AzureOpenAiEndpoint: ${AZURE_OPENAI_ENDPOINT}
+      OpenAiOptions__AzureOpenAiApiKey: ${AZURE_OPENAI_API_KEY}
+      OpenAiOptions__AzureOpenAiApiVersion: ${AZURE_OPENAI_API_VERSION}
+      BillingApiClientOptions__Endpoint: *billing-endpoint
+      BillingApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      BillingApiClientOptions__QueueClientConnectionString: *storage
+    configs: *functions-configs
+    ports:
+      - "${ONEDRAGON_RUNNER_PORT}:80"
+    depends_on:
+      - sql
+      - azurite
+      - billing-api
+    networks:
+      - harmonydb
+
+  # Brings the OneDragon bot's updates from Telegram. Started only with the "bots" profile:
+  # while it runs, the real bot is live.
+  onedragon-poller:
+    profiles: ["bots"]
+    build:
+      <<: *app-build
+      args:
+        PROJECT: OneShelf.Telegram.Polling
+    environment:
+      PollerOptions__Token: ${ONEDRAGON_BOT_TOKEN}
+      PollerOptions__IncomingUpdateUrl: http://onedragon-runner/api/IncomingUpdate
+      PollerOptions__WebHooksSecretHeader: X-Telegram-Bot-Api-Secret-Token
+      PollerOptions__WebHooksSecretToken: ${ONEDRAGON_WEBHOOK_SECRET}
+    depends_on:
+      - onedragon-runner
+    networks:
+      - harmonydb
+
+  admin-web:
+    build:
+      <<: *app-build
+      args:
+        PROJECT: OneShelf.Admin.Web
+    environment:
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__SongsDatabase: *songs-database
+      IllustrationsApiClientOptions__Endpoint: *illustrations-endpoint
+      IllustrationsApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      BillingApiClientOptions__Endpoint: *billing-endpoint
+      BillingApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      AdminOptions__TenantId: ${ADMIN_TENANT_ID}
+      # what to enter on the admin's login page
+      authv1: ${ADMIN_PASSWORD}
+    ports:
+      - "${ADMIN_WEB_PORT}:80"
+    depends_on:
+      - sql
+      - illustrations-api
+      - billing-api
+    networks:
+      - harmonydb
+
+  playground-web:
+    build:
+      <<: *app-build
+      args:
+        PROJECT: HarmonyDB.Playground.Web
+    environment:
+      ASPNETCORE_HTTP_PORTS: "80"
+      IndexApiClientOptions__Endpoint: *index-endpoint
+      IndexApiClientOptions__MasterCode: ${FUNCTIONS_KEY}
+      SourceApiClientOptions__Endpoint: *index-endpoint
+      SourceApiClientOptions__ServiceCode: ${SERVICE_CODE}
+    ports:
+      - "${PLAYGROUND_WEB_PORT}:80"
+    depends_on:
+      - index-api
+    networks:
+      - harmonydb
+
+  # Turns HTML into PDF (the books of songs).
+  pdfs-api:
+    build:
+      context: ..
+      dockerfile: docker/pdfs-api/Dockerfile
+    environment:
+      <<: *functions-environment
+      SyncFusionLicenseKey: ${SYNCFUSION_LICENSE_KEY}
+    configs: *functions-configs
+    ports:
+      - "${PDFS_API_PORT}:80"
+    depends_on:
+      - azurite
+    networks:
+      - harmonydb
+
+  # The site. It also passes the browser's calls on to the two services it uses (see its nginx.conf.template).
+  frontend-web:
+    build:
+      context: ..
+      dockerfile: docker/frontend-web/Dockerfile
+      additional_contexts:
+        assets: frontend-web
+    environment:
+      # "Development" shows the "enter without Telegram" link on the login page
+      BLAZOR_ENVIRONMENT: ${FRONTEND_ENVIRONMENT}
+    configs:
+      - source: frontend-web-settings
+        target: /config/appsettings.json
+      - source: frontend-web-local-identity
+        target: /config/local-identity.json
+    ports:
+      - "${FRONTEND_WEB_PORT}:80"
+    depends_on:
+      - frontend-api
+      - collectives-api
+    networks:
+      - harmonydb
+
+configs:
+  frontend-web-settings:
+    content: |
+      {
+        "TelegramBotId": "${TELEGRAM_BOT_USERNAME}",
+        "HideUnstable": false,
+        "CollectivesApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/collectives-api/api/",
+        "FrontendApiClientOptions:Endpoint": "http://localhost:${FRONTEND_WEB_PORT}/frontend-api/api/",
+        "FrontendOptions:LocalSourceName": "Local",
+        "FrontendOptions:AppInsightsConnectionString": "${FRONTEND_APPINSIGHTS_CONNECTION_STRING}",
+        "BadHash": "${BAD_HASH}"
+      }
+  # who the site's enter.html page logs the browser in as (see frontend-web/configure.sh)
+  frontend-web-local-identity:
+    content: |
+      { "id": ${LOCAL_IDENTITY_ID}, "first_name": "${LOCAL_IDENTITY_FIRST_NAME}", "username": "${LOCAL_IDENTITY_USERNAME}", "auth_date": 123, "hash": "${BAD_HASH}" }
+
+  functions-host-keys:
+    content: |
+      {
+        "masterKey": { "name": "master", "value": "${FUNCTIONS_KEY}", "encrypted": false },
+        "functionKeys": [ { "name": "default", "value": "${FUNCTIONS_KEY}", "encrypted": false } ],
+        "systemKeys": []
+      }
+
+volumes:
+  sql-data:
+  cosmos-data:
+  azurite-data:
+  index-cache:
+
+networks:
+  harmonydb:
+    name: harmonydb
