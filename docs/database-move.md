@@ -88,3 +88,80 @@ at once. Making the addresses when read keeps them right wherever the API is ser
   Cosmos DB. The illustrations' hash that the site caches by changes once because of it.
 - Ids are no longer limited by Cosmos DB: the PDFs' ids, which hold the artist and the title, may contain any
   characters and be of any length.
+
+## Stage three: the Azure Functions apps as ASP.NET modules in one application
+
+**What there was.** Ten Azure Functions apps (isolated worker, with the ASP.NET Core integration): Index, Authorization,
+Billing, Collectives, Frontend API, Illustrations, Sources (Self) and the three bots' runners (the library bot, OneDog,
+OneDragon). Each was its own host with its own settings and keys; they called each other over HTTP through their
+clients. What the Functions host and worker gave them:
+
+- the routes `api/{function name}`, the methods, and the authorization level of each function: anonymous, or a key
+  (`?code=` or the `x-functions-key` header) refused with 401 and no body;
+- an error not handled by a function, or a request that could not be bound (no body, a body that is not JSON, another
+  content type), answered with 500 and no body;
+- storage queues: the bots' updates (accepted by `IncomingUpdate`, processed by a queue trigger, up to 16 at a time,
+  a failed one tried again after 30 seconds, 5 times in all), the library bot's rebuilds (`Regenerate` and the hourly
+  timer queued one, a queue trigger ran it) and the billing usages (sent by `BillingApiClient.Add`);
+- timers: the library bot's `Hourly` and `DailySelection`, and three `Warmups` that only kept the apps from sleeping;
+- Application Insights, when the app had its connection string.
+
+**What there is.**
+
+- `OneShelf.Common.Api` holds what the host and the worker gave, in plain ASP.NET Core:
+  - `ApiModule`: what a Functions app was. A module has a name; its functions are served under the path base of the
+    name in lower case (`/index/api/...`, `/authorization/api/...`, `/sourcesself/api/...`), so that the functions of
+    the same name in different modules (`Ping`, `IncomingUpdate`, `MigrateDb`, `V1GetSong`...) do not meet. Its
+    `Configure` is what its `Program` did.
+  - Each module runs as its own ASP.NET Core application inside the host (`ApiModuleHost`): its own services, its own
+    hosted services, its own logging. Its settings are the host's settings with the section of its name laid over them:
+    `Index:FileCacheBaseOptions:DiskPath` is the Index's setting, a setting without a section is every module's. The
+    host's server passes it the requests under its path base (`ModuleServer`).
+  - `[Function(name, level, methods...)]` replaces `[Function]` and `[HttpTrigger]`: the route `api/{name}` (or a route
+    of its own), the methods, the level. The functions are ASP.NET Core MVC actions of the classes that have them, bound
+    as the Functions bound them; a parameter of the type `HttpRequest` gets the request. The keys of a module are its
+    setting `FunctionKeys` (a list); a function of the `Function` level refuses a call without one of them with 401 and
+    no body, as before. An unhandled error and a request that cannot be bound are answered with 500 and no body.
+  - `BackgroundQueue<T>`: items accepted at once and processed in the background of the module, a given number at a
+    time, a failed one tried again after a delay, a given number of times. It lives in memory: what is in it when the
+    application stops is lost.
+  - `AddSchedule`: work run on a cron schedule with seconds, in UTC, as the timer triggers were, each switched on or
+    off by the setting `Schedules:{name}`, which is required.
+- The ten Functions projects are converted in place: each is a class library with its functions and its module
+  (`IndexModule`, `AuthorizationModule`, ...), its `Program`, `host.json` and the Functions tooling files gone. The
+  modules still call each other over HTTP, through their clients, with their keys, as separate applications do, so
+  any of them can be run alone again.
+- `OneShelf.Api` is the application that runs them all.
+- The bots: `IncomingUpdate` accepts an update at once into the module's background queue, processed up to 16 at a
+  time, a failed one tried again after 30 seconds, 5 times in all, as the queue's settings were. The library bot's
+  rebuild is started in the background by `Regenerate` and by the `Hourly` schedule; the bot's `RegenerationQueue`
+  runs the rebuilds one at a time, as it did. `DailySelection` is a schedule.
+- Billing: `BillingApiClient.Add` posts the usage to the billing module's new function `Add` (of the `Function`
+  level), which writes it as the queue trigger did. A failure is logged by the client, as a failure to queue was.
+- Application Insights: with `APPLICATIONINSIGHTS_CONNECTION_STRING`, the application reports its requests and the
+  calls it makes, and every module its logs.
+- The webhook addresses the bots give Telegram (`SetWebHook`) include the module's path base.
+- The API runs with the workstation garbage collector, as the Functions workers did: the server collector of an
+  ASP.NET application would hold much more memory.
+- `docker/` describes the stack on PostgreSQL: the database, the API, the PDF service (the in-process Functions app,
+  as it is deployed, now without a storage account), the two web sites, the site, and the pollers (profile `bots`,
+  not started by default). Nothing of SQL Server, Cosmos DB or Azure Storage serves it any more. The project name and
+  the ports come from `.env`, so several stacks can run side by side. It is started with
+  `docker compose --env-file .env up -d` in `docker/`. A new database gets its roles and schemas with
+  `CreateServiceRole.sql`, and its data from the transfer, run by hand.
+
+**Why.** The services no longer need the Azure Functions host, its storage account (queues, timers' leases, keys) and
+its emulator, and one process uses much less memory than eleven hosts and their workers. Keeping each app a module,
+with its settings, keys and HTTP clients, keeps the boundaries between the services as they were: a module can be
+split off into an application of its own again, and the clients and the frontends do not change.
+
+**What behaves differently.**
+
+- The functions are reached under the module's path base (`http://<host>/<module>/api/...`); the clients' endpoints
+  in the settings say so.
+- A function called with a method it does not answer gets 405, not 404.
+- The Frontend API's `Ping` answers; under the Functions worker it failed with 500 (it wrote its answer
+  synchronously, which ASP.NET Core refuses).
+- An update or a rebuild being processed, or waiting in the queue, when the application stops is lost; the storage
+  queue kept it. A billing usage that fails to be written is not tried again.
+- The warm-up timers are gone. A schedule that was due while the application was down is not run when it starts.
