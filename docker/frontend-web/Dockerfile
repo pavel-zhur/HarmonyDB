@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# OneShelf.Frontend.Web (Blazor WebAssembly), built on Linux the way .github/workflows/frontend.yml builds it on Windows.
+# OneShelf.Frontend.Web (Blazor WebAssembly), built on Linux.
 # Build context: the repository root (without the docker folder, see .dockerignore);
 # the additional context "assets": this folder.
 
@@ -24,7 +24,7 @@ COPY . .
 COPY --from=styles /project/ OneShelf.Frontend/OneShelf.Frontend.Web/
 WORKDIR /src/OneShelf.Frontend/OneShelf.Frontend.Web
 
-# as the "Replace" steps of the workflow
+# the version the service worker's cache and the page are marked with
 ARG CACHE_VERSION=local
 RUN sed -i "s/{#CACHE_VERSION#}/${CACHE_VERSION}/g" wwwroot/service-worker.published.js wwwroot/index.html
 
