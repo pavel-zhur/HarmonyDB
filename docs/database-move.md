@@ -132,6 +132,12 @@ clients. What the Functions host and worker gave them:
   modules still call each other over HTTP, through their clients, with their keys, as separate applications do, so
   any of them can be run alone again.
 - `OneShelf.Api` is the application that runs them all.
+- `OneShelf.Common.Api.Functions` keeps what an Azure Functions app still needs from the old setup: `ConfigureApi`, the
+  Functions host's setup with its error-handling middleware. It is a package for Functions apps outside these services
+  that still use it; nothing in this repository depends on it.
+- The admin site's PNG of an illustration takes the picture's copy from the Illustrations module through
+  `IllustrationsApiClient.GetImageCopy`, at the module's endpoint in its settings, not at the address meant for
+  browsers, which a server may not reach.
 - The bots: `IncomingUpdate` accepts an update at once into the module's background queue, processed up to 16 at a
   time, a failed one tried again after 30 seconds, 5 times in all, as the queue's settings were. The library bot's
   rebuild is started in the background by `Regenerate` and by the `Hourly` schedule; the bot's `RegenerationQueue`
@@ -149,6 +155,8 @@ clients. What the Functions host and worker gave them:
   the ports come from `.env`, so several stacks can run side by side. It is started with
   `docker compose --env-file .env up -d` in `docker/`. A new database gets its roles and schemas with
   `CreateServiceRole.sql`, and its data from the transfer, run by hand.
+- The applications' images start the application's own executable, not `sh -c "exec dotnet ..."`: the shell silently
+  dropped the settings whose names have dots (`Logging__LogLevel__Microsoft.EntityFrameworkCore`).
 
 **Why.** The services no longer need the Azure Functions host, its storage account (queues, timers' leases, keys) and
 its emulator, and one process uses much less memory than eleven hosts and their workers. Keeping each app a module,
