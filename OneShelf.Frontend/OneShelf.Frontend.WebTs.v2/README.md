@@ -5,6 +5,7 @@
 
 - `index.html` — собранный макет, открывается прямо в браузере.
 - `src.html` — исходник (разметка, стили и скрипт в одном файле).
+- `docs/` — что просили, почему и что получилось: [docs/README.md](docs/README.md).
 - `build.py` — собирает `index.html` из `src.html`, вшивая картинки шапки и логотипа из `OneShelf.Frontend.WebTs/public/assets/images/my`.
 
 ```bash
