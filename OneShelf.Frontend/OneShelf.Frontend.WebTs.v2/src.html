@@ -1035,6 +1035,210 @@ div.row{cursor:pointer}
 [data-skin="trip"] .lnk,[data-skin="trip"] .mi.lk,[data-skin="trip"] a{color:#3df5ff}
 [data-skin="trip"] .pane,[data-skin="trip"] .main,[data-skin="trip"] .mid{background:none}
 
+
+
+.split{display:none}
+@media (min-width:960px){.lib.open .pane.list{flex:0 0 var(--lw,44%);max-width:var(--lw,560px);border-right:0}.lib.open .split{display:block;flex:none;width:9px;margin:0 -4px;cursor:col-resize;position:relative;z-index:3;background:linear-gradient(var(--line),var(--line)) center/1px 100% no-repeat}.lib.open .split:hover,.rsz .split{background:linear-gradient(var(--accent),var(--accent)) center/3px 100% no-repeat}}
+.rsz{cursor:col-resize;user-select:none;-webkit-user-select:none}
+.nehead{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+.nehead .lnk{padding:2px 0;font-size:13px}
+.prow .quiet{flex-wrap:nowrap}
+
+
+.panel{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;align-items:start}
+.pl{font-size:12px;color:var(--muted);min-height:32px;display:flex;align-items:center;text-align:left}
+button.pl:hover,button.pl.on{color:var(--accent)}
+.pc{min-width:0}
+
+.srcl{display:inline-flex;align-items:center;gap:5px;font:inherit;text-align:left}
+.srcl svg{width:14px;height:14px;opacity:.5;flex:none}
+.srcl:hover{color:var(--accent)} .srcl:hover svg{opacity:1}
+.vm{margin-left:auto;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--muted);flex:none}
+.vm:hover{background:var(--surface2);color:var(--ink)}
+.vm svg{width:18px;height:18px}
+.rx .fc{display:inline-flex;align-items:center;padding-left:4px}
+.rx .fc .av{width:18px;height:18px;font-size:9px;margin-left:-4px;box-shadow:0 0 0 1.5px var(--surface)}
+.rx .fc .ct{display:inline;margin-left:3px}
+.wholist{display:grid;gap:8px;padding:2px 12px 10px;font-size:13.5px}
+.wholist>div{display:flex;gap:10px;align-items:center}
+.wholist .e{font-size:18px;width:24px;text-align:center}
+.wholist .av{margin-right:4px;vertical-align:-4px}
+.mi.ico svg.ic{width:19px;height:19px}
+.panel>.pl{padding:0}
+.kchip{white-space:nowrap;flex:none}
+.pn{display:grid;gap:6px}
+.xbtn.cnt{width:auto;min-width:36px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:18px}
+.xbtn.cnt b{font:600 12px var(--mono)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.bar .pact{margin-left:auto}
+.bar .quiet{flex-wrap:nowrap;align-items:center;gap:2px}
+.bar .quiet .seg.sm{margin:0 4px 0 0}
+.mf,.mm{display:inline-flex;flex-wrap:wrap;gap:2px 12px;align-items:center}
+.pact button b{font:600 12px var(--mono);margin-left:-2px}
+.rx .ct{display:none}
+.toast{pointer-events:none}.toast button{pointer-events:auto}
+.khint{max-width:640px}
+:root:not([data-skin]) .top .notes{opacity:.26}
+:root:not([data-skin]) .side{background:var(--bg);border-right:0;padding:14px 8px}
+:root:not([data-skin]) .side button{color:var(--muted);font-size:14px;padding:7px 10px;gap:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+:root:not([data-skin]) .side button svg{width:18px;height:18px;flex:none;opacity:.8}
+:root:not([data-skin]) .side button.on{background:var(--surface2);color:var(--ink);font-weight:600}
+:root:not([data-skin]) .side h6{margin:18px 10px 4px;font-size:10.5px;opacity:.7}
+:root:not([data-skin]) .pane.list .chip{border-color:transparent;background:none;color:var(--muted);padding:5px 8px;min-height:30px;font-size:13px}
+:root:not([data-skin]) .pane.list .chip.on{background:var(--surface2);color:var(--ink);border-color:transparent}
+:root:not([data-skin]) .pane.list .chips{gap:2px}
+:root:not([data-skin]) .pane.list .mqt{animation-duration:120s}
+:root:not([data-skin]) .pane.list .mq{filter:grayscale(1);opacity:.45}
+:root:not([data-skin]) .row{gap:8px}
+:root:not([data-skin]) .row .tx{font-size:14.5px}
+:root:not([data-skin]) .row .lgs .slg small{display:none}
+:root:not([data-skin]) .row .lgs .slogo{width:16px;height:16px;filter:grayscale(1);opacity:.42;transition:filter .15s,opacity .15s}
+:root:not([data-skin]) .row:hover .lgs .slogo,:root:not([data-skin]) .row.last .lgs .slogo{filter:none;opacity:1}
+:root:not([data-skin]) .row .oth{opacity:.6;font-size:11px}
+:root:not([data-skin]) .row:hover .oth,:root:not([data-skin]) .row.last .oth{opacity:1}
+:root:not([data-skin]) .row .lkb{opacity:.38}
+:root:not([data-skin]) .row:hover .lkb,:root:not([data-skin]) .row .lkb.on,:root:not([data-skin]) .row .lkb:focus-visible,:root:not([data-skin]) .list:has(.row.sel) .lkb{opacity:.7}
+:root:not([data-skin]) .row.last{background:var(--surface2)}
+:root:not([data-skin]) .hero{padding-bottom:6px}
+:root:not([data-skin]) .htop{margin-bottom:10px}
+:root:not([data-skin]) .htop .n{font-size:23px}
+:root:not([data-skin]) .vrow{background:none;border:0;box-shadow:none;backdrop-filter:none;border-radius:8px;padding:5px 10px;margin:0 -10px 1px;width:calc(100% + 20px);font-size:14px;color:var(--muted)}
+:root:not([data-skin]) .vrow:hover{background:color-mix(in srgb,var(--surface2) 70%,transparent)}
+:root:not([data-skin]) .vrow.on{background:color-mix(in srgb,var(--surface2) 85%,transparent);border:0;box-shadow:inset 3px 0 0 var(--accent);color:var(--ink)}
+:root:not([data-skin]) .vrow .slogo{width:18px;height:18px}
+:root:not([data-skin]) .vrow .pin{font-size:11px;opacity:.7}
+:root:not([data-skin]) .pp,:root:not([data-skin]) .vrow.on .pp{background:none;padding:0 6px 0 0;font-size:12px;color:var(--muted)}
+:root:not([data-skin]) .pp .av{transform:scale(.85)}
+:root:not([data-skin]) .links{gap:0 16px;margin-top:4px}
+:root:not([data-skin]) .links .lnk{color:var(--muted);font-size:12.5px;padding:5px 0;font-weight:400}
+:root:not([data-skin]) .links .lnk:hover{color:var(--accent)}
+:root:not([data-skin]) .links .lnk svg{width:14px;height:14px}
+:root:not([data-skin]) .vhead{padding-top:10px;border-top-color:color-mix(in srgb,var(--line) 60%,transparent)}
+:root:not([data-skin]) .vhead .t{font-size:15px}
+:root:not([data-skin]) .vhead .xbtn{width:32px;height:32px;opacity:.7}
+:root:not([data-skin]) .tools{padding-top:2px;gap:4px}
+:root:not([data-skin]) .meta{font-size:12px;gap:0 12px}
+:root:not([data-skin]) .mi{min-height:22px}
+:root:not([data-skin]) .mi b{font-size:12px;color:var(--muted)}
+:root:not([data-skin]) .mi.lk{color:var(--muted);font-weight:400}
+:root:not([data-skin]) .mi.lk:hover,:root:not([data-skin]) .mi.lk.on{color:var(--accent)}
+:root:not([data-skin]) .panel{display:grid;gap:0;max-width:none}
+:root:not([data-skin]) .prow{gap:2px;flex-wrap:wrap}
+:root:not([data-skin]) .prow.marks{flex-wrap:wrap}
+:root:not([data-skin]) .step{background:none}
+:root:not([data-skin]) .step button{width:28px;height:30px;color:var(--muted);font-size:17px;border-radius:8px}
+:root:not([data-skin]) .step span{min-width:30px;font-size:13.5px}
+:root:not([data-skin]) .kchip{background:none;min-height:30px;padding:2px 8px;border-radius:8px;font-size:12.5px;color:var(--muted)}
+:root:not([data-skin]) .kchip b{font-size:12.5px}
+:root:not([data-skin]) .kchip:hover{background:var(--surface2)}
+:root:not([data-skin]) .kchip.set{background:none;color:var(--accent)}
+:root:not([data-skin]) .kchip.h.set{background:none;color:var(--here)}
+:root:not([data-skin]) .rx{background:none;min-height:30px;padding:1px 6px;border-radius:8px;font-size:14.5px;gap:4px}
+:root:not([data-skin]) .rx:hover{background:var(--surface2)}
+:root:not([data-skin]) .rx.on{background:var(--accent-soft);box-shadow:none}
+:root:not([data-skin]) .rx i{font-size:11.5px}
+:root:not([data-skin]) .rx .nm{display:none}
+:root:not([data-skin]) .rx .ct{display:inline}
+:root:not([data-skin]) .rx.add{background:none;padding:1px 6px;color:var(--muted)}
+:root:not([data-skin]) .rx.add svg{opacity:.6}
+:root:not([data-skin]) .pact{gap:0;margin-left:auto}
+:root:not([data-skin]) .pact button{flex:none;background:none;height:30px;padding:0 8px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--muted);gap:5px}
+:root:not([data-skin]) .pact button:hover{background:var(--surface2);color:var(--ink)}
+:root:not([data-skin]) .pact button.on{background:none;color:var(--ink)}
+:root:not([data-skin]) .pact button.open{background:var(--accent-soft);color:var(--accent)}
+:root:not([data-skin]) .seg.sm{margin:0 6px 0 4px;border:0;background:none}
+:root:not([data-skin]) .seg.sm button,:root:not([data-skin]) .quiet .seg.sm button{min-height:30px;padding:2px 7px;border-radius:8px;color:var(--muted);font-size:14px}
+:root:not([data-skin]) .seg.sm button:hover{background:var(--surface2)}
+:root:not([data-skin]) .seg.sm button.on,:root:not([data-skin]) .quiet .seg.sm button.on{background:var(--accent-soft);color:var(--accent)}
+:root:not([data-skin]) .quiet>button{color:var(--muted);font-weight:400}
+:root:not([data-skin]) .quiet>button.on{background:var(--accent-soft);color:var(--accent)}
+:root:not([data-skin]) .nl>span:last-child{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+:root:not([data-skin]) .nl{align-items:flex-start}
+:root:not([data-skin]) .pact button span{display:none}
+:root:not([data-skin]) .quiet>button{font-size:12.5px;padding:4px 8px}
+:root:not([data-skin]) .notesc{gap:0;margin-top:2px}
+:root:not([data-skin]) .nl,:root:not([data-skin]) .nl.me{background:none;padding:2px 0;font-size:13px;color:var(--ink);border-radius:0}
+:root:not([data-skin]) .nl svg.ic{color:var(--muted);opacity:.7}
+:root:not([data-skin]) .nl .av{transform:scale(.85)}
+:root:not([data-skin]) .chords{padding-top:14px}
+@media (min-width:960px){:root:not([data-skin]) .pact button span{display:inline}:root:not([data-skin]) .rx .nm{display:inline}:root:not([data-skin]) .rx .ct{display:none}:root:not([data-skin]) .chords{padding-left:calc(var(--gl) + 4px)}}
+@media (hover:none){:root:not([data-skin]) .row .lkb{opacity:.3}:root:not([data-skin]) .row .lgs .slogo{opacity:.55}}
+:root:not([data-skin]) .tools{gap:6px;padding-top:4px}
+:root:not([data-skin]) .meta{justify-content:space-between;gap:0 16px}
+:root:not([data-skin]) .mf{flex-wrap:nowrap;white-space:nowrap;gap:0 10px}
+:root:not([data-skin]) .mm{gap:0 12px}
+:root:not([data-skin]) .panel{gap:4px}
+:root:not([data-skin]) .bar{gap:4px 18px}
+:root:not([data-skin]) .prow.keys{flex-wrap:nowrap}
+:root:not([data-skin]) .step button,:root:not([data-skin]) .kchip,:root:not([data-skin]) .rx,:root:not([data-skin]) .pact button,:root:not([data-skin]) .quiet>button,:root:not([data-skin]) .seg.sm button,:root:not([data-skin]) .quiet .seg.sm button{height:32px;min-height:32px;border-radius:8px}
+:root:not([data-skin]) .step button{width:30px}
+:root:not([data-skin]) .step span{min-width:32px;font-size:13.5px;color:var(--ink)}
+:root:not([data-skin]) .kchip,:root:not([data-skin]) .kchip.set,:root:not([data-skin]) .kchip.h.set{border-color:transparent}
+:root:not([data-skin]) .kchip.ask{box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}
+:root:not([data-skin]) .kchip svg.ic{opacity:.6}
+:root:not([data-skin]) .quiet>button{width:34px;padding:0;justify-content:center}
+:root:not([data-skin]) .quiet svg.ic{width:19px;height:19px;stroke-width:1.6}
+:root:not([data-skin]) .seg.sm button,:root:not([data-skin]) .quiet .seg.sm button{width:30px;padding:0;font-size:15px}
+:root:not([data-skin]) .pact svg.ic{width:18px;height:18px;stroke-width:1.6}
+:root:not([data-skin]) .pact button{padding:0 7px}
+:root:not([data-skin]) .pact button b{font-size:12px}
+:root:not([data-skin]) .khint{font-size:12.5px;line-height:1.35;padding:0 2px}
+:root:not([data-skin]) .khint b{font-family:var(--mono);color:var(--ink)}
+:root:not([data-skin]) .prow.marks{gap:2px;margin-left:-4px}
+:root:not([data-skin]) .rx{padding:0 7px}
+:root:not([data-skin]) .notesc{margin-top:0;gap:1px}
+:root:not([data-skin]) .nl,:root:not([data-skin]) .nl.me{padding:3px 2px;gap:9px;line-height:1.35}
+:root:not([data-skin]) .nl svg.ic{width:16px;height:16px;margin:1px 1px 0}
+:root:not([data-skin]) .totop{width:38px;height:38px;background:var(--surface);color:var(--muted);box-shadow:0 0 0 1px var(--line),0 2px 8px rgba(13,20,48,.12)}
+@media (max-width:959px){:root:not([data-skin]) .bar .prow.keys{flex:1 0 100%}:root:not([data-skin]) .mf{font-size:11.5px;gap:0 8px}:root:not([data-skin]) .mi b{font-size:11.5px}}
+:root:not([data-skin]) .panel{display:grid;gap:2px 14px;margin-top:4px}
+@media (max-width:959px){:root:not([data-skin]) .panel{gap:2px 16px}:root:not([data-skin]) .pl{font-size:11.5px}:root:not([data-skin]) .kchip{padding:2px 7px}}
+:root:not([data-skin]) .pc:not(.pn){margin-left:-7px}
+:root:not([data-skin]) .pn{padding-top:5px;gap:2px}
+:root:not([data-skin]) .pn .rx.add{margin-left:-7px;font-size:13px}
+:root:not([data-skin]) .pn .rx.add svg{width:15px;height:15px}
+:root:not([data-skin]) .prow.marks{margin-left:0}
+:root:not([data-skin]) .vhead .xbtn{width:32px;height:32px;opacity:1;color:var(--muted)}
+:root:not([data-skin]) .vhead .xbtn:hover{color:var(--ink)}
+:root:not([data-skin]) .vhead .xbtn.cnt{width:auto;min-width:32px;padding:0 7px}
+:root:not([data-skin]) .vhead .xbtn.cnt.on{color:var(--ink)}
+:root:not([data-skin]) .vhead .xbtn svg{width:19px;height:19px;stroke-width:1.6}
+:root:not([data-skin]) .khint{display:block;padding:2px 7px 4px}
+:root:not([data-skin]) .notesc{margin:0}
+:root:not([data-skin]) .nl,:root:not([data-skin]) .nl.me{padding:2px 0}
+:root:not([data-skin]) .noteed{margin-top:0}
+@media (max-width:959px){:root:not([data-skin]) .mm{flex-basis:100%}}
+:root:not([data-skin]) .vhead{padding-top:14px}
+:root:not([data-skin]) .tools{gap:10px;padding-top:6px;padding-bottom:6px}
+:root:not([data-skin]) .meta{justify-content:flex-start;gap:0 14px;align-items:center}
+:root:not([data-skin]) .mm{flex-basis:auto;gap:0 6px}
+:root:not([data-skin]) .mi.ico{width:30px;justify-content:center}
+:root:not([data-skin]) .panel{gap:8px 16px;margin-top:6px}
+:root:not([data-skin]) .pl{min-height:34px}
+:root:not([data-skin]) .step button,:root:not([data-skin]) .kchip,:root:not([data-skin]) .rx,:root:not([data-skin]) .quiet>button{height:34px;min-height:34px}
+:root:not([data-skin]) .prow.keys{flex-wrap:wrap;gap:4px}
+:root:not([data-skin]) .kchip.ask{background:var(--accent-soft);color:var(--accent);box-shadow:none;font-weight:600;padding:2px 12px}
+:root:not([data-skin]) .kchip.add{padding:2px 8px;gap:4px}
+:root:not([data-skin]) .kchip.add svg.ic{width:16px;height:16px;opacity:.75}
+:root:not([data-skin]) .kchip.back{color:var(--muted)}
+:root:not([data-skin]) .quiet.eq{gap:6px;flex-wrap:nowrap}
+:root:not([data-skin]) .quiet.eq>button{width:38px}
+:root:not([data-skin]) .quiet svg.ic{width:20px;height:20px}
+:root:not([data-skin]) .prow.marks{gap:6px}
+:root:not([data-skin]) .rx{padding:0 8px 0 7px}
+:root:not([data-skin]) .rx.add{padding:0 8px}
+:root:not([data-skin]) .rx.add svg{width:19px;height:19px;opacity:.8}
+:root:not([data-skin]) .pn{padding-top:7px;gap:4px}
+:root:not([data-skin]) .nl.au{color:var(--muted)}
+:root:not([data-skin]) .nl.au>span:last-child{display:block;-webkit-line-clamp:unset}
+:root:not([data-skin]) .chords{padding-top:22px}
+:root:not([data-skin]) .vrow{padding-right:4px}
+:root:not([data-skin]) .vrow .vm{opacity:.55}
+:root:not([data-skin]) .vrow:hover .vm,:root:not([data-skin]) .vrow.on .vm{opacity:1}
+:root:not([data-skin]) .row .lkb{opacity:0;pointer-events:none}
+:root:not([data-skin]) .list:has(.row.sel) .lkb,:root:not([data-skin]) .row .lkb.on{opacity:.8;pointer-events:auto}
+@media (max-width:959px){:root:not([data-skin]) .mf .alt{display:none}:root:not([data-skin]) .meta{flex-wrap:nowrap}:root:not([data-skin]) .prow.marks{gap:2px}:root:not([data-skin]) .rx{padding:0 6px 0 5px}:root:not([data-skin]) .rx.add{padding:0 5px}:root:not([data-skin]) .panel{gap:8px 16px}:root:not([data-skin]) .quiet.eq{gap:4px}:root:not([data-skin]) .mm{flex-basis:auto}}
+@media (hover:none){:root:not([data-skin]) .row .lkb{opacity:0}}
 .tagl{flex:none;text-align:center;font-size:11px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sx{display:none}
 @keyframes twhue{to{filter:hue-rotate(360deg)}}
@@ -1188,7 +1392,17 @@ const P={
  play:'<path d="M7 5l12 7-12 7z"/>',
  home:'<path d="M3 11l9-7 9 7v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/>',
  lib:'<path d="M4 6h11M4 11h11M4 16h6"/><circle cx="16.5" cy="17.5" r="2.5"/><path d="M19 17.5V9l2.5-.8"/>',
- pls:'<rect x="3" y="11" width="18" height="10" rx="2.5"/><path d="M6 7.5h12M8.5 4h7"/>',
+ yt:'<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.2 9.3v5.4l4.6-2.7z" fill="currentColor"/>',
+phones:'<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.6"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.6"/>',
+flat:'<path d="M8.5 3v17.5c4.6-2.4 7.5-4.9 7.5-8 0-2.6-2.4-3.7-4.4-2.6-1.3.7-3.1 2.4-3.1 2.4"/>',
+sharp:'<path d="M9.2 3.5v17M14.8 3.5v17M5.5 9.6l13-2.6M5.5 17l13-2.6"/>',
+smile:'<circle cx="10.5" cy="13.5" r="7.5"/><path d="M7.8 12.3v.4M13.2 12.3v.4M7.6 15.6c1.7 1.5 4.1 1.5 5.8 0M19 2.5v6M16 5.5h6"/>',
+ext:'<path d="M13.5 5H19v5.5M19 5l-8 8M17 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 4 18.5v-10A1.5 1.5 0 0 1 5.5 7H10"/>',
+addpl:'<path d="M4 6h12M4 11h12M4 16h7M18.5 13v7M15 16.5h7"/>',
+simp:'<text x="1.5" y="18" font-size="14" font-weight="700" stroke="none" fill="currentColor" font-family="Inter,sans-serif">C</text><text x="13" y="12.5" font-size="9.5" font-weight="700" stroke="none" fill="currentColor" font-family="Inter,sans-serif">7</text><path d="M11.5 13l9.5-7.5"/>',
+circ:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.4v5.4M12 15.2v5.4M3.4 12h5.4M15.2 12h5.4M5.9 5.9l3.8 3.8M14.3 14.3l3.8 3.8M18.1 5.9l-3.8 3.8M9.7 14.3l-3.8 3.8"/>',
+simil:'<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16 16M8 9.6h6M8 12.6h6"/>',
+pls:'<rect x="3" y="11" width="18" height="10" rx="2.5"/><path d="M6 7.5h12M8.5 4h7"/>',
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
  more:'<circle cx="6" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/><circle cx="12" cy="12" r="1.6"/>',
  search:'<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16 16"/>',
@@ -1466,7 +1680,7 @@ const NAV=[['home','home','Главная'],['library','lib','Библиотек
 const navOn=r=>S.route===r||(r==='playlists'&&S.route==='plset')||(r==='library'&&0);
 const ANAV=()=>[['go:home','search','Поиск',S.route==='home'||S.route==='library'||S.route==='locked'],['go:more','more','Инструменты',['more','stub','ills','versions','about'].includes(S.route)],['login','user','Войти',false]];
 function tabs(){if(S.deleted)return '';if(S.anon)return `<nav class="tabs">${ANAV().map(([a,i,t,on])=>`<button class="${on?'on':''}" data-a="${a}">${ic(i)}${t}</button>`).join('')}</nav>`;return `<nav class="tabs">${NAV.concat([['more','more','Ещё']]).map(([r,i,t])=>`<button class="${navOn(r)||(r==='more'&&['more','stub','editor','ills','profile','import','versions','about','ear','mcp','style','book'].includes(S.route))?'on':''}" data-a="go:${r}">${ic(i)}${t}</button>`).join('')}</nav>`}
-const TOOLS=[['import','imp','Импорт аккордов','Ссылки, файлы, фото, Telegram'],['ear','ai','Распознавание','ИИ слышит аккорды в видео, записи, микрофоне'],['editor','pen','Добавить мои аккорды','Свой вариант или новая песня'],['ills','img','Иллюстрации','Картинки к песням'],['stub:Аппликатуры на гитаре','frets','Аппликатуры','Все аккорды на грифе'],['stub:Тюнер','gauge','Тюнер','Настроить гитару'],['mcp','mcp','Интеграция с вашим ИИ','Управлять шкафом из Claude, ChatGPT и других']];
+const TOOLS=[['import','imp','Импорт аккордов','Ссылки, файлы, фото, Telegram'],['ear','ai','Распознавание','ИИ слышит аккорды в видео, записи, микрофоне'],['editor','pen','Новая песня','Свой вариант или новая песня'],['ills','img','Иллюстрации','Картинки к песням'],['stub:Аппликатуры на гитаре','frets','Аппликатуры','Все аккорды на грифе'],['stub:Тюнер','gauge','Тюнер','Настроить гитару'],['mcp','mcp','Интеграция с вашим ИИ','Управлять шкафом из Claude, ChatGPT и других']];
 const OTHER=[['stub:Аккорды офлайн','cloud','Аккорды офлайн','Скачать библиотеку на устройство'],['profile','user','Профиль','Павел · вход через Telegram'],['about','info','Что умеет шкаф','Все возможности'],['versions','clock','Версии','Что менялось от релиза к релизу'],['style','theme','Стиль','Шестнадцать вариантов оформления'],['guestdemo','eye','Как видит гость','Ссылка без входа']];
 function side(){if(S.deleted)return '';if(S.anon){const sb=([r,i,t])=>`<button class="${S.route===r?'on':''}" data-a="${r.includes(':')?r:'go:'+r}">${ic(i)}${t}</button>`;return `<aside class="side">${ANAV().filter(x=>x[0]!=='go:more').map(([a,i,t,on])=>`<button class="${on?'on':''}" data-a="${a}">${ic(i)}${t}</button>`).join('')}<h6>Инструменты</h6>${TOOLS.map(sb).join('')}<h6>Прочее</h6>${[['about','info','Что умеет шкаф'],['versions','clock','Версии']].map(sb).join('')}</aside>`}const b=([r,i,t])=>`<button class="${navOn(r)?'on':''}" data-a="${r.includes(':')||r==='guestdemo'?r:'go:'+r}">${ic(i)}${t}</button>`;
  return `<aside class="side" data-sc="side">${NAV.map(b).join('')}<h6>Инструменты</h6>${TOOLS.map(b).join('')}<h6>Прочее</h6>${OTHER.map(b).join('')}</aside>`}
@@ -1539,20 +1753,20 @@ function library(){const p=scopePl()&&pl(S.scope);const cnt=libSongs().length;
    ${S.pres?`<button class="chip on" data-a="pclear">${ic('graph')}${esc(S.pres.title)} ${ic('x')}</button>`:''}
   </div>
   <div id="listbody">${listBody()}</div>${cnt?`<p style="margin:16px 0 0"><button class="btn" data-a="book">${ic('file')}Книжка PDF из этого списка</button></p>`:''}</div><button class="totop" data-a="totop:list" aria-label="Наверх">${ic('up')}</button></div>
- <div class="pane song"${sc('song')}>${S.song?songPane():''}</div></div>`}
+ <div class="split" role="separator" aria-orientation="vertical" title="Потяните, чтобы изменить ширину. Двойной щелчок — вернуть"></div><div class="pane song"${sc('song')}>${S.song?songPane():''}</div></div>`}
 const plural=(n,a,b,c)=>{const m=n%100,k=n%10;return m>10&&m<20?c:k===1?a:k>1&&k<5?b:c};
 function plMeta(p){const n=new Set(p.items.map(i=>i.g)).size,m=Object.keys(p.members).length;return `${n} ${plural(n,'песня','песни','песен')} · ${m?`${m+1} ${plural(m+1,'участник','участника','участников')}`:'только я'} · ${p.open?'по ссылке':'закрытый'}`}
 
 /* song pane */
-function personPills(v,on){const ppl=['me',...Object.keys(PEOPLE).filter(p=>p!=='me')];return ppl.map(p=>{const e=[...new Set(rxOf(v,p).map(r=>r.e))].join(''),km=keyOf(p,v,null),kh=scopePl()?keyOf(p,v,scopePl()):null;if(!e&&!km&&!kh)return '';
- return `<span class="pp">${av(p,1)}${p==='me'?'Я':PEOPLE[p].n} ${e}${km?` <span class="k tap" role="button" data-a="applykey:${km.t}:${v}:${p}" title="Применить эту тональность">${tstr(km.t)}</span>`:''}${kh?` <span class="k h tap" role="button" data-a="applykey:${kh.t}:${v}:${p}" title="Применить тональность из этого плейлиста">здесь ${tstr(kh.t)}</span>`:''}</span>`}).join('')}
+function personPills(v,on){const act=S.verOpen&&S.ver===v,ppl=['me',...Object.keys(PEOPLE).filter(p=>p!=='me')];return ppl.map(p=>{const e=[...new Set(rxOf(v,p).map(r=>r.e))].join(''),km=keyOf(p,v,null),kh=scopePl()?keyOf(p,v,scopePl()):null;if(!e&&!km&&!kh)return '';
+ return `<span class="pp">${av(p,1)}${p==='me'?'Я':PEOPLE[p].n} ${e}${km?` <span class="k${act?' tap':''}"${act?` role="button" data-a="applykey:${km.t}:${v}:${p}" title="Показать в этой тональности"`:''}>${tstr(km.t)}</span>`:''}${kh?` <span class="k h${act?' tap':''}"${act?` role="button" data-a="applykey:${kh.t}:${v}:${p}" title="Показать в тональности из этого плейлиста"`:''}>здесь ${tstr(kh.t)}</span>`:''}</span>`}).join('')}
 function songPane(){const s=song(S.song),vs=songVers(s),bg=cover(s),p=scopePl()&&pl(S.scope),bare=!!s.bare;
  const canEd=!S.anon&&!bare&&p&&canAdd(p);
  let h=`<div class="hero">${bg?`<div class="bgart" style="background-image:url(${bg})"></div>`:''}<div class="htop"><div class="t"><div class="a">${esc(s.artist)}</div><div class="n">${esc(s.title)}</div><div class="ctx">${S.fromLocked?ic('lock')+'Из закрытого плейлиста':bare?(S.anon?ic('link')+'Аккорды по ссылке':ic('globe')+'Аккорды · пока не в ваших плейлистах'):p?`<button class="ctxl" data-a="openpl:${p.id}" title="К списку плейлиста">${ic('pls')}${esc(p.name)}${ic('right')}</button>`:ic('lib')+'Песня из моих плейлистов'}</div></div>${canEd?`<button class="xbtn" data-a="rename:${s.id}" aria-label="Как называть эту песню в плейлисте" title="Как называть эту песню в плейлисте">${ic('note')}</button>`:''}<button class="xbtn" data-a="closesong" aria-label="Закрыть">${ic('x')}</button></div><div class="vers">`;
  const cut=vs.length>6&&!S.allVers,ci=Math.max(0,vs.indexOf(S.ver)),w0=cut?Math.max(0,Math.min(ci-2,vs.length-5)):0;
  if(!bare){
   if(cut&&w0>0)h+=`<button class="lnk more" data-a="allvers">${ic('up')}ещё ${w0} выше</button>`;
-  h+=vs.map((id,i)=>{if(cut&&(i<w0||i>=w0+5))return '';const v=ver(id),on=S.verOpen&&S.ver===id,n=vname(v),diff=n.title!==s.title||n.artist!==s.artist;return `<button class="vrow${on?' on':''}" data-a="ver:${id}"><span class="l">${letter(i)}.</span>${srcSvg(v)}<span>${esc(vsrc(v))}</span>${v.rating?`<span class="rt">☆ ${v.rating}</span>`:''}${MAIN[s.id]===id?`<span class="pin">мой основной</span>`:''}${diff?`<span class="aka">в источнике: ${esc(n.artist)} — ${esc(n.title)}</span>`:''}${personPills(id)}</button>`}).join('');
+  h+=vs.map((id,i)=>{if(cut&&(i<w0||i>=w0+5))return '';const v=ver(id),on=S.verOpen&&S.ver===id,n=vname(v),diff=n.title!==s.title||n.artist!==s.artist;return `<button class="vrow${on?' on':''}" data-a="ver:${id}"><span class="l">${letter(i)}.</span>${srcSvg(v)}<span>${esc(vsrc(v))}</span>${v.rating?`<span class="rt">☆ ${v.rating}</span>`:''}${MAIN[s.id]===id?`<span class="pin">мой основной</span>`:''}${diff?`<span class="aka">в источнике: ${esc(n.artist)} — ${esc(n.title)}</span>`:''}${personPills(id)}${S.anon?'':`<span class="vm" role="button" tabindex="0" data-a="vmenu:${id}" aria-label="Действия с вариантом ${letter(i)}" title="Основной, связать, отделить, убрать">${ic('dots')}</span>`}</button>`}).join('');
   if(cut)h+=`<button class="lnk more" data-a="allvers">${ic('down')}${vs.length-w0-5>0?`ещё ${vs.length-w0-5} ниже · `:''}показать все ${vs.length}</button>`}
  const drawing=s.vers.some(id=>ver(id).task);
  if(s.ill||drawing)h+=`<button class="vrow${S.verOpen&&S.ver==='ill'?' on':''}" data-a="ver:ill">${ic('img')}<span>Иллюстрации (${s.ill})</span>${drawing?`<span class="rt busy">${ic('loop')}рисуем ещё ${BATCH}</span>`:''}</button>`;
@@ -1567,26 +1781,34 @@ function songPane(){const s=song(S.song),vs=songVers(s),bg=cover(s),p=scopePl()&
  return h+`<button class="totop" data-a="totop:song" aria-label="Наверх">${ic('up')}</button>`}
 function verView(s,v,i,vs){const t=curT(v.id),plid=scopePl(),km=keyOf('me',v.id,null),kh=plid?keyOf('me',v.id,plid):null,eff=kh?'h':km?'m':null;
  const base=baseT(v.id);
- let h=`<div class="vhead"><span class="t">${s.bare||(vs.length>1&&vs.length<=4)?'':`<b>${letter(i)}</b>`}${srcSvg(v)}<span class="el">${esc(vsrc(v))}</span></span>${s.bare?(()=>{const nv=S.navIds||[],k=nv.indexOf(s.id);return k>=0&&nv.length>1?`<span class="pips" aria-label="По результатам поиска"><button data-a="navto:${nv[k-1]}" aria-label="Предыдущие аккорды"${k>0?'':' disabled'}>${ic('left')}</button><button class="on" disabled>${k+1}/${nv.length}</button><button data-a="navto:${nv[k+1]}" aria-label="Следующие аккорды"${k<nv.length-1?'':' disabled'}>${ic('right')}</button></span>`:''})():vs.length>4?`<span class="pips" aria-label="Варианты"><button data-a="ver:${vs[i-1]}" aria-label="Предыдущий вариант"${i>0?'':' disabled'}>${ic('left')}</button><button class="on" data-a="pop:vlist" aria-label="Все варианты">${letter(i)} · ${i+1}/${vs.length}</button><button data-a="ver:${vs[i+1]}" aria-label="Следующий вариант"${i<vs.length-1?'':' disabled'}>${ic('right')}</button></span>`:vs.length>1?`<span class="pips" role="tablist" aria-label="Варианты">${vs.map((id,k)=>`<button class="${id===v.id?'on':''}" role="tab" aria-selected="${id===v.id}" data-a="ver:${id}" aria-label="Вариант ${letter(k)}">${letter(k)}</button>`).join('')}</span>`:''}<button class="xbtn tgb" data-a="tgsend" aria-label="Прислать эти аккорды мне в Telegram" title="Прислать эти аккорды мне в Telegram">${ic('tg')}</button><button class="xbtn" data-a="pop:vmore" aria-label="Ещё">${ic('dots')}</button><button class="xbtn" data-a="closever" aria-label="Закрыть аккорды">${ic('x')}</button></div><div class="tools">${tgCard(s)}${metaLine(v,t)}<div class="panel">`;
- h+=`<div class="prow"><span class="step"><button data-a="tr:-1" aria-label="Ниже">−</button><span>${tstr(t)}</span><button data-a="tr:1" aria-label="Выше">+</button></span>
-  <button class="kchip${km?' set':''}" aria-pressed="${!!km}" data-a="keychip:m" title="Моя тональность: везде, где я вижу эти аккорды">Моя <b>${km?tstr(km.t):'—'}</b></button>
-  ${plid?`<button class="kchip h${kh?' set':''}" aria-pressed="${!!kh}" data-a="keychip:h" title="Только в этом плейлисте">Здесь <b>${kh?tstr(kh.t):'—'}</b></button>`:(()=>{const n=KEYS.filter(k=>!S.anon&&k.p==='me'&&k.v===v.id&&k.pl!==null).length;return `<button class="kchip h${n?' set':''}" data-a="pop:keypl" title="Отдельная тональность для плейлиста">В плейлисте${n?` <b>${n}</b>`:''}${ic('down')}</button>`})()}
-  ${S.tmpT!==null?`<span class="khint">Сейчас ${tstr(t)}, не запомнено. Нажмите «Моя» или ${plid?'«Здесь»':'«В плейлисте»'}, чтобы запомнить. <button class="lnk" data-a="keyreset">Вернуть ${tstr(base)}</button></span>`:''}</div>`;
+ let h=`<div class="vhead"><span class="t">${s.bare||vs.length<2?'':`<b>${letter(i)}</b>`}${srcSvg(v)}${v.src&&!/^(импорт|распознано)/.test(v.src)?`<button class="el srcl" data-a="toast:В макете ссылки на источники не открываются" title="Открыть источник: ${esc(v.src)}">${esc(vsrc(v))}${ic('ext')}</button>`:`<span class="el">${esc(vsrc(v))}</span>`}</span>${s.bare?(()=>{const nv=S.navIds||[],k=nv.indexOf(s.id);return k>=0&&nv.length>1?`<span class="pips" aria-label="По результатам поиска"><button data-a="navto:${nv[k-1]}" aria-label="Предыдущие аккорды"${k>0?'':' disabled'}>${ic('left')}</button><button class="on" disabled>${k+1}/${nv.length}</button><button data-a="navto:${nv[k+1]}" aria-label="Следующие аккорды"${k<nv.length-1?'':' disabled'}>${ic('right')}</button></span>`:''})():''}${(n=>`<button class="xbtn cnt${n?' on':''}" data-a="pop:addpl" aria-label="В плейлист" title="В плейлист${n?': уже в '+n:''}">${ic('addpl')}${n?`<b>${n}</b>`:''}</button>`)(myPls().filter(p=>p.items.some(x=>x.v===v.id)).length)}<button class="xbtn" data-a="pop:share" aria-label="Поделиться" title="Поделиться">${ic('share')}</button><button class="xbtn" data-a="closever" aria-label="Закрыть аккорды">${ic('x')}</button></div><div class="tools">${tgCard(s)}${metaLine(v,t)}<div class="panel">`;
  const groups={};rxOf(v.id).forEach(r=>(groups[r.e]=groups[r.e]||[]).push(r.p));
- h+=`<div class="prow">${Object.keys(groups).map(e=>`<button class="rx${groups[e].includes('me')?' on':''}" data-a="rx:${e}" title="${groups[e].map(who).join(', ')}">${e}<i>${groups[e].map(who).join(', ')}</i></button>`).join('')}<button class="rx add" data-a="pop:emo">${Object.keys(groups).length?ic('plus'):'🤍 Отметить'}</button></div>`;
  const inN=myPls().filter(p=>p.items.some(x=>x.v===v.id)).length,myNote=NOTES.find(n=>n.p==='me'&&n.v===v.id&&n.pl===null);
- h+=`<div class="pact"><button class="${inN?'on':''}" data-a="pop:addpl">${ic('pls')}В плейлист${inN?' · '+inN:''}</button><button class="${S.noteOpen?'on':''}" data-a="notetoggle">${ic('note')}${(c=>c?'Заметки · '+c:'Заметка')(NOTES.filter(n=>!S.anon&&n.v===v.id&&n.text&&(n.pl===null?n.p==='me':(plid?n.pl===plid:myPls().some(x=>x.id===n.pl&&x.items.some(it=>it.v===v.id))))).length)}</button><button data-a="pop:share">${ic('share')}Поделиться</button></div></div>`;
- h+=`<div class="quiet"><button class="${S.simp?'on':''}" data-a="pop:simp">Проще</button><button class="${S.circle?'on':''}" data-a="tool:circle">Круг</button><button class="${S.loops?'on':''}" data-a="tool:loops">Циклы</button><button class="${S.psearch?'on':''}" data-a="tool:psearch">Похожие</button><span class="seg sm" role="group" aria-label="Знаки"><button class="${S.flat===true?'on':''}" aria-pressed="${S.flat===true}" data-a="flat:1">♭</button><button class="${S.flat===false?'on':''}" aria-pressed="${S.flat===false}" data-a="flat:0">♯</button></span></div>`;
+ const noteN=NOTES.filter(n=>!S.anon&&n.v===v.id&&n.text&&(n.pl===null?n.p==='me':(plid?n.pl===plid:myPls().some(x=>x.id===n.pl&&x.items.some(it=>it.v===v.id))))).length;
+ let nh='';
  /* notes: one private, one per playlist for its members; other people's playlist notes are always readable */
  const npls=myPls().filter(x=>x.items.some(it=>it.v===v.id)),vis=n=>n.pl===null?n.p==='me':(plid?n.pl===plid:npls.some(x=>x.id===n.pl));
  const shown=NOTES.filter(n=>!S.anon&&n.v===v.id&&n.text&&vis(n)&&!(S.noteOpen&&n.p==='me'));
  const noteCard=n=>`<div class="note${n.pl===null?' me':''}">${n.pl===null?'':av(n.p,1)}<div><span class="w">${n.pl===null?'Только я':`${n.p==='me'?'Я':PEOPLE[n.p].n} · ${plid?'в этом плейлисте':'«'+esc(pl(n.pl).name)+'»'}`}</span>${esc(n.text)}</div></div>`;
  if(S.noteOpen){const ep=notePl(),hn=ep&&NOTES.find(n=>n.p==='me'&&n.v===v.id&&n.pl===ep);
-  h+=`<div class="noteed"><label>Только для меня — вижу в любом плейлисте и в поиске<textarea class="field" id="note_m" data-note="m" placeholder="Например: каподастр на втором ладу">${esc(myNote?myNote.text:'')}</textarea></label>
+  nh+=`<div class="noteed"><div class="nehead"><b>Заметки</b><button class="lnk" data-a="notetoggle">Свернуть${ic('up')}</button></div><label>Только для меня — вижу в любом плейлисте и в поиске<textarea class="field" id="note_m" data-note="m" placeholder="Например: каподастр на втором ладу">${esc(myNote?myNote.text:'')}</textarea></label>
   <div class="nlab">Для участников плейлиста${!plid&&npls.length>1?`<div class="chips" style="margin-top:6px">${npls.map(x=>`<button class="chip${x.id===ep?' on':''}" data-a="notepl:${x.id}">${esc(x.name)}</button>`).join('')}</div>`:''}</div>
   ${ep?`<textarea class="field" id="note_h" data-note="h" aria-label="Заметка для участников плейлиста" placeholder="Видят все участники «${esc(pl(ep).name)}»">${esc(hn?hn.text:'')}</textarea>`:`<div class="hint">Этих аккордов нет ни в одном вашем плейлисте. Положите их в плейлист — и сможете оставить заметку его участникам.</div>`}
   <div><button class="btn pri" data-a="notetoggle">Готово</button></div></div>`}
- h+=S.noteOpen?shown.map(noteCard).join(''):shown.length?`<button class="notesc" data-a="notetoggle" aria-label="Открыть заметки">${shown.map(n=>`<span class="nl${n.pl===null?' me':''}">${n.pl===null?ic('lock'):av(n.p,1)}<span>${esc(n.text)}</span></span>`).join('')}</button>`:'';
+ nh+=S.noteOpen?shown.map(noteCard).join(''):shown.length?`<button class="notesc" data-a="notetoggle" aria-label="Открыть заметки">${shown.map(n=>`<span class="nl${n.pl===null?' me':''}">${n.pl===null?ic('lock'):av(n.p,1)}<span>${esc(n.text)}</span></span>`).join('')}</button>`:'';
+ const ovs=plid?[]:KEYS.filter(k=>!S.anon&&k.p==='me'&&k.v===v.id&&k.pl!==null),tmp=S.tmpT!==null,cm=v.id>0&&vmeta(v).comment;
+ const faces=a=>{const o=[...a].sort((x,y)=>(y==='me')-(x==='me'));return o.slice(0,3).map(p=>av(p,1)).join('')+(o.length>3?`<i class="ct">+${o.length-3}</i>`:'')};
+ h+=`<div class="pl">Тон</div><div class="pc"><div class="prow keys"><span class="step"><button data-a="tr:-1" aria-label="Ниже">−</button><span>${tstr(t)}</span><button data-a="tr:1" aria-label="Выше">+</button></span>
+  ${tmp?`<button class="kchip ask" data-a="keychip:m" title="Запомнить как мою тональность: везде, где я вижу эти аккорды">Запомнить</button>`:''}
+  ${kh?`<button class="kchip h set" aria-pressed="true" data-a="keychip:h" title="Отдельная тональность в этом плейлисте. Нажмите, чтобы ${kh.t===t?'убрать':'заменить на '+tstr(t)}">здесь ${tstr(kh.t)}</button>`:''}
+  ${ovs.map(k=>`<button class="kchip h set" data-a="pop:keypl" title="Отдельная тональность в плейлисте «${esc(pl(k.pl).name)}»">${esc(pl(k.pl).name)} ${tstr(k.t)}</button>`).join('')}
+  ${km&&km.t!==t?`<button class="kchip set" data-a="applykey:${km.t}:${v.id}:me" title="Моя тональность для этих аккордов. Нажмите, чтобы показать в ней">моя ${tstr(km.t)}</button>`:''}
+  ${S.anon||kh?'':`<button class="kchip add" data-a="${plid?'keychip:h':'pop:keypl'}" title="Отдельная тональность для плейлиста" aria-label="Отдельная тональность для плейлиста">${ic('plus')}${tmp?(plid?'только здесь':'для плейлиста'):''}</button>`}
+  ${tmp?`<button class="kchip back" data-a="keyreset" title="Не запоминать">вернуть ${tstr(base)}</button>`:''}</div></div>
+  <div class="pl">Аккорды</div><div class="pc"><div class="quiet eq"><button class="${S.flat===true?'on':''}" aria-pressed="${S.flat===true}" data-a="flat:1" title="Писать с бемолями" aria-label="Писать с бемолями">${ic('flat')}</button><button class="${S.flat===false?'on':''}" aria-pressed="${S.flat===false}" data-a="flat:0" title="Писать с диезами" aria-label="Писать с диезами">${ic('sharp')}</button><button class="${S.simp?'on':''}" data-a="pop:simp" title="Проще: упростить аккорды" aria-label="Проще: упростить аккорды">${ic('simp')}</button><button class="${S.circle?'on':''}" data-a="tool:circle" title="Квинтовый круг" aria-label="Квинтовый круг">${ic('circ')}</button><button class="${S.loops?'on':''}" data-a="tool:loops" title="Циклы: повторяющиеся ходы" aria-label="Циклы: повторяющиеся ходы">${ic('loop')}</button><button class="${S.psearch?'on':''}" data-a="tool:psearch" title="Похожие: песни с таким же ходом" aria-label="Похожие: песни с таким же ходом">${ic('simil')}</button></div></div>
+  <div class="pl">Отметки</div><div class="pc"><div class="prow marks">${Object.keys(groups).map(e=>`<button class="rx${groups[e].includes('me')?' on':''}" aria-pressed="${groups[e].includes('me')}" data-a="rx:${e}" title="${groups[e].map(who).join(', ')} — нажмите, чтобы ${groups[e].includes('me')?'снять свою':'поставить свою'}">${e}<span class="fc">${faces(groups[e])}</span></button>`).join('')}<button class="rx add" data-a="pop:emo" aria-label="Кто отметил и новая отметка" title="Кто отметил и новая отметка">${Object.keys(groups).length?ic('smile'):'🤍 <span>Отметить</span>'}</button></div></div>
+  <button class="pl${S.noteOpen?' on':''}" data-a="notetoggle" aria-expanded="${!!S.noteOpen}" title="${S.noteOpen?'Свернуть заметки':'Открыть заметки'}">Заметки</button><div class="pc pn">${nh||`<button class="rx add" data-a="notetoggle">${ic('plus')}<span>Написать</span></button>`}</div>
+  ${cm?`<div class="pl">От автора</div><div class="pc pn"><div class="nl au"><span>${esc(cm)}</span></div></div>`:''}</div>`;
  /* tools */
  const cs=chordsOf(v,t,S.flat,S.simp);
  if(S.psearch)h+=`<div class="hint">${S.pres?`Найдено ${S.pres.songs.size} ${plural(S.pres.songs.size,'песня','песни','песен')} с ходом <b>${esc(S.pres.title)}</b>. <button class="chip" data-a="pshow">Показать</button> <button class="chip" data-a="pclear">Очистить</button>`:S.pfrom===null?'Нажмите на первый аккорд хода, потом на последний — найду песни с такой же последовательностью.':'Теперь нажмите на последний аккорд хода.'}</div>`;
@@ -1601,14 +1823,13 @@ function vmeta(v){if(META[v.id])return META[v.id];const first=body(v).find(l=>l.
  if(v.id===1){m.video=true;m.audio=true;m.key=tonic;m.bpm=96;m.comment=m.comment||'Вступление — перебор по три струны, со второго куплета можно боем.'}
  return META[v.id]=m}
 function tgCard(s){return `${S.tg==='sent'?`<div class="tgcard ok"><span class="tgi">${ic('check')}</span><div style="flex:1"><b>Ссылка у вас в Telegram</b><div class="small">Бот @shkaf_example_bot прислал эти аккорды («${esc(s.title)}») в личные сообщения.</div></div><button class="xbtn" data-a="tgclose" aria-label="Скрыть">${ic('x')}</button></div>`:S.tg==='need'?`<div class="tgcard"><span class="tgi">${ic('tg')}</span><div style="flex:1"><b>Бот пока не может вам написать</b><div class="small">В Telegram бот пишет только тем, кто сам открыл с ним чат. Откройте бота и нажмите «Запустить» — ссылка придёт сразу, и дальше кнопка будет работать в один тап.</div><div class="chips" style="margin-top:10px"><button class="btn tg" data-a="tgstart">${ic('tg')}Открыть бота</button><button class="btn" data-a="tgclose">Не сейчас</button></div></div></div>`:''}`}
-function metaLine(v,t){if(v.id<0)return '';const m=vmeta(v),kn=x=>chordHtml(transChord(x,t,S.flat)),it=[];
+function metaLine(v,t){if(v.id<0)return '';const m=vmeta(v),kn=x=>chordHtml(transChord(x,t,S.flat)),it=[],md=[];
  if(m.key)it.push(`<button class="mi" data-a="pop:keyinfo"><b>${kn(m.key)}</b>в источнике</button>`);
- it.push(`<button class="mi" data-a="pop:keyinfo">${m.auto.map(([k,p])=>`<b>${kn(k)}</b>${p}%`).join('<i>·</i>')}<i>авто</i></button>`);
+ it.push(`<button class="mi" data-a="pop:keyinfo"><i>авто</i>${m.auto.map(([k,p],n)=>`<span class="${n?'alt':''}">${n?'<i>· </i>':''}<b>${kn(k)}</b> ${p}%</span>`).join('')}</button>`);
  if(m.bpm)it.push(`<span class="mi"><b>${m.bpm}</b>BPM</span>`);
- if(m.video)it.push(`<button class="mi lk${S.media==='video'?' on':''}" data-a="media:video">${ic('play')}Видео</button>`);
- if(m.audio)it.push(`<button class="mi lk${S.media==='audio'?' on':''}" data-a="media:audio">${ic('vol')}Аудио</button>`);
- if(m.comment)it.push(`<button class="mi lk${S.acomm?' on':''}" data-a="acomm">${ic('info')}От автора</button>`);
- return `<div class="meta">${it.join('')}</div>${S.media&&m[S.media]?player(v,m,t):''}${S.acomm&&m.comment?`<div class="note"><div><span class="w">Комментарий автора подбора · ${esc(vsrc(v))}</span>${esc(m.comment)}</div></div>`:''}`}
+ if(m.video)md.push(`<button class="mi lk ico${S.media==='video'?' on':''}" data-a="media:video" title="Видео" aria-label="Видео">${ic('yt')}</button>`);
+ if(m.audio)md.push(`<button class="mi lk ico${S.media==='audio'?' on':''}" data-a="media:audio" title="Аудио" aria-label="Аудио">${ic('phones')}</button>`);
+ return `<div class="meta"><span class="mf">${it.join('')}</span>${md.length?`<span class="mm">${md.join('')}</span>`:''}</div>${S.media&&m[S.media]?player(v,m,t):''}`}
 const mmss=x=>`${x/60|0}:${String(Math.floor(x%60)).padStart(2,'0')}`;
 /* recognised chords along the recording: one block per bar, the way chord-recognition apps show it */
 function timeline(v,m){if(m.tl)return m.tl;const bar=240/(m.bpm||92),seq=[];body(v).forEach(l=>{if(l.k==='c')l.ch.forEach(c=>seq.push(c));if(l.k==='l')l.ch.forEach(c=>seq.push(c[1]))});const tl=[];let t0=0,k=0;while(t0<m.dur){tl.push({c:seq[k%seq.length],t0,t1:Math.min(m.dur,t0+bar)});t0+=bar;k++}return m.tl=tl}
@@ -1642,7 +1863,7 @@ function popover(){const p=S.pop;if(!p)return '';const innerWidth=window.innerWi
  if(p.k==='scope'){h=it('scope:all',S.scope==='all','Вся моя библиотека','Плейлисты, которые я показываю, и мои отметки')+'<hr>'+myPls().map(x=>it('scope:'+x.id,S.scope===x.id,esc(x.name),plMeta(x)+(x.show?'':' · скрыт из библиотеки'))).join('')}
  else if(p.k==='sort')h=Object.keys(SORTS).map(k=>it('sort:'+k,S.sort===k,SORTS[k])).join('');
  else if(p.k==='who'){h=`<div class="ttl">Чьи отметки слева</div>`+[['me','Мои'],['all','Любые'],...Object.keys(PEOPLE).filter(x=>x!=='me').map(x=>[x,PEOPLE[x].n])].map(([k,n])=>it('who:'+k,S.who===k,n,k==='me'||k==='all'?'':'Только песни, которые отметил(а) '+n)).join('')+`<hr><div class="ttl">Только с отметкой</div><div class="emo">${EMO.map(e=>`<button class="${S.tag===e?'on':''}" data-a="tag:${e}">${e}</button>`).join('')}</div>${S.tag?it('tag:','', 'Сбросить отметку'):''}`}
- else if(p.k==='emo'){const mine=new Set(rxOf(S.ver,'me').map(r=>r.e));h=`<div class="ttl">Моя отметка на этих аккордах</div><div class="emo">${EMO.map(e=>`<button class="${mine.has(e)?'on':''}" data-a="rx:${e}">${e}</button>`).join('')}</div><div class="muted small" style="padding:4px 12px 8px">Можно несколько. Видят участники общих плейлистов.</div>`}
+ else if(p.k==='emo'){const mine=new Set(rxOf(S.ver,'me').map(r=>r.e));const gr={};rxOf(S.ver).forEach(r=>(gr[r.e]=gr[r.e]||[]).push(r.p));h=(Object.keys(gr).length?`<div class="ttl">Кто отметил</div><div class="wholist">${Object.keys(gr).map(e=>`<div><span class="e">${e}</span><span>${gr[e].sort((a,b)=>(b==='me')-(a==='me')).map(p=>av(p,1)+(p==='me'?'Я':PEOPLE[p].n)).join(' &nbsp;')}</span></div>`).join('')}</div><hr>`:'')+`<div class="ttl">Моя отметка на этих аккордах</div><div class="emo">${EMO.map(e=>`<button class="${mine.has(e)?'on':''}" data-a="rx:${e}">${e}</button>`).join('')}</div><div class="muted small" style="padding:4px 12px 8px">Можно несколько. Видят участники общих плейлистов.</div>`}
  else if(p.k==='addpl'){const v=S.ver,cur=scopePl(),list=myPls().slice().sort((a,b)=>(b.id===cur)-(a.id===cur));
   h=`<div class="ttl">Эти аккорды лежат в…</div><div class="muted small" style="padding:0 12px 4px">Галочка — положить или убрать, стрелка — перейти в плейлист.</div>`+list.map(x=>{const on=x.items.some(i=>i.v===v);return canAdd(x)||on?`<div class="it2">${it('addpl:'+x.id,on,esc(x.name),canAdd(x)?(x.id===cur?'открыт сейчас':''):'добавлять могут только админы',1)}<button class="goto" data-a="openpl:${x.id}" aria-label="Перейти в плейлист «${esc(x.name)}»" title="Перейти в плейлист">${ic('right')}</button></div>`:''}).join('')+`<hr><div style="display:flex;gap:6px;padding:4px 6px 6px"><input class="field" id="newpl" placeholder="Новый плейлист" style="padding:8px 12px;border-radius:10px"><button class="btn pri" data-a="newpl" aria-label="Создать">${ic('plus')}</button></div>`}
  else if(p.k==='order')h=`<div class="ttl">В каком настроении рисовать</div>`+Object.keys(THEMES).map(k=>it(`order:${p.vid}:${k}`,0,THEMES[k][0],THEMES[k][1])).join('')+`<div class="muted small" style="padding:6px 12px 8px">Сервер нарисует сразу ${BATCH} картинки, это занимает от полминуты до двух. Их увидят все, у кого открыты эти аккорды. В макете — ${TASK_MS/1000} секунд.</div>`;
@@ -1651,7 +1872,7 @@ function popover(){const p=S.pop;if(!p)return '';const innerWidth=window.innerWi
  else if(p.k==='vlist'){const vs=songVers(song(S.song));h=`<div class="ttl">Все варианты · ${vs.length}</div>`+vs.map((id,k)=>{const x=ver(id);return it('ver:'+id,id===S.ver,`${letter(k)}. ${esc(vsrc(x))}`,x.rating?'☆ '+x.rating:'')}).join('')}
  else if(p.k==='simp')h=[[0,'Как в оригинале','Am7/G, Fmaj7'],[2,'Простые с септимами','Am7, G7'],[1,'Совсем простые','Am, G']].map(([m,n,s])=>it('simp:'+m,S.simp===m,n,s)).join('');
  else if(p.k==='share'){const v=ver(S.ver),s=vname(v),u=`shkaf.example/a/${v.id}x${(v.id*7919).toString(36)}`;h=`<div style="padding:8px 10px;width:290px;max-width:78vw"><b>${esc(s.title)}</b><div class="muted small" style="margin-bottom:8px">Аккорды открываются по ссылке всем, вход не нужен.</div><div class="linkbox"><code>${u}</code><button class="btn" data-a="copy:${u}">Копировать</button></div><p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn tg" data-a="tgsend">${ic('tg')}Прислать мне в Telegram</button><button class="btn" data-a="pdfone">${ic('file')}PDF</button></p><div class="qr"><canvas data-qr="${u}" width="132" height="132"></canvas><div class="small muted">QR-код ведёт на эти же аккорды. В макете он ненастоящий.</div></div>${S.anon?'':`<p style="margin:12px 0 2px"><button class="btn" data-a="guest:${v.id}">${ic('eye')}Как это увидит гость</button></p>`}</div>`}
- else if(p.k==='vmore'){const v=ver(S.ver),ent=song(S.song),cur=scopePl(),many=!ent.bare&&songVers(ent).length>1;h=`<div class="ttl">${esc(vsrc(v))}</div>`+(v.src&&!/^(импорт|распознано)/.test(v.src)?it('toast:В макете ссылки на источники не открываются',0,'Открыть источник',v.src):'')+(many?it('main:'+v.id,MAIN[ent.id]===v.id,'Мой основной вариант','Открывается первым по нажатию на песню',1):'')+`<div class="muted small" style="padding:6px 12px">В источнике: ${esc(vname(v).artist)} — ${esc(vname(v).title)}<br>Добавил(а): ${PEOPLE[v.by].n}</div>`+(v.mine?it('editver:'+v.id,0,'Редактировать мои аккорды'):'')+(cur&&many&&canAdd(pl(cur))?`<hr>`+it('unlink:'+v.id,0,'Отделить в отдельную песню','Эти аккорды перестанут быть вариантом этой песни в плейлисте'):'')+(cur&&pl(cur).items.some(i=>i.v===v.id)?`<hr>`+it('addpl:'+cur,0,`<span style="color:var(--danger)">Убрать из «${esc(pl(cur).name)}»</span>`):'')}
+ else if(p.k==='vmore'){const v=ver(S.ver),ent=song(S.song),cur=scopePl(),many=!ent.bare&&songVers(ent).length>1;h=`<div class="ttl">${esc(vsrc(v))}</div>`+(many?it('main:'+v.id,MAIN[ent.id]===v.id,'Мой основной вариант','Открывается первым по нажатию на песню',1):'')+`<div class="muted small" style="padding:6px 12px">В источнике: ${esc(vname(v).artist)} — ${esc(vname(v).title)}<br>Добавил(а): ${PEOPLE[v.by].n}</div>`+(v.mine?it('editver:'+v.id,0,'Редактировать мои аккорды'):'')+(cur&&!ent.bare&&canAdd(pl(cur))?`<hr>`+it('linkfrom',0,'Связать с другой песней','Те же аккорды под другим названием станут вариантом этой песни'):'')+(cur&&many&&canAdd(pl(cur))?it('unlink:'+v.id,0,'Отделить в отдельную песню','Эти аккорды перестанут быть вариантом этой песни в плейлисте'):'')+(cur&&pl(cur).items.some(i=>i.v===v.id)?`<hr>`+it('addpl:'+cur,0,`<span style="color:var(--danger)">Убрать из «${esc(pl(cur).name)}»</span>`):'')}
  const w=Math.min(p.k==='who'||p.k==='emo'?300:330,innerWidth-16);if(p.k==='order'&&false){}
  const _=0,left=Math.max(8,Math.min(p.x,innerWidth-w-8)),below=innerHeight-p.y>320||p.y<innerHeight/2;
  return `<div class="pop" id="pop" style="left:${left}px;width:${p.k==='share'?'auto':w+'px'};${below?`top:${p.y+6}px;max-height:${innerHeight-p.y-16}px`:`bottom:${innerHeight-p.top+6}px;max-height:${p.top-16}px`}">${h}</div>`}
@@ -1961,7 +2182,7 @@ const A={
  seeperson(k){S.route='library';S.scope='all';S.who=k;S.tag=null;S.q='';S.song=null;z('list')},
  rtab(t){S.recentTab=t},
  skin(k){S.skin=k;applySkin()},
- gate(){S.gateOk=true;render()},adx(){S.adx=true;render()},skinnext(){S.skin=SKINS[(skinIdx()+1)%SKINS.length][0];applySkin();toast(`Стиль ${skinIdx()+1}/${SKINS.length}: ${SKINS[skinIdx()][1]}`)},
+ gate(){S.gateOk=true;render()},adx(){S.adx=true;render()},vmenu(id,el){id=+id;if(S.ver!==id||!S.verOpen){S.ver=id;S.verOpen=true;resetVerUi()}const r=el.getBoundingClientRect(),z=Z();S.pop={k:'vmore',x:r.left/z,y:r.bottom/z,top:r.top/z}},linkfrom(){const g=S.song;if(S.linkPl!==scopePl()){S.link=[];S.linkPl=scopePl()}if(!S.link.includes(g))S.link.push(g);S.pop=null;if(!W)S.song=null;toast('Отметьте в списке песню, с которой связать')},skinnext(){S.skin=SKINS[(skinIdx()+1)%SKINS.length][0];applySkin();toast(`Стиль ${skinIdx()+1}/${SKINS.length}: ${SKINS[skinIdx()][1]}`)},
  book(){const p=scopePl()&&pl(S.scope),ents=libSongs(),bits=[p?`плейлист «${p.name}»`:'мои плейлисты'];if(S.q.trim())bits.push(`поиск «${S.q.trim()}»`);if(S.tag)bits.push('отметка '+S.tag);if(S.who!=='me')bits.push('отметки: '+(S.who==='all'?'любые':PEOPLE[S.who].n));
   S.book={label:bits.join(', '),title:p?p.name:'',toc:true,renum:true,signs:null,task:null,rows:ents.map(e=>{const v=preferred(e);return {id:e.id,v,on:true,t:baseT(v),cols:1}})};S.route='book';S.song=null;z('book')},
  bookback(){S.route='library'},
@@ -2013,6 +2234,12 @@ const A={
   sysPl('mine').items.push({v:v.id,by:'me',g});e.pls.forEach(id=>pl(id).items.push({v:v.id,by:'me',g}));
   S.ed=null;S.route='library';S.scope='all';S.song=g;S.last=g;S.ver=v.id;S.verOpen=true;resetVerUi();toast('Аккорды сохранены')},
 };
+/* list/song divider: drag to resize, double click to reset; kept per browser */
+try{const lw=localStorage.getItem('shkaf_lw');if(lw)document.documentElement.style.setProperty('--lw',lw+'px')}catch(_){}
+document.addEventListener('pointerdown',e=>{const sp=e.target.closest('.split');if(!sp)return;e.preventDefault();const lst=sp.previousElementSibling,x0=e.clientX,w0=lst.getBoundingClientRect().width,max=sp.parentElement.getBoundingClientRect().width-320;let w=w0;
+ const mv=ev=>{w=Math.round(Math.max(260,Math.min(max,w0+ev.clientX-x0)));document.documentElement.style.setProperty('--lw',w+'px')},up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.body.classList.remove('rsz');try{localStorage.setItem('shkaf_lw',w)}catch(_){}};
+ document.body.classList.add('rsz');document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)});
+document.addEventListener('dblclick',e=>{if(!e.target.closest('.split'))return;document.documentElement.style.removeProperty('--lw');try{localStorage.removeItem('shkaf_lw')}catch(_){}});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');
  if(S.pop&&!e.target.closest('#pop')&&!(t&&t.dataset.a.startsWith('pop:'))){S.pop=null;if(!t){render();return}}
  const ch=e.target.closest('.chord[data-ch]');
