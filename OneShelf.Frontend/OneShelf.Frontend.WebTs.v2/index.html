@@ -1046,10 +1046,18 @@ div.row{cursor:pointer}
 
 
 .panel{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;align-items:start}
-.pl{font-size:12px;color:var(--muted);min-height:32px;display:flex;align-items:center;text-align:left}
-button.pl:hover,button.pl.on{color:var(--accent)}
+.plb{font-size:12px;color:var(--muted);min-height:32px;display:flex;align-items:center;text-align:left}
+button.plb:hover,button.plb.on{color:var(--accent)}
 .pc{min-width:0}
 
+
+.plwrap{flex-direction:row;align-items:center}
+.plwrap>.pl{flex:1;min-width:0}
+.plwrap>.sw{margin:0 12px 0 4px}
+.newpl{display:flex;gap:8px;max-width:420px}
+.hsw{display:flex;justify-content:space-between;align-items:baseline}
+.hsw span{font-size:11px;letter-spacing:.02em;text-transform:none;font-weight:400}
+.plnote{margin-top:14px}
 .srcl{display:inline-flex;align-items:center;gap:5px;font:inherit;text-align:left}
 .srcl svg{width:14px;height:14px;opacity:.5;flex:none}
 .srcl:hover{color:var(--accent)} .srcl:hover svg{opacity:1}
@@ -1064,7 +1072,7 @@ button.pl:hover,button.pl.on{color:var(--accent)}
 .wholist .e{font-size:18px;width:24px;text-align:center}
 .wholist .av{margin-right:4px;vertical-align:-4px}
 .mi.ico svg.ic{width:19px;height:19px}
-.panel>.pl{padding:0}
+.panel>.plb{padding:0}
 .kchip{white-space:nowrap;flex:none}
 .pn{display:grid;gap:6px}
 .xbtn.cnt{width:auto;min-width:36px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:18px}
@@ -1192,7 +1200,7 @@ button.pl:hover,button.pl.on{color:var(--accent)}
 :root:not([data-skin]) .totop{width:38px;height:38px;background:var(--surface);color:var(--muted);box-shadow:0 0 0 1px var(--line),0 2px 8px rgba(13,20,48,.12)}
 @media (max-width:959px){:root:not([data-skin]) .bar .prow.keys{flex:1 0 100%}:root:not([data-skin]) .mf{font-size:11.5px;gap:0 8px}:root:not([data-skin]) .mi b{font-size:11.5px}}
 :root:not([data-skin]) .panel{display:grid;gap:2px 14px;margin-top:4px}
-@media (max-width:959px){:root:not([data-skin]) .panel{gap:2px 16px}:root:not([data-skin]) .pl{font-size:11.5px}:root:not([data-skin]) .kchip{padding:2px 7px}}
+@media (max-width:959px){:root:not([data-skin]) .panel{gap:2px 16px}:root:not([data-skin]) .plb{font-size:11.5px}:root:not([data-skin]) .kchip{padding:2px 7px}}
 :root:not([data-skin]) .pc:not(.pn){margin-left:-7px}
 :root:not([data-skin]) .pn{padding-top:5px;gap:2px}
 :root:not([data-skin]) .pn .rx.add{margin-left:-7px;font-size:13px}
@@ -1214,7 +1222,7 @@ button.pl:hover,button.pl.on{color:var(--accent)}
 :root:not([data-skin]) .mm{flex-basis:auto;gap:0 6px}
 :root:not([data-skin]) .mi.ico{width:30px;justify-content:center}
 :root:not([data-skin]) .panel{gap:8px 16px;margin-top:6px}
-:root:not([data-skin]) .pl{min-height:34px}
+:root:not([data-skin]) .plb{min-height:34px}
 :root:not([data-skin]) .step button,:root:not([data-skin]) .kchip,:root:not([data-skin]) .rx,:root:not([data-skin]) .quiet>button{height:34px;min-height:34px}
 :root:not([data-skin]) .prow.keys{flex-wrap:wrap;gap:4px}
 :root:not([data-skin]) .kchip.ask{background:var(--accent-soft);color:var(--accent);box-shadow:none;font-weight:600;padding:2px 12px}
@@ -1239,6 +1247,47 @@ button.pl:hover,button.pl.on{color:var(--accent)}
 :root:not([data-skin]) .list:has(.row.sel) .lkb,:root:not([data-skin]) .row .lkb.on{opacity:.8;pointer-events:auto}
 @media (max-width:959px){:root:not([data-skin]) .mf .alt{display:none}:root:not([data-skin]) .meta{flex-wrap:nowrap}:root:not([data-skin]) .prow.marks{gap:2px}:root:not([data-skin]) .rx{padding:0 6px 0 5px}:root:not([data-skin]) .rx.add{padding:0 5px}:root:not([data-skin]) .panel{gap:8px 16px}:root:not([data-skin]) .quiet.eq{gap:4px}:root:not([data-skin]) .mm{flex-basis:auto}}
 @media (hover:none){:root:not([data-skin]) .row .lkb{opacity:0}}
+:root:not([data-skin]) .pad{max-width:760px}
+:root:not([data-skin]) .pad h1{margin-bottom:18px}
+:root:not([data-skin]) .pad h2{margin:30px 0 6px;font-size:11.5px;font-weight:500;letter-spacing:.08em}
+:root:not([data-skin]) .pad .card:not(.fcard){background:none;border:0;border-radius:0;box-shadow:none}
+:root:not([data-skin]) .pad .btn.pri{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+:root:not([data-skin]) .pad .btn{border-color:transparent;background:var(--surface2);font-weight:500;padding:8px 13px;border-radius:10px}
+:root:not([data-skin]) .pad .btn:hover{background:var(--line)}
+:root:not([data-skin]) .pad .btn.pri:hover{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+:root:not([data-skin]) .seg{border:0;background:var(--surface2);padding:3px;border-radius:10px;gap:2px}
+:root:not([data-skin]) .seg button{border-radius:8px;min-height:30px;padding:4px 12px;font-weight:500;color:var(--muted)}
+:root:not([data-skin]) .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(13,20,48,.12)}
+:root:not([data-skin]) .sw{width:36px;height:21px}
+:root:not([data-skin]) .sw::after{width:15px;height:15px}
+:root:not([data-skin]) .sw.on::after{transform:translateX(15px)}
+:root:not([data-skin]) .plgrid{display:block;max-width:720px}
+:root:not([data-skin]) .plwrap{border-top:1px solid var(--line)}
+:root:not([data-skin]) .plwrap>.pl{padding:10px 0;gap:12px}
+:root:not([data-skin]) .plwrap>.sw{margin:0 6px 0 12px}
+:root:not([data-skin]) .pl .cover{width:44px;height:44px;border-radius:10px}
+:root:not([data-skin]) .pl .t{font-weight:600;font-size:15px}
+:root:not([data-skin]) .pl .m{font-size:12px;margin-top:2px}
+:root:not([data-skin]) .pl .m .av{transform:scale(.85);margin-right:-3px}
+:root:not([data-skin]) .hsw span{color:var(--muted);opacity:.8;padding-right:2px}
+:root:not([data-skin]) .recent button{padding:9px 0}
+:root:not([data-skin]) .recent button+button{border-top-color:var(--line)}
+:root:not([data-skin]) .recent img{border-radius:8px}
+:root:not([data-skin]) .menu{display:block;max-width:720px}
+:root:not([data-skin]) .menu button{width:100%;padding:11px 0;border-top:1px solid var(--line)!important;font-weight:500;gap:14px}
+:root:not([data-skin]) .menu button svg.ic{color:var(--muted);width:20px;height:20px}
+:root:not([data-skin]) .menu button small{font-size:12.5px;margin-top:1px}
+:root:not([data-skin]) .menu button:hover{color:var(--accent)}
+:root:not([data-skin]) .setrow{flex-wrap:wrap;padding:12px 0;gap:8px 16px}
+:root:not([data-skin]) .setrow>span:first-child{flex:1 1 190px;min-width:0}
+:root:not([data-skin]) .setrow .step{background:var(--surface2);border-radius:10px}
+:root:not([data-skin]) .impgrid{display:block;max-width:720px;margin-top:6px}
+:root:not([data-skin]) .impc{padding:16px 0;border-top:1px solid var(--line)!important}
+:root:not([data-skin]) .impc b{font-size:15px;font-weight:600}
+:root:not([data-skin]) .impc b svg.ic{color:var(--muted)}
+:root:not([data-skin]) .improw{padding:10px 0}
+:root:not([data-skin]) .field{border-radius:10px}
+:root:not([data-skin]) .hint{background:none;padding:0}
 .tagl{flex:none;text-align:center;font-size:11px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sx{display:none}
 @keyframes twhue{to{filter:hue-rotate(360deg)}}
@@ -1798,17 +1847,17 @@ function verView(s,v,i,vs){const t=curT(v.id),plid=scopePl(),km=keyOf('me',v.id,
  nh+=S.noteOpen?shown.map(noteCard).join(''):shown.length?`<button class="notesc" data-a="notetoggle" aria-label="Открыть заметки">${shown.map(n=>`<span class="nl${n.pl===null?' me':''}">${n.pl===null?ic('lock'):av(n.p,1)}<span>${esc(n.text)}</span></span>`).join('')}</button>`:'';
  const ovs=plid?[]:KEYS.filter(k=>!S.anon&&k.p==='me'&&k.v===v.id&&k.pl!==null),tmp=S.tmpT!==null,cm=v.id>0&&vmeta(v).comment;
  const faces=a=>{const o=[...a].sort((x,y)=>(y==='me')-(x==='me'));return o.slice(0,3).map(p=>av(p,1)).join('')+(o.length>3?`<i class="ct">+${o.length-3}</i>`:'')};
- h+=`<div class="pl">Тон</div><div class="pc"><div class="prow keys"><span class="step"><button data-a="tr:-1" aria-label="Ниже">−</button><span>${tstr(t)}</span><button data-a="tr:1" aria-label="Выше">+</button></span>
+ h+=`<div class="plb">Тон</div><div class="pc"><div class="prow keys"><span class="step"><button data-a="tr:-1" aria-label="Ниже">−</button><span>${tstr(t)}</span><button data-a="tr:1" aria-label="Выше">+</button></span>
   ${tmp?`<button class="kchip ask" data-a="keychip:m" title="Запомнить как мою тональность: везде, где я вижу эти аккорды">Запомнить</button>`:''}
   ${kh?`<button class="kchip h set" aria-pressed="true" data-a="keychip:h" title="Отдельная тональность в этом плейлисте. Нажмите, чтобы ${kh.t===t?'убрать':'заменить на '+tstr(t)}">здесь ${tstr(kh.t)}</button>`:''}
   ${ovs.map(k=>`<button class="kchip h set" data-a="pop:keypl" title="Отдельная тональность в плейлисте «${esc(pl(k.pl).name)}»">${esc(pl(k.pl).name)} ${tstr(k.t)}</button>`).join('')}
   ${km&&km.t!==t?`<button class="kchip set" data-a="applykey:${km.t}:${v.id}:me" title="Моя тональность для этих аккордов. Нажмите, чтобы показать в ней">моя ${tstr(km.t)}</button>`:''}
   ${S.anon||kh?'':`<button class="kchip add" data-a="${plid?'keychip:h':'pop:keypl'}" title="Отдельная тональность для плейлиста" aria-label="Отдельная тональность для плейлиста">${ic('plus')}${tmp?(plid?'только здесь':'для плейлиста'):''}</button>`}
   ${tmp?`<button class="kchip back" data-a="keyreset" title="Не запоминать">вернуть ${tstr(base)}</button>`:''}</div></div>
-  <div class="pl">Аккорды</div><div class="pc"><div class="quiet eq"><button class="${S.flat===true?'on':''}" aria-pressed="${S.flat===true}" data-a="flat:1" title="Писать с бемолями" aria-label="Писать с бемолями">${ic('flat')}</button><button class="${S.flat===false?'on':''}" aria-pressed="${S.flat===false}" data-a="flat:0" title="Писать с диезами" aria-label="Писать с диезами">${ic('sharp')}</button><button class="${S.simp?'on':''}" data-a="pop:simp" title="Проще: упростить аккорды" aria-label="Проще: упростить аккорды">${ic('simp')}</button><button class="${S.circle?'on':''}" data-a="tool:circle" title="Квинтовый круг" aria-label="Квинтовый круг">${ic('circ')}</button><button class="${S.loops?'on':''}" data-a="tool:loops" title="Циклы: повторяющиеся ходы" aria-label="Циклы: повторяющиеся ходы">${ic('loop')}</button><button class="${S.psearch?'on':''}" data-a="tool:psearch" title="Похожие: песни с таким же ходом" aria-label="Похожие: песни с таким же ходом">${ic('simil')}</button></div></div>
-  <div class="pl">Отметки</div><div class="pc"><div class="prow marks">${Object.keys(groups).map(e=>`<button class="rx${groups[e].includes('me')?' on':''}" aria-pressed="${groups[e].includes('me')}" data-a="rx:${e}" title="${groups[e].map(who).join(', ')} — нажмите, чтобы ${groups[e].includes('me')?'снять свою':'поставить свою'}">${e}<span class="fc">${faces(groups[e])}</span></button>`).join('')}<button class="rx add" data-a="pop:emo" aria-label="Кто отметил и новая отметка" title="Кто отметил и новая отметка">${Object.keys(groups).length?ic('smile'):'🤍 <span>Отметить</span>'}</button></div></div>
-  <button class="pl${S.noteOpen?' on':''}" data-a="notetoggle" aria-expanded="${!!S.noteOpen}" title="${S.noteOpen?'Свернуть заметки':'Открыть заметки'}">Заметки</button><div class="pc pn">${nh||`<button class="rx add" data-a="notetoggle">${ic('plus')}<span>Написать</span></button>`}</div>
-  ${cm?`<div class="pl">От автора</div><div class="pc pn"><div class="nl au"><span>${esc(cm)}</span></div></div>`:''}</div>`;
+  <div class="plb">Аккорды</div><div class="pc"><div class="quiet eq"><button class="${S.flat===true?'on':''}" aria-pressed="${S.flat===true}" data-a="flat:1" title="Писать с бемолями" aria-label="Писать с бемолями">${ic('flat')}</button><button class="${S.flat===false?'on':''}" aria-pressed="${S.flat===false}" data-a="flat:0" title="Писать с диезами" aria-label="Писать с диезами">${ic('sharp')}</button><button class="${S.simp?'on':''}" data-a="pop:simp" title="Проще: упростить аккорды" aria-label="Проще: упростить аккорды">${ic('simp')}</button><button class="${S.circle?'on':''}" data-a="tool:circle" title="Квинтовый круг" aria-label="Квинтовый круг">${ic('circ')}</button><button class="${S.loops?'on':''}" data-a="tool:loops" title="Циклы: повторяющиеся ходы" aria-label="Циклы: повторяющиеся ходы">${ic('loop')}</button><button class="${S.psearch?'on':''}" data-a="tool:psearch" title="Похожие: песни с таким же ходом" aria-label="Похожие: песни с таким же ходом">${ic('simil')}</button></div></div>
+  <div class="plb">Отметки</div><div class="pc"><div class="prow marks">${Object.keys(groups).map(e=>`<button class="rx${groups[e].includes('me')?' on':''}" aria-pressed="${groups[e].includes('me')}" data-a="rx:${e}" title="${groups[e].map(who).join(', ')} — нажмите, чтобы ${groups[e].includes('me')?'снять свою':'поставить свою'}">${e}<span class="fc">${faces(groups[e])}</span></button>`).join('')}<button class="rx add" data-a="pop:emo" aria-label="Кто отметил и новая отметка" title="Кто отметил и новая отметка">${Object.keys(groups).length?ic('smile'):'🤍 <span>Отметить</span>'}</button></div></div>
+  <button class="plb${S.noteOpen?' on':''}" data-a="notetoggle" aria-expanded="${!!S.noteOpen}" title="${S.noteOpen?'Свернуть заметки':'Открыть заметки'}">Заметки</button><div class="pc pn">${nh||`<button class="rx add" data-a="notetoggle">${ic('plus')}<span>Написать</span></button>`}</div>
+  ${cm?`<div class="plb">От автора</div><div class="pc pn"><div class="nl au"><span>${esc(cm)}</span></div></div>`:''}</div>`;
  /* tools */
  const cs=chordsOf(v,t,S.flat,S.simp);
  if(S.psearch)h+=`<div class="hint">${S.pres?`Найдено ${S.pres.songs.size} ${plural(S.pres.songs.size,'песня','песни','песен')} с ходом <b>${esc(S.pres.title)}</b>. <button class="chip" data-a="pshow">Показать</button> <button class="chip" data-a="pclear">Очистить</button>`:S.pfrom===null?'Нажмите на первый аккорд хода, потом на последний — найду песни с такой же последовательностью.':'Теперь нажмите на последний аккорд хода.'}</div>`;
@@ -1879,11 +1928,11 @@ function popover(){const p=S.pop;if(!p)return '';const innerWidth=window.innerWi
 
 /* playlists */
 function plCard(p){const ppl=[p.owner,...Object.keys(p.members)];return `<div class="card plwrap"><button class="pl" data-a="openpl:${p.id}">${plCover(p)}<span style="flex:1;min-width:0"><span class="t">${esc(p.name)}</span><span class="m">${p.sys?ic(p.sys==='import'?'imp':p.sys==='ear'?'ai':'pen'):p.open?ic('link'):ic('lock')}${plMeta(p)}</span><span class="m">${ppl.slice(0,5).map(x=>av(x,1)).join('')}${p.owner==='me'?'':' владелец — '+PEOPLE[p.owner].n}</span></span></button>
- <div class="plfoot"><span>Показывать в моей библиотеке</span><button class="sw${p.show?' on':''}" role="switch" aria-checked="${p.show}" aria-label="Показывать в моей библиотеке" data-a="plshow:${p.id}"></button></div></div>`}
+ <button class="sw${p.show?' on':''}" role="switch" aria-checked="${p.show}" aria-label="Показывать песни этого плейлиста в моей библиотеке" title="Показывать песни этого плейлиста в моей библиотеке" data-a="plshow:${p.id}"></button></div>`}
 function playlists(){const mine=myPls().filter(p=>p.owner==='me'),sh=myPls().filter(p=>p.owner!=='me');
- return `<h1>Плейлисты</h1><p class="muted" style="margin-top:-6px">Плейлист с выключенным переключателем остаётся у вас, но его песни не попадают в библиотеку.</p>
- <div style="display:flex;gap:8px;max-width:420px"><input class="field" id="newpl2" placeholder="Название нового плейлиста"><button class="btn pri" data-a="newpl2">${ic('plus')}Создать</button></div>
- <h2>Мои</h2><div class="plgrid">${mine.map(plCard).join('')}</div><h2>Со мной поделились</h2><div class="plgrid">${sh.map(plCard).join('')}</div>`}
+ return `<h1>Плейлисты</h1>
+ <div class="newpl"><input class="field" id="newpl2" placeholder="Новый плейлист"><button class="btn" data-a="newpl2">${ic('plus')}Создать</button></div>
+ <h2 class="hsw">Мои<span title="Выключите — плейлист останется у вас, но его песни не будут попадать в библиотеку">в библиотеке</span></h2><div class="plgrid">${mine.map(plCard).join('')}</div><h2 class="hsw">Со мной поделились<span>в библиотеке</span></h2><div class="plgrid">${sh.map(plCard).join('')}</div><p class="muted small plnote">Выключенный плейлист остаётся у вас, но его песни не попадают в библиотеку.</p>`}
 function plset(){const p=pl(S.plset),adm=isAdmin(p),u=`shkaf.example/p/${(p.id*104729).toString(36)}`,role=r=>r==='admin'?'Админ':'Участник';
  return `<p><button class="btn" data-a="openpl:${p.id}">${ic('left')}К плейлисту</button></p><h1>${esc(p.name)}</h1>
  <div class="form">
