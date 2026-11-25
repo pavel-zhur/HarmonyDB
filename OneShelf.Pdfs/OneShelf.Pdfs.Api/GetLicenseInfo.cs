@@ -15,7 +15,7 @@ namespace OneShelf.Pdfs.Api
             _logger = logger;
         }
 
-        [Function("GetLicenseInfo", AuthorizationLevel.Function, "get")]
+        [Function("GetLicenseInfo", AuthorizationLevel.Function, "get", InternalScope = PdfsModule.InternalScope)]
         public IActionResult Run()
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");

@@ -39,7 +39,7 @@ public class TonalitiesSongs : ServiceFunctionBase<SongsRequest, SongsResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1TonalitiesSongs, AuthorizationLevel.Function, "post")]
+    [Function(IndexApiUrls.VExternal1TonalitiesSongs, AuthorizationLevel.Function, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] SongsRequest request)
         => RunHandler(request);
 

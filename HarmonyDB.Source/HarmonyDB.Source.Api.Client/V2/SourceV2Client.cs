@@ -1,0 +1,298 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using HarmonyDB.Common.ServiceAuth;
+using HarmonyDB.Source.Api.Model.V2;
+using HarmonyDB.Source.Api.Model.V2.Api;
+using Microsoft.Extensions.Logging;
+
+namespace HarmonyDB.Source.Api.Client.V2;
+
+/// <summary>
+/// A client of one server of the source contract, version 2: a source, or the index that relays to the sources.
+/// It calls as an internal client, by its key, and reads and writes <see cref="SourceV2Json.Options"/> only.
+/// When the server cannot be reached, answers with an error or out of the contract, or does not answer in time, the
+/// failure is logged and becomes the contract's "unavailable" where the answer has a place for it (a search failure,
+/// <see cref="ItemState.Unavailable"/>, <see cref="ResolveState.Unavailable"/>); otherwise
+/// (<see cref="GetIcon"/>, <see cref="Ping"/>) <see cref="SourceUnavailableException"/> is thrown.
+/// A cancellation by the caller is not a failure of the server: it is thrown as it is.
+/// </summary>
+public class SourceV2Client
+{
+    private readonly HttpClient _httpClient;
+    private readonly SourceV2ClientOptions _options;
+    private readonly ILogger<SourceV2Client> _logger;
+
+    public SourceV2Client(HttpClient httpClient, SourceV2ClientOptions options, ILogger<SourceV2Client> logger)
+    {
+        Validate(options);
+
+        _httpClient = httpClient;
+        _options = options;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// The name the server is configured with.
+    /// </summary>
+    public string Name => _options.Name;
+
+    /// <exception cref="ArgumentException">The options do not describe a server to call.</exception>
+    public static void Validate(SourceV2ClientOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.Name)) throw new ArgumentException("The server has no name.", nameof(options));
+        if (options.Endpoint is not { IsAbsoluteUri: true } || !options.Endpoint.AbsolutePath.EndsWith('/'))
+            throw new ArgumentException($"The endpoint of {options.Name} is not an absolute address ending with a slash.", nameof(options));
+        if (string.IsNullOrEmpty(options.Key)) throw new ArgumentException($"The key for {options.Name} is empty.", nameof(options));
+        if (options.Timeout <= TimeSpan.Zero) throw new ArgumentException($"The timeout for {options.Name} is not positive.", nameof(options));
+    }
+
+    public async Task<SearchResponse> Search(Caller caller, string query, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<SearchRequest, SearchResponse>(SourceV2Urls.V2Search, new()
+            {
+                Caller = caller,
+                Query = query,
+            }, response =>
+            {
+                Check(response.Headers != null && response.Failures != null, "a search answer has no list");
+                foreach (var header in response.Headers!) CheckHeader(header);
+                Check(response.Failures!.All(x => x is { Source: not null }), "a search failure is empty");
+            }, cancellationToken);
+        }
+        catch (CallFailedException e)
+        {
+            return new()
+            {
+                Headers = [],
+                Failures =
+                [
+                    new()
+                    {
+                        Source = Name,
+                        Reason = e.IsTimeout ? SearchFailureReason.Timeout : SearchFailureReason.Unavailable,
+                    },
+                ],
+            };
+        }
+    }
+
+    public async Task<GetHeadersResponse> GetHeaders(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<GetHeadersRequest, GetHeadersResponse>(SourceV2Urls.V2GetHeaders, new()
+            {
+                Caller = caller,
+                Ids = ids,
+            }, response =>
+            {
+                Check(response.Headers != null && response.Headers.Count == ids.Count, "the number of the headers is not the number of the ids");
+                for (var i = 0; i < ids.Count; i++)
+                {
+                    var answer = response.Headers![i];
+                    Check(answer != null && answer.Id == ids[i], "the headers are not the answers for the ids asked, in their order");
+                    Check((answer!.State == ItemState.Open) == (answer.Header != null), "a header is given exactly for an open item");
+                    if (answer.Header != null)
+                    {
+                        CheckHeader(answer.Header);
+                        Check(answer.Header.Id == answer.Id, "a header has another id");
+                    }
+                }
+            }, cancellationToken);
+        }
+        catch (CallFailedException)
+        {
+            return new()
+            {
+                Headers = ids.Select(id => new HeaderAnswer
+                {
+                    Id = id,
+                    State = ItemState.Unavailable,
+                }).ToList(),
+            };
+        }
+    }
+
+    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<GetContentRequest, GetContentResponse>(SourceV2Urls.V2GetContent, new()
+            {
+                Caller = caller,
+                Id = id,
+                Kinds = kinds,
+            }, response =>
+            {
+                Check(response.Id == id, "the content is of another id");
+                Check((response.State == ItemState.Open) == (response.Header != null) && (response.Header == null) == (response.Content == null),
+                    "the header and the content are given exactly for an open item");
+                if (response.Header != null)
+                {
+                    CheckHeader(response.Header);
+                    Check(response.Header.Id == id, "the header has another id");
+                }
+            }, cancellationToken);
+        }
+        catch (CallFailedException)
+        {
+            return new()
+            {
+                Id = id,
+                State = ItemState.Unavailable,
+            };
+        }
+    }
+
+    public async Task<ResolveResponse> Resolve(Caller caller, IReadOnlyList<Uri> uris, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<ResolveRequest, ResolveResponse>(SourceV2Urls.V2Resolve, new()
+            {
+                Caller = caller,
+                Uris = uris,
+            }, response =>
+            {
+                Check(response.Items != null && response.Items.Count == uris.Count, "the number of the answers is not the number of the addresses");
+                for (var i = 0; i < uris.Count; i++)
+                {
+                    var item = response.Items![i];
+                    Check(item != null && item.Uri == uris[i], "the answers are not for the addresses asked, in their order");
+                    Check((item!.State == ResolveState.Resolved) == !string.IsNullOrEmpty(item.Id), "an id is given exactly for a resolved address");
+                }
+            }, cancellationToken);
+        }
+        catch (CallFailedException)
+        {
+            return new()
+            {
+                Items = uris.Select(uri => new ResolvedUri
+                {
+                    Uri = uri,
+                    State = ResolveState.Unavailable,
+                }).ToList(),
+            };
+        }
+    }
+
+    /// <returns>The picture, or null when the server has none of that name.</returns>
+    /// <exception cref="SourceUnavailableException">The server did not answer.</exception>
+    public async Task<SourceIcon?> GetIcon(string name, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await Call(SourceV2Urls.V2GetIcon, Serialize(new GetIconRequest { Name = name }), async (response, token) =>
+            {
+                if (response.StatusCode == HttpStatusCode.NotFound) return null;
+
+                EnsureSuccess(response);
+                var contentType = response.Content.Headers.ContentType?.ToString();
+                Check(!string.IsNullOrEmpty(contentType), "the picture has no content type");
+                return new SourceIcon(await response.Content.ReadAsByteArrayAsync(token), contentType!);
+            }, cancellationToken);
+        }
+        catch (CallFailedException e)
+        {
+            throw new SourceUnavailableException(Name, e.IsTimeout, e.InnerException);
+        }
+    }
+
+    /// <exception cref="SourceUnavailableException">The server did not answer.</exception>
+    public async Task Ping(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Call<object?>(SourceV2Urls.V2Ping, null, (response, _) =>
+            {
+                EnsureSuccess(response);
+                return Task.FromResult<object?>(null);
+            }, cancellationToken);
+        }
+        catch (CallFailedException e)
+        {
+            throw new SourceUnavailableException(Name, e.IsTimeout, e.InnerException);
+        }
+    }
+
+    /// <summary>
+    /// Posts the request and reads the answer; <paramref name="validate"/> throws (through <see cref="Check"/>) when the
+    /// answer is out of the contract, which counts as a failure of the server.
+    /// </summary>
+    private async Task<TResponse> PostJson<TRequest, TResponse>(string url, TRequest request, Action<TResponse> validate, CancellationToken cancellationToken)
+        where TResponse : class
+        => await Call(url, Serialize(request), async (response, token) =>
+        {
+            EnsureSuccess(response);
+            var answer = await response.Content.ReadFromJsonAsync<TResponse>(SourceV2Json.Options, token)
+                         ?? throw new InvalidAnswerException("the answer is empty");
+            validate(answer);
+            return answer;
+        }, cancellationToken);
+
+    private static HttpContent Serialize<TRequest>(TRequest request) => JsonContent.Create(request, options: SourceV2Json.Options);
+
+    /// <summary>
+    /// Makes the call within the timeout. Every failure of the server is logged and thrown as
+    /// <see cref="CallFailedException"/>.
+    /// </summary>
+    private async Task<T> Call<T>(string url, HttpContent? content, Func<HttpResponseMessage, CancellationToken, Task<T>> read, CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_options.Timeout);
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(_options.Endpoint!, url));
+            request.Content = content;
+            request.Headers.Add(InternalKeyDefaults.HeaderName, _options.Key);
+
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            return await read(response, timeout.Token);
+        }
+        catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(e, "The source {source} did not answer {operation} in {timeout}.", Name, url, _options.Timeout);
+            throw new CallFailedException(true, e);
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or JsonException or InvalidAnswerException)
+        {
+            _logger.LogError(e, "The source {source} failed {operation}.", Name, url);
+            throw new CallFailedException(false, e);
+        }
+    }
+
+    private static void EnsureSuccess(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidAnswerException($"the answer is {(int)response.StatusCode} {response.StatusCode}");
+    }
+
+    /// <summary>
+    /// A header has everything the contract requires of it: the wire format lets a required list or object be null.
+    /// </summary>
+    private static void CheckHeader(Header? header)
+    {
+        Check(header != null, "a header is empty");
+        Check(!string.IsNullOrEmpty(header!.Id), "a header has no id");
+        Check(header.Source is { Key: not null, Title: not null }, "a header has no source");
+        Check(header.Artists != null && header.Artists.All(x => x != null), "a header has no artists list");
+        Check(header.Kinds != null, "a header has no kinds");
+        Check(header.Attributes != null, "a header has no attributes");
+    }
+
+    private static void Check(bool condition, string what)
+    {
+        if (!condition) throw new InvalidAnswerException(what);
+    }
+
+    private sealed class CallFailedException(bool isTimeout, Exception innerException) : Exception(null, innerException)
+    {
+        public bool IsTimeout { get; } = isTimeout;
+    }
+
+    private sealed class InvalidAnswerException(string what) : Exception($"The answer is out of the contract: {what}.");
+}

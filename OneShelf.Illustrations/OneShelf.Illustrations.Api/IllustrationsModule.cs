@@ -11,6 +11,12 @@ namespace OneShelf.Illustrations.Api;
 
 public class IllustrationsModule() : ApiModule("Illustrations")
 {
+    /// <summary>
+    /// The scope of the internal clients (configuration <c>Illustrations:InternalClients</c>) that may call the functions
+    /// of the <see cref="OneShelf.Common.Api.AuthorizationLevel.Function"/> level besides the callers with a function key.
+    /// </summary>
+    public const string InternalScope = "illustrations";
+
     public override void Configure(WebApplicationBuilder builder)
     {
         builder.Services.AddIndexApiClient(builder.Configuration);

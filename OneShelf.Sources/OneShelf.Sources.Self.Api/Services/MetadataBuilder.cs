@@ -35,6 +35,16 @@ public class MetadataBuilder
         }
     }
 
+    /// <returns>The id of the collective whose address this is, or null when it is not an address of a collective.</returns>
+    public Guid? GetCollectiveId(Uri uri)
+    {
+        if (!_options.Hosts.Contains(uri.Host))
+            return null;
+
+        var match = Regex.Match(uri.ToString(), "^https\\:\\/\\/[^\\/]+\\/\\?id\\=([0-9a-f\\-]{36})\\&tag\\=([0-9]{6})\\&version\\=[0-9]+$");
+        return match.Success && Guid.TryParse(match.Groups[1].Value, out var id) ? id : null;
+    }
+
     public bool IsExternalId(string externalId) => Regex.IsMatch(externalId, "^mj\\-[0-9]{6}-[0-9a-f\\-]{36}$");
 
     public Guid GetCollectiveId(string externalId) =>

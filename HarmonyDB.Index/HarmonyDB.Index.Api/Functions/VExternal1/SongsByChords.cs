@@ -42,7 +42,7 @@ public class SongsByChords : ServiceFunctionBase<SongsByChordsRequest, SongsByCh
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1SongsByChords, AuthorizationLevel.Function, "post")]
+    [Function(IndexApiUrls.VExternal1SongsByChords, AuthorizationLevel.Function, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] SongsByChordsRequest request)
         => RunHandler(request);
 

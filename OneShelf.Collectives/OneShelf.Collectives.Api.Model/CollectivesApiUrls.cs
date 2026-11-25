@@ -10,4 +10,5 @@ public static class CollectivesApiUrls
 
     public const string Get = nameof(Get);
     public const string ListAll = nameof(ListAll);
+    public const string GetMany = nameof(GetMany);
 }

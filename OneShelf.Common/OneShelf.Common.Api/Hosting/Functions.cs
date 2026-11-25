@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using HarmonyDB.Common.ServiceAuth;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -47,7 +49,7 @@ internal class FunctionControllerFeatureProvider : IApplicationFeatureProvider<C
 }
 
 /// <summary>
-/// Only the methods marked as functions are endpoints.
+/// Only the methods marked as functions are endpoints. A function's level and internal scope must agree.
 /// </summary>
 internal class FunctionsOnlyConvention : IControllerModelConvention
 {
@@ -57,31 +59,72 @@ internal class FunctionsOnlyConvention : IControllerModelConvention
         {
             controller.Actions.Remove(action);
         }
+
+        foreach (var action in controller.Actions)
+        {
+            var function = action.Attributes.OfType<FunctionAttribute>().Single();
+            var hasScope = !string.IsNullOrWhiteSpace(function.InternalScope);
+            if (function.AuthorizationLevel == AuthorizationLevel.Internal && !hasScope)
+                throw new InvalidOperationException($"The function {function.Name} of the {nameof(AuthorizationLevel.Internal)} level has no internal scope.");
+
+            if (function.AuthorizationLevel == AuthorizationLevel.Anonymous && function.InternalScope != null)
+                throw new InvalidOperationException($"The function {function.Name} is open to anyone, an internal scope means nothing there.");
+        }
     }
 }
 
 /// <summary>
-/// A function of the <see cref="AuthorizationLevel.Function"/> level answers 401 with no body unless one of the keys is
-/// presented in the "code" query parameter or the "x-functions-key" header.
+/// Lets a call through to a function by the function's level:
+/// a request with the <see cref="InternalKeyDefaults.HeaderName"/> header to a function with an internal scope is judged
+/// by that key alone (401 for an unknown key, 403 for a client without the scope); otherwise a function of the
+/// <see cref="AuthorizationLevel.Function"/> level answers 401 with no body unless one of the function keys is presented
+/// in the "code" query parameter or the "x-functions-key" header, and one of the
+/// <see cref="AuthorizationLevel.Internal"/> level answers 401.
 /// </summary>
-internal class FunctionKeysFilter : IAuthorizationFilter
+internal class FunctionAccessFilter : IAsyncAuthorizationFilter
 {
     private const string QueryParameter = "code";
     private const string Header = "x-functions-key";
 
     private readonly IReadOnlyList<byte[]> _keys;
 
-    public FunctionKeysFilter(IOptions<FunctionKeysOptions> options)
+    public FunctionAccessFilter(IOptions<FunctionKeysOptions> options)
     {
         _keys = options.Value.Keys.Where(x => !string.IsNullOrEmpty(x)).Select(Encoding.UTF8.GetBytes).ToList();
     }
 
-    public void OnAuthorization(AuthorizationFilterContext context)
+    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        var level = context.ActionDescriptor.EndpointMetadata.OfType<FunctionAttribute>().Single().AuthorizationLevel;
-        if (level == AuthorizationLevel.Anonymous) return;
+        var function = context.ActionDescriptor.EndpointMetadata.OfType<FunctionAttribute>().Single();
+        if (function.AuthorizationLevel == AuthorizationLevel.Anonymous) return;
 
         var request = context.HttpContext.Request;
+
+        if (function.InternalScope != null && request.Headers.ContainsKey(InternalKeyDefaults.HeaderName))
+        {
+            var result = await context.HttpContext.AuthenticateAsync(InternalKeyDefaults.Scheme);
+            if (!result.Succeeded)
+            {
+                context.Result = new UnauthorizedResult();
+                return;
+            }
+
+            if (!result.Principal.HasClaim(InternalKeyDefaults.ScopeClaimType, function.InternalScope))
+            {
+                context.Result = new ForbidResult(InternalKeyDefaults.Scheme);
+                return;
+            }
+
+            context.HttpContext.User = result.Principal;
+            return;
+        }
+
+        if (function.AuthorizationLevel == AuthorizationLevel.Internal)
+        {
+            context.Result = new UnauthorizedResult();
+            return;
+        }
+
         var presented = request.Headers[Header].FirstOrDefault() ?? request.Query[QueryParameter].FirstOrDefault();
         if (presented == null || !_keys.Any(key => CryptographicOperations.FixedTimeEquals(key, Encoding.UTF8.GetBytes(presented))))
         {

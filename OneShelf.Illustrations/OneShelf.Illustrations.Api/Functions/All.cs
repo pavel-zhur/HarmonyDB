@@ -25,7 +25,7 @@ namespace OneShelf.Illustrations.Api.Functions
             _allReader = allReader;
         }
 
-        [Function(IllustrationsApiUrls.All, AuthorizationLevel.Function, "get", "post")]
+        [Function(IllustrationsApiUrls.All, AuthorizationLevel.Function, "get", "post", InternalScope = IllustrationsModule.InternalScope)]
         public Task<IActionResult> Run(HttpRequest req, [FromBody] AllRequest request) => RunHandler(request);
 
         protected override async Task<AllResponse> Execute(AllRequest allRequest)

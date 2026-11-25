@@ -39,7 +39,7 @@ namespace OneShelf.Illustrations.Api.Functions
             _indexApiClient = indexApiClient;
         }
 
-        [Function(IllustrationsApiUrls.Generate, AuthorizationLevel.Function, "get", "post")]
+        [Function(IllustrationsApiUrls.Generate, AuthorizationLevel.Function, "get", "post", InternalScope = IllustrationsModule.InternalScope)]
         public Task<IActionResult> Run(HttpRequest req, [FromBody] GenerateRequest request) => RunHandler(request);
 
         protected override async Task<AllResponse?> Execute(GenerateRequest generateRequest)

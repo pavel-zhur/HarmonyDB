@@ -34,7 +34,7 @@ public class TonalitiesLoops : ServiceFunctionBase<LoopsRequest, LoopsResponse>
         _options = options.Value;
     }
 
-    [Function(IndexApiUrls.VExternal1TonalitiesLoops, AuthorizationLevel.Function, "post")]
+    [Function(IndexApiUrls.VExternal1TonalitiesLoops, AuthorizationLevel.Function, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] LoopsRequest request)
         => RunHandler(request);
 

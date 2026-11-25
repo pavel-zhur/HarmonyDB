@@ -22,6 +22,9 @@ public class CollectivesDatabase(DbContextOptions<CollectivesDatabase> options) 
         return await collectives.ToListAsync();
     }
 
+    public async Task<List<Collective>> GetCollectives(IReadOnlyCollection<Guid> ids)
+        => await Collectives.AsNoTracking().Where(x => ids.Contains(x.Id)).ToListAsync();
+
     public async Task<Collective?> GetCollective(Guid id)
         => await Collectives.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
 

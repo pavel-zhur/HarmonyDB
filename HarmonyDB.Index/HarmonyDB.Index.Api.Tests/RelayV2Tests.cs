@@ -1,0 +1,369 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using HarmonyDB.Source.Api.Client.V2;
+using HarmonyDB.Source.Api.Model.V2;
+using HarmonyDB.Source.Api.Model.V2.Api;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using OneShelf.Common.Api.Hosting;
+
+namespace HarmonyDB.Index.Api.Tests;
+
+/// <summary>
+/// The index module hosted as in the API, relaying to fake sources over real HTTP: one that answers, one that is down,
+/// one too slow, one that refuses.
+/// </summary>
+public sealed class RelayV2Tests : IAsyncLifetime
+{
+    private const string FunctionKey = "function-key-0123456789abcdefghijklmnopqrstuvwxyz";
+    private const string ShelfKey = "shelf-key-0123456789abcdefghijklmnopqrstuvwxyz";
+    private const string OtherKey = "other-key-0123456789abcdefghijklmnopqrstuvwxyz";
+    private const string SourceKey = "source-key-0123456789abcdefghijklmnopqrstuvwxyz";
+
+    private static readonly TimeSpan RelayTimeout = TimeSpan.FromSeconds(1);
+
+    private static readonly byte[] IconBytes = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+
+    private static readonly Caller Caller = new()
+    {
+        AccountId = Guid.Parse("6c1f0a52-7d1e-4f1b-9a63-1b2f3c4d5e6f"),
+        Keys = ["first", "second"],
+    };
+
+    private FakeSource _good = null!;
+    private FakeSource _slow = null!;
+    private FakeSource _refusing = null!;
+    private FakeSource _broken = null!;
+    private WebApplication _host = null!;
+    private HttpClient _http = null!;
+    private SourceV2Client _relay = null!;
+
+    public async Task InitializeAsync()
+    {
+        _good = await FakeSource.Start("g-", TimeSpan.Zero, null);
+        _slow = await FakeSource.Start("s-", TimeSpan.FromSeconds(5), null);
+        _refusing = await FakeSource.Start("r-", TimeSpan.Zero, HttpStatusCode.Forbidden);
+        _broken = await FakeSource.Start("b-", TimeSpan.Zero, null, answersOutOfContract: true);
+
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Logging.ClearProviders();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["FunctionKeys:0"] = FunctionKey,
+            ["Index:InternalClients:0:Name"] = "shelf",
+            ["Index:InternalClients:0:Key"] = ShelfKey,
+            ["Index:InternalClients:0:Scopes:0"] = "index",
+            ["Index:InternalClients:1:Name"] = "other",
+            ["Index:InternalClients:1:Key"] = OtherKey,
+            ["Index:InternalClients:1:Scopes:0"] = "pdf",
+            ["Index:RelayV2:Timeout"] = RelayTimeout.ToString(),
+            ["Index:RelayV2:Sources:0:Name"] = "good",
+            ["Index:RelayV2:Sources:0:Endpoint"] = _good.Endpoint.ToString(),
+            ["Index:RelayV2:Sources:0:Key"] = SourceKey,
+            ["Index:RelayV2:Sources:0:IdPrefixes:0"] = "g-",
+            ["Index:RelayV2:Sources:1:Name"] = "down",
+            ["Index:RelayV2:Sources:1:Endpoint"] = "http://127.0.0.1:1/api/",
+            ["Index:RelayV2:Sources:1:Key"] = SourceKey,
+            ["Index:RelayV2:Sources:1:IdPrefixes:0"] = "d-",
+            ["Index:RelayV2:Sources:2:Name"] = "slow",
+            ["Index:RelayV2:Sources:2:Endpoint"] = _slow.Endpoint.ToString(),
+            ["Index:RelayV2:Sources:2:Key"] = SourceKey,
+            ["Index:RelayV2:Sources:2:IdPrefixes:0"] = "s-",
+            ["Index:RelayV2:Sources:3:Name"] = "refusing",
+            ["Index:RelayV2:Sources:3:Endpoint"] = _refusing.Endpoint.ToString(),
+            ["Index:RelayV2:Sources:3:Key"] = SourceKey,
+            ["Index:RelayV2:Sources:3:IdPrefixes:0"] = "r-",
+            ["Index:RelayV2:Sources:4:Name"] = "broken",
+            ["Index:RelayV2:Sources:4:Endpoint"] = _broken.Endpoint.ToString(),
+            ["Index:RelayV2:Sources:4:Key"] = SourceKey,
+            ["Index:RelayV2:Sources:4:IdPrefixes:0"] = "b-",
+        });
+        builder.AddApiModules(new IndexModule());
+
+        _host = builder.Build();
+        _host.MapApiModules();
+        await _host.StartAsync();
+
+        _http = _host.GetTestClient();
+        _relay = new(_http, new()
+        {
+            Name = "index",
+            Endpoint = new("http://localhost/index/api/"),
+            Key = ShelfKey,
+            Timeout = TimeSpan.FromSeconds(30),
+        }, NullLogger<SourceV2Client>.Instance);
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _host.DisposeAsync();
+        await _good.DisposeAsync();
+        await _slow.DisposeAsync();
+        await _refusing.DisposeAsync();
+        await _broken.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task SearchMergesWhatWasFoundAndNamesTheSourcesThatFailed()
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var response = await _relay.Search(Caller, "query");
+        stopwatch.Stop();
+
+        Assert.Equal(["g-1"], response.Headers.Select(x => x.Id));
+        Assert.Equal(
+            [("down", SearchFailureReason.Unavailable), ("slow", SearchFailureReason.Timeout), ("refusing", SearchFailureReason.Unavailable),
+                ("broken", SearchFailureReason.Unavailable)],
+            response.Failures.Select(x => (x.Source, x.Reason)));
+        Assert.True(stopwatch.Elapsed < RelayTimeout * 3, $"The slow source held the search for {stopwatch.Elapsed}.");
+
+        // the caller reaches the source as it was sent
+        var received = Assert.Single(_good.Callers);
+        Assert.Equal(Caller.AccountId, received.AccountId);
+        Assert.Equal(Caller.Keys, received.Keys);
+    }
+
+    [Fact]
+    public async Task HeadersAreRoutedByPrefixAndAnsweredInTheOrderAsked()
+    {
+        var response = await _relay.GetHeaders(Caller, ["s-1", "g-2", "x-1", "d-1", "r-1", "g-3"]);
+
+        Assert.Equal(
+            [
+                ("s-1", ItemState.Unavailable), ("g-2", ItemState.Open), ("x-1", ItemState.NotOpen),
+                ("d-1", ItemState.Unavailable), ("r-1", ItemState.Unavailable), ("g-3", ItemState.Open),
+            ],
+            response.Headers.Select(x => (x.Id, x.State)));
+        Assert.Equal("g-2", response.Headers[1].Header!.Id);
+
+        // the good source was asked once, for its own ids only
+        Assert.Single(_good.Callers);
+        Assert.Equal(["g-2", "g-3"], _good.HeaderIdsAsked.Single());
+    }
+
+    [Fact]
+    public async Task ContentMakesTheRoundTripInTheWireFormat()
+    {
+        var response = await _relay.GetContent(Caller, "g-7", [ContentKind.Sheet, ContentKind.Timeline]);
+
+        Assert.Equal(ItemState.Open, response.State);
+        Assert.Equal([ContentKind.Sheet, ContentKind.Timeline], response.Header!.Kinds);
+        Assert.Equal("F#m", response.Header.Attributes.Key);
+        Assert.Equal(new Uri("https://example.com/g-7"), response.Header.Source.Uri);
+        Assert.NotNull(response.Content);
+
+        // on the wire: camel case, enums as camel-case strings
+        var raw = await Post(SourceV2Urls.V2GetContent, """{"caller":{"accountId":null,"keys":[]},"id":"x-1","kinds":["sheet","timeline"]}""", ShelfKey);
+        Assert.Equal(HttpStatusCode.OK, raw.StatusCode);
+        using var json = JsonDocument.Parse(await raw.Content.ReadAsStringAsync());
+        Assert.Equal("x-1", json.RootElement.GetProperty("id").GetString());
+        Assert.Equal("notOpen", json.RootElement.GetProperty("state").GetString());
+
+        var resolved = await _relay.Resolve(Caller, [new("https://example.com/g-7"), new("https://example.com/nowhere")]);
+        Assert.Equal([ResolveState.Resolved, ResolveState.Unavailable], resolved.Items.Select(x => x.State));
+        Assert.Equal("g-7", resolved.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task OnlyInternalClientsWithTheScopeGetIn()
+    {
+        Assert.Equal(HttpStatusCode.OK, (await Post(SourceV2Urls.V2Ping, "", ShelfKey)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post(SourceV2Urls.V2Ping, "", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post(SourceV2Urls.V2Ping, "", ShelfKey + "x")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Post(SourceV2Urls.V2Ping, "", OtherKey)).StatusCode);
+
+        // the old ways do not open it
+        using var withFunctionKey = new HttpRequestMessage(HttpMethod.Post, $"/index/api/{SourceV2Urls.V2Ping}?code={FunctionKey}");
+        withFunctionKey.Headers.Add("x-functions-key", FunctionKey);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.SendAsync(withFunctionKey)).StatusCode);
+
+        // an analysis tool: the internal client with the scope passes the access check (no caches here, so it fails
+        // after it), the one without is refused
+        Assert.NotEqual(HttpStatusCode.Unauthorized, (await Post("VExternal1TonalitiesLoops", "{}", ShelfKey)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Post("VExternal1TonalitiesLoops", "{}", OtherKey)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post("VExternal1TonalitiesLoops", "{}", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task AnIconNameIsRoutedByPrefix()
+    {
+        var icon = await _relay.GetIcon("g-icon");
+        Assert.Equal(IconBytes, icon!.Content);
+        Assert.Equal("image/png", icon.ContentType);
+
+        Assert.Null(await _relay.GetIcon("g-other"));
+        Assert.Null(await _relay.GetIcon("x-icon"));
+        await Assert.ThrowsAsync<SourceUnavailableException>(() => _relay.GetIcon("d-icon"));
+    }
+
+    [Fact]
+    public async Task WithoutItsSectionTheRelayIsNotThere()
+    {
+        await using var host = BuildIndexAlone(new()
+        {
+            ["Index:InternalClients:0:Name"] = "shelf",
+            ["Index:InternalClients:0:Key"] = ShelfKey,
+            ["Index:InternalClients:0:Scopes:0"] = "index",
+        });
+        await host.StartAsync();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/index/api/{SourceV2Urls.V2Search}");
+        request.Content = new StringContent("""{"caller":{"keys":[]},"query":"x"}""", Encoding.UTF8, "application/json");
+        request.Headers.Add("X-Internal-Key", ShelfKey);
+        Assert.Equal(HttpStatusCode.NotFound, (await host.GetTestClient().SendAsync(request)).StatusCode);
+    }
+
+    [Fact]
+    public async Task WithItsSectionButNoSourcesTheRelayDoesNotStart()
+    {
+        await using var host = BuildIndexAlone(new()
+        {
+            ["Index:RelayV2:Timeout"] = "00:00:05",
+        });
+
+        await Assert.ThrowsAsync<Microsoft.Extensions.Options.OptionsValidationException>(() => host.StartAsync());
+    }
+
+    private static WebApplication BuildIndexAlone(Dictionary<string, string?> configuration)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Logging.ClearProviders();
+        builder.Configuration.AddInMemoryCollection(configuration);
+        builder.AddApiModules(new IndexModule());
+        var host = builder.Build();
+        host.MapApiModules();
+        return host;
+    }
+
+    [Fact]
+    public async Task AnIncompleteRequestIsBad()
+    {
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2Search, """{"caller":null,"query":"x"}""", ShelfKey)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2Search, """{"query":"x"}""", ShelfKey)).StatusCode);
+    }
+
+    private async Task<HttpResponseMessage> Post(string operation, string body, string? key)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/index/api/{operation}");
+        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        if (key != null) request.Headers.Add("X-Internal-Key", key);
+        return await _http.SendAsync(request);
+    }
+
+    /// <summary>
+    /// A source on a real port: it knows every id of its prefix, finds one item, resolves its own addresses.
+    /// </summary>
+    private sealed class FakeSource : IAsyncDisposable
+    {
+        private readonly WebApplication _app;
+
+        private FakeSource(WebApplication app, Uri endpoint)
+        {
+            _app = app;
+            Endpoint = endpoint;
+        }
+
+        public Uri Endpoint { get; }
+
+        public ConcurrentQueue<Caller> Callers { get; } = new();
+
+        public ConcurrentQueue<IReadOnlyList<string>> HeaderIdsAsked { get; } = new();
+
+        /// <param name="answersOutOfContract">The source answers a search with a list missing ("headers": null).</param>
+        public static async Task<FakeSource> Start(string prefix, TimeSpan delay, HttpStatusCode? refuseWith, bool answersOutOfContract = false)
+        {
+            var builder = WebApplication.CreateBuilder();
+            builder.WebHost.UseUrls("http://127.0.0.1:0");
+            builder.Logging.ClearProviders();
+            var app = builder.Build();
+            FakeSource? source = null;
+
+            Header Header(string id) => new()
+            {
+                Id = id,
+                Source = new() { Key = "fake", Title = "Fake", Uri = new($"https://example.com/{id}") },
+                Title = "Title",
+                Artists = ["Artist"],
+                Kinds = [ContentKind.Sheet, ContentKind.Timeline],
+                Attributes = new() { Key = "F#m" },
+                IsPublic = true,
+            };
+
+            // a request delegate: it writes its answer itself
+            async Task Serve<TRequest>(HttpContext context, Func<TRequest, object> answer)
+            {
+                if (context.Request.Headers["X-Internal-Key"] != SourceKey)
+                {
+                    context.Response.StatusCode = 401;
+                    return;
+                }
+
+                if (refuseWith.HasValue)
+                {
+                    context.Response.StatusCode = (int)refuseWith.Value;
+                    return;
+                }
+
+                await Task.Delay(delay, context.RequestAborted);
+                var request = await JsonSerializer.DeserializeAsync<TRequest>(context.Request.Body, SourceV2Json.Options);
+                await Results.Json(answer(request!), SourceV2Json.Options).ExecuteAsync(context);
+            }
+
+            app.MapPost($"/api/{SourceV2Urls.V2Search}", (HttpContext c) => answersOutOfContract
+                ? Results.Text("""{"headers":null,"failures":[]}""", "application/json").ExecuteAsync(c)
+                : Serve<SearchRequest>(c, r =>
+                {
+                    source!.Callers.Enqueue(r.Caller);
+                    return new SearchResponse { Headers = [Header($"{prefix}1")], Failures = [] };
+                }));
+            app.MapPost($"/api/{SourceV2Urls.V2GetHeaders}", (HttpContext c) => Serve<GetHeadersRequest>(c, r =>
+            {
+                source!.Callers.Enqueue(r.Caller);
+                source.HeaderIdsAsked.Enqueue(r.Ids);
+                return new GetHeadersResponse
+                {
+                    Headers = r.Ids.Select(id => new HeaderAnswer { Id = id, State = ItemState.Open, Header = Header(id) }).ToList(),
+                };
+            }));
+            app.MapPost($"/api/{SourceV2Urls.V2GetContent}", (HttpContext c) => Serve<GetContentRequest>(c, r =>
+                new GetContentResponse { Id = r.Id, State = ItemState.Open, Header = Header(r.Id), Content = new() }));
+            app.MapPost($"/api/{SourceV2Urls.V2Resolve}", (HttpContext c) => Serve<ResolveRequest>(c, r => new ResolveResponse
+            {
+                Items = r.Uris.Select(uri =>
+                {
+                    var id = uri.AbsolutePath.TrimStart('/');
+                    return id.StartsWith(prefix)
+                        ? new ResolvedUri { Uri = uri, State = ResolveState.Resolved, Id = id }
+                        : new ResolvedUri { Uri = uri, State = ResolveState.NotResolved };
+                }).ToList(),
+            }));
+
+            app.MapPost($"/api/{SourceV2Urls.V2GetIcon}", async context =>
+            {
+                var request = await JsonSerializer.DeserializeAsync<GetIconRequest>(context.Request.Body, SourceV2Json.Options);
+                if (context.Request.Headers["X-Internal-Key"] != SourceKey)
+                    context.Response.StatusCode = 401;
+                else if (request!.Name != $"{prefix}icon")
+                    context.Response.StatusCode = 404;
+                else
+                    await Results.Bytes(IconBytes, "image/png").ExecuteAsync(context);
+            });
+
+            await app.StartAsync();
+            source = new(app, new($"{app.Urls.Single()}/api/"));
+            return source;
+        }
+
+        public async ValueTask DisposeAsync() => await _app.DisposeAsync();
+    }
+}

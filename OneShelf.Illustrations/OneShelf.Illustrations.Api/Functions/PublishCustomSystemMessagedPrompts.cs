@@ -19,7 +19,7 @@ public class PublishCustomSystemMessagedPrompts : FunctionBase<PublishCustomSyst
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.PublishCustomSystemMessagedPrompts, AuthorizationLevel.Function, "get", "post")]
+    [Function(IllustrationsApiUrls.PublishCustomSystemMessagedPrompts, AuthorizationLevel.Function, "get", "post", InternalScope = IllustrationsModule.InternalScope)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] PublishCustomSystemMessagedPromptsRequest request) => RunHandler(request);
 
     protected override async Task<PublishCustomSystemMessagedPromptsResponse> Execute(

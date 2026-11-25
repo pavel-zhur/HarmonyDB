@@ -21,7 +21,7 @@ public class GetImage : FunctionBase<GetImageRequest>
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.GetImage, AuthorizationLevel.Function, "get", "post")]
+    [Function(IllustrationsApiUrls.GetImage, AuthorizationLevel.Function, "get", "post", InternalScope = IllustrationsModule.InternalScope)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] GetImageRequest request) => RunHandler(request);
 
     protected override async Task<IActionResult> ExecuteSuccessful(GetImageRequest request)

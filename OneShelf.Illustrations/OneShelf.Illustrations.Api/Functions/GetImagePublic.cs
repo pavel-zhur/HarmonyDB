@@ -19,7 +19,7 @@ public class GetImagePublic
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.GetImagePublic, AuthorizationLevel.Function, "get")]
+    [Function(IllustrationsApiUrls.GetImagePublic, AuthorizationLevel.Function, "get", InternalScope = IllustrationsModule.InternalScope)]
     public async Task<IActionResult> Run(HttpRequest req, Guid id)
     {
         var illustration = await _illustrationsDatabase.GetIllustration(id);

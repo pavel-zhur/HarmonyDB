@@ -34,6 +34,13 @@ public sealed class FunctionAttribute : Attribute, IRouteTemplateProvider, IActi
     /// </summary>
     public string? Route { get; init; }
 
+    /// <summary>
+    /// The scope an internal client (see <c>HarmonyDB.Common.ServiceAuth</c>) needs to call the function with its key, in
+    /// the <c>X-Internal-Key</c> header. Required for the <see cref="AuthorizationLevel.Internal"/> level; on the
+    /// <see cref="AuthorizationLevel.Function"/> level it opens the function to such a client besides the function keys.
+    /// </summary>
+    public string? InternalScope { get; init; }
+
     public IEnumerable<string> HttpMethods => _methods;
 
     string IRouteTemplateProvider.Template => $"{RoutePrefix}/{Route ?? Name}";

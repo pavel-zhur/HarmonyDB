@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using HarmonyDB.Common.ServiceAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
@@ -62,13 +63,16 @@ internal sealed class ApiModuleHost
                 _ => { });
         }
 
+        // The internal clients that may call the module's functions with an internal scope (setting InternalClients).
+        builder.Services.AddInternalClients(builder.Configuration);
+
         builder.Services
             .Configure<FunctionKeysOptions>(o => builder.Configuration.GetSection(FunctionKeysOptions.SectionName).Bind(o.Keys))
             .AddSingleton<IObjectModelValidator, NoObjectModelValidator>()
             .AddControllers(options =>
             {
                 options.Conventions.Add(new FunctionsOnlyConvention());
-                options.Filters.Add<FunctionKeysFilter>();
+                options.Filters.Add<FunctionAccessFilter>();
                 options.Filters.Add<BindingFailureFilter>();
                 foreach (var filter in options.Filters.OfType<UnsupportedContentTypeFilter>().ToList()) options.Filters.Remove(filter);
                 options.ModelBinderProviders.Insert(0, new HttpRequestModelBinderProvider());

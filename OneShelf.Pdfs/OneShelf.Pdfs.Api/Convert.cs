@@ -23,7 +23,7 @@ public class Convert
         _logger = logger;
     }
     
-    [Function("Convert", AuthorizationLevel.Function, "post")]
+    [Function("Convert", AuthorizationLevel.Function, "post", InternalScope = PdfsModule.InternalScope)]
     public async Task<IActionResult> Run(HttpRequest req)
     {
         try

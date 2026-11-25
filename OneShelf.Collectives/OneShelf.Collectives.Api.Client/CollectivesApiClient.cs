@@ -27,6 +27,13 @@ public class CollectivesApiClient : ApiClientBase<CollectivesApiClient>
             Identity = identity,
         });
 
+    /// <returns>The collectives of these ids that exist and are not deleted.</returns>
+    public async Task<GetManyResponse> GetMany(IReadOnlyCollection<Guid> collectiveIds)
+        => await PostWithCode<GetManyRequest, GetManyResponse>(CollectivesApiUrls.GetMany, new()
+        {
+            CollectiveIds = collectiveIds.ToList(),
+        });
+
     public async Task<GetResponse> Get(Guid collectiveId)
         => await PostWithCode<GetRequest, GetResponse>(CollectivesApiUrls.Get, new()
         {

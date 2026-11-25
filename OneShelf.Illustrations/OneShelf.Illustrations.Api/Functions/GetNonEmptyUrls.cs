@@ -17,7 +17,7 @@ public class GetNonEmptyUrls : FunctionBase<GetNonEmptyUrlsRequest, GetNonEmptyU
         _illustrationsDatabase = illustrationsDatabase;
     }
 
-    [Function(IllustrationsApiUrls.GetNonEmptyUrls, AuthorizationLevel.Function, "post")]
+    [Function(IllustrationsApiUrls.GetNonEmptyUrls, AuthorizationLevel.Function, "post", InternalScope = IllustrationsModule.InternalScope)]
     public Task<IActionResult> Run(HttpRequest req, [FromBody] GetNonEmptyUrlsRequest request) => RunHandler(request);
 
     protected override async Task<GetNonEmptyUrlsResponse> Execute(GetNonEmptyUrlsRequest getPdfsRequest)
