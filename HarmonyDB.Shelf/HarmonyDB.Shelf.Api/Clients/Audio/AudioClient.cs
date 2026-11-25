@@ -12,7 +12,7 @@ namespace HarmonyDB.Shelf.Api.Clients.Audio;
 /// The music service (HarmonyDB.Audio), called with the shelf's internal key. Every call to a music service says how
 /// it acts (<see cref="AudioActing"/>). Add the calls an area needs here, typed, in the same way.
 /// </summary>
-public sealed class AudioClient(HttpClient http, IOptionsMonitor<AudioClientOptions> options)
+public sealed partial class AudioClient(HttpClient http, IOptionsMonitor<AudioClientOptions> options)
 {
     public const string ModeHeader = "X-Audio-Mode";
     public const string SubjectHeader = "X-Audio-Subject";
@@ -37,11 +37,22 @@ public sealed class AudioClient(HttpClient http, IOptionsMonitor<AudioClientOpti
     /// </summary>
     public bool IsConfigured => options.CurrentValue.IsConfigured;
 
-    private async Task<T> SendAsync<T>(HttpMethod method, string path, AudioActing? acting, CancellationToken cancellationToken)
+    /// <summary>
+    /// How long a call may take, unless it says otherwise.
+    /// </summary>
+    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+
+    private Task<T> SendAsync<T>(HttpMethod method, string path, AudioActing? acting, CancellationToken cancellationToken)
+        => SendAsync<T>(method, path, acting, DefaultTimeout, cancellationToken);
+
+    private async Task<T> SendAsync<T>(HttpMethod method, string path, AudioActing? acting, TimeSpan timeout, CancellationToken cancellationToken)
     {
         var settings = options.CurrentValue;
         if (!settings.IsConfigured)
             throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
+
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        limit.CancelAfter(timeout);
 
         using var request = new HttpRequestMessage(method, new Uri(new Uri(settings.BaseUrl!.TrimEnd('/') + "/"), path));
         request.Headers.Add(InternalKeyDefaults.HeaderName, settings.Key);
@@ -57,15 +68,15 @@ public sealed class AudioClient(HttpClient http, IOptionsMonitor<AudioClientOpti
         HttpResponseMessage response;
         try
         {
-            response = await http.SendAsync(request, cancellationToken);
+            response = await http.SendAsync(request, limit.Token);
         }
         catch (HttpRequestException exception)
         {
             throw new AudioException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable, exception);
         }
-        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
-            // The client's timeout: the music service hangs.
+            // The call's timeout: the music service hangs.
             throw new AudioException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable, exception);
         }
 
@@ -75,12 +86,16 @@ public sealed class AudioClient(HttpClient http, IOptionsMonitor<AudioClientOpti
             {
                 try
                 {
-                    return await response.Content.ReadFromJsonAsync<T>(Json, cancellationToken)
+                    return await response.Content.ReadFromJsonAsync<T>(Json, limit.Token)
                            ?? throw new JsonException("The answer is null.");
                 }
                 catch (JsonException exception)
                 {
                     throw new AudioException(StatusCodes.Status502BadGateway, ErrorCodes.Unavailable, exception);
+                }
+                catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new AudioException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable, exception);
                 }
             }
 

@@ -15,6 +15,16 @@ builder.AddArea<AuthArea>();
 builder.AddArea<MeArea>();
 builder.AddArea<AnalysesArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Admin.AdminArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Playlists.PlaylistsArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Library.LibraryArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Share.ShareArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Sync.SyncArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Chords.ChordsArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Search.SearchArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.AnalysisTools.AnalysisToolsArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Music.MusicArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Recordings.RecordingsArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Media.MediaArea>();
 
 var app = builder.Build();
 app.UseShelfFoundation();

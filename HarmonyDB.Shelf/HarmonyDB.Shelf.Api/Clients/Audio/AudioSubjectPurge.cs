@@ -44,7 +44,8 @@ public static class AudioClientExtensions
 
         services.AddOptions<AudioClientOptions>().Bind(configuration.GetSection(AudioClientOptions.SectionName)).ValidateOnStart();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<AudioClientOptions>, AudioClientOptionsValidator>());
-        services.AddHttpClient<AudioClient>(x => x.Timeout = TimeSpan.FromSeconds(30));
+        // each call has its own timeout (AudioClient.DefaultTimeout, or longer where it says)
+        services.AddHttpClient<AudioClient>(x => x.Timeout = Timeout.InfiniteTimeSpan);
         services.AddHostedService<AudioSubjectPurgeWorker>();
         return services;
     }

@@ -11,4 +11,9 @@
     <None Include="openapi.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- the chord sheet's types (a key; the source contract's content kinds) are given to the browser as they are -->
+    <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj" />
+  </ItemGroup>
+
 </Project>

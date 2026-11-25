@@ -113,8 +113,23 @@ before authorization. See
 | `SignIn:RateLimitPermits`, `SignIn:RateLimitWindow` | How many sign-ins one client address may start or finish in a window (30 in 5 minutes) |
 | `Shelf:Proxy:TrustedNetworks` | The reverse proxies' networks (CIDR) whose `X-Forwarded-For` gives the client's address; none by default. **Set it whenever a proxy stands in front** (in the compose project: `SHELF_TRUSTED_PROXY_NETWORK`, its own network), or every client has the proxy's address and shares every rate limit |
 | `Clients:Audio:BaseUrl`, `Clients:Audio:Key` | The music service and the shelf's key there; not set: what needs it answers 503 `unavailable` |
+| `Playlists:LibraryShowLimit` | A playlist of more songs than this, joined, starts out of the person's library (2000) |
+| `Clients:OwnChords:Endpoint`, `…:Key`, `…:PreviewEndpoint`, `…:PreviewKey` | The own chords' store (`…/collectives/api/`) and their editor's preview (`…/sourcesself/api/`), with the shelf's keys; not set: 503 `unavailable` |
+| `Clients:Illustrations:Endpoint`, `…:Key` | The illustrations service (`…/illustrations/api/`); not set: 503 `unavailable` |
+| `Clients:Pdfs:Endpoint`, `…:Key` | The PDF service (`…/pdfs/api/`); not set: 503 `unavailable` |
+| `Clients:Index:Endpoint`, `…:Key`, `…:Timeout` | The index (`…/index/api/`): the source contract's relay and the analysis tools, with the shelf's key; not set: 503 `unavailable` (the search marks its chords part failed) |
+| `Media:SigningKey`, `Media:AddressLifetime`, `Media:RateLimitPermits`, `Media:RateLimitWindow` | Media addresses: their signing key (32 random bytes, base64; not set: 503 `unavailable`), how long one works (15 minutes), how many new ones one client address may ask for (60 a minute) |
+| `Illustrations:DailyImageLimit` | How many pictures a person may have drawn in a day (42) |
+| `Jobs:Concurrency`, `Jobs:Lease`, `Jobs:MaxAttempts`, `Jobs:Poll`, `Jobs:RecentTime`, `Jobs:ListLimit`, `Jobs:FileLifetime`, `Jobs:Retention` | The background jobs (`Common/Jobs/JobsOptions.cs`); each has a default |
 
 The settings are checked at start; a wrong one stops the app with the reason.
+
+## Media
+
+Sound and video are played from short-lived addresses (`/api/media/…`, with Range), asked for with
+`POST /api/media/tracks` (a music service's track) or `POST /api/media/chords` (the recording, separate instruments and
+notes file of an item of chords). Each answer gives the address(es) and their `expiresAt`: ask for new ones before then
+(a player that seeks later than that gets 410 `media_expired`; ask again and go on from the same place).
 
 ## Signing in
 
@@ -166,6 +181,22 @@ outbox (`AudioSubjectPurge`). What a person pastes as a music credential may be 
 `music_credentials_too_large` (they copied more than the request's headers).
 
 **Internal**: `GET /internal/accounts/{accountId}/logins/{provider}` → `{subjects}` (scope `shelf.accounts`).
+
+## Background jobs
+
+Work a person starts that takes long (illustrations, a book, an import, a playlist's sync) is a job (`Common/Jobs`):
+kept in `jobs`, run by a worker in the app, seen by the person at `GET /api/jobs` (queued, running, finished lately)
+and `GET /api/jobs/{id}`, its file at `GET /api/jobs/{id}/file`.
+
+- A kind of job is a class implementing `IJobHandler`, registered by the area that starts it:
+  `services.AddJobHandler<MyJob>(configuration, "my_kind")`. It is made in a scope of its own for each run.
+- Start it with `JobQueue.EnqueueAsync(accountId, "my_kind", subjectId, input)`; `JobQueue.FindActiveAsync(kind,
+  subjectId)` finds one queued or running for a thing.
+- In the handler: `run.Input<T>()`, `run.ReportAsync(stage, progress)` (a stage is a code the frontend words), and the
+  end: `return new JobCompletion(result, file)`, or `throw new JobFailedException(code)`.
+- A job stopped with the app goes back to the queue; one whose app died is taken again when its lease runs out, up to
+  `Jobs:MaxAttempts` starts, then fails with `job_interrupted`. A run may so be repeated: what a handler does must bear
+  it. The person's custom keys, when the job reads the sources, go in its input at the start.
 
 ## Working beside each other
 
