@@ -3,6 +3,7 @@ using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Media.Services;
 using HarmonyDB.Shelf.Api.Areas.Music.Services;
 using HarmonyDB.Shelf.Api.Areas.OAuth.Services;
+using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
@@ -294,11 +295,50 @@ public static class MusicTools
             }),
     ];
 
+    /// <summary>
+    /// Every service's music permission: a tool of another kind that makes the shelf read a service (its track, its
+    /// playlist) for the person is listed with one of them, and its call checks the service's own
+    /// (<see cref="MayRead"/>, <see cref="PlaylistReading"/>).
+    /// </summary>
+    public static string[] AnyMusic { get; } =
+    [
+        BuiltInPermissions.McpYandexAnonymous,
+        BuiltInPermissions.McpYandexLinked,
+        BuiltInPermissions.McpYoutubeAnonymous,
+        BuiltInPermissions.McpYoutubeLinked,
+    ];
+
     private static McpTool Catalog(string name, string description, McpToolEffect effect, Delegate handler)
-        => new(name, description, effect, handler, BuiltInPermissions.McpYandexAnonymous, BuiltInPermissions.McpYoutubeAnonymous) { AnyPermission = true };
+        => new(name, description, effect, handler) { AnyOf = [BuiltInPermissions.McpYandexAnonymous, BuiltInPermissions.McpYoutubeAnonymous] };
 
     private static McpTool Linked(string name, string description, Delegate handler)
-        => new(name, description, McpToolEffect.ReadOutside, handler, BuiltInPermissions.McpYandexLinked, BuiltInPermissions.McpYoutubeLinked) { AnyPermission = true };
+        => new(name, description, McpToolEffect.ReadOutside, handler) { AnyOf = [BuiltInPermissions.McpYandexLinked, BuiltInPermissions.McpYoutubeLinked] };
+
+    /// <summary>
+    /// A call that makes the shelf read what anyone may read of the service: allowed by either of the service's
+    /// permissions.
+    /// </summary>
+    /// <exception cref="ShelfException">403 <c>permission_denied</c>, naming the permissions.</exception>
+    public static void MayRead(ClaimsPrincipal user, PermissionCatalog permissions, MusicService service)
+    {
+        var (anonymous, linked) = (Permission(service, false), Permission(service, true));
+        if (!permissions.Has(user, anonymous) && !permissions.Has(user, linked))
+            throw Denied(linked, anonymous);
+    }
+
+    /// <summary>
+    /// How a playlist of the service imported for the person is read: as the person, through the account they linked,
+    /// with the service's linked permission; anonymously with its anonymous one only.
+    /// </summary>
+    /// <exception cref="ShelfException">403 <c>permission_denied</c>, naming the permissions, with neither.</exception>
+    public static OriginReading PlaylistReading(ClaimsPrincipal user, PermissionCatalog permissions, MusicService service)
+    {
+        if (permissions.Has(user, Permission(service, true)))
+            return OriginReading.AsImporter;
+
+        MayRead(user, permissions, service);
+        return OriginReading.Anonymous;
+    }
 
     /// <summary>
     /// Whether the caller may use this service so (its catalog, or its own lists): the service's permission, in force for
@@ -307,19 +347,27 @@ public static class MusicTools
     /// <exception cref="ShelfException">403 <c>permission_denied</c>.</exception>
     private static bool Allowed(ClaimsPrincipal user, PermissionCatalog permissions, MusicService service, bool linked)
     {
-        var permission = (service, linked) switch
-        {
-            (MusicService.Yandex, false) => BuiltInPermissions.McpYandexAnonymous,
-            (MusicService.Yandex, true) => BuiltInPermissions.McpYandexLinked,
-            (MusicService.Youtube, false) => BuiltInPermissions.McpYoutubeAnonymous,
-            (MusicService.Youtube, true) => BuiltInPermissions.McpYoutubeLinked,
-            _ => throw ShelfException.BadRequest(),
-        };
+        var permission = Permission(service, linked);
         if (!permissions.Has(user, permission))
-            throw ShelfException.Forbidden(ErrorCodes.PermissionDenied);
+            throw Denied(permission);
 
         return permissions.Has(user, BuiltInPermissions.McpLibraryRead);
     }
+
+    private static string Permission(MusicService service, bool linked) => (service, linked) switch
+    {
+        (MusicService.Yandex, false) => BuiltInPermissions.McpYandexAnonymous,
+        (MusicService.Yandex, true) => BuiltInPermissions.McpYandexLinked,
+        (MusicService.Youtube, false) => BuiltInPermissions.McpYoutubeAnonymous,
+        (MusicService.Youtube, true) => BuiltInPermissions.McpYoutubeLinked,
+        _ => throw ShelfException.BadRequest(),
+    };
+
+    /// <summary>
+    /// The refusal of a call the person did not allow: its details name what it needs (one of them, when several).
+    /// </summary>
+    private static ShelfException Denied(params string[] permissions)
+        => new(StatusCodes.Status403Forbidden, ErrorCodes.PermissionDenied, new Dictionary<string, string> { ["permission"] = string.Join(' ', permissions) });
 
     private static Slim.Page<object> Tracks(IReadOnlyList<MusicTrack> tracks, int? offset, int? limit, bool library)
         => Slim.Paged(tracks, offset, limit, x => Slim.Track(x, library));

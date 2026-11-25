@@ -297,17 +297,20 @@ public static class LibraryChangeTools
             BuiltInPermissions.McpLibraryWrite),
 
         new("add_recording_to_song",
-            "Add a recording (a music service's track) to a song." + Undo,
+            "Add a recording (a music service's track) to a song; needs that service's music permission." + Undo,
             McpToolEffect.Add,
             async (
-                ClaimsPrincipal user, SongRecordingsService recordings,
+                ClaimsPrincipal user, PermissionCatalog permissions, SongRecordingsService recordings,
                 Guid playlistId,
                 Guid songId,
                 [Description("yandex or youtube.")] MusicService service,
                 string trackId,
-                CancellationToken cancellationToken = default)
-                => Song(await recordings.AddAsync(user, playlistId, songId, new AddRecordingRequest { Service = service, TrackId = trackId }, cancellationToken)),
-            BuiltInPermissions.McpLibraryWrite),
+                CancellationToken cancellationToken = default) =>
+            {
+                MusicTools.MayRead(user, permissions, service);
+                return Song(await recordings.AddAsync(user, playlistId, songId, new AddRecordingRequest { Service = service, TrackId = trackId }, cancellationToken));
+            },
+            BuiltInPermissions.McpLibraryWrite) { AnyOf = MusicTools.AnyMusic },
 
         new("choose_recording",
             "Choose the recording of a song this person listens to (itemId); none clears it." + Undo,
@@ -377,11 +380,21 @@ public static class LibraryChangeTools
             BuiltInPermissions.McpLibraryWrite),
 
         new("import_music_playlist",
-            "Make a shelf playlist from a Yandex Music or YouTube Music playlist link.",
+            "Make a shelf playlist from a Yandex Music or YouTube Music playlist link, filled by a job (syncJobId, see " +
+            "get_job). Read as the person's linked account with that service's linked permission; with its anonymous " +
+            "one only, anonymously (a private playlist then fails: not_found).",
             McpToolEffect.Add,
-            async (ClaimsPrincipal user, OriginSync origin, [Description("The playlist link.")] string url, CancellationToken cancellationToken = default)
-                => Playlist(await origin.ImportAsync(user.Me(), url, cancellationToken)),
-            BuiltInPermissions.McpLibraryWrite),
+            async (
+                ClaimsPrincipal user, PermissionCatalog permissions, OriginSync origin,
+                [Description("The playlist link.")] string url,
+                CancellationToken cancellationToken = default) =>
+            {
+                var found = await origin.ResolveAsync(url, cancellationToken);
+                var reading = MusicTools.PlaylistReading(user, permissions, found.Service);
+                var imported = await origin.ImportAsync(user.Me(), found, reading, cancellationToken);
+                return new { playlist = Slim.Playlist(imported.Value.Playlist), syncJobId = imported.Value.Sync?.Id, reading, imported.Undo };
+            },
+            BuiltInPermissions.McpLibraryWrite) { AnyOf = MusicTools.AnyMusic },
 
         new("undo",
             "Take back a change by its undo token, within a few seconds.",

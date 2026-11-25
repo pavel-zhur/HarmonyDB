@@ -142,13 +142,16 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
 
 /// <summary>
 /// The music service as the tests set it: a link resolves to the YouTube playlist <c>PL1</c>, whose tracks are
-/// <see cref="Tracks"/>; any credentials of YouTube are an account.
+/// <see cref="Tracks"/>; any credentials of YouTube are an account. While <see cref="PlaylistPrivate"/>, the playlist
+/// opens only to an account (anonymously it is not found, as the service answers of a private one).
 /// </summary>
 public sealed class FakeAudio : HttpMessageHandler
 {
     public List<(string Id, string Title, string Artist)> Tracks { get; } = [];
 
     public string Title { get; set; } = "A playlist there";
+
+    public bool PlaylistPrivate { get; set; }
 
     /// <summary>
     /// How each asking of the playlist acted (anonymous, person …), in order.
@@ -160,8 +163,11 @@ public sealed class FakeAudio : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         if (path == "/internal/youtube/playlists/PL1")
         {
+            var mode = request.Headers.TryGetValues(AudioClient.ModeHeader, out var modes) ? modes.Single() : null;
             lock (PlaylistModes)
-                PlaylistModes.Add(request.Headers.TryGetValues(AudioClient.ModeHeader, out var modes) ? modes.Single() : null);
+                PlaylistModes.Add(mode);
+            if (PlaylistPrivate && mode != "person")
+                path = "/not-open";
         }
 
         object? answer = path switch

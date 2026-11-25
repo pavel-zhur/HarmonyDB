@@ -19,7 +19,7 @@ public static class McpErrors
         ["bad_request"] = "A value in the request is not allowed; check the arguments against the tool's description.",
         ["not_found"] = "There is no such thing, or it is not open to this person.",
         ["forbidden"] = "This person may not do that here (it is not theirs to change, or their role does not allow it).",
-        ["permission_denied"] = "The person did not allow this assistant to do that.",
+        ["permission_denied"] = "The person did not allow this assistant to do that; details.permission names what it needs (any one of them).",
         ["conflict"] = "That conflicts with how things are now; read the current state and try again.",
         ["too_many_requests"] = "Too many requests just now; wait a little and try again.",
         ["unavailable"] = "A service this needs does not answer now; try again later.",

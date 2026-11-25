@@ -31,14 +31,15 @@ public enum McpToolEffect
 /// permission it needs (the one place that decides is the authorization of the MCP server: a tool the caller may not
 /// use is not listed to it and cannot be called), and its handler — a call of the same service the app's endpoint
 /// calls. The handler's parameters are its arguments (with their descriptions), and the services and the caller it
-/// needs.
+/// needs. It needs all its <see cref="Permissions"/>, and one of <see cref="AnyOf"/> when it names some.
 /// </summary>
 public sealed record McpTool(string Name, string Description, McpToolEffect Effect, Delegate Handler, params string[] Permissions)
 {
     /// <summary>
-    /// A tool that needs any one of its permissions (its <see cref="Permissions"/> are then alternatives).
+    /// Alternatives: the tool needs one of these too (a tool of several services or kinds of work, whose call then checks
+    /// the permission of the one it is asked for).
     /// </summary>
-    public bool AnyPermission { get; init; }
+    public string[] AnyOf { get; init; } = [];
 
     public McpServerTool Create(IServiceProvider services) => McpServerTool.Create(Handler, new McpServerToolCreateOptions
     {
@@ -50,9 +51,9 @@ public sealed record McpTool(string Name, string Description, McpToolEffect Effe
         Destructive = Effect == McpToolEffect.Remove,
         Idempotent = Effect is McpToolEffect.Read or McpToolEffect.ReadOutside or McpToolEffect.Set,
         OpenWorld = Effect == McpToolEffect.ReadOutside,
-        Metadata = AnyPermission
-            ? [new RequireAnyPermissionAttribute(Permissions)]
-            : Permissions.Select(x => (object)new RequirePermissionAttribute(x)).ToList(),
+        Metadata = Permissions.Select(x => (object)new RequirePermissionAttribute(x))
+            .Concat(AnyOf.Length == 0 ? [] : [new RequireAnyPermissionAttribute(AnyOf)])
+            .ToList(),
         SchemaCreateOptions = new() { TransformSchemaNode = (_, node) => Lean(node) },
     });
 

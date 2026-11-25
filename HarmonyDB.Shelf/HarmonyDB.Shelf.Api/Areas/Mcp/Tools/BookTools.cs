@@ -49,8 +49,10 @@ public static class BookTools
                 int? offset = null,
                 [Description("1-25, default 10.")] int? limit = null,
                 CancellationToken cancellationToken = default)
-                => Slim.Paged(await jobs.ListAsync(user.Me(), kind, cancellationToken), offset, limit, Job),
-            BuiltInPermissions.McpPdf, BuiltInPermissions.McpLibraryWrite) { AnyPermission = true },
+                => Slim.Paged(await jobs.ListAsync(user.Me(), kind, cancellationToken), offset, limit, Job))
+        {
+            AnyOf = [BuiltInPermissions.McpPdf, BuiltInPermissions.McpLibraryWrite],
+        },
 
         new("get_job",
             "A job's state (queued, running, succeeded, failed), stage, error code, result, and fileUrl — a download link " +
@@ -61,8 +63,10 @@ public static class BookTools
                 var job = await jobs.GetAsync(user.Me(), jobId, cancellationToken) ?? throw ShelfException.NotFound(JobsErrorCodes.NoSuchJob);
                 var link = job.File == null ? ((string Url, DateTimeOffset ExpiresAt)?)null : files.JobFile(user.Me(), job.Id);
                 return new { job = Job(job), job.Result, fileUrl = link?.Url, fileUrlExpiresAt = link?.ExpiresAt };
-            },
-            BuiltInPermissions.McpPdf, BuiltInPermissions.McpLibraryWrite) { AnyPermission = true },
+            })
+        {
+            AnyOf = [BuiltInPermissions.McpPdf, BuiltInPermissions.McpLibraryWrite],
+        },
     ];
 
     public static object Job(JobInfo x) => new { jobId = x.Id, x.Kind, x.Status, x.Stage, x.Progress, x.ErrorCode, x.CreatedAt, x.FinishedAt };
