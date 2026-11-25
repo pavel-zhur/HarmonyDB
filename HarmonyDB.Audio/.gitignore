@@ -1,0 +1,2 @@
+# local secrets and settings for running the service by hand; never committed
+.env.local
