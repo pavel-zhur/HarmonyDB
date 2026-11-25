@@ -19,6 +19,7 @@ builder.AddArea<HarmonyDB.Shelf.Api.Areas.Admin.AdminArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Playlists.PlaylistsArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Library.LibraryArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Share.ShareArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.PublicPage.PublicPageArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Sync.SyncArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Chords.ChordsArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Search.SearchArea>();

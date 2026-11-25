@@ -1783,6 +1783,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("token");
 
+                    b.Property<List<string>>("CarriedKeys")
+                        .HasColumnType("text[]")
+                        .HasColumnName("carried_keys");
+
                     b.Property<Guid?>("ChordsId")
                         .HasColumnType("uuid")
                         .HasColumnName("chords_id");
@@ -1823,14 +1827,22 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.HasIndex("SongId")
                         .HasDatabaseName("ix_share_links_song_id");
 
+                    b.HasIndex("ChordsId", "CreatedById")
+                        .IsUnique()
+                        .HasDatabaseName("ix_share_links_chords_id_created_by_id")
+                        .HasFilter("carried_keys IS NOT NULL");
+
                     b.HasIndex("Kind", "PlaylistId", "SongId", "ChordsId")
                         .IsUnique()
-                        .HasDatabaseName("ix_share_links_kind_playlist_id_song_id_chords_id");
+                        .HasDatabaseName("ix_share_links_kind_playlist_id_song_id_chords_id")
+                        .HasFilter("carried_keys IS NULL");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Kind", "PlaylistId", "SongId", "ChordsId"), false);
 
                     b.ToTable("share_links", null, t =>
                         {
+                            t.HasCheckConstraint("ck_share_links_carried_keys", "carried_keys IS NULL OR kind = 'chords'");
+
                             t.HasCheckConstraint("ck_share_links_target", "(kind = 'playlist' AND playlist_id IS NOT NULL AND song_id IS NULL AND chords_id IS NULL)\nOR (kind = 'song' AND song_id IS NOT NULL AND playlist_id IS NULL)\nOR (kind = 'chords' AND chords_id IS NOT NULL AND playlist_id IS NULL AND song_id IS NULL)");
                         });
                 });

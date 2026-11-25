@@ -14,7 +14,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Media.Services;
 /// it to the asker — and streams them from the music service, always by the service account or anonymously, never
 /// with a person's own account.
 /// </summary>
-public sealed class MediaService(MediaSigner signer, ChordsReader chords, AudioMediaClient audio)
+public sealed class MediaService(MediaSigner signer, ChordsReader chords, SourceCallers callers, AudioMediaClient audio)
 {
     private static readonly string[] PassedHeaders = ["Content-Range", "Accept-Ranges", "ETag", "Last-Modified"];
 
@@ -37,12 +37,18 @@ public sealed class MediaService(MediaSigner signer, ChordsReader chords, AudioM
     /// The addresses of the item's recording, its separate instruments and its notes file, when the item is open to
     /// the asker; not found when it is not (nothing more is said of it).
     /// </summary>
-    public async Task<ChordsMedia> SignChordsAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
+    public Task<ChordsMedia> SignChordsAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
+        => SignChordsAsync(callers.For(user), id, cancellationToken);
+
+    /// <summary>
+    /// The same, for the caller given.
+    /// </summary>
+    public async Task<ChordsMedia> SignChordsAsync(Caller caller, string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw ShelfException.BadRequest();
 
-        var content = await chords.GetOpenContentAsync(user, id, [ContentKind.Recording, ContentKind.Notes], cancellationToken)
+        var content = await chords.GetOpenContentAsync(caller, id, [ContentKind.Recording, ContentKind.Notes], cancellationToken)
                       ?? throw ShelfException.NotFound();
         if (content.Recording == null && content.Notes?.Midi == null)
             throw ShelfException.NotFound(MediaErrorCodes.NoMedia);

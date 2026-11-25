@@ -34,6 +34,12 @@ public class SelfV2Functions(SelfV2Source source)
             r => IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null,
             async r => Json(await source.GetContent(r.Caller, r.Id, r.Kinds, cancellationToken)));
 
+    [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
+    public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
+        => Handle<GetContentsRequest>(req,
+            GetContentsRequest.IsValid,
+            async r => Json(await source.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken)));
+
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
         => Handle<ResolveRequest>(req,

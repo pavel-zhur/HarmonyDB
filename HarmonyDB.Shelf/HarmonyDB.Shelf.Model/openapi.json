@@ -1119,6 +1119,136 @@
         }
       }
     },
+    "/api/library/illustrated": {
+      "get": {
+        "tags": [
+          "Library"
+        ],
+        "operationId": "GetIllustratedLibrary",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IllustratedChordsList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/offline/chords": {
+      "get": {
+        "tags": [
+          "Library"
+        ],
+        "description": "The ids of the chords of the person's library, for a device that keeps it; with since, only whether anything changed. Media are not part of the offline library.",
+        "operationId": "GetOfflineChords",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineChordsList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/offline/contents": {
+      "post": {
+        "tags": [
+          "Library"
+        ],
+        "description": "The headers and content of up to 50 chords of the person's library. Media (recordings, separate instruments, files, pictures) are not part of the offline library.",
+        "operationId": "GetOfflineContents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineContentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineContents"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/mcp": {
       "get": {
         "tags": [
@@ -5133,6 +5263,45 @@
         }
       }
     },
+    "/api/share/mine": {
+      "get": {
+        "tags": [
+          "Share"
+        ],
+        "operationId": "GetMyCarryingShareLink",
+        "parameters": [
+          {
+            "name": "chords",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyCarryingLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/share/{token}": {
       "get": {
         "tags": [
@@ -5156,6 +5325,124 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ShareView"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Share"
+        ],
+        "operationId": "RemoveShareLink",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/{token}/chords": {
+      "get": {
+        "tags": [
+          "Share"
+        ],
+        "operationId": "GetSharedChords",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kinds",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChordsContentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/{token}/media": {
+      "post": {
+        "tags": [
+          "Share"
+        ],
+        "operationId": "GetSharedChordsMedia",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChordsMedia"
                 }
               }
             }
@@ -5477,6 +5764,71 @@
         },
         "additionalProperties": false
       },
+      "BookItemPages": {
+        "required": [
+          "chordsId",
+          "state",
+          "transpose"
+        ],
+        "type": "object",
+        "properties": {
+          "chordsId": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/BookItemState"
+          },
+          "transpose": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagesOneColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pagesTwoColumns": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BookItemResult": {
+        "required": [
+          "chordsId",
+          "state",
+          "transpose"
+        ],
+        "type": "object",
+        "properties": {
+          "chordsId": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/BookItemState"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "transpose": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BookItemState": {
+        "enum": [
+          "printed",
+          "notOpen",
+          "unavailable"
+        ],
+        "type": "string"
+      },
       "BookOptions": {
         "required": [
           "contents",
@@ -5496,6 +5848,38 @@
           },
           "accidentals": {
             "$ref": "#/components/schemas/BookAccidentals"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BookPagesResult": {
+        "required": [
+          "items",
+          "kind"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookItemPages"
+            }
+          },
+          "contentsPages": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "kind": {
+            "enum": [
+              "book_pages"
+            ],
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5520,6 +5904,38 @@
           },
           "options": {
             "$ref": "#/components/schemas/BookOptions"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BookResult": {
+        "required": [
+          "items",
+          "kind",
+          "pages"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "pages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookItemResult"
+            }
+          },
+          "kind": {
+            "enum": [
+              "book"
+            ],
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -6336,6 +6752,7 @@
       },
       "CreateShareRequest": {
         "required": [
+          "carriesAccess",
           "kind"
         ],
         "type": "object",
@@ -6360,6 +6777,9 @@
           "share": {
             "type": "string",
             "nullable": true
+          },
+          "carriesAccess": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -6468,6 +6888,58 @@
         ],
         "type": "string"
       },
+      "IllustratedChords": {
+        "required": [
+          "artists",
+          "chords",
+          "pictureUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "chords": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pictureUrl": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IllustratedChordsList": {
+        "required": [
+          "items",
+          "offset",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IllustratedChords"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "IllustrationDrawing": {
         "required": [
           "preset"
@@ -6529,6 +7001,65 @@
         },
         "additionalProperties": false
       },
+      "IllustrationsJobResult": {
+        "required": [
+          "kind",
+          "made"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "made": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "enum": [
+              "illustrations"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportLinkResult": {
+        "required": [
+          "link",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "link": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ImportLinkState"
+          },
+          "chordsId": {
+            "type": "string",
+            "nullable": true
+          },
+          "songId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportLinkState": {
+        "enum": [
+          "imported",
+          "notFound",
+          "unavailable",
+          "notALink"
+        ],
+        "type": "string"
+      },
       "ImportLinksRequest": {
         "required": [
           "links"
@@ -6557,6 +7088,38 @@
           "playlistId": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportResult": {
+        "required": [
+          "kind",
+          "links",
+          "playlistId"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "playlistId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportLinkResult"
+            }
+          },
+          "kind": {
+            "enum": [
+              "import"
+            ],
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -6743,6 +7306,26 @@
             "nullable": true
           },
           "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PlaylistSyncResult"
+              },
+              {
+                "$ref": "#/components/schemas/OwnChordsPlacingResult"
+              },
+              {
+                "$ref": "#/components/schemas/IllustrationsJobResult"
+              },
+              {
+                "$ref": "#/components/schemas/BookPagesResult"
+              },
+              {
+                "$ref": "#/components/schemas/BookResult"
+              },
+              {
+                "$ref": "#/components/schemas/ImportResult"
+              }
+            ],
             "nullable": true
           },
           "file": {
@@ -6750,6 +7333,29 @@
           }
         },
         "additionalProperties": false
+      },
+      "JobResult": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "playlist_sync": "#/components/schemas/PlaylistSyncResult",
+            "own_chords_placing": "#/components/schemas/OwnChordsPlacingResult",
+            "illustrations": "#/components/schemas/IllustrationsJobResult",
+            "book_pages": "#/components/schemas/BookPagesResult",
+            "book": "#/components/schemas/BookResult",
+            "import": "#/components/schemas/ImportResult"
+          }
+        }
       },
       "JobStatus": {
         "enum": [
@@ -7766,6 +8372,15 @@
         },
         "additionalProperties": false
       },
+      "MyCarryingLink": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/ShareLinkItem"
+          }
+        },
+        "additionalProperties": false
+      },
       "MyKey": {
         "required": [
           "chords"
@@ -8075,6 +8690,98 @@
         ],
         "type": "string"
       },
+      "OfflineChordsList": {
+        "required": [
+          "changed",
+          "chords",
+          "watermark"
+        ],
+        "type": "object",
+        "properties": {
+          "watermark": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "chords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "OfflineContent": {
+        "required": [
+          "chords",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "chords": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/OfflineContentState"
+          },
+          "header": {
+            "$ref": "#/components/schemas/ChordsHeader"
+          },
+          "content": {
+            "$ref": "#/components/schemas/SourceV2Content"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OfflineContentState": {
+        "enum": [
+          "open",
+          "notOpen",
+          "unavailable",
+          "notInLibrary"
+        ],
+        "type": "string"
+      },
+      "OfflineContents": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfflineContent"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "OfflineContentsRequest": {
+        "required": [
+          "chords"
+        ],
+        "type": "object",
+        "properties": {
+          "chords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChordsKind"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "OwnChordsDetails": {
         "required": [
           "history",
@@ -8154,13 +8861,39 @@
         },
         "additionalProperties": false
       },
+      "OwnChordsPlacingResult": {
+        "required": [
+          "chordsId",
+          "kind"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "chordsId": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "own_chords_placing"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "OwnChordsPreview": {
         "required": [
           "content"
         ],
         "type": "object",
         "properties": {
-          "content": { }
+          "content": {
+            "$ref": "#/components/schemas/SourceV2Content"
+          }
         },
         "additionalProperties": false
       },
@@ -8556,6 +9289,31 @@
         },
         "additionalProperties": false
       },
+      "PlaylistSyncResult": {
+        "required": [
+          "added",
+          "kind"
+        ],
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JobResult"
+          }
+        ],
+        "properties": {
+          "added": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "enum": [
+              "playlist_sync"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "PlaylistSystemKind": {
         "enum": [
           "none",
@@ -8627,6 +9385,15 @@
             "items": {
               "$ref": "#/components/schemas/MarkKind"
             }
+          },
+          "showcasePlaylistId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "publicPageOrigin": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8991,6 +9758,7 @@
       },
       "ShareLinkItem": {
         "required": [
+          "carriesAccess",
           "kind",
           "token"
         ],
@@ -9001,12 +9769,20 @@
           },
           "kind": {
             "$ref": "#/components/schemas/ShareKind"
+          },
+          "carriesAccess": {
+            "type": "boolean"
+          },
+          "publicAddress": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
       },
       "ShareView": {
         "required": [
+          "carriesAccess",
           "kind"
         ],
         "type": "object",
@@ -9022,6 +9798,9 @@
           },
           "chords": {
             "$ref": "#/components/schemas/ChordsAnswer"
+          },
+          "carriesAccess": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

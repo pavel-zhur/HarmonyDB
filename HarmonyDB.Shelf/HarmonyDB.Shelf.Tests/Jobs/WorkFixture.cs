@@ -68,7 +68,7 @@ public sealed class WorkFixture : IAsyncLifetime
             {
                 services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => Store);
                 var configuration = new ConfigurationBuilder().Build();
-                services.AddJobHandler<TestJobs.Succeeding>(configuration, TestJobs.Succeeding.Kind);
+                services.AddJobHandler<TestJobs.Succeeding, TestJobs.Echo>(configuration, TestJobs.Succeeding.Kind);
                 services.AddJobHandler<TestJobs.Failing>(configuration, TestJobs.Failing.Kind);
             }));
         Api.CreateClient().Dispose();
@@ -159,6 +159,13 @@ public static class TestJobs
     /// <summary>
     /// Tells a stage, then ends with a result and a file made of its input.
     /// </summary>
+    public sealed record Echo : JobResult
+    {
+        public required string Text { get; init; }
+
+        public required int Attempt { get; init; }
+    }
+
     public sealed class Succeeding : IJobHandler
     {
         public const string Kind = "test_succeeding";
@@ -167,7 +174,7 @@ public static class TestJobs
         {
             var input = run.Input<Input>();
             await run.ReportAsync("working", 0.5, cancellationToken);
-            return new(new { echo = input.Text, attempt = run.Attempt }, new("echo.txt", "text/plain", Encoding.UTF8.GetBytes(input.Text)));
+            return new(new Echo { Text = input.Text, Attempt = run.Attempt }, new("echo.txt", "text/plain", Encoding.UTF8.GetBytes(input.Text)));
         }
     }
 

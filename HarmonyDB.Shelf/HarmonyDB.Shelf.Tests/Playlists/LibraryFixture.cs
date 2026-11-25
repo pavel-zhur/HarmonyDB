@@ -38,8 +38,9 @@ public sealed class LibraryFixture : IAsyncLifetime
     public FakeIllustrations Illustrations { get; } = new();
 
     /// <summary>
-    /// The sources, through the index: an id "test-…" is open (titled "Title of …"), "closed-…" is not open to
-    /// anyone, "away-…" does not answer.
+    /// The sources, through the index: an id "test-…" is open (titled "Title of …"), "keyed-…" is open to a caller
+    /// with the key <see cref="Key"/> only (its content a sheet and a recording), "closed-…" is not open to anyone,
+    /// "away-…" does not answer.
     /// </summary>
     public FakeIndex Index { get; } = new() { Answer = Sources };
 
@@ -64,8 +65,31 @@ public sealed class LibraryFixture : IAsyncLifetime
         Api = new(ConnectionString, Audio, Index, Illustrations);
     }
 
+    /// <summary>
+    /// The custom permission of the tests: the key that opens the "keyed-…" chords.
+    /// </summary>
+    public const string Key = "custom.one";
+
     private static (HttpStatusCode, object?) Sources(string operation, JsonElement body)
     {
+        var keyed = body.TryGetProperty("caller", out var caller) && caller.GetProperty("keys").EnumerateArray().Any(x => x.GetString() == Key);
+        if (operation == "V2GetContent" && body.GetProperty("id").GetString() is { } asked && asked.StartsWith("keyed-", StringComparison.Ordinal))
+        {
+            return (HttpStatusCode.OK, keyed
+                ? new GetContentResponse
+                {
+                    Id = asked,
+                    State = ItemState.Open,
+                    Header = FakeIndex.Header(asked, "A keyed source"),
+                    Content = new()
+                    {
+                        Sheet = new() { Root = new HarmonyDB.Common.Representations.OneShelf.NodeHtml { Name = "pre" } },
+                        Recording = new() { Audio = new() { Blob = new() { Key = $"{asked}/take.mp3", ContentType = "audio/mpeg" } }, Duration = 100, Stems = [] },
+                    },
+                }
+                : new GetContentResponse { Id = asked, State = ItemState.NotOpen });
+        }
+
         if (operation != "V2GetHeaders")
             return (HttpStatusCode.NotFound, null);
 
@@ -74,6 +98,7 @@ public sealed class LibraryFixture : IAsyncLifetime
             Headers = body.GetProperty("ids").EnumerateArray().Select(x => x.GetString()!).Select(id => id switch
             {
                 _ when id.StartsWith("test-", StringComparison.Ordinal) => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A source") },
+                _ when id.StartsWith("keyed-", StringComparison.Ordinal) && keyed => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A keyed source") },
                 _ when id.StartsWith("away-", StringComparison.Ordinal) => new HeaderAnswer { Id = id, State = ItemState.Unavailable },
                 _ => new HeaderAnswer { Id = id, State = ItemState.NotOpen },
             }).ToList(),
@@ -128,6 +153,10 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
             ["Jobs:Poll"] = "00:00:00.200",
             // a few songs make a playlist large here
             ["Playlists:LibraryShowLimit"] = "5",
+            ["PublicPage:Origin"] = "https://site.example",
+            ["Permissions:Custom:0:Key"] = LibraryFixture.Key,
+            ["Permissions:Custom:0:Label"] = "Custom one",
+            ["Media:SigningKey"] = Convert.ToBase64String(Enumerable.Range(1, 32).Select(x => (byte)x).ToArray()),
         }));
         builder.ConfigureTestServices(services =>
         {
@@ -194,14 +223,33 @@ public sealed class FakeAudio : HttpMessageHandler
 }
 
 /// <summary>
-/// The illustrations' service as the tests set it: the covers of the chords in <see cref="Covers"/>.
+/// The illustrations' service as the tests set it: the covers of the chords in <see cref="Covers"/>, their pictures in
+/// <see cref="Images"/>, copies of the sides 256 and 512.
 /// </summary>
 public sealed class FakeIllustrations : HttpMessageHandler
 {
     public Dictionary<string, Guid> Covers { get; } = new();
 
+    public Dictionary<string, List<Guid>> Images { get; } = new();
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        switch (request.RequestUri!.AbsolutePath)
+        {
+            case "/api/ShelfPresets":
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new { presets = new[] { "a" }, sizes = new[] { 256, 512 } }, options: web) };
+            case "/api/ShelfRead":
+                var key = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.GetProperty("key").GetString()!;
+                List<Guid> images;
+                lock (Images)
+                    images = Images.GetValueOrDefault(key)?.ToList() ?? [];
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = JsonContent.Create(new { images = images.Select(x => new { id = x, preset = "a", createdOn = DateTimeOffset.UtcNow }) }, options: web),
+                };
+        }
+
         if (request.RequestUri!.AbsolutePath != "/api/ShelfCovers")
             return new HttpResponseMessage(HttpStatusCode.NotFound);
 

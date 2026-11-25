@@ -81,6 +81,25 @@ public sealed class FoundationTests(ShelfApiFactory factory) : IClassFixture<She
     }
 
     [Fact]
+    public async Task TheShowcaseIsTheConfiguredPlaylistOrNone()
+    {
+        var none = await factory.CreateClient().GetFromJsonAsync<PublicConfiguration>("/api/app/configuration", JsonOptions());
+        Assert.Null(none!.ShowcasePlaylistId);
+        Assert.Null(none.PublicPageOrigin);
+
+        var id = Guid.NewGuid();
+        using var configured = new ShelfApiFactory();
+        configured.Settings["App:ShowcasePlaylistId"] = id.ToString();
+        configured.Settings["PublicPage:Origin"] = "https://site.example/";
+        var both = await configured.CreateClient().GetFromJsonAsync<PublicConfiguration>("/api/app/configuration", JsonOptions());
+        Assert.Equal((id, "https://site.example"), (both!.ShowcasePlaylistId, both.PublicPageOrigin));
+
+        using var bad = new ShelfApiFactory();
+        bad.Settings["App:ShowcasePlaylistId"] = "not-a-playlist";
+        Assert.Throws<OptionsValidationException>(() => bad.CreateClient());
+    }
+
+    [Fact]
     public void InternalEndpointsAreNotInTheBrowserDocument()
     {
         var paths = factory.Services.GetRequiredService<Swashbuckle.AspNetCore.Swagger.ISwaggerProvider>()

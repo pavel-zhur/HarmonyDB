@@ -27,7 +27,7 @@ public sealed class IllustrationsArea : IShelfArea
         services.AddIllustrationsClient(configuration);
         services.AddChordsReading(configuration);
         services.AddScoped<IllustrationsService>();
-        services.AddJobHandler<IllustrationsJob>(configuration, IllustrationsService.JobKind);
+        services.AddJobHandler<IllustrationsJob, IllustrationsJobResult>(configuration, IllustrationsService.JobKind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

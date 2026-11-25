@@ -112,6 +112,24 @@ public partial class SelfV2Source
         var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var collectiveId = FromId(id);
         var version = collectiveId == null ? null : (await Get([collectiveId])).GetValueOrDefault(collectiveId.Value);
+        return ContentOf(viewer, id, version, kinds);
+    }
+
+    /// <summary>
+    /// The content of several items, read from the store in one call.
+    /// </summary>
+    public async Task<GetContentsResponse> GetContents(Caller caller, IReadOnlyList<string> ids, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    {
+        var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
+        var found = await Get(ids.Select(FromId));
+        return new()
+        {
+            Items = ids.Select(id => ContentOf(viewer, id, FromId(id) is { } collectiveId ? found.GetValueOrDefault(collectiveId) : null, kinds)).ToList(),
+        };
+    }
+
+    private GetContentResponse ContentOf(Viewer viewer, string id, OwnCollective? version, IReadOnlyList<ContentKind> kinds)
+    {
         var state = viewer.StateOf(version);
         if (state != ItemState.Open)
         {

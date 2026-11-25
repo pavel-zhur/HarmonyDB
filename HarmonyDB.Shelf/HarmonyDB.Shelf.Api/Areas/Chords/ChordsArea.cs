@@ -63,7 +63,10 @@ public sealed class ChordsArea : IShelfArea
             .WithName("GetSourceIcon");
     }
 
-    private static IReadOnlyList<ContentKind> ParseKinds(string? kinds)
+    /// <summary>
+    /// The kinds asked as "sheet,timeline"; the sheet when none is given. An unknown one answers 400 <c>unknown_kind</c>.
+    /// </summary>
+    public static IReadOnlyList<ContentKind> ParseKinds(string? kinds)
     {
         if (string.IsNullOrWhiteSpace(kinds))
             return [ContentKind.Sheet];

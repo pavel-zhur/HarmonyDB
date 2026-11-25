@@ -47,12 +47,13 @@ public record McpClientInfo
 
     /// <summary>
     /// For a client known by its own description document: the host of its address (its id), which only its owner can
-    /// serve. Null for a registered client.
+    /// serve. Null for a registered client. Hosts are given in their ASCII form (<c>xn--…</c> for a name in other
+    /// letters), so that a look-alike of a known host does not pass for it.
     /// </summary>
     public string? ClientIdHost { get; init; }
 
     /// <summary>
-    /// The host the browser goes back to with the answer: shown to the person.
+    /// The host the browser goes back to with the answer, in its ASCII form: shown to the person.
     /// </summary>
     public required string RedirectHost { get; init; }
 
@@ -131,7 +132,7 @@ public record ConnectedClient
     public string? ClientIdHost { get; init; }
 
     /// <summary>
-    /// The hosts it may be sent back to.
+    /// The hosts it may be sent back to, in their ASCII form.
     /// </summary>
     public required IReadOnlyList<string> RedirectHosts { get; init; }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -31,7 +32,21 @@ public sealed class ClientRegistry(ShelfDbContext db, ClientMetadataFetcher fetc
     public const string GrantRefreshToken = "refresh_token";
 
     private const int MaxRedirectUris = 20;
-    private const int MaxText = 500;
+
+    /// <summary>
+    /// The longest name of a client, in characters.
+    /// </summary>
+    public const int MaxName = 100;
+
+    /// <summary>
+    /// Whether a client's name (trimmed) may be shown to a person as it is: not too long, and no character that is not
+    /// seen as itself — control characters, line breaks, and invisible or direction-changing ones (which could make the
+    /// name read as something else). Such a name is refused, not cleaned: the client is told so, and a person is never
+    /// shown a name other than the one it gave.
+    /// </summary>
+    public static bool IsShowableName(string name)
+        => name.Length <= MaxName
+           && name.All(x => char.GetUnicodeCategory(x) is not (UnicodeCategory.Control or UnicodeCategory.Format or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator));
 
     /// <summary>
     /// Whether a client id is the address of a description document, in the form the draft requires: https, a path, no
@@ -54,7 +69,10 @@ public sealed class ClientRegistry(ShelfDbContext db, ClientMetadataFetcher fetc
     /// </summary>
     public static string? NameOf(OAuthClient client) => client.ClientName;
 
-    public static string? IdHostOf(OAuthClient client) => IsMetadataDocumentId(client.ClientId) ? new Uri(client.ClientId).Host : null;
+    /// <summary>
+    /// The host of a described client's address, in its ASCII form (a look-alike letter of another script shows as such).
+    /// </summary>
+    public static string? IdHostOf(OAuthClient client) => IsMetadataDocumentId(client.ClientId) ? new Uri(client.ClientId).IdnHost : null;
 
     /// <summary>
     /// How long a client that nobody connected is kept.
@@ -78,8 +96,8 @@ public sealed class ClientRegistry(ShelfDbContext db, ClientMetadataFetcher fetc
         var redirectUris = request.RedirectUris ?? [];
         if (redirectUris.Count == 0 || redirectUris.Count > MaxRedirectUris || !redirectUris.All(IsAllowedRedirect))
             throw new OAuthError("invalid_redirect_uri", "redirect_uris: one or more https addresses, or http ones on localhost.");
-        if (request.ClientName?.Length > MaxText)
-            throw new OAuthError("invalid_client_metadata", $"client_name: at most {MaxText} characters.");
+        if (!string.IsNullOrWhiteSpace(request.ClientName) && !IsShowableName(request.ClientName.Trim()))
+            throw new OAuthError("invalid_client_metadata", $"client_name: at most {MaxName} characters, with no control, invisible or direction-changing characters.");
 
         var grantTypes = request.GrantTypes is { Count: > 0 } given ? given.Distinct().ToList() : [GrantAuthorizationCode];
         if (!grantTypes.Contains(GrantAuthorizationCode) || grantTypes.Any(x => x is not (GrantAuthorizationCode or GrantRefreshToken)))
@@ -165,7 +183,7 @@ public sealed class ClientRegistry(ShelfDbContext db, ClientMetadataFetcher fetc
 
         var name = Text("client_name");
         var redirectUris = Texts("redirect_uris");
-        if (string.IsNullOrWhiteSpace(name) || name.Length > MaxText
+        if (string.IsNullOrWhiteSpace(name) || !IsShowableName(name.Trim())
             || redirectUris is not { Count: > 0 and <= MaxRedirectUris } || !redirectUris.All(IsAllowedRedirect))
             return null;
 

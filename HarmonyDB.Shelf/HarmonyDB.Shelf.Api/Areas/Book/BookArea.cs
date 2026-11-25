@@ -25,8 +25,8 @@ public sealed class BookArea : IShelfArea
         services.AddSingleton<BookPdfCache>();
         services.AddScoped<BookPrinter>();
         services.AddScoped<BookService>();
-        services.AddJobHandler<BookPagesJob>(configuration, BookService.PagesJobKind);
-        services.AddJobHandler<BookJob>(configuration, BookService.BookJobKind);
+        services.AddJobHandler<BookPagesJob, BookPagesResult>(configuration, BookService.PagesJobKind);
+        services.AddJobHandler<BookJob, BookResult>(configuration, BookService.BookJobKind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

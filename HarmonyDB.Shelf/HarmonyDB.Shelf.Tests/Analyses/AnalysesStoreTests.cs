@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Shelf.Api.Areas.Analyses;
 using HarmonyDB.Shelf.Database.Model;
 using HarmonyDB.Shelf.Tests.Auth;
@@ -11,8 +14,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HarmonyDB.Shelf.Tests.Analyses;
 
 /// <summary>
-/// The analyses over a real database: who they are open to, their kinds and files, putting them again, the playlist,
-/// the scopes and bad requests.
+/// The analyses over a real database: who they are open to, their kinds and files, their content given as it was put,
+/// putting them again, the playlist, the scopes and bad requests.
 /// </summary>
 public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFixture<ShelfDatabaseFixture>
 {
@@ -31,6 +34,7 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         ["InternalClients:2:Scopes:0"] = AnalysesArea.WriteScope,
         ["Analyses:SourceKey"] = "tests",
         ["Analyses:SourceTitle"] = "Tests",
+        ["Analyses:PublicUriTemplate"] = "https://site.example/chords/{id}",
     });
 
     [DatabaseFact]
@@ -43,7 +47,7 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         await using var db = database.CreateContext();
         var analysis = await db.Analyses.Include(x => x.Contents).SingleAsync(x => x.SourceId == first.Id);
         Assert.Equal("Second title", analysis.Title);
-        Assert.Equal(["recording", "timeline"], analysis.Contents.Select(x => x.Kind).Order());
+        Assert.Equal(["recording", "sheet", "timeline"], analysis.Contents.Select(x => x.Kind).Order());
     }
 
     [DatabaseFact]
@@ -65,6 +69,33 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
             Assert.Equal(open ? ItemState.Open : ItemState.NotOpen, content.State);
             Assert.Equal(open, content.Content?.Sheet != null);
         }
+    }
+
+    [DatabaseFact]
+    public async Task ManyContentsAreEachAnsweredAsTheSingleReadAnswersIt()
+    {
+        var owner = await AccountAsync("batch-owner");
+        var open = await PutAsync("batch-open", "Open song", null);
+        var hidden = await PutAsync("batch-hidden", "Hidden song", owner);
+        string[] ids = [hidden.Id, open.Id, "ha-nothing"];
+
+        foreach (var caller in new[] { Caller(null), Caller(owner) })
+        {
+            var contents = await SourceAsync<GetContentsResponse>("V2GetContents", new GetContentsRequest { Caller = caller, Ids = ids, Kinds = [ContentKind.Sheet, ContentKind.Timeline] });
+            Assert.Equal(ids, contents.Items.Select(x => x.Id));
+            foreach (var (id, item) in ids.Zip(contents.Items))
+            {
+                var single = await SourceAsync<GetContentResponse>("V2GetContent", new GetContentRequest { Caller = caller, Id = id, Kinds = [ContentKind.Sheet, ContentKind.Timeline] });
+                Assert.Equal(
+                    System.Text.Json.JsonSerializer.Serialize(single, SourceV2Json.Options),
+                    System.Text.Json.JsonSerializer.Serialize(item, SourceV2Json.Options));
+            }
+        }
+
+        // too many ids are refused
+        using var client = Api.CreateClient();
+        var tooMany = new GetContentsRequest { Caller = Caller(null), Ids = Enumerable.Range(0, GetContentsRequest.MaxIds + 1).Select(i => $"ha-{i}").ToList(), Kinds = [ContentKind.Sheet] };
+        Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Post, "/internal/source/V2GetContents", SourceKey, tooMany)).StatusCode);
     }
 
     [DatabaseFact]
@@ -94,18 +125,14 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
     }
 
     [DatabaseFact]
-    public async Task TheTimelinesSectionsComeNamed()
+    public async Task TheSheetAndTheTimelineAreGivenAsTheyWerePut()
     {
-        var put = Put("named", "Named sections", null);
+        var put = Put("as-put", "As put", null);
         put = put with
         {
             Content = put.Content with
             {
-                Timeline = Timeline() with
-                {
-                    Bars = [Timeline().Bars[0], Timeline().Bars[0] with { Start = 4, End = 8, Beats = [4, 5, 6, 7] }],
-                    Sections = [new() { Label = SectionLabel.Intro, Start = 0, End = 4 }, new() { Label = SectionLabel.Verse, Name = "Куплет", Start = 4, End = 8 }],
-                },
+                Timeline = Timeline() with { Sections = [new() { Label = SectionLabel.Verse, Name = "Куплет 1", Start = 0, End = 4 }] },
             },
         };
         using var client = Api.CreateClient();
@@ -113,8 +140,24 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var id = (await response.Content.ReadFromJsonAsync<PutAnalysisResponse>(SourceV2Json.Options))!.Id;
 
-        var content = await SourceAsync<GetContentResponse>("V2GetContent", new GetContentRequest { Caller = Caller(null), Id = id, Kinds = [ContentKind.Timeline] });
-        Assert.Equal(["Intro", "Куплет"], content.Content!.Timeline!.Sections.Select(x => x.Name));
+        var content = (await SourceAsync<GetContentResponse>("V2GetContent", new GetContentRequest { Caller = Caller(null), Id = id, Kinds = [ContentKind.Sheet, ContentKind.Timeline] })).Content!;
+        Assert.True(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(Sheet(SheetJson), SourceV2Json.Options), JsonSerializer.SerializeToNode(content.Sheet, SourceV2Json.Options)));
+        Assert.Equal(2, content.Sheet!.Root.Times!.Bars.Count);
+        Assert.Equal(["Куплет 1"], content.Timeline!.Sections.Select(x => x.Name));
+    }
+
+    [DatabaseFact]
+    public async Task WithoutASheetThereIsNoSheet()
+    {
+        var put = Put("no-sheet", "No sheet", null);
+        using var client = Api.CreateClient();
+        var response = await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, put with { Content = put.Content with { Sheet = null } });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var id = (await response.Content.ReadFromJsonAsync<PutAnalysisResponse>(SourceV2Json.Options))!.Id;
+
+        Assert.DoesNotContain(ContentKind.Sheet, await KindsAsync(id));
+        var content = await SourceAsync<GetContentResponse>("V2GetContent", new GetContentRequest { Caller = Caller(null), Id = id, Kinds = [ContentKind.Sheet] });
+        Assert.Null(content.Content!.Sheet);
     }
 
     [DatabaseFact]
@@ -145,6 +188,28 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
     }
 
     [DatabaseFact]
+    public async Task AnAnalysisAddressIsOnThePublicPageByTheTemplate()
+    {
+        var put = await PutAsync("address", "With an address", null);
+        var header = (await SourceAsync<GetHeadersResponse>("V2GetHeaders", new GetHeadersRequest { Caller = Caller(null), Ids = [put.Id] })).Headers.Single().Header!;
+        Assert.Equal(new Uri($"https://site.example/chords/{put.Id}"), header.Source.Uri);
+    }
+
+    [Theory]
+    [InlineData("https://site.example/chords/")]
+    [InlineData("https://site.example/{id}/{id}")]
+    [InlineData("site.example/chords/{id}")]
+    [InlineData("ftp://site.example/{id}")]
+    public void ABadAddressTemplateIsRefused(string template)
+    {
+        using var bad = new HarmonyDB.Shelf.Tests.Api.ShelfApiFactory();
+        bad.Settings["Analyses:SourceKey"] = "tests";
+        bad.Settings["Analyses:SourceTitle"] = "Tests";
+        bad.Settings["Analyses:PublicUriTemplate"] = template;
+        Assert.Throws<Microsoft.Extensions.Options.OptionsValidationException>(() => bad.CreateClient());
+    }
+
+    [DatabaseFact]
     public async Task ScopesAndBadRequestsAreRefused()
     {
         using var client = Api.CreateClient();
@@ -153,29 +218,36 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Put, "/internal/analyses", SourceKey, Put("scopes", "x", null))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Post, "/internal/source/V2Search", WriteKey, new SearchRequest { Caller = Caller(null), Query = "x" })).StatusCode);
 
-        // no caller, a section with neither a label nor a name, a meter that is not one
+        // no caller; a sheet the shelf does not draw (a mark that says nothing)
         Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Post, "/internal/source/V2Search", SourceKey, new { query = "x" })).StatusCode);
-        var parts = Put("bad-part", "x", null) with
+        var sheet = Put("bad-sheet", "x", null) with
         {
-            Content = Put("bad-part", "x", null).Content with
+            Content = Put("bad-sheet", "x", null).Content with
             {
-                Timeline = Timeline() with { Sections = [new() { Start = 0, End = 4 }] },
+                Sheet = Sheet("""{"name":"pre","children":[{"nodeMark":{}}]}"""),
             },
         };
-        Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, parts)).StatusCode);
-        var meter = Put("bad-meter", "x", null) with
-        {
-            Content = Put("bad-meter", "x", null).Content with
-            {
-                Timeline = Timeline() with { Bars = [Timeline().Bars[0] with { TimeSignature = "four" }] },
-            },
-        };
-        Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, meter)).StatusCode);
+        var refused = await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, sheet);
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains(AnalysesErrorCodes.BadSheet, await refused.Content.ReadAsStringAsync());
     }
 
     // ------------------------------------------------------------------ helpers
 
     private static Caller Caller(Guid? account) => new() { AccountId = account, Keys = [] };
+
+    /// <summary>
+    /// A sheet with its own bars: a mark and a chord at places in them, a word at its second.
+    /// </summary>
+    private const string SheetJson = """
+        {"name":"pre","keys":[{"tonic":"C","isMinor":false}],"times":{"end":8,"bars":[{"beats":[0,1,2,3],"time_sig":"4/4"},{"beats":[4,5,6,7]}]},
+         "children":[{"nodeMark":{"key":{"tonic":"C","isMinor":false},"place":{"bar":1,"beat":1},"meter":true}},{"nodeText":{"text":"\n"}},
+                     {"nodeHtml":{"name":"b","children":[{"nodeText":{"text":"Куплет 1"}}]}},{"nodeText":{"text":"\n"}},
+                     {"nodeChord":{"children":[{"nodeText":{"text":"C"}}],"degree":"I","place":{"bar":1,"beat":2,"at":"1/2"}}},{"nodeText":{"text":"\n"}},
+                     {"nodeText":{"text":"La","time":1.5}}]}
+        """;
+
+    private static SheetContent Sheet(string root) => new() { Root = JsonSerializer.Deserialize<NodeHtml>(root, SourceV2Json.Options)! };
 
     private static Timeline Timeline() => new()
     {
@@ -193,6 +265,7 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         OwnerId = owner,
         Content = new()
         {
+            Sheet = Sheet(SheetJson),
             Timeline = Timeline(),
             Recording = new() { Audio = new() { Blob = new() { Key = "take.mp3", ContentType = "audio/mpeg" } }, Duration = 8 },
         },

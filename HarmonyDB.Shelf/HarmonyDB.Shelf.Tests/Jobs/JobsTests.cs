@@ -25,8 +25,8 @@ public sealed class JobsTests(WorkFixture fixture) : IClassFixture<WorkFixture>
 
         var done = await fixture.FinishedAsync(me, job.Id);
         Assert.Equal(JobStatus.Succeeded, done.Status);
-        Assert.Equal("hello", done.Result!.Value.GetProperty("echo").GetString());
-        Assert.Equal(1, done.Result.Value.GetProperty("attempt").GetInt32());
+        Assert.Equal("hello", ((TestJobs.Echo)done.Result!).Text);
+        Assert.Equal(1, ((TestJobs.Echo)done.Result).Attempt);
         Assert.Equal("echo.txt", done.File!.FileName);
 
         using var client = fixture.Api.CreateClient();
@@ -62,7 +62,7 @@ public sealed class JobsTests(WorkFixture fixture) : IClassFixture<WorkFixture>
 
         var again = await fixture.FinishedAsync(me, left);
         Assert.Equal(JobStatus.Succeeded, again.Status);
-        Assert.Equal(2, again.Result!.Value.GetProperty("attempt").GetInt32());
+        Assert.Equal(2, ((TestJobs.Echo)again.Result!).Attempt);
 
         var givenUp = await fixture.FinishedAsync(me, tooOften);
         Assert.Equal(JobStatus.Failed, givenUp.Status);

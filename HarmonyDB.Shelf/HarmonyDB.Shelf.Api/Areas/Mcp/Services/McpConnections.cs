@@ -3,10 +3,13 @@ using HarmonyDB.Shelf.Api.Areas.Auth.Services;
 using HarmonyDB.Shelf.Api.Areas.OAuth.Services;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
+using HarmonyDB.Shelf.Api.Foundation.SignIn;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
+using HarmonyDB.Shelf.Model.Auth;
 using HarmonyDB.Shelf.Model.Mcp;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Shelf.Api.Areas.Mcp.Services;
 
@@ -15,7 +18,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Mcp.Services;
 /// disconnected or revoked — at once: a disconnected client's tokens and a revoked key stop working with the next
 /// request.
 /// </summary>
-public sealed class McpConnections(ShelfDbContext db, McpAddresses addresses, PermissionCatalog permissions, TimeProvider time)
+public sealed class McpConnections(ShelfDbContext db, McpAddresses addresses, PermissionCatalog permissions, IOptionsMonitor<SignInOptions> signIn, TimeProvider time)
 {
     private const int MaxKeyName = 100;
 
@@ -36,14 +39,35 @@ public sealed class McpConnections(ShelfDbContext db, McpAddresses addresses, Pe
         return grants.Select(x => ToItem(x, given)).ToList();
     }
 
+    /// <summary>
+    /// Changes what the client may do, as a consent does (<see cref="AuthorizationRequests.ApproveAsync"/>): what a
+    /// token may do is read from the grant on every call, so narrowing reaches every live token at once; widening would
+    /// widen tokens no consent gave that much, so the client's tokens and codes are revoked and it is given the wider
+    /// rights only by authorizing anew. Widening is asked of a recent sign-in (403 <c>fresh_sign_in_required</c>), as
+    /// changing the account's sign-ins is: a session taken over must not hand an assistant more.
+    /// </summary>
     public async Task<ConnectedClient> UpdateClientAsync(ClaimsPrincipal user, Guid id, IReadOnlyList<string> chosen, CancellationToken cancellationToken)
     {
         var me = user.GetAccountId()!.Value;
         var grant = await db.OAuthGrants.Include(x => x.Client).SingleOrDefaultAsync(x => x.Id == id && x.AccountId == me, cancellationToken)
                     ?? throw ShelfException.NotFound(McpErrorCodes.NoSuchClient);
-        grant.Permissions = AuthorizationRequests.Grantable(user, chosen, permissions).ToList();
-        grant.UpdatedAt = time.GetUtcNow();
+        var granted = AuthorizationRequests.Grantable(user, chosen, permissions);
+        var now = time.GetUtcNow();
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        if (granted.Except(grant.Permissions, StringComparer.Ordinal).Any())
+        {
+            if (!SessionService.IsSignedInSince(user, now - signIn.CurrentValue.FreshSignIn))
+                throw ShelfException.Forbidden(AuthErrorCodes.FreshSignInRequired);
+
+            await db.OAuthTokens.Where(x => x.GrantId == grant.Id).ExecuteDeleteAsync(cancellationToken);
+            await db.OAuthAuthorizationCodes.Where(x => x.GrantId == grant.Id).ExecuteDeleteAsync(cancellationToken);
+        }
+
+        grant.Permissions = granted.ToList();
+        grant.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return ToItem(grant, permissions.InForce(user));
     }
 
@@ -109,7 +133,7 @@ public sealed class McpConnections(ShelfDbContext db, McpAddresses addresses, Pe
         Name = ClientRegistry.NameOf(grant.Client),
         Uri = grant.Client.ClientUri,
         ClientIdHost = ClientRegistry.IdHostOf(grant.Client),
-        RedirectHosts = grant.Client.RedirectUris.Select(x => new Uri(x).Host).Distinct().ToList(),
+        RedirectHosts = grant.Client.RedirectUris.Select(x => new Uri(x).IdnHost).Distinct().ToList(),
         ConnectedAt = grant.CreatedAt,
         LastUsedAt = grant.LastUsedAt,
         Allowed = McpPermissions.Of(grant.Permissions),

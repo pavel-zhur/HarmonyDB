@@ -81,7 +81,18 @@ public sealed class BookPagesJob(BookPrinter printer) : IJobHandler
             };
         }, cancellationToken);
 
-        return new(new BookPagesResult { Items = pages });
+        // the contents, as the book would have them: of the printed items, with their numbers
+        int? contentsPages = null;
+        var request = input.Request;
+        if (request.Options.Caption != null && request.Options.Contents)
+        {
+            var numbers = BookJob.Numbers(items, request.Options.Renumber);
+            var songs = items.Select((x, i) => (Item: x, Number: numbers[i])).Where(x => x.Number != null).Select(x => (x.Item, Number: x.Number!.Value)).ToList();
+            if (songs.Count > 0)
+                contentsPages = (await printer.PrintContentsAsync(songs, cancellationToken)).PageCount;
+        }
+
+        return new(new BookPagesResult { Items = pages, ContentsPages = contentsPages });
     }
 }
 

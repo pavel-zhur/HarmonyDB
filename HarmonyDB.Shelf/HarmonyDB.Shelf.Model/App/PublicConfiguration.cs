@@ -27,6 +27,17 @@ public record PublicConfiguration
     /// it is one of the hearts.
     /// </summary>
     public required IReadOnlyList<MarkKind> MarkKinds { get; init; }
+
+    /// <summary>
+    /// The playlist the public page shows as its showcase (<c>GET /api/playlists/{id}</c>); null when there is none.
+    /// </summary>
+    public Guid? ShowcasePlaylistId { get; init; }
+
+    /// <summary>
+    /// The public page's origin (<c>https://…</c>, no slash at the end); null when there is none, and no link to it is
+    /// offered.
+    /// </summary>
+    public string? PublicPageOrigin { get; init; }
 }
 
 public record SignInProviderInfo

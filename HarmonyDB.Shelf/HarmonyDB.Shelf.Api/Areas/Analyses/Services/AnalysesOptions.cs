@@ -33,11 +33,31 @@ public sealed class AnalysesOptions
     public string? IconFile { get; set; }
 
     /// <summary>
+    /// The address of an analysis on the public page, with <c>{id}</c> where its id goes
+    /// (<c>https://…/chords/{id}</c>): its items' "link to the source". Not set: their headers give no address.
+    /// </summary>
+    public string? PublicUriTemplate
+    {
+        get => _publicUriTemplate;
+        set => _publicUriTemplate = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private string? _publicUriTemplate;
+
+    /// <summary>
     /// The largest file of an analysis taken in, bytes.
     /// </summary>
     public long MaxFileBytes { get; set; } = 300L * 1024 * 1024;
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(SourceTitle);
+
+    public const string IdPlaceholder = "{id}";
+
+    /// <summary>
+    /// The analysis's address on the public page, by <see cref="PublicUriTemplate"/>; null when it is not set.
+    /// </summary>
+    public Uri? PublicUri(string id)
+        => PublicUriTemplate == null ? null : new Uri(PublicUriTemplate.Replace(IdPlaceholder, Uri.EscapeDataString(id), StringComparison.Ordinal));
 
     /// <summary>
     /// The picture's content type, by its file's extension.
@@ -61,7 +81,7 @@ internal sealed class AnalysesOptionsValidator : IValidateOptions<AnalysesOption
         if (options.IsConfigured && string.IsNullOrWhiteSpace(options.SourceKey))
             failures.Add($"{section}:{nameof(AnalysesOptions.SourceKey)} is not set.");
 
-        if (!options.IsConfigured && (options.SourceKey != null || options.IconName != null || options.IconFile != null))
+        if (!options.IsConfigured && (options.SourceKey != null || options.IconName != null || options.IconFile != null || options.PublicUriTemplate != null))
             failures.Add($"{section}:{nameof(AnalysesOptions.SourceTitle)} is not set.");
 
         if (string.IsNullOrWhiteSpace(options.IconName) != string.IsNullOrWhiteSpace(options.IconFile))
@@ -78,6 +98,12 @@ internal sealed class AnalysesOptionsValidator : IValidateOptions<AnalysesOption
             else if (!File.Exists(options.IconFile))
                 failures.Add($"{section}:{nameof(AnalysesOptions.IconFile)} does not exist: {options.IconFile}.");
         }
+
+        if (options.PublicUriTemplate != null
+            && (options.PublicUriTemplate.Split(AnalysesOptions.IdPlaceholder).Length != 2
+                || !Uri.TryCreate(options.PublicUriTemplate.Replace(AnalysesOptions.IdPlaceholder, AnalysisStore.IdPrefix + "0", StringComparison.Ordinal), UriKind.Absolute, out var sample)
+                || (sample.Scheme != Uri.UriSchemeHttps && sample.Scheme != Uri.UriSchemeHttp)))
+            failures.Add($"{section}:{nameof(AnalysesOptions.PublicUriTemplate)} is not an http(s) address with {AnalysesOptions.IdPlaceholder} once in it.");
 
         if (options.MaxFileBytes <= 0)
             failures.Add($"{section}:{nameof(AnalysesOptions.MaxFileBytes)} is not positive.");

@@ -28,7 +28,7 @@ public static class LibraryServices
         services.AddIllustrationsClient(configuration);
         services.AddShelfCommon();
         services.AddAudioClient(configuration);
-        services.AddJobHandler<OriginSyncHandler>(configuration, PlaylistService.SyncJobKind);
+        services.AddJobHandler<OriginSyncHandler, Model.Playlists.PlaylistSyncResult>(configuration, PlaylistService.SyncJobKind);
         services.AddOptions<PlaylistsOptions>().Bind(configuration.GetSection(PlaylistsOptions.SectionName)).ValidateOnStart();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<PlaylistsOptions>, PlaylistsOptionsValidator>());
         services.AddScoped<ChordsLookup>();
@@ -42,6 +42,7 @@ public static class LibraryServices
         services.AddScoped<OriginSync>();
         services.AddScoped<RecentService>();
         services.AddScoped<PlacesService>();
+        services.AddScoped<IllustratedService>();
         services.AddScoped<ShareService>();
         services.AddScoped<SyncService>();
     }

@@ -15,6 +15,9 @@ public static class SourceV2Urls
     /// <summary><see cref="Api.GetContentRequest"/> → <see cref="Api.GetContentResponse"/>.</summary>
     public const string V2GetContent = nameof(V2GetContent);
 
+    /// <summary><see cref="Api.GetContentsRequest"/> → <see cref="Api.GetContentsResponse"/>.</summary>
+    public const string V2GetContents = nameof(V2GetContents);
+
     /// <summary><see cref="Api.ResolveRequest"/> → <see cref="Api.ResolveResponse"/>.</summary>
     public const string V2Resolve = nameof(V2Resolve);
 

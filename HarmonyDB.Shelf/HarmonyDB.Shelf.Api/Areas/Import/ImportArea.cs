@@ -21,7 +21,7 @@ public sealed class ImportArea : IShelfArea
         services.AddChordsReading(configuration);
         services.AddShelfCommon();
         services.AddScoped<ImportService>();
-        services.AddJobHandler<ImportJob>(configuration, ImportService.JobKind);
+        services.AddJobHandler<ImportJob, ImportResult>(configuration, ImportService.JobKind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

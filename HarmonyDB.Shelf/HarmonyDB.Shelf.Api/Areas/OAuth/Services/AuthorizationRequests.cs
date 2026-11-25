@@ -220,7 +220,7 @@ public sealed partial class AuthorizationRequests(
         Name = ClientRegistry.NameOf(client),
         Uri = client.ClientUri,
         ClientIdHost = ClientRegistry.IdHostOf(client),
-        RedirectHost = new Uri(redirectUri).Host,
+        RedirectHost = new Uri(redirectUri).IdnHost,
         LocalOnly = client.RedirectUris.All(x => ClientRegistry.IsLoopback(new Uri(x).Host)),
     };
     /// <summary>

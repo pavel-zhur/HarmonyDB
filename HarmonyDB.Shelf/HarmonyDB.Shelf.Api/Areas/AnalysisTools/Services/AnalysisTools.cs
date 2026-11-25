@@ -27,7 +27,8 @@ public sealed class AnalysisTools(IndexClient index, ChordsReader chords)
         if (song == null)
             return new() { Id = id, State = ChordsState.Open, Analysed = false, Keys = [], Loops = [] };
 
-        var links = song.Links.Where(x => x.ExternalId == id).ToDictionary(x => x.Normalized);
+        // a loop occurs in an item once from each note it starts on there: a link each, of one loop
+        var loops = song.Loops.ToDictionary(x => x.Normalized);
         return new()
         {
             Id = id,
@@ -37,9 +38,9 @@ public sealed class AnalysisTools(IndexClient index, ChordsReader chords)
             StatedKey = song.Song.KnownTonalityIndex is { } known ? IndexKeys.Key(known) : null,
             TonicScore = song.Song.TonicScore,
             ScaleScore = song.Song.ScaleScore,
-            Loops = song.Loops
-                .Where(x => links.ContainsKey(x.Normalized))
-                .Select(x => (loop: x, link: links[x.Normalized]))
+            Loops = song.Links
+                .Where(x => x.ExternalId == id && loops.ContainsKey(x.Normalized))
+                .Select(x => (loop: loops[x.Normalized], link: x))
                 .OrderByDescending(x => x.link.Coverage)
                 .Select(x => new ChordsLoop
                 {

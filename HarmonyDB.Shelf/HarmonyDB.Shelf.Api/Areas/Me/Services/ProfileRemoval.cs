@@ -122,13 +122,14 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
 
     /// <summary>
     /// What nothing needs any more, removed at once rather than by the purge: the share links into the playlists
-    /// removed or emptied now (others' links into playlists that stay are kept), the person's jobs, and the analyses
-    /// of the person's own files.
+    /// removed or emptied now (others' links into playlists that stay are kept) and the person's links that carry their
+    /// access, the person's jobs, and the analyses of the person's own files.
     /// </summary>
     private async Task RemoveWhatNobodyNeedsAsync(Guid accountId, List<Guid> playlists, CancellationToken cancellationToken)
     {
         await db.ShareLinks
-            .Where(x => (x.PlaylistId != null && playlists.Contains(x.PlaylistId.Value)) || (x.SongId != null && playlists.Contains(x.Song!.PlaylistId)))
+            .Where(x => (x.PlaylistId != null && playlists.Contains(x.PlaylistId.Value)) || (x.SongId != null && playlists.Contains(x.Song!.PlaylistId))
+                        || (x.CarriedKeys != null && x.CreatedById == accountId))
             .ExecuteDeleteAsync(cancellationToken);
         await db.Jobs.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
         await HarmonyDB.Shelf.Api.Areas.Analyses.Services.AnalysisStore.RemoveOwnedAsync(db, accountId, time.GetUtcNow(), cancellationToken);

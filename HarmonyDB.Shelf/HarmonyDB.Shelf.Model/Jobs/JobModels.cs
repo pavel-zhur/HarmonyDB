@@ -1,4 +1,3 @@
-using System.Text.Json;
 
 namespace HarmonyDB.Shelf.Model.Jobs;
 
@@ -52,15 +51,21 @@ public record JobInfo
     public DateTimeOffset? FinishedAt { get; init; }
 
     /// <summary>
-    /// What came of it, when it succeeded: each kind has its own shape (the area that starts it describes it).
+    /// What came of it, when it succeeded and its kind ends with a result: one of the results, told apart by its
+    /// <c>kind</c> (the job's kind).
     /// </summary>
-    public JsonElement? Result { get; init; }
+    public JobResult? Result { get; init; }
 
     /// <summary>
     /// The file it made, while it is kept: fetched at <c>/api/jobs/{id}/file</c>.
     /// </summary>
     public JobFileInfo? File { get; init; }
 }
+
+/// <summary>
+/// What a job ended with: each kind of jobs that has a result has its own type of it, given with the kind.
+/// </summary>
+public abstract record JobResult;
 
 public record JobFileInfo
 {

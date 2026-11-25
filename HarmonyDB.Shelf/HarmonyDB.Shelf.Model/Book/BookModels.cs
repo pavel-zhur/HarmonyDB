@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Model.Jobs;
+
 namespace HarmonyDB.Shelf.Model.Book;
 
 /// <summary>
@@ -118,12 +120,18 @@ public record BookItemPages
 /// <summary>
 /// What a job of the kind "book_pages" ends with: how many pages each item takes, to lay the book out.
 /// </summary>
-public record BookPagesResult
+public record BookPagesResult : JobResult
 {
     /// <summary>
     /// In the order asked.
     /// </summary>
     public required IReadOnlyList<BookItemPages> Items { get; init; }
+
+    /// <summary>
+    /// The pages of the book's contents, as the book would print them; null when the book has none (no caption, the
+    /// contents not asked for, or nothing printed).
+    /// </summary>
+    public int? ContentsPages { get; init; }
 }
 
 public record BookItemResult
@@ -143,7 +151,7 @@ public record BookItemResult
 /// <summary>
 /// What a job of the kind "book" ends with; the PDF is the job's file.
 /// </summary>
-public record BookResult
+public record BookResult : JobResult
 {
     public required int Pages { get; init; }
 

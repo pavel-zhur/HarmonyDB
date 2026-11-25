@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Model.Jobs;
+
 namespace HarmonyDB.Shelf.Model.Import;
 
 /// <summary>
@@ -50,7 +52,7 @@ public record ImportLinkResult
 /// <summary>
 /// What a job of the kind "import" ends with.
 /// </summary>
-public record ImportResult
+public record ImportResult : JobResult
 {
     public required Guid PlaylistId { get; init; }
 

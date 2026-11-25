@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Model.Jobs;
 namespace HarmonyDB.Shelf.Api.Common.Jobs;
 
 /// <summary>
@@ -15,7 +16,7 @@ public interface IJobHandler
 /// What a handler ended with: its result (written as JSON), and the file it made, if any; or, made by <see cref="Again"/>,
 /// that it is to be run again later.
 /// </summary>
-public sealed record JobCompletion(object? Result, JobFile? File = null)
+public sealed record JobCompletion(JobResult? Result, JobFile? File = null)
 {
     /// <summary>
     /// When set, the job is not over: it goes back to the queue and is run again from the start, not before this time.
@@ -26,7 +27,7 @@ public sealed record JobCompletion(object? Result, JobFile? File = null)
     /// The job is to be run again, from the start, not before the time (it waits for something; it holds no worker
     /// meanwhile). Such a run does not count as a start (<see cref="JobsOptions.MaxAttempts"/>).
     /// </summary>
-    public static JobCompletion Again(DateTimeOffset notBefore) => new((object?)null) { RunAgainNotBefore = notBefore };
+    public static JobCompletion Again(DateTimeOffset notBefore) => new((JobResult?)null) { RunAgainNotBefore = notBefore };
 }
 
 /// <summary>

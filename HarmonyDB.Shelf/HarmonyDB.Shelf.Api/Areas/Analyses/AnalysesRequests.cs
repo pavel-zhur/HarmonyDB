@@ -23,10 +23,11 @@ public sealed record PutAnalysisRequest
     public Guid? OwnerId { get; init; }
 
     /// <summary>
-    /// Its content in the source contract's kinds, the sheet left out (it is made here of the timeline and the words).
-    /// The timeline is required. A file of the analysis (<see cref="Source.Api.Model.V2.Contents.BlobRef"/>: the
-    /// recording, a separate instrument, a MIDI file) is named by its <c>Key</c> as the file's name, put next with
-    /// <c>PUT /internal/analyses/{id}/files/{name}</c> in the content type given here.
+    /// Its content in the source contract's kinds, each kept and given as it is put. The timeline is required; the sheet,
+    /// when there is one, is to be one the shelf reads and draws; without one the analysis has no sheet. A file of the
+    /// analysis (<see cref="Source.Api.Model.V2.Contents.BlobRef"/>: the recording, a separate instrument, a MIDI file) is
+    /// named by its <c>Key</c> as the file's name, put next with <c>PUT /internal/analyses/{id}/files/{name}</c> in the
+    /// content type given here.
     /// </summary>
     public required Content Content { get; init; }
 }
@@ -110,14 +111,8 @@ public static class AnalysesErrorCodes
     /// <summary>400: the content has no timeline.</summary>
     public const string TimelineMissing = "timeline_missing";
 
-    /// <summary>400: the content gives a sheet; the sheet is made here.</summary>
-    public const string SheetGiven = "sheet_given";
-
-    /// <summary>400: a key, a meter, a tempo or a section of the timeline is not one.</summary>
-    public const string BadContent = "bad_content";
-
-    /// <summary>400: a chord's name is not readable (<c>details.chord</c>).</summary>
-    public const string UnreadableChord = "unreadable_chord";
+    /// <summary>400: the sheet is not one the shelf reads and draws.</summary>
+    public const string BadSheet = "bad_sheet";
 
     /// <summary>400: a file's name is not a name, or two files have one name (<c>details.name</c>).</summary>
     public const string BadFileName = "bad_file_name";

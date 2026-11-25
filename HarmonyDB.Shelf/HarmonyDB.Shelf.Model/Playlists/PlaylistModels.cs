@@ -357,3 +357,14 @@ public record UndoOnly
 {
     public string? Undo { get; init; }
 }
+
+/// <summary>
+/// What a job of the kind "playlist_sync" ends with.
+/// </summary>
+public record PlaylistSyncResult : JobResult
+{
+    /// <summary>
+    /// How many songs it added.
+    /// </summary>
+    public required int Added { get; init; }
+}

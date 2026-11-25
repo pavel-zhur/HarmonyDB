@@ -1,5 +1,4 @@
 using System.Text.Json;
-using HarmonyDB.Shelf.Api.Areas.Analyses.Services.Sheets;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
@@ -15,7 +14,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Analyses.Services;
 
 /// <summary>
 /// The shelf's own analyses as a source (the source contract, version 2). An analysis is open to the caller when it is
-/// open to all, or when it is of the caller's own file.
+/// open to all, or when it is of the caller's own file. Its address, the "link to the source", is on the public page,
+/// by the source's own address template (<see cref="AnalysesOptions.PublicUriTemplate"/>).
 /// </summary>
 public sealed class AnalysesSource(ShelfDbContext db, IOptionsMonitor<AnalysesOptions> options)
 {
@@ -79,48 +79,62 @@ public sealed class AnalysesSource(ShelfDbContext db, IOptionsMonitor<AnalysesOp
     }
 
     public async Task<GetContentResponse> GetContentAsync(GetContentRequest request, CancellationToken cancellationToken)
+        => (await ContentsAsync(request.Caller, [request.Id], request.Kinds, cancellationToken)).Single();
+
+    /// <summary>
+    /// The content of several analyses, read in one query each for the analyses, their headers and their contents.
+    /// </summary>
+    public async Task<GetContentsResponse> GetContentsAsync(GetContentsRequest request, CancellationToken cancellationToken)
+        => new() { Items = await ContentsAsync(request.Caller, request.Ids, request.Kinds, cancellationToken) };
+
+    private async Task<IReadOnlyList<GetContentResponse>> ContentsAsync(Caller caller, IReadOnlyList<string> ids, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
     {
-        var analysis = await Open(request.Caller).SingleOrDefaultAsync(x => x.SourceId == request.Id, cancellationToken);
-        if (analysis == null)
-            return new() { Id = request.Id, State = ItemState.NotOpen };
+        var found = await Open(caller).Where(x => ids.Contains(x.SourceId)).ToListAsync(cancellationToken);
+        var headers = (await HeadersAsync(found, cancellationToken)).ToDictionary(x => x.Id);
 
-        var header = (await HeadersAsync([analysis], cancellationToken)).Single();
+        var analysisIds = found.Select(x => x.Id).ToList();
+        var names = kinds.Select(AnalysisStore.KindName).ToList();
+        var rows = (await db.AnalysisContents
+                .Where(x => analysisIds.Contains(x.AnalysisId) && names.Contains(x.Kind))
+                .Select(x => new { x.AnalysisId, x.Kind, x.Content })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(x => (x.AnalysisId, x.Kind), x => x.Content);
+        var bySourceId = found.ToDictionary(x => x.SourceId);
 
-        // the sheet is made of the timeline and the words
-        var asked = request.Kinds.Where(header.Kinds.Contains).ToHashSet();
-        var read = asked.Contains(ContentKind.Sheet) ? asked.Union([ContentKind.Timeline, ContentKind.Lyrics]) : asked;
-        var names = read.Select(AnalysisStore.KindName).ToList();
-        var rows = await db.AnalysisContents
-            .Where(x => x.AnalysisId == analysis.Id && names.Contains(x.Kind))
-            .ToDictionaryAsync(x => x.Kind, x => x.Content, cancellationToken);
-
-        T? Get<T>(ContentKind kind) where T : class
-            => rows.TryGetValue(AnalysisStore.KindName(kind), out var json) ? JsonSerializer.Deserialize<T>(json, SourceV2Json.Options) : null;
-
-        var timeline = Get<Timeline>(ContentKind.Timeline);
-        var lyrics = Get<Lyrics>(ContentKind.Lyrics);
-
-        return new()
+        return ids.Select(id =>
         {
-            Id = request.Id,
-            State = ItemState.Open,
-            Header = header,
-            Content = new()
+            if (!bySourceId.TryGetValue(id, out var analysis))
+                return new GetContentResponse { Id = id, State = ItemState.NotOpen };
+
+            var header = headers[id];
+            // the kinds asked that the analysis has (a kind that names files is had once they are stored)
+            T? Get<T>(ContentKind kind) where T : class
+                => header.Kinds.Contains(kind) && kinds.Contains(kind) && rows.TryGetValue((analysis.Id, AnalysisStore.KindName(kind)), out var json)
+                    ? JsonSerializer.Deserialize<T>(json, SourceV2Json.Options)
+                    : null;
+
+            // every kind as it was put
+            return new GetContentResponse
             {
-                Sheet = asked.Contains(ContentKind.Sheet) ? new SheetContent { Root = SheetBuilder.Build(timeline!, lyrics) } : null,
-                // its sections named as the sheet's headers name them
-                Timeline = asked.Contains(ContentKind.Timeline) ? SheetBuilder.WithSectionNames(timeline!) : null,
-                Lyrics = asked.Contains(ContentKind.Lyrics) ? lyrics : null,
-                Notes = asked.Contains(ContentKind.Notes) ? Get<Notes>(ContentKind.Notes) : null,
-                Score = asked.Contains(ContentKind.Score) ? Get<Score>(ContentKind.Score) : null,
-                Chart = asked.Contains(ContentKind.Chart) ? Get<Chart>(ContentKind.Chart) : null,
-                Recording = asked.Contains(ContentKind.Recording) ? Get<Recording>(ContentKind.Recording) : null,
-            },
-        };
+                Id = id,
+                State = ItemState.Open,
+                Header = header,
+                Content = new()
+                {
+                    Sheet = Get<SheetContent>(ContentKind.Sheet),
+                    Timeline = Get<Timeline>(ContentKind.Timeline),
+                    Lyrics = Get<Lyrics>(ContentKind.Lyrics),
+                    Notes = Get<Notes>(ContentKind.Notes),
+                    Score = Get<Score>(ContentKind.Score),
+                    Chart = Get<Chart>(ContentKind.Chart),
+                    Recording = Get<Recording>(ContentKind.Recording),
+                },
+            };
+        }).ToList();
     }
 
     /// <summary>
-    /// The analyses have no addresses of their own: none is resolved.
+    /// No address is resolved: the analyses' addresses on the public page are given in their headers only.
     /// </summary>
     public ResolveResponse Resolve(ResolveRequest request) => new()
     {
@@ -187,17 +201,17 @@ public sealed class AnalysesSource(ShelfDbContext db, IOptionsMonitor<AnalysesOp
             .ToDictionary(x => x.AnalysisId);
 
         var label = Label;
+        var settings = Options;
         return analyses.Select(x =>
         {
-            var had = Enum.GetValues<ContentKind>().Where(k => kinds[x.Id].Contains(AnalysisStore.KindName(k))).ToList();
             var attribute = attributes.GetValueOrDefault(x.Id);
             return new Header
             {
                 Id = x.SourceId,
-                Source = label,
+                Source = label with { Uri = settings.PublicUri(x.SourceId) },
                 Title = x.Title,
                 Artists = x.Artists,
-                Kinds = had.Contains(ContentKind.Timeline) ? had.Prepend(ContentKind.Sheet).ToList() : had,
+                Kinds = Enum.GetValues<ContentKind>().Where(k => kinds[x.Id].Contains(AnalysisStore.KindName(k))).ToList(),
                 Attributes = new()
                 {
                     Key = attribute?.Key,

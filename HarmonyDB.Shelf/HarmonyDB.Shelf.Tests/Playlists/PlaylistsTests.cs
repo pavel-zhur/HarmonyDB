@@ -326,7 +326,7 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         await WaitForSyncAsync(ann, playlist);
         var after = await Ok<PlaylistDetails>(ann, HttpMethod.Get, $"/api/playlists/{playlist}");
         Assert.Equal("A playlist there", after.Playlist.Title);
-        Assert.Equal(1, after.Sync!.Result!.Value.GetProperty("added").GetInt32());
+        Assert.Equal(1, Assert.IsType<PlaylistSyncResult>(after.Sync!.Result).Added);
         Assert.Equal(["Mine now", "Second", "Fourth"], (await Ok<SongList>(ann, HttpMethod.Get, $"/api/playlists/{playlist}/songs")).Rows.Select(x => x.Title));
     }
 

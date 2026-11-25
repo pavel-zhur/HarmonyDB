@@ -33,14 +33,20 @@ public sealed class ChordsReader(
     /// <summary>
     /// The state and header of each item for the person, in the order asked.
     /// </summary>
-    public async Task<IReadOnlyList<ChordsAnswer>> GetHeadersAsync(ClaimsPrincipal user, IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ChordsAnswer>> GetHeadersAsync(ClaimsPrincipal user, IReadOnlyList<string> ids, CancellationToken cancellationToken)
+        => GetHeadersAsync(callers.For(user), ids, cancellationToken);
+
+    /// <summary>
+    /// The state and header of each item for the caller given, in the order asked.
+    /// </summary>
+    public async Task<IReadOnlyList<ChordsAnswer>> GetHeadersAsync(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {
         if (ids.Count > MaxIds)
             throw ShelfException.BadRequest(ChordsErrorCodes.TooManyIds, new Dictionary<string, string> { ["max"] = MaxIds.ToString() });
         if (ids.Any(string.IsNullOrWhiteSpace))
             throw ShelfException.BadRequest();
 
-        return (await GetAnswersAsync(callers.For(user), ids, cancellationToken)).Select(ToAnswer).ToList();
+        return (await GetAnswersAsync(caller, ids, cancellationToken)).Select(ToAnswer).ToList();
     }
 
     /// <summary>
@@ -111,16 +117,22 @@ public sealed class ChordsReader(
     /// <summary>
     /// The item for the person with the kinds asked; when it is open, its local row is made or refreshed.
     /// </summary>
-    public async Task<ChordsContentResponse> GetContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public Task<ChordsContentResponse> GetContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+        => GetContentAsync(callers.For(user), user.GetAccountId(), id, kinds, cancellationToken);
+
+    /// <summary>
+    /// The item for the caller given with the kinds asked, with the marks, keys and notes <paramref name="viewer"/> sees
+    /// on it; when it is open, its local row is made or refreshed.
+    /// </summary>
+    public async Task<ChordsContentResponse> GetContentAsync(Caller caller, Guid? viewer, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
     {
-        var caller = callers.For(user);
         var response = await index.Sources.GetContent(caller, id, kinds, cancellationToken);
         Remember(caller, new() { Id = id, State = response.State, Header = response.Header });
         if (response.State != ItemState.Open)
             return new() { Id = id, State = ToState(response.State), Marks = [], Keys = [], MyNotes = [] };
 
         var row = await rows.GetOrCreateChordsAsync(id, response.Header, IsAnonymous(caller), cancellationToken);
-        var seen = await annotations.ReadAsync(user.GetAccountId(), [row.Id], null, null, cancellationToken);
+        var seen = await annotations.ReadAsync(viewer, [row.Id], null, null, cancellationToken);
         return new()
         {
             Id = id,
@@ -139,9 +151,15 @@ public sealed class ChordsReader(
     /// themselves (the media of a recording). Null when the item is not open to the person.
     /// </summary>
     /// <exception cref="ShelfException">503 <c>unavailable</c>: its source did not answer.</exception>
-    public async Task<Content?> GetOpenContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public Task<Content?> GetOpenContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+        => GetOpenContentAsync(callers.For(user), id, kinds, cancellationToken);
+
+    /// <summary>
+    /// The item's content for the caller given; null when it is not open to them.
+    /// </summary>
+    /// <exception cref="ShelfException">503 <c>unavailable</c>: its source did not answer.</exception>
+    public async Task<Content?> GetOpenContentAsync(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
     {
-        var caller = callers.For(user);
         var response = await index.Sources.GetContent(caller, id, kinds, cancellationToken);
         Remember(caller, new() { Id = id, State = response.State, Header = response.Header });
         return response.State switch

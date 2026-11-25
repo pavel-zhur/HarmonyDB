@@ -233,7 +233,7 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
     /// The illustration to show as the cover of each of the chords that have one; asked of the illustrations' service
     /// for those not kept, in one call, and kept a few minutes (also that there is none).
     /// </summary>
-    private async Task<Dictionary<string, Guid>> IllustrationCoversAsync(IReadOnlyCollection<string> sourceIds, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, Guid>> IllustrationCoversAsync(IReadOnlyCollection<string> sourceIds, CancellationToken cancellationToken)
     {
         var result = new Dictionary<string, Guid>(StringComparer.Ordinal);
         var missing = new List<string>();

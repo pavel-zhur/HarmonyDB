@@ -8,13 +8,12 @@ namespace OneShelf.Sources.Self.Api.Services;
 
 public class StructureParser
 {
-    public NodeHtml ContentToHtml(Collective collective) => ContentsToHtml(collective.Contents);
+    public NodeHtml ContentToHtml(Collective collective) => ContentToHtml(collective.Contents);
 
     /// <summary>
-    /// The contents of own chords, as they are kept, in the sheet they are shown as.
+    /// The contents of own chords, as they are kept, in the sheet they are shown as. The sheet's texts are plain text, as
+    /// written (the sheet escapes them where it is written as HTML).
     /// </summary>
-    public NodeHtml ContentsToHtml(string contents) => ContentToHtml(contents.Replace("&", "&amp;"));
-
     public NodeHtml ContentToHtml(string content)
     {
         var pre = new NodeHtml
@@ -81,8 +80,6 @@ public class StructureParser
 
             void Write(char c) => buffer.Append(c);
 
-            void WriteString(string s) => buffer.Append(s);
-
             var inChord = InChord.Out;
             foreach (var c in line)
             {
@@ -119,7 +116,7 @@ public class StructureParser
                                 break;
                             case InChord.Out:
                             case InChord.SourceInTargetOut:
-                                WriteString("&gt;");
+                                Write(c);
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();

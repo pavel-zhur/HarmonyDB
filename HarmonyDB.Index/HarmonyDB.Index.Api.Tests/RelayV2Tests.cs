@@ -246,6 +246,30 @@ public sealed class RelayV2Tests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ContentsAreSplitBySourceAndJoinedInTheOrderAskedAFailingSourceFailingOnlyItsOwn()
+    {
+        var response = await _relay.GetContents(Caller, ["s-1", "g-2", "x-1", "g-gone", "d-1", "r-1", "g-3"], [ContentKind.Sheet]);
+
+        Assert.Equal(
+            [
+                ("s-1", ItemState.Unavailable), ("g-2", ItemState.Open), ("x-1", ItemState.NotOpen), ("g-gone", ItemState.NotOpen),
+                ("d-1", ItemState.Unavailable), ("r-1", ItemState.Unavailable), ("g-3", ItemState.Open),
+            ],
+            response.Items.Select(x => (x.Id, x.State)));
+        Assert.Equal("g-3", response.Items[6].Header!.Id);
+        Assert.NotNull(response.Items[6].Content);
+        Assert.Null(response.Items[3].Content);
+
+        // the good source was asked once, for its own ids only, in their order
+        Assert.Equal(["g-2", "g-gone", "g-3"], _good.ContentIdsAsked.Single());
+
+        // more ids than one call may ask, an id twice, an empty one: refused
+        var tooMany = string.Join(',', Enumerable.Range(0, GetContentsRequest.MaxIds + 1).Select(i => $"\"g-{i}\""));
+        foreach (var ids in new[] { tooMany, "\"g-1\",\"g-1\"", "\"\"" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2GetContents, $$"""{"caller":{"accountId":null,"keys":[]},"ids":[{{ids}}],"kinds":["sheet"]}""", ShelfKey)).StatusCode);
+    }
+
+    [Fact]
     public async Task AnIncompleteRequestIsBad()
     {
         Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2Search, """{"caller":null,"query":"x"}""", ShelfKey)).StatusCode);
@@ -278,6 +302,8 @@ public sealed class RelayV2Tests : IAsyncLifetime
         public ConcurrentQueue<Caller> Callers { get; } = new();
 
         public ConcurrentQueue<IReadOnlyList<string>> HeaderIdsAsked { get; } = new();
+
+        public ConcurrentQueue<IReadOnlyList<string>> ContentIdsAsked { get; } = new();
 
         /// <param name="answersOutOfContract">The source answers a search with a list missing ("headers": null).</param>
         public static async Task<FakeSource> Start(string prefix, TimeSpan delay, HttpStatusCode? refuseWith, bool answersOutOfContract = false)
@@ -337,6 +363,17 @@ public sealed class RelayV2Tests : IAsyncLifetime
             }));
             app.MapPost($"/api/{SourceV2Urls.V2GetContent}", (HttpContext c) => Serve<GetContentRequest>(c, r =>
                 new GetContentResponse { Id = r.Id, State = ItemState.Open, Header = Header(r.Id), Content = new() }));
+            app.MapPost($"/api/{SourceV2Urls.V2GetContents}", (HttpContext c) => Serve<GetContentsRequest>(c, r =>
+            {
+                source!.ContentIdsAsked.Enqueue(r.Ids);
+                return new GetContentsResponse
+                {
+                    // an item of the prefix with "gone" in it is not open
+                    Items = r.Ids.Select(id => id.Contains("gone")
+                        ? new GetContentResponse { Id = id, State = ItemState.NotOpen }
+                        : new GetContentResponse { Id = id, State = ItemState.Open, Header = Header(id), Content = new() }).ToList(),
+                };
+            }));
             app.MapPost($"/api/{SourceV2Urls.V2Resolve}", (HttpContext c) => Serve<ResolveRequest>(c, r => new ResolveResponse
             {
                 Items = r.Uris.Select(uri =>

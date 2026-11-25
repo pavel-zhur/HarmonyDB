@@ -138,13 +138,7 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
     public async Task<M.SongList> LibraryAsync(ClaimsPrincipal user, SongListQuery query, CancellationToken cancellationToken)
     {
         var me = user.GetAccountId()!.Value;
-        var memberOf = await db.PlaylistMembers.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null)
-            .OrderBy(x => x.JoinedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
-        var followed = await db.PlaylistFollows.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null && x.Playlist.Access != PlaylistAccess.Private)
-            .OrderBy(x => x.FollowedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
-        // a follow counts only where the person is no member at all (a member shows a playlist or not by their membership)
-        var anyMembership = await db.PlaylistMembers.Where(x => x.AccountId == me).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
-        followed = followed.Except(anyMembership).ToList();
+        var (memberOf, followed) = await ShownAsync(me, cancellationToken);
         var shown = memberOf.Concat(followed).ToList();
         // whose marks are seen in each: its members', in a playlist one is a member of; one's own, in one followed
         var members = (await db.PlaylistMembers.Where(x => memberOf.Contains(x.PlaylistId)).Select(x => new { x.PlaylistId, x.AccountId }).ToListAsync(cancellationToken))
@@ -223,6 +217,37 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
             Rows = await RowsAsync(user, page, cancellationToken),
             People = await PeopleAsync(me, people, cancellationToken),
         };
+    }
+
+    /// <summary>
+    /// The chords of the person's library: of the songs of the playlists shown in it, and the person's own (marked, or
+    /// with their key or note).
+    /// </summary>
+    public async Task<IReadOnlyList<ChordsItem>> LibraryChordsAsync(Guid me, CancellationToken cancellationToken)
+    {
+        var (memberOf, followed) = await ShownAsync(me, cancellationToken);
+        var shown = memberOf.Concat(followed).ToList();
+        var inPlaylists = db.PlaylistSongItems.Where(x => x.ChordsId != null && shown.Contains(x.Song.PlaylistId)).Select(x => x.ChordsId!.Value);
+        var own = db.Marks.Where(x => x.AccountId == me).Select(x => x.ChordsId)
+            .Union(db.Transpositions.Where(x => x.AccountId == me).Select(x => x.ChordsId))
+            .Union(db.Notes.Where(x => x.AccountId == me && x.ChordsId != null).Select(x => x.ChordsId!.Value));
+        var ids = inPlaylists.Union(own);
+        return await db.Chords.Where(x => ids.Contains(x.Id)).AsNoTracking().ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The playlists shown in the person's library: those they are a member of and show, in the order joined; then those
+    /// they follow and show, in the order followed (a follow counts only where the person is no member at all: a member
+    /// shows a playlist or not by their membership).
+    /// </summary>
+    private async Task<(List<Guid> MemberOf, List<Guid> Followed)> ShownAsync(Guid me, CancellationToken cancellationToken)
+    {
+        var memberOf = await db.PlaylistMembers.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null)
+            .OrderBy(x => x.JoinedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
+        var followed = await db.PlaylistFollows.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null && x.Playlist.Access != PlaylistAccess.Private)
+            .OrderBy(x => x.FollowedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
+        var anyMembership = await db.PlaylistMembers.Where(x => x.AccountId == me).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
+        return (memberOf, followed.Except(anyMembership).ToList());
     }
 
     /// <summary>

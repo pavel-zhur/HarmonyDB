@@ -33,6 +33,12 @@ public class RelayV2Functions(SourceV2Relay relay)
             r => RelayV2Function.IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null,
             r => relay.GetContent(r.Caller, r.Id, r.Kinds, cancellationToken));
 
+    [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
+    public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
+        => RelayV2Function.Handle<GetContentsRequest, GetContentsResponse>(req,
+            GetContentsRequest.IsValid,
+            r => relay.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken));
+
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
         => RelayV2Function.Handle<ResolveRequest, ResolveResponse>(req,

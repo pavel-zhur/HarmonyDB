@@ -62,7 +62,8 @@ public static class BookTools
             {
                 var job = await jobs.GetAsync(user.Me(), jobId, cancellationToken) ?? throw ShelfException.NotFound(JobsErrorCodes.NoSuchJob);
                 var link = job.File == null ? ((string Url, DateTimeOffset ExpiresAt)?)null : files.JobFile(user.Me(), job.Id);
-                return new { job = Job(job), job.Result, fileUrl = link?.Url, fileUrlExpiresAt = link?.ExpiresAt };
+                // the result as its own type: the tools' JSON does not tell the results apart by their kind
+                return new { job = Job(job), result = (object?)job.Result, fileUrl = link?.Url, fileUrlExpiresAt = link?.ExpiresAt };
             })
         {
             AnyOf = [BuiltInPermissions.McpPdf, BuiltInPermissions.McpLibraryWrite],

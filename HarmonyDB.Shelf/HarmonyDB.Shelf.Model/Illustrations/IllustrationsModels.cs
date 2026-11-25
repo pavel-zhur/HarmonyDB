@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Model.Jobs;
+
 namespace HarmonyDB.Shelf.Model.Illustrations;
 
 /// <summary>
@@ -68,7 +70,7 @@ public record DrawIllustrationsRequest
 /// <summary>
 /// What a job of the kind "illustrations" ends with.
 /// </summary>
-public record IllustrationsJobResult
+public record IllustrationsJobResult : JobResult
 {
     /// <summary>
     /// How many pictures were drawn now (none when the preset was drawn for these chords before).

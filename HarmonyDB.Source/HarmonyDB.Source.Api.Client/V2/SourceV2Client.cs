@@ -128,13 +128,7 @@ public class SourceV2Client
             }, response =>
             {
                 Check(response.Id == id, "the content is of another id");
-                Check((response.State == ItemState.Open) == (response.Header != null) && (response.Header == null) == (response.Content == null),
-                    "the header and the content are given exactly for an open item");
-                if (response.Header != null)
-                {
-                    CheckHeader(response.Header);
-                    Check(response.Header.Id == id, "the header has another id");
-                }
+                CheckContent(response);
             }, cancellationToken);
         }
         catch (CallFailedException)
@@ -143,6 +137,40 @@ public class SourceV2Client
             {
                 Id = id,
                 State = ItemState.Unavailable,
+            };
+        }
+    }
+
+    /// <param name="ids">Each once, at most <see cref="GetContentsRequest.MaxIds"/>.</param>
+    public async Task<GetContentsResponse> GetContents(Caller caller, IReadOnlyList<string> ids, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<GetContentsRequest, GetContentsResponse>(SourceV2Urls.V2GetContents, new()
+            {
+                Caller = caller,
+                Ids = ids,
+                Kinds = kinds,
+            }, response =>
+            {
+                Check(response.Items != null && response.Items.Count == ids.Count, "the number of the contents is not the number of the ids");
+                for (var i = 0; i < ids.Count; i++)
+                {
+                    var item = response.Items![i];
+                    Check(item != null && item.Id == ids[i], "the contents are not the answers for the ids asked, in their order");
+                    CheckContent(item!);
+                }
+            }, cancellationToken);
+        }
+        catch (CallFailedException)
+        {
+            return new()
+            {
+                Items = ids.Select(id => new GetContentResponse
+                {
+                    Id = id,
+                    State = ItemState.Unavailable,
+                }).ToList(),
             };
         }
     }
@@ -282,6 +310,20 @@ public class SourceV2Client
         Check(header.Artists != null && header.Artists.All(x => x != null), "a header has no artists list");
         Check(header.Kinds != null, "a header has no kinds");
         Check(header.Attributes != null, "a header has no attributes");
+    }
+
+    /// <summary>
+    /// An item's content answer: the header and the content exactly for an open item, the header of that item.
+    /// </summary>
+    private static void CheckContent(GetContentResponse response)
+    {
+        Check((response.State == ItemState.Open) == (response.Header != null) && (response.Header == null) == (response.Content == null),
+            "the header and the content are given exactly for an open item");
+        if (response.Header != null)
+        {
+            CheckHeader(response.Header);
+            Check(response.Header.Id == response.Id, "the header has another id");
+        }
     }
 
     private static void Check(bool condition, string what)

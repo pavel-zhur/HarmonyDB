@@ -196,6 +196,10 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
             .ExecuteUpdateAsync(x => x.SetProperty(s => s.AddedById, first), cancellationToken);
         await db.PlaylistSongItems.IgnoreQueryFilters().Where(x => x.AddedById == second)
             .ExecuteUpdateAsync(x => x.SetProperty(i => i.AddedById, first), cancellationToken);
+        // of two links that carry access to the same chords, the first's stays
+        await db.ShareLinks.Where(x => x.CreatedById == second && x.CarriedKeys != null
+                                       && db.ShareLinks.Any(f => f.CreatedById == first && f.CarriedKeys != null && f.ChordsId == x.ChordsId))
+            .ExecuteDeleteAsync(cancellationToken);
         await db.ShareLinks.Where(x => x.CreatedById == second)
             .ExecuteUpdateAsync(x => x.SetProperty(l => l.CreatedById, first), cancellationToken);
         await db.PlaylistInvitations.IgnoreQueryFilters().Where(x => x.CreatedById == second)

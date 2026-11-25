@@ -26,7 +26,7 @@ public sealed class OwnChordsArea : IShelfArea
         services.AddOptions<OwnChordsPlacingOptions>().Bind(configuration.GetSection(OwnChordsPlacingOptions.SectionName))
             .Validate(x => x.Pause > TimeSpan.Zero && x.GiveUpAfter > TimeSpan.Zero, $"{OwnChordsPlacingOptions.SectionName}: the pause or the time to give up after is not positive.")
             .ValidateOnStart();
-        services.AddJobHandler<OwnChordsPlacingJob>(configuration, OwnChordsService.PlacingJobKind);
+        services.AddJobHandler<OwnChordsPlacingJob, OwnChordsPlacingResult>(configuration, OwnChordsService.PlacingJobKind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

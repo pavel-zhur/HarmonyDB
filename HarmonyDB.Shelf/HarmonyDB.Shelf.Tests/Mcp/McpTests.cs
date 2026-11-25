@@ -211,6 +211,85 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
     }
 
     [DatabaseFact]
+    public async Task HostsAreShownInTheirAsciiFormAndANameNotSeenAsItselfIsRefused()
+    {
+        // a look-alike: the first letter is Cyrillic
+        const string lookAlike = "https://сlaude.ai/cb";
+        var ascii = new System.Globalization.IdnMapping().GetAscii("сlaude.ai");
+        Assert.StartsWith("xn--", ascii);
+
+        var (browser, _) = await PersonAsync("mcp-hosts", BuiltInPermissions.McpIndex);
+        var registered = await _api.CreateClient().PostAsJsonAsync("/oauth/register", new Dictionary<string, object>
+        {
+            ["client_name"] = "Assistant",
+            ["redirect_uris"] = new[] { lookAlike },
+            ["token_endpoint_auth_method"] = "none",
+        });
+        Assert.Equal(HttpStatusCode.Created, registered.StatusCode);
+        var clientId = (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString()!;
+
+        var verifier = AuthTokens.NewToken();
+        var authorize = await NoRedirects().GetAsync($"/oauth/authorize?response_type=code&client_id={clientId}&redirect_uri={Uri.EscapeDataString(lookAlike)}" +
+                                                     $"&code_challenge={AuthTokens.PkceChallenge(verifier)}&code_challenge_method=S256");
+        var requestId = HttpUtility.ParseQueryString(authorize.Headers.Location!.Query)["request"]!;
+        Assert.Equal(ascii, (await browser.GetAsync<AuthorizationRequestView>($"/api/oauth/requests/{requestId}")).Client.RedirectHost);
+        await ApproveAsync(browser, requestId, ["mcp.index"], redirectStart: lookAlike + "?");
+        Assert.Equal([ascii], Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients")).RedirectHosts);
+
+        Assert.Equal(ascii, ClientRegistry.IdHostOf(new OAuthClient { ClientId = "https://сlaude.ai/client.json", TokenEndpointAuthMethod = ClientRegistry.AuthNone }));
+
+        // names: as given, or refused
+        Assert.True(ClientRegistry.IsShowableName("Ассистент — mine"));
+        foreach (var name in new[] { new string('a', ClientRegistry.MaxName + 1), "Good‮gnp.exe", "Two\nlines", "In​visible", "Bell\u0007" })
+        {
+            Assert.False(ClientRegistry.IsShowableName(name), name);
+            var refused = await _api.CreateClient().PostAsJsonAsync("/oauth/register", new Dictionary<string, object>
+            {
+                ["client_name"] = name,
+                ["redirect_uris"] = new[] { "http://127.0.0.1/callback" },
+                ["token_endpoint_auth_method"] = "none",
+            });
+            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Equal("invalid_client_metadata", (await refused.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
+        }
+    }
+
+    [DatabaseFact]
+    public async Task AClientChangedInTheAppNarrowsAtOnceAndIsWidenedOnlyByAFreshSignInAndANewConsent()
+    {
+        var (browser, accountId) = await PersonAsync("mcp-change", BuiltInPermissions.McpIndex, BuiltInPermissions.McpLibraryRead);
+        var clientId = await RegisterAsync(refresh: false);
+        var (requestId, verifier) = await AuthorizeAsync(clientId, null);
+        var token = (await ApproveAndRedeemAsync(browser, clientId, requestId, verifier, ["mcp.index", "mcp.library.read"])).GetProperty("access_token").GetString()!;
+        var connected = Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients"));
+        var path = $"/api/mcp/clients/{connected.Id}";
+
+        // narrower: the live token keeps working, with less, at once
+        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(HttpMethod.Put, path, new UpdateMcpPermissionsRequest { Permissions = ["mcp.index"] })).StatusCode);
+        await using (var client = await ConnectAsync(token))
+            Assert.DoesNotContain("list_playlists", (await client.ListToolsAsync()).Select(x => x.Name));
+
+        // the client's own token cannot change it
+        var byToken = new HttpRequestMessage(HttpMethod.Put, path) { Content = JsonContent.Create(new UpdateMcpPermissionsRequest { Permissions = ["mcp.index", "mcp.library.read"] }) };
+        byToken.Headers.Authorization = new("Bearer", token);
+        Assert.Contains((await _api.CreateClient().SendAsync(byToken)).StatusCode, new[] { HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden });
+        Assert.Equal(["mcp.index"], Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients")).Allowed);
+
+        // wider, a while after signing in: refused, nothing changes
+        await using (var db = database.CreateContext())
+            await db.Sessions.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(s => s.SignedInAt, DateTimeOffset.UtcNow.AddHours(-1)));
+        await Browser.AssertError(
+            await browser.SendAsync(HttpMethod.Put, path, new UpdateMcpPermissionsRequest { Permissions = ["mcp.index", "mcp.library.read"] }),
+            HttpStatusCode.Forbidden, AuthErrorCodes.FreshSignInRequired);
+        Assert.Equal(HttpStatusCode.OK, (await PostMcpAsync(token)).StatusCode);
+
+        // wider, just signed in: the live token goes; the client is given more by a new consent
+        await browser.DevAsync("mcp-change");
+        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(HttpMethod.Put, path, new UpdateMcpPermissionsRequest { Permissions = ["mcp.index", "mcp.library.read"] })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await PostMcpAsync(token)).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task AWrongVerifierOrAReusedCodeGivesNothingAndAReusedCodeRevokesItsTokens()
     {
         var (browser, _) = await PersonAsync("mcp-codes", BuiltInPermissions.McpIndex);

@@ -128,6 +128,32 @@ public class SourceV2Relay
     }
 
     /// <summary>
+    /// Asks each source for the content of its ids at once; an id of no source is not open, and a source that did not
+    /// answer leaves its own ids unavailable only.
+    /// </summary>
+    public async Task<GetContentsResponse> GetContents(Caller caller, IReadOnlyList<string> ids, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    {
+        var answers = new GetContentResponse[ids.Count];
+        var bySource = new Dictionary<int, List<int>>();
+        for (var i = 0; i < ids.Count; i++)
+        {
+            if (Route(ids[i]) is { } source)
+                (bySource.TryGetValue(source, out var positions) ? positions : bySource[source] = []).Add(i);
+            else
+                answers[i] = new() { Id = ids[i], State = ItemState.NotOpen };
+        }
+
+        await Task.WhenAll(bySource.Select(async x =>
+        {
+            var response = await _sources[x.Key].client.GetContents(caller, x.Value.Select(i => ids[i]).ToList(), kinds, cancellationToken);
+            for (var k = 0; k < x.Value.Count; k++)
+                answers[x.Value[k]] = response.Items[k];
+        }));
+
+        return new() { Items = answers };
+    }
+
+    /// <summary>
     /// Asks every source for every address at once. An address is resolved by the first source (in the configured
     /// order) that resolves it; otherwise it is unavailable when a source did not answer for it, and not resolved
     /// when none knows it.

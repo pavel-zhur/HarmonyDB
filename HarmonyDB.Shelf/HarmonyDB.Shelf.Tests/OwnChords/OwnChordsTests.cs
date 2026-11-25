@@ -101,7 +101,7 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
 
         var job = await fixture.FinishedAsync(me, details.PlacingJobId!.Value);
         Assert.True(job.Status == Model.Jobs.JobStatus.Succeeded, job.ErrorCode);
-        Assert.Equal(chordsId, job.Result!.Value.GetProperty("chordsId").GetString());
+        Assert.Equal(chordsId, Assert.IsType<OwnChordsPlacingResult>(job.Result).ChordsId);
 
         await using var db = fixture.CreateContext();
         var placed = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.PlaylistSongItems.Where(x => x.Chords!.SourceId == chordsId).Select(x => x.Song));

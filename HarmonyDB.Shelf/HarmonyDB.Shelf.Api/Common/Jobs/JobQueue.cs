@@ -13,7 +13,7 @@ namespace HarmonyDB.Shelf.Api.Common.Jobs;
 /// Starts background work for a person and tells them where it is. The work is done by <see cref="JobWorker"/> with the
 /// handler registered for the job's kind.
 /// </summary>
-public sealed class JobQueue(ShelfDbContext db, JobSignal signal, TimeProvider time, IOptionsMonitor<JobsOptions> options)
+public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults results, TimeProvider time, IOptionsMonitor<JobsOptions> options)
 {
     /// <summary>
     /// The JSON of the jobs' inputs and results: the browser API's.
@@ -115,7 +115,7 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, TimeProvider t
                 : null));
     }
 
-    internal static JobInfo ToInfo(Job job, JobFileInfo? file) => new()
+    private JobInfo ToInfo(Job job, JobFileInfo? file) => new()
     {
         Id = job.Id,
         Kind = job.Kind,
@@ -135,7 +135,7 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, TimeProvider t
         CreatedAt = job.CreatedAt,
         StartedAt = job.StartedAt,
         FinishedAt = job.FinishedAt,
-        Result = job.Result == null ? null : JsonDocument.Parse(job.Result).RootElement.Clone(),
+        Result = job.Result == null ? null : results.Read(job.Kind, job.Result),
         File = file,
     };
 

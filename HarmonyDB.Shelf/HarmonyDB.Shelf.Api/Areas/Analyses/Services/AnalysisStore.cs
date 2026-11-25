@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using HarmonyDB.Shelf.Api.Areas.Analyses.Services.Sheets;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Database;
@@ -52,24 +52,20 @@ public sealed partial class AnalysisStore(ShelfDbContext db, AudioBlobsClient bl
             throw ShelfException.BadRequest();
 
         var content = request.Content;
-        if (content.Sheet != null)
-            throw ShelfException.BadRequest(AnalysesErrorCodes.SheetGiven);
         if (content.Timeline == null)
             throw ShelfException.BadRequest(AnalysesErrorCodes.TimelineMissing);
 
-        // The sheet is made on every reading; made once here, it shows that every chord is readable.
-        try
+        // the sheet is kept as it is given: it is only to be one the shelf reads and draws
+        if (content.Sheet != null)
         {
-            SheetBuilder.Build(content.Timeline, content.Lyrics);
-        }
-        catch (UnreadableChordException exception)
-        {
-            throw ShelfException.BadRequest(AnalysesErrorCodes.UnreadableChord, new Dictionary<string, string> { ["chord"] = exception.Name });
-        }
-        catch (Exception exception) when (exception is ArgumentException or FormatException)
-        {
-            // a key, a meter, a tempo or a section that is not one
-            throw ShelfException.BadRequest(AnalysesErrorCodes.BadContent);
+            try
+            {
+                content.Sheet.Root.AsHtml(new RepresentationSettings());
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                throw ShelfException.BadRequest(AnalysesErrorCodes.BadSheet);
+            }
         }
 
         if (request.OwnerId.HasValue && !await db.Accounts.AnyAsync(x => x.Id == request.OwnerId && x.DeletedAt == null, cancellationToken))
@@ -124,6 +120,7 @@ public sealed partial class AnalysisStore(ShelfDbContext db, AudioBlobsClient bl
 
         var kinds = new Dictionary<ContentKind, object?>
         {
+            [ContentKind.Sheet] = content.Sheet,
             [ContentKind.Timeline] = content.Timeline,
             [ContentKind.Lyrics] = content.Lyrics,
             [ContentKind.Notes] = notes,

@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Api.Areas.PublicPage.Services;
 using HarmonyDB.Shelf.Api.Foundation.SignIn;
 using HarmonyDB.Shelf.Model.App;
 using Microsoft.Extensions.Options;
@@ -8,7 +9,7 @@ namespace HarmonyDB.Shelf.Api.Areas.App.Services;
 /// What the frontend needs at start. Nothing secret, and nothing of the permissions (their keys and labels are for the
 /// admin site only).
 /// </summary>
-public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> signIn, IHostEnvironment environment)
+public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> signIn, IOptionsMonitor<AppOptions> app, IOptionsMonitor<PublicPageOptions> publicPage, IHostEnvironment environment)
 {
     /// <summary>
     /// The languages of the interface; the first is the default.
@@ -38,6 +39,8 @@ public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> si
             Locales = Locales,
             DefaultLocale = Locales[0],
             MarkKinds = Model.Marks.MarkKinds.All,
+            ShowcasePlaylistId = app.CurrentValue.ShowcasePlaylist,
+            PublicPageOrigin = publicPage.CurrentValue.Origin,
         };
     }
 }

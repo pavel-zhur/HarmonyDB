@@ -22,9 +22,9 @@ public sealed class JobSignal
 }
 
 /// <summary>
-/// The kinds of jobs and their handlers' types.
+/// The kinds of jobs, their handlers' types and the types of their results (none for a kind that ends with no result).
 /// </summary>
-internal sealed record JobHandlerRegistration(string Kind, Type HandlerType);
+internal sealed record JobHandlerRegistration(string Kind, Type HandlerType, Type? ResultType);
 
 /// <summary>
 /// Runs the queued jobs of the kinds this app has handlers for, up to <see cref="JobsOptions.Concurrency"/> at once.
@@ -36,6 +36,7 @@ internal sealed record JobHandlerRegistration(string Kind, Type HandlerType);
 internal sealed class JobWorker(
     IServiceScopeFactory scopes,
     IEnumerable<JobHandlerRegistration> registrations,
+    JobResults results,
     JobSignal signal,
     IOptionsMonitor<JobsOptions> options,
     TimeProvider time,
@@ -236,7 +237,7 @@ internal sealed class JobWorker(
             if (state == JobState.Succeeded)
             {
                 row.Progress = 1;
-                row.Result = completion!.Result == null ? null : JsonSerializer.Serialize(completion.Result, JobQueue.JsonOptions);
+                row.Result = completion!.Result == null ? null : results.Write(job.Kind, completion.Result);
                 if (completion.File is { } file)
                 {
                     db.JobOutputs.Add(new()

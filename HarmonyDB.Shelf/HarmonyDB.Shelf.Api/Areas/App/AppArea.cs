@@ -3,6 +3,8 @@ using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Model.App;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Shelf.Api.Areas.App;
 
@@ -13,6 +15,8 @@ public sealed class AppArea : IShelfArea
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<AppOptions>().Bind(configuration.GetSection(AppOptions.SectionName)).ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<AppOptions>, AppOptionsValidator>());
         services.AddHealthChecks().AddDbContextCheck<ShelfDbContext>("database");
         services.AddSingleton<VersionService>();
         services.AddSingleton<PublicConfigurationService>();

@@ -112,6 +112,12 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
             Assert.Equal(state == ItemState.Open, content.Content?.Sheet != null);
         }
 
+        // many at once: the same answers, in the order asked; one that does not exist is not open
+        var contents = await _source.GetContents(caller, [Id(Public), Id(Club), Id(Private), Id(AccountPrivate), Id(Missing), "mj-not-an-id"], [ContentKind.Sheet], CancellationToken.None);
+        Assert.Equal([Id(Public), Id(Club), Id(Private), Id(AccountPrivate), Id(Missing), "mj-not-an-id"], contents.Items.Select(x => x.Id));
+        Assert.Equal([.. expected, ItemState.NotOpen, ItemState.NotOpen], contents.Items.Select(x => x.State));
+        Assert.All(contents.Items, x => Assert.Equal(x.State == ItemState.Open, x.Content?.Sheet != null));
+
         var resolved = await _source.Resolve(caller, [Address(Public), Address(Club), Address(Private), Address(AccountPrivate)]);
         Assert.Equal(
             expected.Select(x => x == ItemState.Open ? ResolveState.Resolved : ResolveState.NotResolved),

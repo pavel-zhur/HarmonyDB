@@ -76,7 +76,11 @@ public class NodeText : NodeBase
     internal override void AppendOneShelfTo(StringBuilder builder, RepresentationSettings representationSettings,
         bool isBold, ref bool owesWhitespace, bool alreadyChordLine)
     {
-        if (owesWhitespace && Text.StartsWith(' ') && Text.Length > 1)
+        // The ">" of a line of chords stands in its first column, and "<" and ">" of a chord in the line in the spaces
+        // around it: a space owed to them is taken from the text. A single space between two chords stays (they would
+        // run together); at the start of a line of chords nothing stands before it.
+        var lineStart = alreadyChordLine && builder.Length > 0 && builder[^1] == '>';
+        if (owesWhitespace && Text.StartsWith(' ') && (Text.Length > 1 || lineStart))
         {
             builder.Append(Text.Substring(1));
             owesWhitespace = false;

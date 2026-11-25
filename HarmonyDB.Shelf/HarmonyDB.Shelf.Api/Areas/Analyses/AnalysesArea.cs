@@ -51,6 +51,9 @@ public sealed class AnalysesArea : IShelfArea
         source.MapPost($"/{SourceV2Urls.V2GetContent}", async (HttpRequest request, AnalysesSource service, CancellationToken cancellationToken)
             => V2(await service.GetContentAsync(await ReadAsync<GetContentRequest>(request, x => Valid(x.Caller) && x.Id != null && x.Kinds != null, cancellationToken), cancellationToken))).WithName("AnalysesV2GetContent");
 
+        source.MapPost($"/{SourceV2Urls.V2GetContents}", async (HttpRequest request, AnalysesSource service, CancellationToken cancellationToken)
+            => V2(await service.GetContentsAsync(await ReadAsync<GetContentsRequest>(request, GetContentsRequest.IsValid, cancellationToken), cancellationToken))).WithName("AnalysesV2GetContents");
+
         source.MapPost($"/{SourceV2Urls.V2Resolve}", async (HttpRequest request, AnalysesSource service, CancellationToken cancellationToken)
             => V2(service.Resolve(await ReadAsync<ResolveRequest>(request, x => Valid(x.Caller) && x.Uris != null && x.Uris.All(uri => uri != null), cancellationToken)))).WithName("AnalysesV2Resolve");
 

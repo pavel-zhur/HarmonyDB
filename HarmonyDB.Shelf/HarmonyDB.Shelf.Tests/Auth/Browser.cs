@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Api.Foundation;
 using HarmonyDB.Shelf.Model;
 using HarmonyDB.Shelf.Model.Auth;
@@ -93,6 +94,18 @@ public sealed class Browser(HttpClient client)
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         FoundationExtensions.ConfigureJson(options);
+
+        // the jobs' results, as the frontend's client knows them, and the tests' own job's
+        new JobResults(new (string Kind, Type Result)[]
+        {
+            (global::HarmonyDB.Shelf.Api.Areas.Book.Services.BookService.PagesJobKind, typeof(Model.Book.BookPagesResult)),
+            (global::HarmonyDB.Shelf.Api.Areas.Book.Services.BookService.BookJobKind, typeof(Model.Book.BookResult)),
+            (global::HarmonyDB.Shelf.Api.Areas.Illustrations.Services.IllustrationsService.JobKind, typeof(Model.Illustrations.IllustrationsJobResult)),
+            (global::HarmonyDB.Shelf.Api.Areas.Import.Services.ImportService.JobKind, typeof(Model.Import.ImportResult)),
+            (global::HarmonyDB.Shelf.Api.Areas.OwnChords.Services.OwnChordsService.PlacingJobKind, typeof(Model.OwnChords.OwnChordsPlacingResult)),
+            (global::HarmonyDB.Shelf.Api.Areas.Playlists.Services.PlaylistService.SyncJobKind, typeof(Model.Playlists.PlaylistSyncResult)),
+            (Jobs.TestJobs.Succeeding.Kind, typeof(Jobs.TestJobs.Echo)),
+        }.Select(x => new JobHandlerRegistration(x.Kind, typeof(object), x.Result))).Configure(options);
         return options;
     }
 }

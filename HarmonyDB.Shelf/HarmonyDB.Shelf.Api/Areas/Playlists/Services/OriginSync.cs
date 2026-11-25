@@ -267,7 +267,7 @@ public sealed class OriginSyncHandler(ShelfDbContext db, AudioClient audio, Musi
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         logger.LogInformation("Playlist {PlaylistId} synced: {Added} songs added of {Tracks} tracks.", playlist.Id, added, page.Tracks.Count);
-        return new(new { added });
+        return new(new M.PlaylistSyncResult { Added = added });
     }
 
     private static string Cut(string title) => title.Length > PlaylistService.MaxTitleLength ? title[..PlaylistService.MaxTitleLength] : title;

@@ -33,6 +33,6 @@ public class SelfV2Preview(StructureParser structureParser)
 
         if (request?.Contents == null) return new BadRequestResult();
 
-        return new JsonResult(new SheetContent { Root = structureParser.ContentsToHtml(request.Contents) }, SourceV2Json.Options);
+        return new JsonResult(new SheetContent { Root = structureParser.ContentToHtml(request.Contents) }, SourceV2Json.Options);
     }
 }

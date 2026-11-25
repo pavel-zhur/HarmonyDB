@@ -55,7 +55,7 @@ public sealed class ImportTests(WorkFixture fixture) : IClassFixture<WorkFixture
 
         var done = await fixture.FinishedAsync(me, job.Id);
         Assert.Equal(JobStatus.Succeeded, done.Status);
-        var result = done.Result!.Value.Deserialize<ImportResult>(Browser.Json)!;
+        var result = Assert.IsType<ImportResult>(done.Result);
         Assert.Equal(
             [ImportLinkState.Imported, ImportLinkState.NotFound, ImportLinkState.Unavailable, ImportLinkState.NotALink, ImportLinkState.Imported],
             result.Links.Select(x => x.State));

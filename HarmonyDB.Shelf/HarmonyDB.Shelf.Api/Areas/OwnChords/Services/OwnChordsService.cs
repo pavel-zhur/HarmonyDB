@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Security.Claims;
-using System.Text.Json;
 using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
@@ -177,7 +176,7 @@ public sealed class OwnChordsService(
             throw ShelfException.BadRequest(OwnChordsErrorCodes.ContentsRequired, new Dictionary<string, string> { ["max"] = MaxContents.ToString() });
 
         var sheet = await store.PreviewAsync(contents, cancellationToken);
-        return new() { Content = JsonSerializer.SerializeToElement(new Content { Sheet = sheet }, SourceV2Json.Options) };
+        return new() { Content = new() { Sheet = sheet } };
     }
 
     /// <summary>

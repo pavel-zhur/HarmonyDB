@@ -1,4 +1,5 @@
-using System.Text.Json;
+using HarmonyDB.Shelf.Model.Jobs;
+using HarmonyDB.Source.Api.Model.V2;
 
 namespace HarmonyDB.Shelf.Model.OwnChords;
 
@@ -120,7 +121,7 @@ public record OwnChordsDetails
 /// <summary>
 /// What a job of the kind "own_chords_placing" ends with.
 /// </summary>
-public record OwnChordsPlacingResult
+public record OwnChordsPlacingResult : JobResult
 {
     public required string ChordsId { get; init; }
 }
@@ -161,7 +162,7 @@ public record OwnChordsPreviewRequest
 /// </summary>
 public record OwnChordsPreview
 {
-    public required JsonElement Content { get; init; }
+    public required Content Content { get; init; }
 }
 
 public static class OwnChordsErrorCodes

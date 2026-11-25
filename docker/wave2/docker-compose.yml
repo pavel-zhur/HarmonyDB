@@ -69,6 +69,10 @@ services:
       Clients__Illustrations__Key: ${WAVE2_ILLUSTRATIONS_SHELF_KEY}
       Clients__Pdfs__Endpoint: http://wave2-pdfs/pdfs/api/
       Clients__Pdfs__Key: ${WAVE2_PDFS_SHELF_KEY}
+      # the playlist the public page shows as its showcase: its id (empty: none)
+      App__ShowcasePlaylistId: ${SHELF_SHOWCASE_PLAYLIST_ID}
+      # the public page's address: the previews of its addresses and its sitemap are written for it
+      PublicPage__Origin: ${SHELF_SITE_ORIGIN}
       # the key the media addresses are signed with
       Media__SigningKey: ${SHELF_MEDIA_SIGNING_KEY}
       # the reverse proxy in front (this project's own network): its X-Forwarded-For gives the client's address
@@ -79,6 +83,8 @@ services:
       Analyses__SourceTitle: ${SHELF_ANALYSES_SOURCE_TITLE}
       Analyses__IconName: ha-icon
       Analyses__IconFile: /app/config/analyses-icon.svg
+      # an analysis's address on the public page, with {id} where its id goes (empty: no address)
+      Analyses__PublicUriTemplate: ${SHELF_ANALYSES_PUBLIC_URI_TEMPLATE}
       InternalClients__0__Name: index
       InternalClients__0__Key: ${WAVE2_SHELF_INDEX_KEY}
       InternalClients__0__Scopes__0: shelf.source
@@ -127,6 +133,27 @@ services:
         fingerings: ../../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
     ports:
       - "127.0.0.1:14100:80"
+    depends_on:
+      - shelf-api
+    networks:
+      - default
+
+  # The public page (HarmonyDB.Shelf.Web, public.html): where a link shared outside leads — an analysis with its
+  # player, the open playlist of analyses. The same build as the app's, its own nginx with the same content policy;
+  # only the guest's reading of the API goes on to shelf-api. Its address is SHELF_SITE_ORIGIN; it invites into the
+  # app at SHELF_PUBLIC_ORIGIN.
+  public-web:
+    build:
+      context: ../../HarmonyDB.Shelf/HarmonyDB.Shelf.Web
+      dockerfile: docker/Dockerfile
+      target: public
+      additional_contexts:
+        fingerings: ../../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
+    environment:
+      SHELF_SITE_ORIGIN: ${SHELF_SITE_ORIGIN}
+      SHELF_APP_ORIGIN: ${SHELF_PUBLIC_ORIGIN}
+    ports:
+      - "127.0.0.1:14109:80"
     depends_on:
       - shelf-api
     networks:
