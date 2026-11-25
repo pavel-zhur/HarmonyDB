@@ -10,3 +10,5 @@
 .il-ask { padding: 10px 12px; display: grid; gap: 10px; }
 .il-ask p { margin: 0; }
 .il-ask .chips { gap: 8px; }
+/* a guest who closed the chords: what else can be done here */
+.guestinv { padding: 8px var(--gr) 24px var(--gl); }

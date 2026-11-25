@@ -9,7 +9,11 @@
 
 import { Component, lazy, Suspense, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { errorText } from '../api/errors';
+import { Icon } from '../kit/Icon';
+import { useChangeWords } from './marks';
+import type { Piece } from './piece';
 import { useAnalysisPiece } from './useAnalysisPiece';
 import { useFollowLit } from './follow';
 import { TimeView } from './views/TimeView';
@@ -48,7 +52,7 @@ function storedTab(): ViewName | null {
     }
 }
 
-export function AnalysisViewsBody({ chordsId, sheet, share }: { chordsId: string; sheet: ReactNode | null; share?: string | null }) {
+export function AnalysisViewsBody({ chordsId, sheet, share, edit = null }: { chordsId: string; sheet: ReactNode | null; share?: string | null; edit?: string | null }) {
     const { t } = useTranslation();
     const { analysis, piece } = useAnalysisPiece(chordsId, share);
     // the tab chosen on this page; until then the one kept in this browser, when it has something to show
@@ -81,6 +85,7 @@ export function AnalysisViewsBody({ chordsId, sheet, share }: { chordsId: string
     const tabs = (Object.keys(has) as ViewName[]).filter(name => has[name]);
     return (
         <div className="an-aviews">
+            {piece && <AnalysisHint piece={piece} edit={edit} />}
             <div className="an-rtabs" role="tablist">
                 {tabs.map(name => (
                     <button type="button" key={name} role="tab" aria-selected={name === shown} className={name === shown ? 'on' : ''} onClick={() => choose(name)}>
@@ -103,5 +108,28 @@ export function AnalysisViewsBody({ chordsId, sheet, share }: { chordsId: string
                 </ViewBoundary>
             </div>
         </div>
+    );
+}
+
+/**
+ * What the analysis is, in one line (the mock-up's): ours, of this recording; its key (and where it goes), meter and
+ * tempo; and, wrong somewhere, "fix it by hand" — its chords copied into the editor as the person's own variant, no
+ * longer tied to the time. (`edit`: the editor's address for this song; none where there is no song to add it to.)
+ */
+function AnalysisHint({ piece, edit }: { piece: Piece; edit: string | null }) {
+    const { t } = useTranslation();
+    const changeWords = useChangeWords();
+    const first = piece.changes[0];
+    const keys = piece.changes.map(c => c.key).filter((k): k is string => !!k);
+    const facts = first ? changeWords(first, true, piece.bars[0]?.tempo?.beatUnit) : [];
+    const later = keys.length > 1 ? changeWords({ ...first!, key: keys[keys.length - 1], timeSignature: undefined, bpm: undefined }, false) : [];
+    return (
+        <p className="an-hint">
+            <Icon name="ai" />
+            <span>
+                {t('analysis.hint.ours')} {[...facts, ...later].join(' · ')}.
+                {edit && <> {t('analysis.hint.wrong')} <Link className="lnk" to={edit}>{t('analysis.hint.fix')}</Link>{t('analysis.hint.fixAfter')}</>}
+            </span>
+        </p>
     );
 }

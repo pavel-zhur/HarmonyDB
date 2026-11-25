@@ -23,7 +23,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { ApiError } from '../api/client';
 import { errorText } from '../api/errors';
-import { chordsMedia, trackMedia, type MediaAddress, type MediaStem } from '../data/media';
+import { chordsMedia, trackMedia, type MediaAddress, type MediaStem, type TrackRoute } from '../data/media';
 import type { MusicTrack } from '../data/music';
 import { i18n } from '../i18n';
 import { toast } from '../app/toasts';
@@ -38,7 +38,8 @@ import { playClick } from './sounds';
 export type PlayerSource =
     // share: opened by a share link that carries its sharer's access — the media are asked through it
     | { kind: 'analysis'; chordsId: string; share?: string | null; title: string; subtitle: string }
-    | { kind: 'track'; track: MusicTrack };
+    // route: its addresses asked bound to the song that lists it (the public page); none — as the app asks them
+    | { kind: 'track'; track: MusicTrack; route?: TrackRoute | null };
 
 export interface MixRow { on: boolean; volume: number }
 
@@ -144,6 +145,8 @@ class PlayerController {
     private videoExpiresAt = 0;
     /** a failed stream, or clip, is tried once more with a new address; failing again, it is given up */
     private streamRetried = false;
+    /** a recording chosen with a tap: it plays once it is open (playChosen) */
+    private wantPlay = false;
     private clipRetried = false;
     private watch: Worker | null = null;
 
@@ -164,6 +167,11 @@ class PlayerController {
     private set(patch: Partial<PlayerState>): void {
         this.state = { ...this.state, ...patch };
         for (const listener of this.listeners) listener();
+        if (patch.status === 'failed') this.wantPlay = false;
+        if (patch.status === 'ready' && this.wantPlay) {
+            this.wantPlay = false;
+            void this.play();
+        }
     }
 
     // ---- the source -----------------------------------------------------------------------------------
@@ -183,7 +191,7 @@ class PlayerController {
         this.streamRetried = false;
         this.clipRetried = false;
         this.set({ ...initial, mix: this.state.mix, tempo: this.state.tempo, countIn: this.state.countIn, source, status: 'loading', hasVideo });
-        const opened = source.kind === 'analysis' ? this.openAnalysis(source.chordsId, source.share ?? null, generation) : this.openTrack(source.track, generation);
+        const opened = source.kind === 'analysis' ? this.openAnalysis(source.chordsId, source.share ?? null, generation) : this.openTrack(source.track, source.route ?? null, generation);
         opened.catch(error => {
             if (generation !== this.generation) return;
             this.set({ status: 'failed', error: errorText(error) });
@@ -222,7 +230,7 @@ class PlayerController {
     private async getSound(): Promise<Player> {
         if (this.sound) return this.sound;
         // (the sound, with its stretcher, is loaded the first time a recording is opened)
-        this.soundPromise ??= import('./sound/player').then(({ Player }) => Player.create()).then(sound => {
+        this.soundPromise ??= import('./sound/player').then(({ Player }) => startInTime(Player.create())).then(sound => {
             const metronome = sound.addLane('metronome');
             metronome.setProvider((from, to) => this.clicks(from, to));
             const chords = sound.addLane('chords');
@@ -235,6 +243,10 @@ class PlayerController {
             this.sound = sound;
             this.applyMix();
             return sound;
+        }, error => {
+            // (asked again next time: the next song may get it)
+            this.soundPromise = null;
+            throw error;
         });
         return this.soundPromise;
     }
@@ -272,7 +284,12 @@ class PlayerController {
         this.set({ stems: this.stemUrls.map(s => s.stem), duration: media.durationSeconds ?? 0 });
         this.stream(media.recordingUrl, generation);
         this.decoded = this.decode(media.recordingUrl, generation);
-        await this.decoded;
+        try {
+            await this.decoded;
+        } catch (error) {
+            // the stream plays on: what needs the sound (a seamless loop, the metronome, the instruments) says it failed
+            if (generation === this.generation) toast(playerErrorText(error));
+        }
     }
 
     /** The recording decoded, given to the sound, and handed over to from the stream. */
@@ -289,8 +306,8 @@ class PlayerController {
         await this.handOver(sound);
     }
 
-    private async openTrack(track: MusicTrack, generation: number): Promise<void> {
-        const address = await trackMedia(track.service, track.id, 'audio');
+    private async openTrack(track: MusicTrack, route: TrackRoute | null, generation: number): Promise<void> {
+        const address = await trackMedia(track.service, track.id, 'audio', route);
         if (generation !== this.generation) return;
         this.expiresAt = Date.parse(address.expiresAt);
         this.stream(address.url, generation);
@@ -348,7 +365,7 @@ class PlayerController {
     private async freshMedia(): Promise<string | null> {
         const source = this.state.source;
         if (source?.kind === 'track') {
-            const address: MediaAddress = await trackMedia(source.track.service, source.track.id, 'audio');
+            const address: MediaAddress = await trackMedia(source.track.service, source.track.id, 'audio', source.route);
             this.expiresAt = Date.parse(address.expiresAt);
             return address.url;
         }
@@ -398,6 +415,13 @@ class PlayerController {
     }
 
     // ---- the transport --------------------------------------------------------------------------------
+
+    /**
+     * A recording chosen with a tap plays: the source opened next, as soon as it is ready (the tap lets sound begin).
+     */
+    playChosen(): void {
+        this.wantPlay = true;
+    }
 
     /** Plays; called from a tap (the browser lets sound begin only then). */
     async play(): Promise<void> {
@@ -727,7 +751,7 @@ class PlayerController {
         const source = this.state.source;
         if (source?.kind !== 'track' || !this.state.hasVideo) return;
         if (on && (!this.video || Date.now() > this.videoExpiresAt - EXPIRY_MARGIN_MS)) {
-            const address = await trackMedia(source.track.service, source.track.id, 'video');
+            const address = await trackMedia(source.track.service, source.track.id, 'video', source.route);
             this.videoExpiresAt = Date.parse(address.expiresAt);
             if (!this.video) {
                 const video = Object.assign(document.createElement('video'), { muted: true, playsInline: true, preload: 'auto' });
@@ -756,7 +780,7 @@ class PlayerController {
         }
         this.clipRetried = true;
         try {
-            const address = await trackMedia(source.track.service, source.track.id, 'video');
+            const address = await trackMedia(source.track.service, source.track.id, 'video', source.route);
             if (generation !== this.generation || this.video !== video) return;
             this.videoExpiresAt = Date.parse(address.expiresAt);
             video.src = address.url;
@@ -793,6 +817,31 @@ class PlayerController {
             };
         }
     }
+}
+
+/** How long the sound (its audio worklet) may take to start before the page says it could not. */
+const SOUND_START_MS = 15_000;
+
+/**
+ * The sound started, or a failure said within SOUND_START_MS: a browser that never loads the audio worklet would
+ * otherwise leave "loading" standing forever. A sound that starts later still is let go.
+ */
+function startInTime(starting: Promise<Player>): Promise<Player> {
+    return new Promise((resolve, reject) => {
+        let late = false;
+        const timer = setTimeout(() => {
+            late = true;
+            reject(new PlayerError('no-output', 'the sound did not start in time'));
+        }, SOUND_START_MS);
+        starting.then(sound => {
+            clearTimeout(timer);
+            if (late) void sound.dispose();
+            else resolve(sound);
+        }, error => {
+            clearTimeout(timer);
+            if (!late) reject(error);
+        });
+    });
 }
 
 /** What the sound says went wrong, in the person's language. */

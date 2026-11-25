@@ -76,6 +76,8 @@ export interface PlayedChord {
     /** the root (A is 0) and the chord's type as the fingerings know it ("m7"), when it has one */
     readonly note: number;
     readonly fingering: string | null;
+    /** a timed chord's time on the recording (an analysis's sheet): its window can play from there */
+    readonly time: number | null;
 }
 
 let context: AudioContext | null = null;
@@ -83,7 +85,7 @@ let played: PlayedChord | null = null;
 const listeners = new Set<() => void>();
 
 /** Plays a chord by its data now and tells the fingering window. */
-export function playChord(data: string, name: string): void {
+export function playChord(data: string, name: string, time: number | null = null): void {
     const parsed = chordDataParser.getNotes(data);
     if (parsed === null) return;
 
@@ -93,7 +95,7 @@ export function playChord(data: string, name: string): void {
     const pitches = [...parsed.bass, ...parsed.main].map(x => 45 + x);
     void audio.resume().then(() => pluckChord(audio, audio.destination, audio.currentTime, pitches));
 
-    played = { data, name, note: parsed.root, fingering: parsed.fingering };
+    played = { data, name, note: parsed.root, fingering: parsed.fingering, time };
     listeners.forEach(listener => listener());
 }
 

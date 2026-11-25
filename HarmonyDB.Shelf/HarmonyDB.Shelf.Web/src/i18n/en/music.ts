@@ -57,7 +57,6 @@ export const music = {
             openMade: 'Open the playlist',
         },
         search: {
-            title: 'Music',
             failed: 'A music service did not answer.',
         },
     },
@@ -134,6 +133,12 @@ export const music = {
             synthEffects: 'Synth effects', ethnic: 'Ethnic instruments', percussive: 'Percussion', effects: 'Sound effects',
         },
         views: { text: 'Text', time: 'Chords', grid: 'Grid', lead: 'Lead sheet', ireal: 'iReal Pro', score: 'Score', notes: 'Notes' },
+        hint: {
+            ours: 'Our analysis of this recording.',
+            wrong: 'Wrong somewhere?',
+            fix: 'Fix it by hand',
+            fixAfter: ': it becomes your own variant, no longer tied to the time.',
+        },
         key: 'Key {{key}}',
         keyChange: 'Key → {{key}}',
         noKey: 'No key',

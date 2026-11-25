@@ -77,7 +77,7 @@ export const toolScreens = {
     },
     book: {
         from: 'Open a playlist and press “PDF book”.',
-        noPermission: 'Your profile does not have PDF books.',
+        noPermission: 'Making PDF books is not switched on for your profile yet. The shelf’s team switches it on for a profile — ask them, and the book of any playlist is made here.',
         back: 'To the playlist',
         lead: 'From “{{title}}”. Chosen {{chosen}} of {{count}}.',
         cover: 'The cover and the whole book',
@@ -144,13 +144,16 @@ export const toolScreens = {
         empty: 'No chords of your library have illustrations yet.',
         more_one: 'Show {{count}} more',
         more_other: 'Show {{count}} more',
+        notOn: 'Ordering new ones is not switched on for your profile yet: the shelf’s team switches it on — ask them.',
         presetOther: 'Another mood',
         preset: { plain: 'Usual', evil: 'Anger', despair: 'Sadness', drama: 'Drama' },
     },
     about: {
         groups: { best: 'The most interesting', play: 'Playing', own: 'Gathering your own', more: 'And more' },
         versions: 'Versions: what changed',
+        find: 'Find',
         cards: {
+            search: { title: 'One search for everything', text: 'Your playlists, artists, recordings of songs and chords from the internet. Try it right here.' },
             linking: { title: 'Linking', text: 'One song under different names from different sources gathered into one — with variants A, B, C and recordings.' },
             marks: { title: 'Marks, keys, notes', text: 'Marks, your own key and a key for a playlist, personal notes and notes for the members.' },
             together: { title: 'Together', text: 'Members and roles, a link and a QR code; it is seen who likes what and in what key plays it.' },
@@ -231,7 +234,7 @@ export const toolScreens = {
         latest: 'latest',
         items: {
             v1_2: {
-                i0: 'No more clubs: there are people and playlists. Share a playlist or single chords by a link; a mark, a playlist and a key are three things now, not one like.',
+                i0: 'No more clubs: there are people and playlists. A playlist or single chords are shared by a link. A mark, a place in a playlist and a key are three separate things now, not one like.',
                 i1: 'Where a song has an analysis of its recording, it is seen in seven views: text with chords, time line, grid, lead sheet, iReal Pro, score, notes.',
                 i2: 'Play along with the recording: the original, the clip, live recordings and covers from Yandex Music and YouTube; the chord lit, a loop, the tempo, a trainer; where the song is analysed, the voice and the instruments apart.',
                 i3: 'Music around the chords: artists, albums, genres and moods, the chart, similar songs and radio.',

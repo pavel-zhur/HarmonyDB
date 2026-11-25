@@ -4,7 +4,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { player, useClock } from '../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../clock';
 import { barAt, type Piece, type Bar, type Part } from '../piece';
 import { partName, useChangeWords, useChordText } from '../marks';
 
@@ -60,7 +60,7 @@ export function IRealView({ piece, link, title, artists }: { piece: Piece; link:
         els.current[b]?.classList.add('now');
         lit.current = b;
     }, [piece]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     const first = piece.changes[0];
     return (
@@ -76,7 +76,7 @@ export function IRealView({ piece, link, title, artists }: { piece: Piece; link:
                         const change = changes.get(bar.index);
                         return (
                             <button type="button" key={bar.index} ref={el => { els.current[bar.index] = el; }} className="an-irb" title={t('analysis.barN', { n: bar.number })}
-                                onClick={() => player.playFrom(bar.start)}>
+                                onClick={() => analysisPlayer.playFrom(bar.start)}>
                                 {marks.has(bar.index) && <span className="an-irm">{marks.get(bar.index)}</span>}
                                 {change && <span className="an-irc">{changeWords(change, false, bar.tempo?.beatUnit).join(' ')}</span>}
                                 {bar.fermatas.length > 0 && <span className="an-irf" aria-hidden="true">𝄐</span>}

@@ -1,7 +1,7 @@
 // The small pieces of the design (styles/base.css): switch, segmented choice, stepper, chip, "soon", the search
 // field, the avatar, the inline confirmation of a dangerous step.
 
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon, type IconName } from './Icon';
 
@@ -80,8 +80,11 @@ export function Avatar({ person, size }: { person: { id: string; name: string; p
 /** A dangerous step asked again in place: the text and the choices, each in red, and Cancel. */
 export function Confirm({ text, choices, onCancel }: { text: string; choices: [string, () => void][]; onCancel: () => void }) {
     const { t } = useTranslation();
+    // asked where it was pressed: brought whole into view (at a page's bottom, its buttons would be below the screen)
+    const box = useRef<HTMLDivElement>(null);
+    useEffect(() => box.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), []);
     return (
-        <div className="confirm">
+        <div className="confirm" ref={box}>
             <p>{text}</p>
             <div className="chips">
                 {choices.map(([label, run]) => <button type="button" key={label} className="btn dan" onClick={run}>{label}</button>)}

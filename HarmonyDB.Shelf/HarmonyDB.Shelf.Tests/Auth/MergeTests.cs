@@ -45,6 +45,8 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         Assert.Equal(["dev"], question.MergeCandidate!.Providers);
         var candidate = question.MergeCandidate;
         Assert.Equal((1, 0, 2, 0, 0), (candidate.OwnedPlaylists, candidate.JoinedPlaylists, candidate.Marks, candidate.Keys, candidate.Notes));
+        // the own chords' store is not configured here: their number is not known
+        Assert.Null(candidate.OwnChords);
 
         var merged = await first.SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/merge");
         Assert.Equal(HttpStatusCode.OK, merged.StatusCode);

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useChordsView } from '../../chords/view';
 import { planLabels } from '../fit';
 import { useTranslation } from 'react-i18next';
-import { player, useClock } from '../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../clock';
 import { barAt, type Piece, type Bar, type Part } from '../piece';
 import { ChordLabel, partName, useChangeWords } from '../marks';
 
@@ -101,7 +101,7 @@ export function GridView({ piece }: { piece: Piece }) {
             was.beat = beat;
         }
     }, [piece]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     // the names of a crowded bar: pulled back from its end, smaller, on two lines, without degrees (analysis/fit.ts)
     const view = useChordsView();
@@ -152,11 +152,11 @@ export function GridView({ piece }: { piece: Piece }) {
                                     {Array.from({ length: lead }, (_, e) => <span className="an-gempty" key={`l${e}`} />)}
                                     {slots[bar.index]!.map((parts, k) => (
                                         <button type="button" className="an-gbeat" key={k} ref={el => { (beatEls.current[bar.index] ??= [])[k] = el; }}
-                                            onClick={() => player.playFrom(parts[0]!.time)} title={bar.fermatas.includes(k + 1) ? t('analysis.fermata') : undefined}>
+                                            onClick={() => analysisPlayer.playFrom(parts[0]!.time)} title={bar.fermatas.includes(k + 1) ? t('analysis.fermata') : undefined}>
                                             {bar.fermatas.includes(k + 1) && <span className="an-gferm" aria-hidden="true">𝄐</span>}
                                             {parts.map((slot, j) => (
                                                 <span className="an-gpart" key={j} style={{ flexGrow: slot.share }}
-                                                    onClick={j > 0 ? e => { e.stopPropagation(); player.playFrom(slot.time); } : undefined}>
+                                                    onClick={j > 0 ? e => { e.stopPropagation(); analysisPlayer.playFrom(slot.time); } : undefined}>
                                                     {slot.label ? <ChordLabel name={slot.label} degree={slot.degree} />
                                                         : k === 0 && j === 0 && held ? <span className="an-gheld"><ChordLabel name={held} degree={slot.degree} /></span> : null}
                                                 </span>

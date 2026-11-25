@@ -9,6 +9,7 @@ import { updateSettings, useSettings } from '../data/settings';
 import { Icon } from '../kit/Icon';
 import { fingerings } from './fingerings';
 import { forgetPlayedChord, playChord, usePlayedChord } from './sound';
+import { playFrom } from './time';
 
 export function FingeringWindow() {
     const { t } = useTranslation();
@@ -55,11 +56,17 @@ export function FingeringWindow() {
         <div className="fing" role="dialog" aria-label={t('chords.fingerings.title', { chord: chord.name })}>
             <div className="fh">
                 <b>{chord.name}</b>
-                <button type="button" className="xbtn" aria-label={t('chords.fingerings.again')} title={t('chords.fingerings.again')} onClick={() => playChord(chord.data, chord.name)}>
+                <button type="button" className="xbtn" aria-label={t('chords.fingerings.again')} title={t('chords.fingerings.again')} onClick={() => playChord(chord.data, chord.name, chord.time)}>
                     <Icon name="vol" />
                 </button>
                 <button type="button" className="xbtn" aria-label={t('common.close')} title={t('common.close')} onClick={forgetPlayedChord}><Icon name="x" /></button>
             </div>
+            {chord.time !== null && (
+                <button type="button" className="btn fing-from" onClick={() => {
+                    playFrom(chord.time!);
+                    forgetPlayedChord();
+                }}><Icon name="play" />{t('chords.fingerings.playFrom')}</button>
+            )}
             {pictures === null && <p className="muted small fstate">{t('common.loading')}</p>}
             {pictures === 'failed' && <p className="muted small fstate">{t('chords.fingerings.failed')}</p>}
             {Array.isArray(pictures) && pictures.length === 0 && <p className="muted small fstate">{t('chords.fingerings.none')}</p>}

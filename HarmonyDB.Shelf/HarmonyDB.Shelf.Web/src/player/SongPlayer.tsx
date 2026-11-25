@@ -5,6 +5,7 @@
 //
 //   <SongPlayer song={{ playlistId, songId, share } | null} analysisId={the open variant, when it is an analysis} />
 //   analysisShare={token}: the analysis opened by a share link that carries its sharer's access, read through it
+//   boundTracks: the song's recordings are asked bound to the song (through its link, when it has one): the public page
 
 import { lazy, Suspense } from 'react';
 
@@ -12,7 +13,7 @@ const Body = lazy(() => import('./SongPlayerBody').then(m => ({ default: m.SongP
 
 type SongPath = { playlistId: string; songId: string; share?: string | null };
 
-export function SongPlayer(props: { song: SongPath | null; analysisId: string | null; analysisShare?: string | null }) {
+export function SongPlayer(props: { song: SongPath | null; analysisId: string | null; analysisShare?: string | null; boundTracks?: boolean }) {
     if (!props.song && !props.analysisId) return null;
     return (
         <Suspense fallback={null}>

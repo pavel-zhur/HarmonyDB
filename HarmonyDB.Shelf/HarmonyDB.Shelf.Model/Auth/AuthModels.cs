@@ -118,6 +118,11 @@ public record MergeCandidate
     public required int Keys { get; init; }
 
     public required int Notes { get; init; }
+
+    /// <summary>
+    /// The own chords it wrote, as its list of own chords counts them; null when their store did not answer now.
+    /// </summary>
+    public int? OwnChords { get; init; }
 }
 
 /// <summary>

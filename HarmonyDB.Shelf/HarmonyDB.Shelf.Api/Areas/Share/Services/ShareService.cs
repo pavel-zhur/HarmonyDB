@@ -136,6 +136,34 @@ public sealed class ShareService(
     }
 
     /// <summary>
+    /// The song a link opens: a song's link, its song (or the one it was linked into since; <paramref name="songId"/>,
+    /// when given, must be that one); a playlist's link, the song of that playlist named by <paramref name="songId"/>.
+    /// Whether the caller sees it by the link is the song's read's to tell (the link is passed on as its share).
+    /// </summary>
+    /// <exception cref="ShelfException">404 <c>no_such_link</c>: no such link, or one of chords; 404 <c>no_such_song</c>:
+    /// the link opens no such song.</exception>
+    public async Task<(Guid PlaylistId, Guid SongId)> SongOfLinkAsync(string token, Guid? songId, CancellationToken cancellationToken)
+    {
+        var link = await db.ShareLinks.AsNoTracking().SingleOrDefaultAsync(x => x.Token == token, cancellationToken);
+        switch (link?.Kind)
+        {
+            case ShareTargetKind.Song:
+                var song = await gate.SharedSongAsync(link.SongId!.Value, cancellationToken);
+                if (song == null || song.DeletedAt != null)
+                    throw ShelfException.NotFound(PlaylistErrorCodes.NoSuchLink);
+                if (songId != null && songId != song.Id)
+                    throw ShelfException.NotFound(PlaylistErrorCodes.NoSuchSong);
+                return (song.PlaylistId, song.Id);
+            case ShareTargetKind.Playlist when songId is { } id:
+                return (link.PlaylistId!.Value, id);
+            case ShareTargetKind.Playlist:
+                throw ShelfException.BadRequest();
+            default:
+                throw ShelfException.NotFound(PlaylistErrorCodes.NoSuchLink);
+        }
+    }
+
+    /// <summary>
     /// The id of a link's chords and who they are read for: the link's carried access, or the caller.
     /// </summary>
     /// <exception cref="ShelfException">404 <c>no_such_link</c>; 400 <c>bad_request</c>: the link is not of chords.</exception>

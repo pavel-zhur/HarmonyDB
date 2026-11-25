@@ -39,3 +39,4 @@
 .ai-warn svg.ic { color: var(--danger); margin-top: 1px; }
 .ai-decide { gap: 8px; }
 .ai-inl { padding: 0; font-size: 13px; }
+.ai-puny { display: block; color: var(--danger); font-size: 13px; }

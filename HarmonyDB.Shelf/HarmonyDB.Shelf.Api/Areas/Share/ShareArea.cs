@@ -4,10 +4,12 @@ using HarmonyDB.Shelf.Api.Areas.Chords;
 using HarmonyDB.Shelf.Api.Areas.Media;
 using HarmonyDB.Shelf.Api.Areas.Media.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
+using HarmonyDB.Shelf.Api.Areas.Recordings.Services;
 using HarmonyDB.Shelf.Api.Areas.Share.Services;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Network;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
+using HarmonyDB.Shelf.Model.Media;
 using HarmonyDB.Shelf.Model.Share;
 using Microsoft.Extensions.Options;
 
@@ -69,5 +71,17 @@ public sealed class ShareArea : IShelfArea
             .AllowGuests()
             .RequireRateLimiting(MediaArea.AddressesRateLimit)
             .WithName("GetSharedChordsMedia");
+
+        // a recording of the song the link opens (a song's link, or a playlist's with the song named): only one of the
+        // song's recordings as its recordings read gives them is signed
+        group.MapPost("/{token}/tracks", async (ClaimsPrincipal user, string token, SharedTrackMediaRequest request, ShareService share, SongRecordingsService recordings, CancellationToken cancellationToken) =>
+            {
+                var (playlistId, songId) = await share.SongOfLinkAsync(token, request.SongId, cancellationToken);
+                return await recordings.SignTrackAsync(user, playlistId, songId, token,
+                    new TrackMediaRequest { Service = request.Service, Id = request.Id, Kind = request.Kind }, cancellationToken);
+            })
+            .AllowGuests()
+            .RequireRateLimiting(MediaArea.AddressesRateLimit)
+            .WithName("GetSharedSongTrackMedia");
     }
 }

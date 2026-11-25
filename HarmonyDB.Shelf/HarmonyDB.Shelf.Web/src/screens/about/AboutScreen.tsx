@@ -1,10 +1,11 @@
 // "What the shelf can do": a showcase of everything it does, in groups, each card leading to where it is done ("soon"
 // where it is not there yet); the guest's home shows the most interesting of the same cards. Then the versions.
 
-import { Link } from 'react-router';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Page } from '../../app/panes';
-import { Soon } from '../../kit/controls';
+import { SearchField, Soon } from '../../kit/controls';
 import { Icon, type IconName } from '../../kit/Icon';
 import { Visual, type Card } from '../home/GuestHome';
 import type { en } from '../../i18n/en';
@@ -43,11 +44,30 @@ export function AboutScreen() {
             {groups.map((group, k) => (
                 <section key={group.key}>
                     <h2 className={k ? undefined : 'ab-first'}>{t(`about.groups.${group.key}`)}</h2>
-                    <div className="fgridc">{group.items.map(item => <FeatureCard key={'guest' in item ? item.guest : item.own} item={item} />)}</div>
+                    <div className="fgridc">
+                        {k === 0 && <SearchCard />}
+                        {group.items.map(item => <FeatureCard key={'guest' in item ? item.guest : item.own} item={item} />)}
+                    </div>
                 </section>
             ))}
             <p className="ab-versions"><Link className="btn" to="/versions"><Icon name="clock" />{t('about.versions')}</Link></p>
         </Page>
+    );
+}
+
+/** The first card: the one search, tried right here — the words go to the home's search, where the results come as one types. */
+function SearchCard() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [q, setQ] = useState('');
+    return (
+        <div className="fcard tall">
+            <form className="fvis ab-search" onSubmit={e => { e.preventDefault(); if (q.trim()) navigate(`/?q=${encodeURIComponent(q.trim())}`); }}>
+                <SearchField value={q} onChange={setQ} placeholder={t('home.searchPlaceholder')} />
+                <button type="submit" className="btn pri" disabled={!q.trim()}>{t('about.find')}</button>
+            </form>
+            <span className="fbody"><b>{t('about.cards.search.title')}</b><small>{t('about.cards.search.text')}</small></span>
+        </div>
     );
 }
 

@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../api/client';
 import { errorText } from '../../api/errors';
 import { ListWithSong } from '../../app/panes';
-import { playlistTitle, usePlaylist, type PlaylistDetails } from '../../data/playlists';
+import { playlistTitle, unfollowPlaylist, usePlaylist, type PlaylistDetails } from '../../data/playlists';
+import { useMutation } from '@tanstack/react-query';
 import { useSession } from '../../data/session';
 import { offerSignIn } from '../../data/signInOffer';
 import { Avatar } from '../../kit/controls';
@@ -54,7 +55,7 @@ export function PlaylistScreen() {
 
 function Head({ details, share }: { details: PlaylistDetails; share: string | null }) {
     const { t } = useTranslation();
-    const { signedIn, session } = useSession();
+    const { signedIn } = useSession();
     const p = details.playlist;
     const member = !!p.myRole;
     const settings = `/playlists/${p.id}/settings`;
@@ -66,10 +67,9 @@ function Head({ details, share }: { details: PlaylistDetails; share: string | nu
                     <div className="t" title={playlistTitle(p)}>{playlistTitle(p)}</div>
                     <div className="muted small"><PlaylistMeta playlist={p} /></div>
                 </div>
-                {/* the book is for a profile that has PDF books (a guest is offered signing in there) */}
-                {(!signedIn || session?.permissions.includes('pdf')) && (
-                    <Link className="xbtn" to={`/book?playlist=${p.id}${share ? `&share=${share}` : ''}`} aria-label={t('playlist.book')} title={t('playlist.book')}><Icon name="file" /></Link>
-                )}
+                {/* the book, as the mock-up offers it to everyone: a guest signs in there; a profile without PDF books is
+                    told there what it takes */}
+                <Link className="xbtn" to={`/book?playlist=${p.id}${share ? `&share=${share}` : ''}`} aria-label={t('playlist.book')} title={t('playlist.book')}><Icon name="file" /></Link>
                 {signedIn && member && <Link className="xbtn" to={settings} aria-label={t('playlist.settings')} title={t('playlist.settings')}><Icon name="share" /></Link>}
             </div>
             {member && (
@@ -82,11 +82,19 @@ function Head({ details, share }: { details: PlaylistDetails; share: string | nu
                 <div className="keep">
                     <span>{t('playlists.inLibraryHint')}</span>
                     <InLibrary playlist={p} share={share} />
+                    {p.following && <LetGo id={p.id} />}
                 </div>
             )}
             {p.origin?.canSync && <OriginSync details={details} />}
         </>
     );
+}
+
+/** A playlist followed, let go: it leaves my playlists (Undo in the toast). */
+function LetGo({ id }: { id: string }) {
+    const { t } = useTranslation();
+    const unfollow = useMutation({ mutationFn: unfollowPlaylist });
+    return <button type="button" className="lnk" disabled={unfollow.isPending} onClick={() => unfollow.mutate(id)}>{t('playlists.letGo')}</button>;
 }
 
 /** A private playlist opened by a guest: a lock, and signing in. */

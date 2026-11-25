@@ -10,7 +10,7 @@ export const signIn = {
             yandex: 'Войти через Яндекс',
             dev: 'Войти тестовым человеком',
         },
-        devName: 'Имя тестового человека или id аккаунта',
+        devName: 'Имя или id аккаунта',
         notNow: 'Не сейчас',
         signedIn: 'Вы вошли',
         signedOut: 'Вы вышли',

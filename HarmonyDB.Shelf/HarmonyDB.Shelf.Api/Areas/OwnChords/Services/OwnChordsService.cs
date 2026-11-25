@@ -52,6 +52,12 @@ public sealed class OwnChordsService(
         return new() { Items = stored.Select((x, i) => ToItem(x, ids[i])).ToList() };
     }
 
+    /// <summary>
+    /// How many own chords an account has: as many as its list (<see cref="ListAsync"/>) holds.
+    /// </summary>
+    public async Task<int> CountAsync(Guid accountId, CancellationToken cancellationToken)
+        => (await store.ListAsync(await AuthorAsync(accountId, cancellationToken), cancellationToken)).Count;
+
     public async Task<OwnChordsDetails> GetAsync(ClaimsPrincipal user, Guid id, CancellationToken cancellationToken)
     {
         var stored = await store.GetAsync(await AuthorAsync(user, cancellationToken), id, cancellationToken)
@@ -211,12 +217,14 @@ public sealed class OwnChordsService(
     /// <summary>
     /// The person as an author of own chords: their account and the Telegram users their Telegram sign-ins are.
     /// </summary>
-    private async Task<OwnChordsAuthor> AuthorAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    private Task<OwnChordsAuthor> AuthorAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+        => AuthorAsync(user.GetAccountId()!.Value, cancellationToken);
+
+    private async Task<OwnChordsAuthor> AuthorAsync(Guid accountId, CancellationToken cancellationToken)
     {
-        var me = user.GetAccountId()!.Value;
-        var subjects = await db.AccountLogins.Where(x => x.AccountId == me && x.Provider == TelegramProvider)
+        var subjects = await db.AccountLogins.Where(x => x.AccountId == accountId && x.Provider == TelegramProvider)
             .Select(x => x.Subject).ToListAsync(cancellationToken);
-        return new(me, subjects.Select(x => long.Parse(x, CultureInfo.InvariantCulture)).ToList());
+        return new(accountId, subjects.Select(x => long.Parse(x, CultureInfo.InvariantCulture)).ToList());
     }
 
     private const string TelegramProvider = "telegram";

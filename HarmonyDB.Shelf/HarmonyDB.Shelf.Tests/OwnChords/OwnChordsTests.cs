@@ -11,6 +11,7 @@ using HarmonyDB.Shelf.Tests.Api;
 using HarmonyDB.Shelf.Tests.Auth;
 using HarmonyDB.Shelf.Tests.Chords;
 using HarmonyDB.Shelf.Tests.Jobs;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Shelf.Tests.OwnChords;
 
@@ -43,6 +44,23 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
         Assert.Equal([111L, 222L], authors[0].GetProperty("telegramUserIds").EnumerateArray().Select(x => x.GetInt64()).Order());
         Assert.Equal(withoutTelegram, authors[1].GetProperty("accountId").GetGuid());
         Assert.Empty(authors[1].GetProperty("telegramUserIds").EnumerateArray());
+    }
+
+    [DatabaseFact]
+    public async Task AnAccountsOwnChordsAreCountedAsItsListHoldsThem()
+    {
+        var account = await fixture.AccountAsync(("telegram", "333"));
+        var text = new StoredText(["Artist"], "Title", ">Am\nla", StoredVisibility.Private, null, null, null, null);
+        StoredOwnChords Stored() => new(Guid.NewGuid(), text, 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new($"https://own.example/{Guid.NewGuid()}"), 333, null, null);
+        fixture.Store.Answer = (operation, _) => operation == "OwnList"
+            ? (HttpStatusCode.OK, new { items = new[] { Stored(), Stored(), Stored() } })
+            : (HttpStatusCode.NotFound, null);
+
+        await using var scope = fixture.Api.Services.CreateAsyncScope();
+        Assert.Equal(3, await scope.ServiceProvider.GetRequiredService<OwnChordsService>().CountAsync(account, CancellationToken.None));
+        var author = fixture.Store.Requests.Last(x => x.Operation == "OwnList").Body.GetProperty("author");
+        Assert.Equal(account, author.GetProperty("accountId").GetGuid());
+        Assert.Equal([333L], author.GetProperty("telegramUserIds").EnumerateArray().Select(x => x.GetInt64()));
     }
 
     [DatabaseFact]

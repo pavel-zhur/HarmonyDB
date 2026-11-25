@@ -93,5 +93,10 @@
 .an-smeasure { position: absolute; cursor: pointer; border-radius: 4px; }
 .an-smeasure.now { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 0 -2px 0 var(--accent); }
 
-/* a lit bar brought into sight stops clear of the player at the bottom (follow.ts) */
-.an-gbar, .an-irb, .an-smeasure, .ls-barbg { scroll-margin: 12px 0 96px; }
+/* the analysis in one line, above its views */
+.an-hint { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin: 0 0 10px; padding: 0 var(--gr) 0 var(--gl); }
+.an-hint svg.ic { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--accent); }
+
+/* every view keeps the page's side gutters (the text's sheet has its own) */
+.an-rtabs { padding: 0 var(--gr) 0 var(--gl); }
+.an-vbody > :not(.sheetbox) { margin-left: var(--gl); margin-right: var(--gr); }

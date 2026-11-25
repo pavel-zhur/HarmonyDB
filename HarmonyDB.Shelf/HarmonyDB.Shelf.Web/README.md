@@ -197,6 +197,15 @@ scripts, styles, fonts and connections; pictures also from https; `frame-ancesto
 referrer policy. No inline script or style in the page: a new need (a picture from elsewhere, a player) is a change of
 the policy there, said in the review.
 
+Framing. The app, when framed, is only ever the guest's preview of a link ("how a guest sees it"): a page framed by
+the app's preview page runs as a guest (no credentials, no storage of the person's, no worker of its own, nothing
+written); a page framed in any other way does not run at all — one plain line (`src/app/guestMode.ts`, decided first
+in `main.tsx`). **This in-page rule is the guard**: the service worker answers navigations with its kept page, whose
+headers are the page's, not those of the address asked for, so headers cannot hold a page behind it. The headers stay
+as defence in depth: the app's page may be framed by the same origin only (`docker/security-framed-by-self.conf`),
+the consent page (`/connect`, matched as the router matches it), the API and every other file by no one
+(`security.conf`).
+
 ## The consent page of the MCP's sign-in (a later unit)
 
 `/connect` (its place is in `app/routes.tsx`): the server's `/oauth/authorize` sends the person here to choose what a

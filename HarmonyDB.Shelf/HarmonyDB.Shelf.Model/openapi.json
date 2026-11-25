@@ -5067,6 +5067,73 @@
         }
       }
     },
+    "/api/recordings/playlists/{playlistId}/songs/{songId}/media": {
+      "post": {
+        "tags": [
+          "Recordings"
+        ],
+        "operationId": "GetSongRecordingMedia",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "songId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "share",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackMediaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAddress"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recordings/playlists/{playlistId}/songs/{songId}/find": {
       "post": {
         "tags": [
@@ -5457,6 +5524,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChordsMedia"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/{token}/tracks": {
+      "post": {
+        "tags": [
+          "Share"
+        ],
+        "operationId": "GetSharedSongTrackMedia",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedTrackMediaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAddress"
                 }
               }
             }
@@ -7741,6 +7858,11 @@
           "notes": {
             "type": "integer",
             "format": "int32"
+          },
+          "ownChords": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9840,6 +9962,31 @@
           },
           "carriesAccess": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SharedTrackMediaRequest": {
+        "required": [
+          "id",
+          "kind",
+          "service"
+        ],
+        "type": "object",
+        "properties": {
+          "songId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "service": {
+            "$ref": "#/components/schemas/MusicService"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MediaKind"
           }
         },
         "additionalProperties": false

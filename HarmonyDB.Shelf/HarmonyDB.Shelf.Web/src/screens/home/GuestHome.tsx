@@ -42,6 +42,22 @@ export function GuestHome() {
                 <span>{t('guest.welcomeText')}</span>
             </div>
             {biggest && <TryNow playlistId={biggest.id} />}
+            <Invitations />
+            {!!playlists.data?.length && (
+                <>
+                    <h2>{t('guest.publicPlaylists')}</h2>
+                    <div className="pls">{playlists.data.map(p => <PlaylistLine key={p.id} playlist={p} />)}</div>
+                </>
+            )}
+        </>
+    );
+}
+
+/** What can be done here, and the quiet offer to sign in: the guest's home, and where a guest closed the chords. */
+export function Invitations() {
+    const { t } = useTranslation();
+    return (
+        <>
             <h2>{t('guest.whatHere')}</h2>
             <div className="fgridc">
                 {cards.map(card => (
@@ -58,12 +74,6 @@ export function GuestHome() {
                 <div><b>{t('guest.ctaTitle')}</b><span className="muted">{t('guest.ctaText')}</span></div>
                 <button type="button" className="btn pri" onClick={() => offerSignIn()}>{t('nav.signIn')}</button>
             </div>
-            {!!playlists.data?.length && (
-                <>
-                    <h2>{t('guest.publicPlaylists')}</h2>
-                    <div className="pls">{playlists.data.map(p => <PlaylistLine key={p.id} playlist={p} />)}</div>
-                </>
-            )}
         </>
     );
 }

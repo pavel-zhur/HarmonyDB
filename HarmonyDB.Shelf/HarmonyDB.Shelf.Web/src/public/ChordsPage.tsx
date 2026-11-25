@@ -1,6 +1,6 @@
 // What the public page opens: chords — an analysis with the app's views of it (the text with chords first) and the
 // player of its recording, the views following the music; other chords as their text with chords. A song shows its
-// chords; a playlist (by a link) its songs.
+// chords (a song of recordings only, them and their player); a playlist (by a link) its songs.
 //
 //   /songs/:songId           a song of the showcase (the open playlist of analyses)
 //   /chords/:chordsId        chords by their id (an analysis: open to all)
@@ -24,6 +24,7 @@ import { ToTop } from '../app/ToTop';
 import { Icon } from '../kit/Icon';
 import { Invite } from './PublicFrame';
 import { PlaylistSongs } from './Songs';
+import { SongRecordings } from '../screens/recordings/SongRecordings';
 import { appAddress, useShowcase } from './site';
 import '../screens/song/song.css';
 
@@ -64,7 +65,7 @@ export function SharePage() {
     if (!v) return <Message><p className="loading">{t('common.loading')}</p></Message>;
     // chords by a link: read through it, as the one who shared them saw them
     if (v.kind === 'chords' && v.chords) return <Chords chordsId={v.chords.id} share={token} inApp={inApp} />;
-    if (v.kind === 'song' && v.song) return <Song page={v.song} inApp={inApp} />;
+    if (v.kind === 'song' && v.song) return <Song page={v.song} inApp={inApp} share={token} />;
     if (v.kind === 'playlist' && v.playlist) {
         return (
             <Message>
@@ -89,14 +90,15 @@ function SongInPlaylist({ playlistId, songId, share }: { playlistId: string; son
     if (song.isError) return <Message><p className="failed">{errorText(song.error)}</p></Message>;
     if (!song.data) return <Message><p className="loading">{t('common.loading')}</p></Message>;
     const inApp = `/playlists/${playlistId}/songs/${songId}${share ? `?share=${encodeURIComponent(share)}` : ''}`;
-    return <Song page={song.data} inApp={inApp} />;
+    return <Song page={song.data} inApp={inApp} share={share} />;
 }
 
-/** A song: its chords that open (an analysis first), under the song's own title. */
-function Song({ page, inApp }: { page: SongPage; inApp: string }) {
+/** A song: its chords that open (an analysis first), under the song's own title; a song of recordings only, them. */
+function Song({ page, inApp, share }: { page: SongPage; inApp: string; share?: string }) {
     const { t } = useTranslation();
     const open = page.variants.filter(x => x.chords.state === 'open');
     const variant = open.find(x => isAnalysis(x.chords.header?.kinds)) ?? open[0] ?? page.variants[0];
+    if (!variant && page.recordings.length) return <RecordingsSong page={page} inApp={inApp} share={share} />;
     if (!variant) return <Message><Title title={page.song.title} artists={page.song.artists.join(', ')} /><p className="muted">{t('song.chords.noSheet')}</p></Message>;
     return <Chords chordsId={variant.chords.id} inApp={inApp} title={page.song.title} artists={page.song.artists} />;
 }
@@ -159,6 +161,35 @@ function Chords({ chordsId, share, inApp, title, artists }: { chordsId: string; 
                 <div className="songfoot">
                     <ToTop />
                     {analysis && <SongPlayer song={null} analysisId={chordsId} analysisShare={share} />}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/** A song that holds only recordings: them, to listen to, with the player. */
+function RecordingsSong({ page, inApp, share }: { page: SongPage; inApp: string; share?: string }) {
+    const song = { playlistId: page.song.playlistId, songId: page.song.id, share: share ?? null };
+    const artists = page.song.artists.join(', ');
+    useEffect(() => {
+        document.title = [artists, page.song.title].filter(Boolean).join(' — ');
+    }, [artists, page.song.title]);
+    return (
+        <div className="pane song">
+            <div className="songpage">
+                <div className="hero">
+                    <div className="htop">
+                        <div className="t">
+                            <div className="a">{artists}</div>
+                            <div className="n">{page.song.title}</div>
+                        </div>
+                    </div>
+                    <SongRecordings song={song} analysed readOnly />
+                </div>
+                <div className="pub-gutter"><Invite to={appAddress(inApp)} /></div>
+                <div className="songfoot">
+                    <ToTop />
+                    <SongPlayer song={song} analysisId={null} boundTracks />
                 </div>
             </div>
         </div>

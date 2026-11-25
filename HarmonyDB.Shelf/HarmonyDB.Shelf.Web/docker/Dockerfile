@@ -39,5 +39,5 @@ COPY --from=build /web/dist/favicon.png /web/dist/icon-192.png /web/dist/icon-51
 # The app (the last stage: what a build without a target makes)
 FROM nginx:1.27.5-alpine AS app
 COPY docker/app.nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/security.conf /etc/nginx/snippets/security.conf
+COPY docker/security.conf docker/security-framed-by-self.conf /etc/nginx/snippets/
 COPY --from=build /web/dist /usr/share/nginx/html

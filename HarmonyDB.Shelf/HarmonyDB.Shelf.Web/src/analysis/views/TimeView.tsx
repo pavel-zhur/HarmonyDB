@@ -7,7 +7,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { player, useClock, usePlayer } from '../../player/controller';
+import { player, usePlayer } from '../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../clock';
 import { chordAt, sectionAt, type Piece } from '../piece';
 import { ChordLabel, useChangeWords } from '../marks';
 import { useRedraw } from '../redraw';
@@ -146,7 +147,7 @@ export function TimeView({ piece }: { piece: Piece }) {
             if (x < left + vw * 0.1 || x > left + vw * 0.8) box.scrollLeft = Math.max(0, x - vw * 0.3);
         }
     }, [piece, pps]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     // ---- pointers: a tap goes there; a drag (the mouse) or a hold and drag (a finger) makes a loop --------------
     const timeAt = (clientX: number) => {
@@ -194,10 +195,10 @@ export function TimeView({ piece }: { piece: Piece }) {
         if (p.drawing && p.moved) {
             const at = snap(piece, timeAt(e.clientX));
             const start = Math.min(p.t, at), end = Math.max(p.t, at);
-            if (end - start >= 0.1) player.setLoop(start, end);
+            if (end - start >= 0.1) analysisPlayer.setLoop(start, end);
             return;
         }
-        if (!p.moved && e.type === 'pointerup') player.playFrom(timeAt(e.clientX));
+        if (!p.moved && e.type === 'pointerup') analysisPlayer.playFrom(timeAt(e.clientX));
     };
 
     // two fingers zoom; Ctrl and the wheel too
@@ -262,7 +263,7 @@ export function TimeView({ piece }: { piece: Piece }) {
                             {piece.sections.map((s, i) => (
                                 <button type="button" key={i} ref={el => { sectionEls.current[i] = el; }} className={`an-sk an-sk-${s.label ?? 'other'}`}
                                     style={{ left: s.start * pps, width: Math.max(2, (s.end - s.start) * pps - 2) }} title={s.name}
-                                    onPointerDown={e => e.stopPropagation()} onClick={() => player.playFrom(s.start)}>{s.name}</button>
+                                    onPointerDown={e => e.stopPropagation()} onClick={() => analysisPlayer.playFrom(s.start)}>{s.name}</button>
                             ))}
                         </div>
                     )}
@@ -286,7 +287,7 @@ export function TimeView({ piece }: { piece: Piece }) {
                         {piece.chords.map((c, i) => (
                             <button type="button" key={i} ref={el => { chordEls.current[i] = el; }} className={c.name ? 'an-tch' : 'an-tch nc'}
                                 style={{ left: c.start * pps, width: Math.max(2, (c.end - c.start) * pps - 2) }}
-                                title={c.name ?? ''} onPointerDown={e => e.stopPropagation()} onClick={() => player.playFrom(c.start)}>
+                                title={c.name ?? ''} onPointerDown={e => e.stopPropagation()} onClick={() => analysisPlayer.playFrom(c.start)}>
                                 {c.name ? <ChordLabel name={c.name} degree={c.degree} /> : c.kind === 'stop' ? '‖' : 'N.C.'}
                             </button>
                         ))}

@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '../app/toasts';
 import { Qr } from './Qr';
 
-/** A link to give: the address, Copy, its QR code and a note beside it. */
-export function LinkBox({ link, note }: { link: string; note?: string }) {
+/** The link with Copy and its QR code; `children`: what stands between them (the share box's buttons). */
+export function LinkBox({ link, note, children }: { link: string; note?: string; children?: ReactNode }) {
     const { t } = useTranslation();
     const copy = async () => {
         await navigator.clipboard.writeText(link);
@@ -12,6 +13,7 @@ export function LinkBox({ link, note }: { link: string; note?: string }) {
     return (
         <>
             <div className="linkbox"><code>{link}</code><button type="button" className="btn" onClick={() => void copy()}>{t('common.copy')}</button></div>
+            {children}
             <div className="qr"><Qr text={link} />{note && <div className="small muted">{note}</div>}</div>
         </>
     );

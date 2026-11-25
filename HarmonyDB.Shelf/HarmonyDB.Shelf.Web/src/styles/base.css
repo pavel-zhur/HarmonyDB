@@ -164,3 +164,4 @@ textarea.field { resize: vertical; min-height: 80px; }
 .locked h1 { margin: 10px 0 6px; }
 .locked p { margin: 0 0 10px; }
 .lockic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--surface2); color: var(--muted); }
+.framed { padding: 20px 16px; color: var(--muted); }

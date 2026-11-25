@@ -1,5 +1,5 @@
-// What is done with chords and variants, each behind its button: sharing the chords (the link, its QR code; Telegram
-// "soon"), adding what one sees to one's own playlist, and the variant's menu "⋯" (my main variant, linking,
+// What is done with chords and variants, each behind its button: sharing the chords (the link, Telegram "soon", their
+// PDF, the QR code, the link that opens without the app), adding what one sees to one's own playlist, and the variant's menu "⋯" (my main variant, linking,
 // separating, removing, editing my chords).
 
 import { useEffect, useState } from 'react';
@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
-import { playlistTitle } from '../../data/playlists';
+import { playlistTitle, useJob } from '../../data/playlists';
+import { jobFileUrl, makeBook, resultOf } from '../../data/jobs';
 import { useConfiguration, useSession } from '../../data/session';
 import { toast } from '../../app/toasts';
 import { addToPlaylist, makeStaticLink, removeStaticLink, removeVariant, useChordsPlaces, useStaticLink, setMainVariant, shareLink, unlinkVariant, useOwnChords, type ChordsVariant, type SongPage } from '../../data/song';
@@ -19,10 +20,14 @@ import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
 import { startLinking } from './linking';
 import { useWide } from '../../app/layout';
 
-/** What a link gives: the song in its playlist (with its variants), or chords alone. */
+/** Where the shared chords are: in a song of a playlist (the link keeps the song around them), or alone. */
 export type ShareTarget = { kind: 'song'; playlistId: string; songId: string; share: string | null } | { kind: 'chords'; chords: string };
 
-/** The link to the song (from a song) or to the chords (chords alone), with its QR code; Telegram is "soon". */
+/**
+ * Sharing the chords open (the mock-up's box): their title, the link with Copy, Telegram ("soon") and their PDF, the QR
+ * code, and below the link that opens without the app. From a song the link is the song's — whoever opens it sees these
+ * chords and the song's other open variants around them, not whose playlist it is — and it opens on these chords.
+ */
 export function SharePop({ anchor, onClose, target, title, chords }: {
     anchor: HTMLElement | null; onClose: () => void; target: ShareTarget; title: string;
     /** the chords open (from a song: its open variant's), their id and their source's own address */
@@ -31,32 +36,68 @@ export function SharePop({ anchor, onClose, target, title, chords }: {
     const { t } = useTranslation();
     const [link, setLink] = useState<string | null>(null);
     const [failed, setFailed] = useState<unknown>(null);
+    const { signedIn } = useSession();
+    const navigate = useNavigate();
     useEffect(() => {
         if (!anchor) return;
         let gone = false;
         shareLink(target.kind === 'song'
             ? { kind: 'song', playlistId: target.playlistId, songId: target.songId, share: target.share, carriesAccess: false }
             : { kind: 'chords', chords: target.chords, carriesAccess: false })
-            .then(x => !gone && setLink(x))
+            .then(x => !gone && setLink(target.kind === 'song' ? `${x}?chords=${encodeURIComponent(chords.id)}` : x))
             .catch(error => !gone && setFailed(error));
         return () => {
             gone = true;
         };
         // the same target: the same link (its parts, not the object made anew at each render)
-    }, [anchor, target.kind, target.kind === 'song' ? target.songId : target.chords]);
+    }, [anchor, target.kind, target.kind === 'song' ? target.songId : target.chords, chords.id]);
     return (
         <Popover anchor={anchor} onClose={onClose} width={320} label={t('song.share.title')}>
             <div className="sharepop">
                 <b>{title}</b>
-                <div className="muted small">{t(target.kind === 'song' ? 'song.share.openSong' : 'song.share.open')}</div>
-                <p className="tgrow"><button type="button" className="btn tg" disabled><Icon name="tg" />{t('song.share.telegram')}</button> <Soon /></p>
-                {link && <LinkBox link={link} note={t(target.kind === 'song' ? 'song.share.qrSong' : 'song.share.qr')} />}
+                <div className="muted small">{t('song.share.open')}</div>
+                {link && (
+                    <LinkBox link={link} note={t('song.share.qr')}>
+                        <p className="tgrow"><button type="button" className="btn tg" disabled><Icon name="tg" />{t('song.share.telegram')}</button><Soon /><Pdf chordsId={chords.id} /></p>
+                    </LinkBox>
+                )}
                 {!link && !failed && <p className="loading">{t('common.loading')}</p>}
                 {failed !== null && <p className="failed">{errorText(failed)}</p>}
+                {link && signedIn && (
+                    <p className="guestp"><button type="button" className="btn" onClick={() => { onClose(); navigate(guestAddress(link)); }}><Icon name="eye" />{t('song.share.guest.button')}</button></p>
+                )}
                 {anchor && <StaticLink chords={chords} />}
             </div>
         </Popover>
     );
+}
+
+/** The chords as a PDF (the book of one item; it needs the permission for PDFs): made on asking, then downloaded. */
+function Pdf({ chordsId }: { chordsId: string }) {
+    const { t } = useTranslation();
+    const { session } = useSession();
+    const [jobId, setJobId] = useState<string | null>(null);
+    const make = useMutation({
+        mutationFn: () => makeBook({ items: [{ chordsId, twoColumns: false }], options: { contents: false, renumber: false } }),
+        onSuccess: job => setJobId(job.id),
+    });
+    const job = useJob(jobId);
+    const made = resultOf(job.data, 'book');
+    if (!session?.permissions.includes('pdf')) return null;
+    if (made && job.data) return <a className="btn" href={jobFileUrl(job.data.id)} download><Icon name="file" />{t('song.share.pdfReady')}</a>;
+    const busy = make.isPending || (!!job.data && job.data.status !== 'failed');
+    return (
+        <>
+            <button type="button" className="btn" disabled={busy} onClick={() => make.mutate()}><Icon name="file" />{busy ? t('song.share.pdfMaking') : t('song.share.pdf')}</button>
+            {(make.isError || job.data?.status === 'failed') && <span className="failed small">{make.isError ? errorText(make.error) : t('song.share.pdfFailed')}</span>}
+        </>
+    );
+}
+
+/** The guest's preview of a link of the app (/s/<token>[?chords=…] → /s/<token>/guest[?chords=…]). */
+function guestAddress(link: string): string {
+    const url = new URL(link);
+    return `${url.pathname}/guest${url.search}`;
 }
 
 /**

@@ -20,18 +20,31 @@ export function Popover({ anchor, onClose, width = 330, children, label }: { anc
     const box = useRef<HTMLDivElement>(null);
     const [style, setStyle] = useState<React.CSSProperties>({ visibility: 'hidden' });
 
+    // under the anchor, or over it near the bottom; content taller than that side's room goes to the side where it fits,
+    // and content that fits on neither is kept whole in the window (over the anchor) — placed again as it grows
     useLayoutEffect(() => {
         if (!anchor) return;
-        const z = zoom();
-        const r = anchor.getBoundingClientRect();
-        const vw = innerWidth / z, vh = innerHeight / z;
-        const w = Math.min(width, vw - 16);
-        const x = r.left / z, top = r.top / z, bottom = r.bottom / z;
-        const left = Math.max(8, Math.min(x, vw - w - 8));
-        const below = vh - bottom > 320 || bottom < vh / 2;
-        setStyle(below
-            ? { left, width: w, top: bottom + 6, maxHeight: vh - bottom - 16 }
-            : { left, width: w, bottom: vh - top + 6, maxHeight: top - 16 });
+        const place = () => {
+            const z = zoom();
+            const r = anchor.getBoundingClientRect();
+            const vw = innerWidth / z, vh = innerHeight / z;
+            const w = Math.min(width, vw - 16);
+            const x = r.left / z, top = r.top / z, bottom = r.bottom / z;
+            const left = Math.max(8, Math.min(x, vw - w - 8));
+            const need = box.current?.scrollHeight ?? 0;
+            const roomBelow = vh - bottom - 16, roomAbove = top - 16;
+            const below = vh - bottom > 320 || bottom < vh / 2;
+            const next: React.CSSProperties = need <= (below ? roomBelow : roomAbove)
+                ? (below ? { left, width: w, top: bottom + 6, maxHeight: roomBelow } : { left, width: w, bottom: vh - top + 6, maxHeight: roomAbove })
+                : need <= roomBelow ? { left, width: w, top: bottom + 6, maxHeight: roomBelow }
+                : need <= roomAbove ? { left, width: w, bottom: vh - top + 6, maxHeight: roomAbove }
+                : { left, width: w, top: Math.max(8, vh - need - 8), maxHeight: vh - 16 };
+            setStyle(previous => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
+        };
+        place();
+        const changes = new MutationObserver(place);
+        if (box.current) changes.observe(box.current, { childList: true, subtree: true, characterData: true });
+        return () => changes.disconnect();
     }, [anchor, width]);
 
     useEffect(() => {

@@ -5,6 +5,19 @@
 .songpage { padding-bottom: 0; }
 .songpage > .songfoot { margin-top: 96px; }
 
+/* A short page (the chords closed) still has its foot — the player — at the bottom of the screen: the song's column
+   fills the screen at least (wide: the song's pane, which scrolls; phone: the scrolling middle under the header), and
+   the foot goes to its end. */
+.pane.song { display: flex; flex-direction: column; }
+.pane.song > .songpage { flex: 1 0 auto; display: flex; flex-direction: column; }
+.pane.song > .songpage > * { flex: none; }
+.pane.song > .songpage > .songfoot { margin-top: auto; }
+.pane.song > .songpage > :has(+ .songfoot) { margin-bottom: 96px; }
+@media (max-width: 959px) {
+    .mid:has(.pane.song .songpage) { display: flex; flex-direction: column; }
+    .mid:has(.pane.song .songpage) > .main, .main:has(.pane.song .songpage) > .lib, .lib.open:has(.songpage) > .pane.song { flex: 1 0 auto; display: flex; flex-direction: column; }
+}
+
 .hero { position: relative; padding: 18px var(--gr) 12px var(--gl); overflow: hidden; }
 .hero .bgart { position: absolute; inset: 0; background: center / cover; opacity: .4; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
 .hero > *:not(.bgart) { position: relative; }
@@ -20,14 +33,19 @@
 
 /* the variants */
 .vlab { font-size: 11px; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin: 12px 0 3px; }
-.vrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid transparent; box-shadow: 0 1px 2px rgba(13, 20, 48, .06); margin-bottom: 8px; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); cursor: pointer; color: var(--ink); }
-.vrow.on { background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+/* plain lines, only the open one lit (the mock-up's own look) */
+.vrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: calc(100% + 20px); margin: 0 -10px 1px; text-align: left; padding: 5px 4px 5px 10px; border-radius: 8px; background: none; border: 0; font-size: 14px; cursor: pointer; color: var(--muted); }
+.vrow:hover { background: color-mix(in srgb, var(--surface2) 70%, transparent); }
+.vrow.on { background: color-mix(in srgb, var(--surface2) 85%, transparent); box-shadow: inset 3px 0 0 var(--accent); color: var(--ink); }
 .vrow .l { font-weight: 700; }
 .vrow.on .l { color: var(--accent); }
-.vrow .slogo { width: 22px; height: 22px; border-radius: 5px; }
+.vrow .slogo { width: 18px; height: 18px; border-radius: 4px; }
 .vrow .rt { font-size: 12px; opacity: .8; }
 .vrow .na { font-size: 12.5px; color: var(--muted); }
 .vrow .pin { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; opacity: .7; }
+.vrow .pp { background: none; padding: 0 6px 0 0; font-size: 12px; color: var(--muted); }
+.vrow .vm { opacity: .55; }
+.vrow:hover .vm, .vrow.on .vm { opacity: 1; }
 .vrow .aka { flex-basis: 100%; font-size: 12.5px; color: var(--muted); margin-top: -2px; order: 2; }
 .vrow .vm { order: 1; }
 .vrow > svg.ic { color: var(--muted); }
@@ -84,10 +102,14 @@ button.plb:hover, .plb.on { color: var(--accent); }
 .kchip.ask { color: var(--accent); }
 .kchip svg.ic { width: 14px; height: 14px; }
 .quiet { display: flex; flex-wrap: wrap; gap: 0; align-items: center; }
-.quiet > button { display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; min-height: 34px; border-radius: 10px; color: var(--muted); }
+.quiet > button { display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; min-height: 34px; border-radius: 8px; color: var(--muted); }
 .quiet > button:hover { background: var(--surface2); }
 .quiet > button.on { background: var(--accent-soft); color: var(--accent); }
-.quiet svg.ic { width: 18px; height: 18px; }
+.quiet svg.ic { width: 20px; height: 20px; }
+/* the row of the chords' switches: even, calm steps (the mock-up's) */
+.quiet.eq { gap: 6px; flex-wrap: nowrap; }
+.quiet.eq > button { width: 38px; height: 34px; padding: 0; }
+@media (max-width: 959px) { .quiet.eq { gap: 4px; } }
 .rx { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 1px 9px 1px 7px; border-radius: 999px; background: var(--surface2); font-size: 15px; }
 .rx.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .rx.add { color: var(--muted); font-size: 13.5px; font-weight: 500; padding: 1px 10px; }
@@ -127,11 +149,12 @@ button.plb:hover, .plb.on { color: var(--accent); }
 /* nothing in it goes sideways on a narrow phone: the link breaks anywhere, the QR code's note goes under it when it must */
 .sharepop { min-width: 0; }
 .sharepop .linkbox code { min-width: 0; }
-.sharepop .qr { flex-wrap: wrap; }
+.sharepop .qr { margin-top: 6px; }
+.sharepop .qr > :last-child { min-width: 0; }
 .pop:has(> .sharepop) { overflow-x: hidden; }
 .sharepop .staticlink { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .sharepop .staticlink p { margin: 0; }
-.sharepop .tgrow { margin: 6px 0 0; display: flex; align-items: center; gap: 8px; }
+.sharepop .tgrow { margin: 6px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .it2 { display: flex; align-items: center; }
 .it2 .it { flex: 1; min-width: 0; }
 .it2 .goto { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); flex: none; }
@@ -167,3 +190,21 @@ button.plb:hover, .plb.on { color: var(--accent); }
 .songfoot { position: sticky; bottom: 0; z-index: 4; }
 .songfoot .pl-bar { position: relative; }
 .songfoot > .totop { position: absolute; right: var(--gr); bottom: calc(100% + 12px); margin: 0; }
+
+/* the quiet links under the variants (SongLinks.tsx), as the mock-up's */
+.il-links { margin-top: 4px; }
+.il-links .lnk { color: var(--muted); font-size: 12.5px; padding: 5px 0; font-weight: 400; }
+.il-links .lnk:hover { color: var(--accent); }
+.il-links .lnk svg.ic { width: 14px; height: 14px; }
+.il-links .lnk.off { cursor: default; gap: 6px; }
+.il-links .lnk.off:hover { color: var(--muted); }
+
+/* the guest's preview (screens/share/GuestPreview.tsx): the band (what it is, the way back) over the app as a guest's */
+.guestpreview { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.guestpreview iframe { flex: 1; min-height: 0; width: 100%; border: 0; display: block; background: var(--bg); }
+/* on a phone the page scrolls as a whole: the frame is a screen tall */
+@media (max-width: 959px) { .guestpreview iframe { flex: none; height: 100dvh; } }
+.guestframe { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px var(--gr) 10px var(--gl); background: var(--accent-soft); color: var(--accent); font-size: 13.5px; font-weight: 500; }
+.guestframe > span { flex: 1; min-width: 0; }
+.guestframe svg.ic { width: 18px; height: 18px; flex: none; }
+.sharepop .guestp { margin: 6px 0 0; }

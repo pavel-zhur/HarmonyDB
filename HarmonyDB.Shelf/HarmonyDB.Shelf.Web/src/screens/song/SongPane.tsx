@@ -13,8 +13,8 @@ import { useQuery } from '@tanstack/react-query';
 import { playlistTitle } from '../../data/playlists';
 import { useProfile, useSession } from '../../data/session';
 import { useSearch } from '../../data/songs';
-import { useChordsContent, useIllustrations, useSongPage, type ChordsVariant, type SongPage } from '../../data/song';
-import { useDrawnIllustrations } from '../../data/illustrations';
+import { useChordsContent, useChordsPlaces, useIllustrations, useSongPage, type ChordsVariant, type SongPage } from '../../data/song';
+import { useDrawnIllustrations, useSongIllustrations } from '../../data/illustrations';
 import { useMarkSign } from '../../data/marks';
 import { local, useLocalView } from '../../local';
 import { Avatar } from '../../kit/controls';
@@ -26,6 +26,8 @@ import { SongRecordings } from '../recordings/SongRecordings';
 import { SongPlayer } from '../../player/SongPlayer';
 import { VariantMenu } from './Actions';
 import { Illustrations } from './Illustrations';
+import { Invitations } from '../home/GuestHome';
+import '../home/home.css';
 import { SongLinks } from './SongLinks';
 import { keyText, letter } from './keys';
 import './song.css';
@@ -86,15 +88,29 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
     const [open, setOpen] = useState<{ itemId: string } | 'illustrations' | null | undefined>(undefined);
     const [shown, setShown] = useState<{ chords: string; semitones: number } | null>(null);
     const [all, setAll] = useState(false);
+    const { signedIn, known } = useSession();
+    // a link shared from these chords (?chords=…) opens on them
+    const [query] = useSearchParams();
+    const linked = query.get('chords');
 
-    // the variant open: chosen here, else my main one, else the first
+    // the variant open: chosen here, else the one the link names, else my main one, else the first
     const variant = page && open !== null && open !== 'illustrations'
-        ? (open ? page.variants.find(v => v.itemId === open.itemId) : undefined) ?? (open === undefined ? firstOpen(page) : null)
+        ? (open ? page.variants.find(v => v.itemId === open.itemId) : undefined)
+            ?? (open === undefined ? page.variants.find(v => v.chords.id === linked) ?? firstOpen(page) : null)
         : null;
     const chordsId = variant?.chords.id ?? null;
     useOpened(chordsId, songId);
-    const illustrations = useDrawnIllustrations(chordsId ?? (page ? firstOpen(page)?.chords.id ?? null : null));
-    const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
+    // the song's illustrations, all its variants' (the open one's first): they stay whichever variant is open
+    const illustrations = useSongIllustrations(page?.variants.filter(v => v.chords.state === 'open').map(v => v.chords.id) ?? [], chordsId);
+    const cover = illustrations.images[0]?.urls['512'] ?? null;
+
+    // the song open here is gone (its last variant removed, here or elsewhere): back to the list, where the toast's
+    // Undo brings it back; a link to a song that was never seen here says it is not there
+    const navigate = useNavigate();
+    const gone = song.isError && !!song.data && song.error instanceof ApiError && song.error.code === 'no_such_song';
+    useEffect(() => {
+        if (gone) navigate(closeTo, { replace: true });
+    }, [gone, closeTo, navigate]);
 
     if (song.isError) {
         // with no connection, a song whose page is not on the device opens as its chords kept, as a tap in the list does
@@ -125,7 +141,8 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
             <div className="hero">
                 <Hero title={page.song.title} artists={page.song.artists} context={context} cover={cover} closeTo={closeTo} />
                 <div className="vers">
-                    <SongRecordings song={{ playlistId, songId, share }} analysed={variants.some(v => !!v.chords.header?.kinds.includes('timeline'))} />
+                    <SongRecordings song={{ playlistId, songId, share }} analysed={variants.some(v => !!v.chords.header?.kinds.includes('timeline'))}
+                        analysisId={variant?.chords.header?.kinds.includes('timeline') ? variant.chords.id : null} />
                     <div className="vlab">{t('song.chordsLabel')}</div>
                     {cut && w0 > 0 && <button type="button" className="lnk more" onClick={() => setAll(true)}><Icon name="up" />{t('song.moreAbove', { count: w0 })}</button>}
                     {variants.map((v, i) => (cut && (i < w0 || i >= w0 + 5)) ? null : (
@@ -134,17 +151,17 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
                             onKey={semitones => setShown({ chords: v.chords.id, semitones })} />
                     ))}
                     {cut && <button type="button" className="lnk more" onClick={() => setAll(true)}><Icon name="down" />{t('song.showAll', { count: variants.length })}</button>}
-                    {(!!illustrations.data?.images.length || !!illustrations.data?.drawing) && (
+                    {(!!illustrations.images.length || illustrations.drawing) && (
                         <button type="button" className={open === 'illustrations' ? 'vrow on' : 'vrow'} onClick={() => setOpen(open === 'illustrations' ? null : 'illustrations')}>
-                            <Icon name="img" /><span>{t('song.illustrations', { count: illustrations.data.images.length })}</span>
+                            <Icon name="img" /><span>{t('song.illustrations', { count: illustrations.images.length })}</span>
                         </button>
                     )}
-                    <SongLinks page={page} from={(variant ?? firstOpen(page))?.chords.state === 'open' ? (variant ?? firstOpen(page))!.chords.id : null} illustrated={!!illustrations.data?.images.length || !!illustrations.data?.drawing} onIllustrations={() => setOpen('illustrations')} />
+                    <SongLinks page={page} share={share ?? null} from={(variant ?? firstOpen(page))?.chords.state === 'open' ? (variant ?? firstOpen(page))!.chords.id : null} illustrated={!!illustrations.images.length || illustrations.drawing} onIllustrations={() => setOpen('illustrations')} />
                 </div>
             </div>
             {open === 'illustrations' && (
                 <Illustrations onClose={() => setOpen(null)}
-                    variants={variants.map((v, i) => ({ chordsId: v.chords.id, label: variants.length > 1 ? `${letter(i)}. ${v.chords.header?.source.title ?? ''}` : null }))} />
+                    variants={variants.flatMap((v, i) => (v.chords.state === 'open' ? [{ chordsId: v.chords.id, label: variants.length > 1 ? `${letter(i)}. ${v.chords.header?.source.title ?? ''}` : null }] : []))} />
             )}
             {variant && (
                 <ChordsView key={variant.chords.id} chordsId={variant.chords.id}
@@ -153,6 +170,7 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
                     onShow={semitones => setShown(semitones === null ? null : { chords: variant.chords.id, semitones })}
                     onClose={() => setOpen(null)} onSwipe={go} />
             )}
+            {!variant && open !== 'illustrations' && !signedIn && known && <div className="guestinv"><Invitations /></div>}
             <SongFoot><SongPlayer song={{ playlistId, songId, share }} analysisId={variant?.chords.header?.kinds.includes('timeline') ? variant.chords.id : null} /></SongFoot>
         </div>
     );
@@ -206,7 +224,7 @@ function VariantRow({ page, variant, index, on, onOpen, onKey }: {
     return (
         <div className={on ? 'vrow on' : 'vrow'} role="button" tabIndex={0} aria-pressed={on} onClick={onOpen} onKeyDown={e => e.key === 'Enter' && e.target === e.currentTarget && onOpen()}>
             <span className="l">{letter(index)}.</span>
-            {header && <SourceIcon source={header.source} />}
+            {header?.source.iconUrl && <SourceIcon source={header.source} />}
             <span>{header?.source.title}</span>
             {variant.chords.state === 'notOpen' && <span className="na">{t('song.chords.notOpenShort')}</span>}
             {variant.chords.state === 'unavailable' && <span className="na">{t('song.chords.unavailableShort')}</span>}
@@ -244,8 +262,10 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
     const [open, setOpen] = useState(true);
     const { signedIn } = useSession();
     const online = useOnline();
+    const places = useChordsPlaces(chordsId);
     useOpened(chordsId, null);
-    const illustrations = useIllustrations(chordsId);
+    // asked only of chords open to me (others answer that they are not)
+    const illustrations = useIllustrations(content.data?.state === 'open' ? chordsId : null);
     const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
 
     // the search the chords were opened from: its chords, in its order
@@ -258,9 +278,12 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
 
     const header = content.data?.header;
     // with no connection the app does not know where else the chords are: it says only that they are kept here
+    const inMine = new Set(places.data?.places.filter(x => x.chords === chordsId).map(x => x.playlistId) ?? []).size;
     const context = !online
         ? <><Icon name="cloud" />{t('offline.chordsHere')}</>
-        : q
+        : inMine > 0
+            ? <><Icon name="pls" />{t('song.chordsInMine', { count: inMine })}</>
+            : q
             ? <><Icon name="globe" />{t('song.fromSearch')}</>
             : <><Icon name="link" />{t(signedIn ? 'song.chordsAlone' : 'song.chordsByLink')}</>;
 
@@ -270,12 +293,13 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
                 <Hero title={header?.title ?? ''} artists={header?.artists ?? []} context={content.data ? context : null} cover={cover} closeTo={closeTo} />
                 {content.isError && <p className="failed">{errorText(content.error)}</p>}
                 {!content.data && !content.isError && <p className="loading">{t('common.loading')}</p>}
-                {!open && <button type="button" className="vrow" onClick={() => setOpen(true)}>{header && <SourceIcon source={header.source} />}<span>{header?.source.title}</span></button>}
+                {!open && <button type="button" className="vrow" onClick={() => setOpen(true)}>{header?.source.iconUrl && <SourceIcon source={header.source} />}<span>{header?.source.title}</span></button>}
             </div>
             {open && (
                 <ChordsView chordsId={chordsId} place={{ pager }} shown={shown} onShow={setShown} onClose={() => setOpen(false)}
                     onSwipe={direction => { const to = direction < 0 ? pager?.prev : pager?.next; if (to) navigate(to); }} />
             )}
+            {!open && !signedIn && <div className="guestinv"><Invitations /></div>}
             <SongFoot><SongPlayer song={null} analysisId={header?.kinds.includes('timeline') ? chordsId : null} /></SongFoot>
         </div>
     );

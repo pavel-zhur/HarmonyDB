@@ -6,6 +6,7 @@ export const playlists = {
         shared: 'Shared with me',
         inLibrary: 'in library',
         inLibraryHint: 'Show this playlist’s songs in my library',
+        letGo: 'Remove from my playlists',
         note: 'A playlist switched off stays yours, but its songs do not come into the library.',
         songs_one: '{{count}} song',
         songs_other: '{{count}} songs',

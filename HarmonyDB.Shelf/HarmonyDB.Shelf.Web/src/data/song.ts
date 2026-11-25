@@ -54,10 +54,12 @@ export function useChordsAnalysis(chordsId: string | null, enabled = true) {
 }
 
 /** Items with the same progression ("Am F C G"), a page of them. */
+/** Songs with a progression (the index's search; it may take seconds). Dropped, and its request cancelled, when no one
+ * waits for it any more (the tool closed, cleared, another progression chosen). */
 export function useSimilarChords(progression: string | null, page = 1) {
     return useQuery({
         queryKey: ['similar', progression, page],
-        queryFn: () => call(api.GET('/api/analysis/similar', { params: { query: { progression: progression!, page } } })),
+        queryFn: ({ signal }) => call(api.GET('/api/analysis/similar', { params: { query: { progression: progression!, page } }, signal })),
         enabled: !!progression,
         staleTime: Infinity,
     });

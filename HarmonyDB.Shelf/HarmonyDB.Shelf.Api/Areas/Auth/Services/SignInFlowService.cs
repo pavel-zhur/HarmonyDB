@@ -1,4 +1,5 @@
 using HarmonyDB.Shelf.Api.Areas.Auth.Services.Providers;
+using HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Api.Foundation.SignIn;
@@ -29,6 +30,7 @@ public sealed class SignInFlowService(
     IEnumerable<ISignInProvider> providers,
     SessionService sessions,
     AccountMerger merger,
+    OwnChordsService ownChords,
     PermissionCatalog permissions,
     AuthCookies cookies,
     IOptionsMonitor<SignInOptions> options,
@@ -309,7 +311,8 @@ public sealed class SignInFlowService(
     }
 
     private async Task<MergeCandidate> DescribeAsync(Guid accountId, CancellationToken cancellationToken)
-        => await db.Accounts.AsNoTracking().Where(x => x.Id == accountId)
+    {
+        var candidate = await db.Accounts.AsNoTracking().Where(x => x.Id == accountId)
             .Select(x => new MergeCandidate
             {
                 DisplayName = x.DisplayName,
@@ -323,6 +326,20 @@ public sealed class SignInFlowService(
                 Notes = db.Notes.Count(n => n.AccountId == accountId),
             })
             .SingleAsync(cancellationToken);
+
+        // the own chords are the own chords' store's: counted by their service; not known while the store does not answer
+        int? count;
+        try
+        {
+            count = await ownChords.CountAsync(accountId, cancellationToken);
+        }
+        catch (ShelfException exception) when (exception.StatusCode == StatusCodes.Status503ServiceUnavailable)
+        {
+            count = null;
+        }
+
+        return candidate with { OwnChords = count };
+    }
 
     /// <summary>
     /// A flow not answered yet, of this browser (the state cookie), not expired; a linking one in its own session.

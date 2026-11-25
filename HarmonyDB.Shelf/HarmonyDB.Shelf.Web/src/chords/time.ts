@@ -11,10 +11,14 @@
 //                                             // chord or word tells its time; before that a tap only plays the
 //                                             // chord's sound. stop() when the player goes
 //   sheetTime.seeking()                       // whether anyone listens (the sheet shows its timed words as tappable)
+//   const stop = sheetTime.onPlayFrom(seconds => …)
+//                                             // a timed chord's "play from here" (its fingerings' window, playFrom
+//                                             // below): offered while someone listens; stop() when the player goes
 
 type Listener = (seconds: number) => void;
 
 const seekListeners = new Set<Listener>();
+const playFromListeners = new Set<Listener>();
 const showListeners = new Set<(seconds: number | null) => void>();
 let now: number | null = null;
 
@@ -30,7 +34,21 @@ export const sheetTime = {
     seeking(): boolean {
         return seekListeners.size > 0;
     },
+    onPlayFrom(listener: Listener): () => void {
+        playFromListeners.add(listener);
+        return () => playFromListeners.delete(listener);
+    },
 };
+
+/** Whether a timed chord can be played from (someone listens): its fingerings' window then offers "play from here". */
+export function playsFrom(): boolean {
+    return playFromListeners.size > 0;
+}
+
+/** internal: "play from here" on a timed chord. */
+export function playFrom(seconds: number): void {
+    playFromListeners.forEach(listener => listener(seconds));
+}
 
 /** internal: the sheet asks to go to a time. */
 export function seek(seconds: number): void {

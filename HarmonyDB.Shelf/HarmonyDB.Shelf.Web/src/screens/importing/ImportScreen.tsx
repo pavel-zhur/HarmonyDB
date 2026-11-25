@@ -2,9 +2,9 @@
 // stays while one is away from the page); files, a photo, a message to the bot are "soon"; chords from a recording are
 // the analysis's ("soon"); writing by hand is the editor.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../api/client';
 import { errorText } from '../../api/errors';
@@ -80,6 +80,18 @@ function Queue() {
     const { t } = useTranslation();
     const jobs = useJobs('import');
     const list = jobs.data ?? [];
+    // an import done: the playlist "Imported chords" and the lists have the new songs — read anew
+    const queryClient = useQueryClient();
+    const done = list.filter(job => job.status === 'succeeded').map(job => job.id).join();
+    const first = useRef(true);
+    useEffect(() => {
+        if (first.current) {
+            first.current = false;
+            return;
+        }
+        void queryClient.invalidateQueries({ queryKey: ['playlists'] });
+        void queryClient.invalidateQueries({ queryKey: ['songs'] });
+    }, [done, queryClient]);
     const busy = list.filter(unfinished).length;
     return (
         <>

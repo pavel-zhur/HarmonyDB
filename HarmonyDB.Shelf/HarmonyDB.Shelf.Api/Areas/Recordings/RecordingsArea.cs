@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords;
+using HarmonyDB.Shelf.Api.Areas.Media;
 using HarmonyDB.Shelf.Api.Areas.Music;
 using HarmonyDB.Shelf.Api.Areas.Recordings.Services;
 using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
+using HarmonyDB.Shelf.Model.Media;
 using HarmonyDB.Shelf.Model.Recordings;
 
 namespace HarmonyDB.Shelf.Api.Areas.Recordings;
@@ -43,6 +45,14 @@ public sealed class RecordingsArea : IShelfArea
 
         songs.MapGet("/{songId:guid}", (ClaimsPrincipal user, Guid playlistId, Guid songId, string? share, SongRecordingsService service, CancellationToken cancellationToken)
             => service.ListAsync(user, playlistId, songId, share, cancellationToken)).WithName("GetSongRecordings");
+
+        // the sound or video of a recording of the song, for whoever sees it (a public playlist's song for a guest; with
+        // ?share= a song by its link or a playlist's): only a track the song's recordings read gives is signed
+        songs.MapPost("/{songId:guid}/media", (ClaimsPrincipal user, Guid playlistId, Guid songId, string? share, TrackMediaRequest request, SongRecordingsService service, CancellationToken cancellationToken)
+                => service.SignTrackAsync(user, playlistId, songId, share, request, cancellationToken))
+            .AllowGuests()
+            .RequireRateLimiting(MediaArea.AddressesRateLimit)
+            .WithName("GetSongRecordingMedia");
 
         // "find another recording": looks for recordings of the song's chords (live searches), then answers as the GET
         songs.MapPost("/{songId:guid}/find", (ClaimsPrincipal user, Guid playlistId, Guid songId, string? share, SongRecordingsService service, CancellationToken cancellationToken)

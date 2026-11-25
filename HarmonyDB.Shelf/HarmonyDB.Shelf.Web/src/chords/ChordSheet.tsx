@@ -1,12 +1,13 @@
 // The chord sheet as the old frontend showed it: the HTML of NodeHtml.asHtml (its lines, the chords flying over their
 // words, the wrapping — made on purpose, at any width and any font) in a block of the old styles (chords.css). Two
 // fingers on it change the chords' size (data-chords, --chords-scale). A tap on a chord plays it (and, when asked,
-// tells the caller which chord it was: the progression's search); a tap on a timed chord or word tells the player.
+// tells the caller which chord it was: the progression's search); a tap on a timed chord or word tells the player
+// while it follows the music, and a timed chord's window offers "play from here" (time.ts).
 
 import { useEffect, useMemo, useRef } from 'react';
 import type { NodeHtml, RepresentationSettings } from '../lib/representations';
 import { forgetPlayedChord, playChord } from './sound';
-import { followTime, light, seek } from './time';
+import { followTime, light, playsFrom, seek } from './time';
 import './chords.css';
 
 export function ChordSheet({ sheet, settings, onChord }: {
@@ -32,7 +33,8 @@ export function ChordSheet({ sheet, settings, onChord }: {
             const data = chord.getAttribute('chord-data') ?? '';
             const degree = chord.querySelector('.chord-degree')?.textContent ?? '';
             const name = (chord.textContent ?? '').slice(0, (chord.textContent ?? '').length - degree.length);
-            playChord(data, name);
+            const time = chord.getAttribute('data-time');
+            playChord(data, name, time !== null && playsFrom() ? Number(time) : null);
             chordTap.current?.(Number(chord.getAttribute('chord-index')));
         }
         const timed = target.closest('[data-time]');

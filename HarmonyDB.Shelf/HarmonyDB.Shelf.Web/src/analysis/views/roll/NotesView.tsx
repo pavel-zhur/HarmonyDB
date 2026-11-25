@@ -12,13 +12,14 @@ import { chordsMedia } from '../../../data/media';
 import { toast } from '../../../app/toasts';
 import { errorText } from '../../../api/errors';
 import { Icon } from '../../../kit/Icon';
-import { player, useClock, usePlayer } from '../../../player/controller';
+import { usePlayer } from '../../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../../clock';
 import { MIN_LOOP_SECONDS } from '../../../player/sound/types';
 import { barAt, type Chord, type Piece } from '../../piece';
 import { useChordText } from '../../marks';
 import { useRedraw } from '../../redraw';
 import { readNotes, LANE_COLOURS } from './lanes';
-import { usePartName } from '../../partNames';
+import { numberRepeats, usePartName } from '../../partNames';
 import { pitchName } from './names';
 import { createRoll, MAX_ROW, MAX_ZOOM, MIN_ROW, MIN_ZOOM, type Roll, type RollTexts } from './roll';
 import './roll.css';
@@ -59,7 +60,8 @@ export function NotesView({ notes, piece, chordsId, share }: { notes: Notes; pie
     const partName = usePartName();
     const data = useMemo(() => {
         const read = readNotes(notes);
-        return { ...read, lanes: read.lanes.map(lane => ({ ...lane, name: partName(lane) })) };
+        const names = numberRepeats(read.lanes.map(lane => partName(lane)));
+        return { ...read, lanes: read.lanes.map((lane, i) => ({ ...lane, name: names[i]! })) };
     }, [notes, partName]);
     const [off, setOff] = useState<Set<string>>(() => new Set());
     const [zoom, setZoom] = useState<{ pps: number; row: number | null; shown: number }>(() => ({ pps: storedZoom(), row: storedRow(), shown: 0 }));
@@ -102,10 +104,10 @@ export function NotesView({ notes, piece, chordsId, share }: { notes: Notes; pie
         const made = createRoll(el, {
             noteName: (midi, time) => pitchName(midi, now.current.keyAt(time)),
             chordText: chord => now.current.chordText(chord),
-            onSeek: time => player.playFrom(time),
-            onChord: chord => player.playFrom(chord.start),
-            onSection: section => player.playFrom(section.start),
-            onLoop: (start, end) => player.setLoop(start, end),
+            onSeek: time => analysisPlayer.playFrom(time),
+            onChord: chord => analysisPlayer.playFrom(chord.start),
+            onSection: section => analysisPlayer.playFrom(section.start),
+            onLoop: (start, end) => analysisPlayer.setLoop(start, end),
             onZoom: ({ pps, row }) => saveZoom(pps, row),
             minLoop: MIN_LOOP_SECONDS,
             texts,
@@ -157,7 +159,7 @@ export function NotesView({ notes, piece, chordsId, share }: { notes: Notes; pie
             r.refresh();
         }
     }, [keyAt]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     const changeZoom = (pps: number) => {
         const r = roll.current!;

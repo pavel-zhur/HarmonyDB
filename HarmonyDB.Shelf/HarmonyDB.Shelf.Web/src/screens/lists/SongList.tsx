@@ -202,7 +202,8 @@ function Compact({ rows, q, lit, href, onOpen }: { rows: Row[]; q: string; lit: 
     );
 }
 
-/** While searching, under the list: the songs of my other playlists, and chords from the sources. */
+/** While searching, under the list: the songs of my other playlists, the music services' artists and recordings, and
+ * chords from the sources (the mock-up's order). */
 function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: string | null; p: SongListProps; href: (path: string) => string }) {
     const { t } = useTranslation();
     const { signedIn } = useSession();
@@ -220,6 +221,7 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
                     title={song.title} artists={song.artists}
                     extra={<span className="in">{song.playlistTitle}</span>} />
             ))}
+            <MusicSearch q={q} />
             <div className="sec"><Icon name="globe" />{t('library.fromSources')} · {chords.length}</div>
             {chords.map(header => (
                 <SongRow noMarks key={'c' + header.id} to={href(p.chordsHref(header.id))} lit={lit === header.id} q={q}
@@ -233,7 +235,6 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
                     <button type="button" className="lnk" disabled={search.isFetching} onClick={() => void search.refetch()}>{t('common.retry')}</button>
                 </p>
             )}
-            <MusicSearch q={q} />
         </>
     );
 }

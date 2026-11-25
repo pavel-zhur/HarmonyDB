@@ -59,7 +59,6 @@ export const music = {
             openMade: 'Открыть плейлист',
         },
         search: {
-            title: 'Музыка',
             failed: 'Музыкальный сервис не ответил.',
         },
     },
@@ -141,6 +140,12 @@ export const music = {
             effects: 'Звуковые эффекты',
         },
         views: { text: 'Текст', time: 'Аккорды', grid: 'Сетка', lead: 'Lead sheet', ireal: 'iReal Pro', score: 'Партитура', notes: 'Ноты' },
+        hint: {
+            ours: 'Наш разбор этой записи.',
+            wrong: 'Ошибся —',
+            fix: 'поправить вручную',
+            fixAfter: ': получится ваш вариант, уже без привязки ко времени.',
+        },
         key: 'Тональность {{key}}',
         keyChange: 'Тональность → {{key}}',
         noKey: 'Без тональности',

@@ -7,4 +7,7 @@ public static class RecordingsErrorCodes
 {
     /// <summary>404: no such recording variant of the song.</summary>
     public const string NoSuchItem = "no_such_item";
+
+    /// <summary>404: the track is not a recording of the song (neither one it holds nor one found for its chords).</summary>
+    public const string NotOfTheSong = "recording_not_of_the_song";
 }

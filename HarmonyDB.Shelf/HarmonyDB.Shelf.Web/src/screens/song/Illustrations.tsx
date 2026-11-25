@@ -21,13 +21,15 @@ export interface IllustratedVariant {
 export function Illustrations({ variants, onClose }: { variants: IllustratedVariant[]; onClose: () => void }) {
     const { t } = useTranslation();
     const [big, setBig] = useState<string | null>(null);
+    const { signedIn, session } = useSession();
+    const may = !!session?.permissions.includes(drawPermission);
     return (
         <section className="vview">
             <div className="vhead">
                 <span className="t">{t('song.illustrationsTitle')}</span>
                 <button type="button" className="xbtn" aria-label={t('common.close')} title={t('common.close')} onClick={onClose}><Icon name="x" /></button>
             </div>
-            <p className="muted small illnote">{t('song.illustrationsNote')}</p>
+            <p className="muted small illnote">{t('song.illustrationsNote')}{signedIn && !may && ` ${t('ills.notOn')}`}</p>
             {big && <button type="button" className="illbig" onClick={() => setBig(null)} aria-label={t('common.close')}><img src={big} alt="" /></button>}
             {variants.map(v => <VariantIllustrations key={v.chordsId} variant={v} onBig={setBig} />)}
         </section>

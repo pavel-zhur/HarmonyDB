@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
+using HarmonyDB.Shelf.Api.Areas.Media.Services;
 using HarmonyDB.Shelf.Api.Areas.Music.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Areas.Sync.Services;
@@ -10,6 +11,7 @@ using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
+using HarmonyDB.Shelf.Model.Media;
 using HarmonyDB.Shelf.Model.Recordings;
 using HarmonyDB.Source.Api.Model.V2;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +37,8 @@ public sealed class SongRecordingsService(
     RecordingFinder finder,
     ItemRows rows,
     MusicCatalog music,
-    TrackMarks marks)
+    TrackMarks marks,
+    MediaService media)
 {
     private const int CandidatesShown = 12;
 
@@ -91,6 +94,20 @@ public sealed class SongRecordingsService(
                 .ToList(),
             CanAdd = view.CanAdd,
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// The address of the sound (or video) of a recording of the song, for whoever sees the song: only a track the
+    /// song's recordings read gives (<see cref="ListAsync"/>: one it holds, or one found for its chords open to the
+    /// person) is signed; any other is 404 <c>recording_not_of_the_song</c>.
+    /// </summary>
+    public async Task<MediaAddress> SignTrackAsync(ClaimsPrincipal user, Guid playlistId, Guid songId, string? share, TrackMediaRequest request, CancellationToken cancellationToken)
+    {
+        var recordings = await ListAsync(user, playlistId, songId, share, cancellationToken);
+        if (!recordings.Recordings.Select(x => x.Track).Concat(recordings.Candidates).Any(x => x.Service == request.Service && x.Id == request.Id))
+            throw ShelfException.NotFound(RecordingsErrorCodes.NotOfTheSong);
+
+        return media.SignTrack(request);
     }
 
     /// <summary>

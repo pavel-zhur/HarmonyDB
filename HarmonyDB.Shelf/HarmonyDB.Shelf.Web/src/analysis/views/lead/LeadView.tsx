@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import { useTranslation } from 'react-i18next';
 import { Seg } from '../../../kit/controls';
 import type { Lyrics } from '../../../data/analysis';
-import { player, useClock } from '../../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../../clock';
 import { barAt, type Piece } from '../../piece';
 import { useRedraw } from '../../redraw';
 import { MUSIC_FONT } from './glyphs';
@@ -132,12 +132,12 @@ export function LeadView({ piece, lyrics }: { piece: Piece; lyrics: Lyrics | nul
         lit.current = { bar, beat };
         light(d.bars, lit.current, true);
     }, [piece]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     const press = (target: EventTarget) => {
         const hit = target instanceof Element ? target.closest('.ls-hit') : null;
         const time = hit?.getAttribute('data-t');
-        if (time) player.playFrom(Number(time));
+        if (time) analysisPlayer.playFrom(Number(time));
     };
     const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;

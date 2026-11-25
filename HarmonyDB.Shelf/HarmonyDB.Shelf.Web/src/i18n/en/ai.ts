@@ -6,7 +6,7 @@ export const ai = {
         addressNote: 'Paste it into your assistant’s connections. When it connects the first time, the shelf asks you to sign in and to choose what the assistant may do — that is how it knows whose shelf this is.',
         mayTitle: 'What an assistant may be allowed',
         mayNote: 'You choose for each assistant when it connects, and change it here later. An assistant cannot delete your profile or change how you sign in: that is done only here, by hand.',
-        nothingGrantable: 'Your profile has nothing an assistant could be allowed.',
+        nothingGrantable: 'Connecting an AI is not switched on for your profile yet. The shelf’s team switches it on for a profile — ask them, and what an assistant may be allowed shows here.',
         notInForce: 'Allowed, but your profile no longer has it: {{list}}',
         permission: {
             mcp_index: { title: 'Search chords', text: 'find chords and open them, read links to chords, analyse progressions' },
@@ -21,6 +21,7 @@ export const ai = {
         hosts: {
             id: 'Known by the address',
             back: 'Goes back to',
+            puny: 'This address is written with letters of other alphabets in a coded form (xn--…): it is not the address it may look like. Check it letter by letter.',
             calls: 'It calls itself “{{name}}”',
         },
         clients: {
@@ -41,7 +42,7 @@ export const ai = {
             title: 'Keys for programs that cannot sign in',
             why: 'For an assistant or a script that cannot open the sign-in: it sends the key instead.',
             create: 'Make a key',
-            cannot: 'A key can be made once your profile has something an assistant may be allowed.',
+            cannot: 'Keys can be made once connecting an AI is switched on for your profile.',
             createIt: 'Make the key',
             name: 'What it is for',
             expiry: 'It works for',

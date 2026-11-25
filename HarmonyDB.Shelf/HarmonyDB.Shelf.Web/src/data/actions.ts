@@ -18,6 +18,7 @@ import { i18n } from '../i18n';
 import { toast } from '../app/toasts';
 import { queryClient } from './queryClient';
 import { offerSignIn, registerPending, rememberPending, type SignInWhat } from './signInOffer';
+import { isGuestPreview } from '../app/guestMode';
 
 export interface ActionOptions<A, R> {
     done?: (result: R, args: A) => string | null;
@@ -33,6 +34,11 @@ export interface ActionOptions<A, R> {
 export function action<A, R>(name: string, what: SignInWhat, run: (args: A) => Promise<R>, options: ActionOptions<A, R> = {}): (args: A) => Promise<R> {
     const perform = async (args: A): Promise<R> => {
         let result: R;
+        // the guest's preview writes nothing: it is asked to sign in, as a guest is (and says it is a preview)
+        if (isGuestPreview) {
+            offerSignIn(what);
+            throw new ApiError(401, 'sign_in_required');
+        }
         try {
             result = await run(args);
         } catch (error) {

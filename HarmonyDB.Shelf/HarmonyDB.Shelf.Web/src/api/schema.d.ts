@@ -1574,6 +1574,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recordings/playlists/{playlistId}/songs/{songId}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GetSongRecordingMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recordings/playlists/{playlistId}/songs/{songId}/find": {
         parameters: {
             query?: never;
@@ -1696,6 +1712,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["GetSharedChordsMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/share/{token}/tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GetSharedSongTrackMedia"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2338,6 +2370,8 @@ export interface components {
             keys: number;
             /** Format: int32 */
             notes: number;
+            /** Format: int32 */
+            ownChords?: number | null;
         };
         MusicAlbum: {
             service: components["schemas"]["MusicService"];
@@ -2886,6 +2920,13 @@ export interface components {
             song?: components["schemas"]["SongPage"];
             chords?: components["schemas"]["ChordsAnswer"];
             carriesAccess: boolean;
+        };
+        SharedTrackMediaRequest: {
+            /** Format: uuid */
+            songId?: string | null;
+            service: components["schemas"]["MusicService"];
+            id: string;
+            kind: components["schemas"]["MediaKind"];
         };
         SheetBar: {
             beats: number[];
@@ -5365,7 +5406,9 @@ export interface operations {
     };
     GetMusicCategories: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 service: string;
@@ -5398,6 +5441,7 @@ export interface operations {
         parameters: {
             query?: {
                 offset?: number;
+                locale?: string;
             };
             header?: never;
             path: {
@@ -7075,6 +7119,44 @@ export interface operations {
             };
         };
     };
+    GetSongRecordingMedia: {
+        parameters: {
+            query?: {
+                share?: string;
+            };
+            header?: never;
+            path: {
+                playlistId: string;
+                songId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrackMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAddress"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     FindSongRecordings: {
         parameters: {
             query?: {
@@ -7354,6 +7436,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChordsMedia"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetSharedSongTrackMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedTrackMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAddress"];
                 };
             };
             /** @description An error. */

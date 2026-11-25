@@ -24,7 +24,7 @@ import { ChordsViewProvider } from '../../chords/view';
 import { AnalysisViews } from '../../analysis/AnalysisViews';
 import { CircleOfFifths, type Tonic } from '../../chords/CircleOfFifths';
 import { FingeringWindow } from '../../chords/FingeringWindow';
-import { firstAttribute, loopAttributes, loopsOf, progressionBetween, progressionOf, type Loop } from '../../chords/analysis';
+import { chordNames, firstAttribute, loopAttributes, loopsOf, progressionBetween, progressionOf, type Loop } from '../../chords/analysis';
 import { sheetFromApi } from '../../chords/sheet';
 import { AddPop, SharePop } from './Actions';
 import { keyText, stepKey } from './keys';
@@ -90,7 +90,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     [transpose, alteration, simplification, sheet, degrees, superscripts, settings.accidentals]);
     const chords = useMemo(() => (sheet ? sheet.asChords(base) : []), [sheet, base]);
     const progression = useMemo(() => (sheet && (tool === 'loops' || tool === 'similar') ? progressionOf(chords) : null), [sheet, tool, chords]);
-    const loops = useMemo(() => (progression && tool === 'loops' ? loopsOf(progression) : []), [progression, tool]);
+    const loops = useMemo(() => (progression && tool === 'loops' ? loopsOf(progression, chordNames(chords, base)) : []), [progression, tool, chords, base]);
     // without a text with chords (a piece without words) an analysis's views still show the degrees
     const hasDegrees = useMemo(() => (sheet ? sheet.traverseAllChords().some(x => x.degree !== null) : timed), [sheet, timed]);
 
@@ -142,7 +142,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
             <div className="vhead">
                 <span className="t">
                     {place.letter && <b>{place.letter}</b>}
-                    {header && <SourceIcon source={header.source} />}
+                    {header?.source.iconUrl && <SourceIcon source={header.source} />}
                     {header?.source.uri
                         ? <a className="el srcl" href={header.source.uri} target="_blank" rel="noreferrer" title={t('song.chords.openSource', { source: header.source.title })}>{header.source.title}<Icon name="ext" /></a>
                         : <span className="el">{header?.source.title}</span>}
@@ -168,7 +168,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 <button type="button" className="xbtn" aria-label={t('song.chords.close')} title={t('song.chords.close')} onClick={onClose}><Icon name="x" /></button>
             </div>
             <AddPop anchor={addAnchor} onClose={() => setAddAnchor(null)} chordsId={chordsId} />
-            <SharePop anchor={shareAnchor} onClose={() => setShareAnchor(null)} title={place.page?.song.title ?? header?.title ?? ''}
+            <SharePop anchor={shareAnchor} onClose={() => setShareAnchor(null)} title={header?.title ?? place.page?.song.title ?? ''}
                 chords={{ id: chordsId, sourceUri: header?.source.uri ?? null }}
                 target={place.page ? { kind: 'song', playlistId: place.page.song.playlistId, songId: place.page.song.id, share: place.share ?? null } : { kind: 'chords', chords: chordsId }} />
 
@@ -244,7 +244,8 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 // shows its views whether or not it has a text with chords (a piece without words has none)
                 <ChordsViewProvider value={representation}>
                     {timed
-                        ? <AnalysisViews chordsId={chordsId} sheet={sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>} />
+                        ? <AnalysisViews chordsId={chordsId} sheet={sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
+                            edit={place.page ? `/editor?playlist=${place.page.song.playlistId}&song=${place.page.song.id}&from=${chordsId}` : null} />
                         : sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
                 </ChordsViewProvider>
             )}
@@ -303,14 +304,21 @@ function statedKeys(keys: readonly SheetKey[] | null, attribute: string | null):
     }
 }
 
-/** The key(s) the item states, the detected ones with their confidence (the second hidden on a phone), the tempo. */
+/**
+ * The key(s) the item states, the detected ones with their confidence (the second hidden on a phone), the tempo: facts
+ * about the chords as they are written, not moved by the transposition. When the chords are shown in another key, where
+ * they are now is said apart ("now E").
+ */
 function Meta({ settings, stated, detected, bpm }: { settings: RepresentationSettings; stated: (SheetKey | string)[]; detected: { key: { tonic: string; isMinor: boolean }; confidence: number }[]; bpm: number | null }) {
     const { t } = useTranslation();
-    const name = (key: SheetKey | string) => (typeof key === 'string' ? key : key.shown(settings.with({ relativeTo: null })).name);
+    const written = settings.with({ transpose: 0, relativeTo: null, alteration: null, showNotesAsWritten: true });
+    const name = (key: SheetKey | string, view = written) => (typeof key === 'string' ? key : key.shown(view).name);
+    const first = stated.find((x): x is SheetKey => typeof x !== 'string') ?? (detected[0] ? new SheetKey(detected[0].key.tonic, detected[0].key.isMinor) : null);
+    const now = settings.transpose !== 0 && first ? name(first, settings.with({ relativeTo: null })) : null;
     if (!stated.length && !detected.length && !bpm) return null;
     return (
         <div className="meta">
-            {stated.length > 0 && <span className="mi"><b>{stated.map(name).join(' → ')}</b>{t('song.meta.stated')}</span>}
+            {stated.length > 0 && <span className="mi"><b>{stated.map(x => name(x)).join(' → ')}</b>{t('song.meta.stated')}</span>}
             {detected.length > 0 && (
                 <span className="mi" title={t('song.meta.detectedSub')}>
                     <i>{t('song.meta.detected')}</i>
@@ -319,6 +327,7 @@ function Meta({ settings, stated, detected, bpm }: { settings: RepresentationSet
                     ))}
                 </span>
             )}
+            {now && <span className="mi"><i>{t('song.meta.now')}</i><b>{now}</b></span>}
             {!!bpm && <span className="mi"><b>{Math.round(bpm)}</b>BPM</span>}
         </div>
     );
@@ -583,7 +592,7 @@ function Similar({ from, found, onClear }: { from: number | null; found: string 
     return (
         <div className="hint similar">
             <div>
-                {first.isPending && t('common.loading')}
+                {first.isPending && <span className="muted">{t('song.similar.looking', { progression: found })}</span>}
                 {first.isError && errorText(first.error)}
                 {first.data && (first.data.items.length ? t('song.similar.found', { progression: found }) : t('song.similar.none', { progression: found }))}
                 {' '}<button type="button" className="chip" onClick={() => { setPages(1); onClear(); }}>{t('common.clear')}</button>
@@ -599,7 +608,8 @@ function Similar({ from, found, onClear }: { from: number | null; found: string 
 function SimilarPage({ progression, page }: { progression: string; page: number }) {
     const { t } = useTranslation();
     const similar = useSimilarChords(progression, page);
-    if (!similar.data) return similar.isError ? <p className="failed">{errorText(similar.error)}</p> : <p className="muted small">{t('common.loading')}</p>;
+    // the first page's waiting and failure are said above, with the progression
+    if (!similar.data) return page === 1 ? null : similar.isError ? <p className="failed">{errorText(similar.error)}</p> : <p className="muted small">{t('common.loading')}</p>;
     return (
         <>
             {similar.data.items.map(item => (

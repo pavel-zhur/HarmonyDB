@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import type { Score } from '../../data/analysis';
-import { player, useClock } from '../../player/controller';
+import { analysisPlayer, useAnalysisClock } from '../clock';
 import { useThemeChange } from '../redraw';
-import { usePartName, type PartIdentity } from '../partNames';
+import { numberRepeats, usePartName, type PartIdentity } from '../partNames';
 
 interface Box { left: number; top: number; width: number; height: number }
 
@@ -17,13 +17,15 @@ interface Box { left: number; top: number; width: number; height: number }
  */
 function namedScore(xml: string, partName: (part: PartIdentity) => string): { xml: string; names: string[] } {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
-    const names = [...doc.querySelectorAll('part-list > score-part')].map((part, i) => {
+    const parts = [...doc.querySelectorAll('part-list > score-part')];
+    const names = numberRepeats(parts.map((part, i) => {
         const program = Number(part.querySelector('midi-instrument > midi-program')?.textContent);
-        const name = partName({ name: part.querySelector('part-name')?.textContent?.trim() || `${i + 1}`, program: program >= 1 && program <= 128 ? program - 1 : null });
+        return partName({ name: part.querySelector('part-name')?.textContent?.trim() || `${i + 1}`, program: program >= 1 && program <= 128 ? program - 1 : null });
+    }));
+    parts.forEach((part, i) => {
         const el = part.querySelector('part-name');
-        if (el) el.textContent = name;
+        if (el) el.textContent = names[i]!;
         part.querySelector('part-abbreviation')?.remove();     // (an English short name would stay on later rows)
-        return name;
     });
     return { xml: new XMLSerializer().serializeToString(doc), names };
 }
@@ -118,7 +120,7 @@ export default function ScoreView({ score }: { score: Score }) {
         marks.current[b]?.classList.add('now');
         lit.current = b;
     }, [times]);
-    useClock(onTime);
+    useAnalysisClock(onTime);
 
     const toggle = (i: number) => setShown(prev => {
         const next = new Set(prev);
@@ -142,7 +144,7 @@ export default function ScoreView({ score }: { score: Score }) {
                 {times && boxes.map((box, i) => (i < times.bars.length && box.width > 0 ? (
                     <div key={i} ref={el => { marks.current[i] = el; }} className="an-smeasure" role="button" tabIndex={-1} title={t('analysis.barN', { n: i + 1 })}
                         style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
-                        onClick={() => player.playFrom(times.bars[i]!.beats[0]!)} />
+                        onClick={() => analysisPlayer.playFrom(times.bars[i]!.beats[0]!)} />
                 ) : null))}
             </div>
         </div>

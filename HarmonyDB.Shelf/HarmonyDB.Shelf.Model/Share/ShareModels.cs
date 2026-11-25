@@ -91,3 +91,23 @@ public record ShareView
     /// </summary>
     public bool CarriesAccess { get; init; }
 }
+
+/// <summary>
+/// A recording of a song a link opens, to play (<c>POST /api/share/{token}/tracks</c>).
+/// </summary>
+public record SharedTrackMediaRequest
+{
+    /// <summary>
+    /// The song: needed with a playlist's link; with a song's link, its song (may be left out).
+    /// </summary>
+    public Guid? SongId { get; init; }
+
+    public required Me.MusicService Service { get; init; }
+
+    /// <summary>
+    /// The track's id on the service: one of the song's recordings as its recordings read gives them.
+    /// </summary>
+    public required string Id { get; init; }
+
+    public required Media.MediaKind Kind { get; init; }
+}

@@ -10,7 +10,7 @@ export const signIn = {
             yandex: 'Sign in with Yandex',
             dev: 'Sign in as a test person',
         },
-        devName: 'A test name, or an account id',
+        devName: 'Name or account id',
         notNow: 'Not now',
         signedIn: 'Signed in',
         signedOut: 'Signed out',

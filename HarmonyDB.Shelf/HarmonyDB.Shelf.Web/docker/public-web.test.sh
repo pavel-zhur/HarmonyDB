@@ -54,7 +54,7 @@ passes() {
 
 stops() {
     ask "$@"
-    if grep -q '^reached' "$work/body" || ! head -1 "$work/head" | grep -q ' 404'; then
+    if grep -q '^reached' "$work/body" || ! head -1 "$work/head" | grep -q ' 404' || grep -q 'no_such_link' "$work/body"; then
         echo "FAIL: $1 $2 should stop with 404: $(head -1 "$work/head")"; failed=1
     fi
 }
@@ -71,8 +71,22 @@ passes GET  /api/playlists/$uuid
 passes GET  "/api/playlists/$uuid/songs?sort=order&offset=0&limit=200"
 passes GET  /api/playlists/$uuid/songs/$uuid
 passes GET  /api/illustrations/images/abc123/small
+passes GET  "/api/recordings/playlists/$uuid/songs/$uuid?share=$token"
 passes POST /api/media/chords '{"id":"ha-1"}'
+passes POST /api/recordings/playlists/$uuid/songs/$uuid/media '{"service":"youtube","id":"x","kind":"audio"}'
+passes POST /api/share/$token/tracks '{"songId":"'$uuid'","service":"youtube","id":"x","kind":"audio"}'
 passes GET  /api/media/eyJLIjoiYmxvYiJ9.uwjAckjOsLC6bXANl1dlRWbB5e351L2
+
+# what it does not; a share token of another shape is no link, as the API says it, and nothing reaches the API
+says_no_link() {
+    ask "$@"
+    if grep -q '^reached' "$work/body" || ! head -1 "$work/head" | grep -q ' 404' || ! grep -q '"code":"no_such_link"' "$work/body"; then
+        echo "FAIL: $1 $2 should be answered as no link: $(head -1 "$work/head") $(head -c 200 "$work/body")"; failed=1
+    fi
+}
+says_no_link GET  /api/share/short
+says_no_link GET  /api/share/short/chords
+says_no_link POST /api/share/a-token-of-30-letters-0123456/media
 
 # what it does not
 stops GET    /api/auth/session
@@ -82,6 +96,7 @@ stops GET    /api/app/health
 stops GET    /api/app/version
 stops POST   /api/share '{"kind":"chords"}'
 stops GET    /api/share/mine
+stops DELETE /api/share/mine
 stops DELETE /api/share/$token
 stops GET    /api/share/$token/other
 stops POST   /api/chords/headers
@@ -97,6 +112,10 @@ stops POST   /api/playlists/$uuid/songs
 stops PUT    /api/playlists/$uuid/songs/$uuid/main
 stops GET    /api/playlists/invitations/$token
 stops POST   /api/media/tracks
+stops GET    /api/media/tracks
+stops GET    /api/recordings/playlists/$uuid/songs/$uuid/media
+stops GET    /api/share/$token/tracks
+stops POST   /api/recordings/playlists/$uuid/songs/$uuid/find
 stops GET    /api/media/chords
 stops POST   /api/sync
 stops GET    /api/library

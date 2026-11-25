@@ -10,8 +10,24 @@ export type MediaAddress = Schemas['MediaAddress'];
 export type ChordsMedia = Schemas['ChordsMedia'];
 export type MediaStem = Schemas['MediaStem'];
 
-/** The sound (or the video) of a track of a music service. */
-export function trackMedia(service: MusicService, id: string, kind: Schemas['MediaKind']): Promise<MediaAddress> {
+/**
+ * Where a track's addresses are asked: anywhere (the app), or bound to a song that lists the track among its
+ * recordings (the public page, which signs only what it shows) — the song itself, or through its link.
+ */
+export type TrackRoute =
+    | { kind: 'song'; playlistId: string; songId: string }
+    | { kind: 'link'; token: string; songId: string };
+
+/** The sound (or the video) of a track of a music service; `route`: bound to a song (above). */
+export function trackMedia(service: MusicService, id: string, kind: Schemas['MediaKind'], route: TrackRoute | null = null): Promise<MediaAddress> {
+    if (route?.kind === 'song') {
+        return call(api.POST('/api/recordings/playlists/{playlistId}/songs/{songId}/media', {
+            params: { path: { playlistId: route.playlistId, songId: route.songId } }, body: { service, id, kind },
+        }));
+    }
+    if (route?.kind === 'link') {
+        return call(api.POST('/api/share/{token}/tracks', { params: { path: { token: route.token } }, body: { songId: route.songId, service, id, kind } }));
+    }
     return call(api.POST('/api/media/tracks', { body: { service, id, kind } }));
 }
 

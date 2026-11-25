@@ -10,10 +10,27 @@ import { closeSignIn, forgetPending, offerSignIn, runPending } from './signInOff
 import { askMerge } from './mergeQuestion';
 import { attach } from '../local/store';
 
+const lastConfigurationKey = 'shelf.lastConfiguration';
+
+/**
+ * The server's public configuration (sign-in providers, the kinds of marks …), remembered in this browser: with no
+ * connection the last one is used — marks can be put offline too.
+ */
 export const configurationQuery = {
     queryKey: ['configuration'],
-    queryFn: () => call(api.GET('/api/app/configuration')),
+    queryFn: async () => {
+        try {
+            const configuration = await call(api.GET('/api/app/configuration'));
+            remember(lastConfigurationKey, configuration);
+            return configuration;
+        } catch (error) {
+            const last = isNetwork(error) ? remembered<Schemas['PublicConfiguration']>(lastConfigurationKey) : null;
+            if (!last) throw error;
+            return last;
+        }
+    },
     staleTime: Infinity,
+    networkMode: 'always' as const,
 };
 
 export function useConfiguration() {

@@ -4,6 +4,7 @@
 //
 //   const partName = usePartName();
 //   partName({ name: 'Electric Guitar', program: 27 })   → "Electric Guitar" / "Гитара"
+//   numberRepeats(names)                                   → the same names told apart by a number
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,4 +33,16 @@ export function usePartName(): (part: PartIdentity) => string {
         if (part.stem) return t(`player.stem.${part.stem}`);
         return part.name;
     }, [english, t]);
+}
+
+/** Names that repeat (five parts of strings) numbered in their order: "Strings 1", "Strings 2"; the others as they are. */
+export function numberRepeats(names: readonly string[]): string[] {
+    const total = new Map<string, number>(), seen = new Map<string, number>();
+    for (const name of names) total.set(name, (total.get(name) ?? 0) + 1);
+    return names.map(name => {
+        if (total.get(name)! < 2) return name;
+        const n = (seen.get(name) ?? 0) + 1;
+        seen.set(name, n);
+        return `${name} ${n}`;
+    });
 }

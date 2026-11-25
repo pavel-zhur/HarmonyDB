@@ -7,7 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
 import { Page } from '../../app/panes';
-import { createPlaylist, followPlaylist, playlistTitle, showInLibrary, unfollowPlaylist, useMyPlaylists, type PlaylistSummary } from '../../data/playlists';
+import { createPlaylist, followPlaylist, playlistTitle, showInLibrary, useMyPlaylists, type PlaylistSummary } from '../../data/playlists';
 import { useSession } from '../../data/session';
 import { Avatar, Switch } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
@@ -70,21 +70,23 @@ export function PlaylistLine({ playlist: p }: { playlist: PlaylistSummary }) {
 }
 
 /**
- * "In my library": a member shows or hides the playlist's songs there; anyone else keeps a public playlist (or one
- * opened by its link) there by following it, and lets it go. A private one of others: nothing to switch.
+ * "In my library": a member shows or hides the playlist's songs there. Anyone else keeps a public playlist (or one
+ * opened by its link) by following it — switched on, it follows and its songs come into the library; switched off, it
+ * stays among my playlists without its songs in the library (letting it go is on its page). A private one of others:
+ * nothing to switch.
  */
 export function InLibrary({ playlist: p, share }: { playlist: PlaylistSummary; share?: string | null }) {
     const { t } = useTranslation();
     const show = useMutation({ mutationFn: showInLibrary });
     const follow = useMutation({ mutationFn: followPlaylist });
-    const unfollow = useMutation({ mutationFn: unfollowPlaylist });
     if (p.myRole) {
         const on = show.isPending ? show.variables.show : p.showInLibrary ?? false;
         return <Switch on={on} label={t('playlists.inLibraryHint')} onChange={value => show.mutate({ id: p.id, show: value })} />;
     }
     if (p.access === 'private' && !p.following) return null;
-    const on = follow.isPending ? true : unfollow.isPending ? false : p.following;
-    return <Switch on={on} label={t('playlists.inLibraryHint')} onChange={value => (value ? follow.mutate({ id: p.id, share }) : unfollow.mutate(p.id))} />;
+    const on = follow.isPending ? true : show.isPending ? show.variables.show : p.following && p.showInLibrary !== false;
+    return <Switch on={on} label={t('playlists.inLibraryHint')}
+        onChange={value => (p.following ? show.mutate({ id: p.id, show: value }) : value ? follow.mutate({ id: p.id, share }) : undefined)} />;
 }
 
 function NewPlaylist() {

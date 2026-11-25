@@ -13,6 +13,8 @@ import { PathsSearcher } from '../lib/analysis/Services/PathsSearcher';
 import { ProgressionsBuilder } from '../lib/analysis/Services/ProgressionsBuilder';
 import { ProgressionsSearch } from '../lib/analysis/Services/ProgressionsSearch';
 import { ProgressionsVisualizer } from '../lib/analysis/Services/ProgressionsVisualizer';
+import { NoteAlteration } from '../lib/common/HarmonyDB.Common/NoteAlteration';
+import { Note, type RepresentationSettings } from '../lib/representations';
 
 const logger: ILogger = {
     logInformation: () => undefined,
@@ -34,23 +36,61 @@ export function progressionOf(chords: readonly string[]): ChordsProgression {
 
 export interface Loop {
     readonly link: StructureLink;
-    /** its chords from where it starts in the song: "Am F C G" */
+    /** its chords where it first sounds in the song, named as the sheet shows them: "Am F C G" */
     readonly chords: string;
 }
 
-/** The loops of a progression, the shortest first (as the old frontend listed them). */
-export function loopsOf(progression: ChordsProgression): Loop[] {
+/**
+ * The sheet's chords (as NodeHtml.asChords gives them: "[!5b!]m7/[!0!]", the notes by their tones) named as the sheet
+ * shows them under these settings: its spelling, its transposition (a moved note takes the chosen ♭ or ♯, else ♯, as
+ * the sheet's does).
+ */
+export function chordNames(chords: readonly string[], settings: RepresentationSettings): string[] {
+    const written = settings.with({ transpose: 0, relativeTo: null });
+    return chords.map(chord => chord.replace(/\[!(\d+)([b#]?)!\]/g, (_, tone: string, sign: string) => {
+        const alteration = settings.transpose !== 0 ? null : sign === 'b' ? NoteAlteration.Flat : sign === '#' ? NoteAlteration.Sharp : null;
+        return new Note(Number(tone), alteration).representation(written);
+    }));
+}
+
+/**
+ * The loops of a progression, the shortest first (as the old frontend listed them). Each is named by the sheet's own
+ * chords where it first sounds (`names`: the sheet's chords as shown, the progression's source), so it speaks the
+ * sheet's spelling, key and simplification — the old frontend named them from the loop's notes, in sharps, with "?"
+ * for a chord it could not type.
+ */
+export function loopsOf(progression: ChordsProgression, names: readonly string[]): Loop[] {
     const links = indexExtractor.findStructureLinks('does not matter', progression.compact());
     return links
         .map(link => ({ link, length: deserializeLoop(link.normalized).length }))
         .sort((a, b) => a.length - b.length)
-        .map(({ link }) => ({ link, chords: visualizer.getLoopChordsTitle(link) }));
+        .map(({ link }) => ({ link, chords: firstSounding(progression, link, names) }));
+}
+
+/** The sheet's chords of a loop's first occurrence: from its first chord up to where it starts again or stops. */
+function firstSounding(progression: ChordsProgression, link: StructureLink, names: readonly string[]): string {
+    const attributes = placesOf(progression, link);
+    const indices = [...attributes.keys()].sort((a, b) => a - b);
+    const start = indices.findIndex(i => attributes.get(i) === ProgressionsVisualizer.AttributeSearchFirst);
+    const taken: string[] = [];
+    for (let k = start; k < indices.length; k++) {
+        const i = indices[k]!;
+        if (k > start && (i !== indices[k - 1]! + 1 || attributes.get(i) === ProgressionsVisualizer.AttributeSearchFirst)) break;
+        const name = names[i];
+        if (name !== undefined && name !== taken[taken.length - 1]) taken.push(name);
+    }
+    // the loop was found in this progression, so it sounds in it at least once
+    return taken.join(' ');
+}
+
+function placesOf(progression: ChordsProgression, link: StructureLink): ReadonlyMap<number, string> {
+    const search = inputParser.parseSequence(getTitleFromBeginningNote(link.normalized, 0, true));
+    return visualizer.buildCustomAttributesForSearch(progression, progressionsSearch.search([progression], search));
 }
 
 /** The chords' marks of where a loop is in the sheet: chord index → 'search' (or 'search-first' where it starts). */
 export function loopAttributes(progression: ChordsProgression, loop: Loop): ReadonlyMap<number, string> {
-    const search = inputParser.parseSequence(getTitleFromBeginningNote(loop.link.normalized, 0, true));
-    return visualizer.buildCustomAttributesForSearch(progression, progressionsSearch.search([progression], search));
+    return placesOf(progression, loop.link);
 }
 
 /** The first chord of a progression to find, marked. */

@@ -2,8 +2,11 @@
 // with its service's mark. A tap chooses the one to listen to. "Find another recording" shows the candidates: the wrong
 // ones are removed, the missing ones added — in this playlist only.
 //
-//   <SongRecordings song={{ playlistId, songId, share }} analysed={…} />
+//   <SongRecordings song={{ playlistId, songId, share }} analysed={…} analysisId={…} />
 //   analysed: the song has an analysis of a recording (else "Analyse this recording" stands here, marked "soon")
+//   analysisId: the analysis open on the page — its recording is one of the song's: listed (its own row, or the row of
+//   the same recording on its service), and lit while it plays. A tap on a row plays that recording.
+//   readOnly: only the recordings, to listen to (the public page): nothing to find, add or analyse
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -16,7 +19,9 @@ import { Soon } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { MenuTitle, Popover } from '../../kit/Popover';
 import { ServiceMark, artistNames, clock } from '../music/parts';
-import { chooseHere, useChosenRecording } from './choice';
+import { useAnalysis } from '../../data/analysis';
+import { player } from '../../player/controller';
+import { chooseAnalysis, chooseHere, useChosenRecording, usePlaysAnalysis } from './choice';
 import './recordings.css';
 
 type SongPath = { playlistId: string; songId: string; share?: string | null };
@@ -24,47 +29,94 @@ type SongPath = { playlistId: string; songId: string; share?: string | null };
 /** How many recordings are shown before "more". */
 const shownFirst = 3;
 
-export function SongRecordings({ song, analysed }: { song: SongPath; analysed: boolean }) {
-    const { t } = useTranslation();
+type Props = { song: SongPath; analysed: boolean; analysisId?: string | null; readOnly?: boolean };
+
+export function SongRecordings(props: Props) {
+    // (read-only — the public page, always a guest — asks for no session)
+    return props.readOnly ? <Recordings {...props} signedIn={false} /> : <RecordingsOfPerson {...props} />;
+}
+
+function RecordingsOfPerson(props: Props) {
     const { signedIn } = useSession();
+    return <Recordings {...props} signedIn={signedIn} />;
+}
+
+function Recordings({ song, analysed, analysisId = null, readOnly = false, signedIn }: Props & { signedIn: boolean }) {
+    const { t } = useTranslation();
     const recordings = useSongRecordings(song);
     const chosen = useChosenRecording(recordings.data);
+    const analysis = useAnalysis(analysisId);
+    const playsAnalysis = usePlaysAnalysis(song) && !!analysisId;
     const [all, setAll] = useState(false);
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const data = recordings.data;
     if (!data) return recordings.isError ? <p className="failed">{errorText(recordings.error)}</p> : null;
 
+    // a tap on the recording that plays pauses it or plays on; on another, that one plays
     const choose = (itemId: string) => {
+        if (lit?.itemId === itemId && !playsAnalysis) {
+            player.toggle();
+            return;
+        }
+        player.playChosen();
         chooseHere(song, itemId);
-        if (signedIn) void chooseRecording({ song, itemId });
+        if (signedIn && !readOnly) void chooseRecording({ song, itemId });
     };
+    const toAnalysis = () => {
+        if (playsAnalysis) {
+            player.toggle();
+            return;
+        }
+        player.playChosen();
+        chooseAnalysis(song);
+    };
+    // the analysis's recording: the row of the same recording on its service, else a row of its own
+    const header = analysis.data?.header, recording = analysis.data?.content?.recording;
+    const analysedTrack = recording?.audio.track ?? null;
+    const sameRow = analysedTrack ? data.recordings.find(r => r.track.service === analysedTrack.service && r.track.id === analysedTrack.id) ?? null : null;
+    const ownRow = !!analysisId && !!header && !!recording && !sameRow;
+    const lit = playsAnalysis ? sameRow : chosen;
     const list = data.recordings;
     const shown = all ? list : list.slice(0, shownFirst);
-    if (chosen && !shown.includes(chosen)) shown.push(chosen);
+    if (lit && !shown.includes(lit)) shown.push(lit);
 
     return (
         <div className="rec-list">
             <div className="rec-lab">{t('recordings.title')}</div>
-            {list.length === 0 && <p className="muted small">{t('recordings.none')}</p>}
+            {list.length === 0 && !ownRow && <p className="muted small">{t('recordings.none')}</p>}
+            {ownRow && (
+                <button type="button" className={playsAnalysis ? 'rec-row on' : 'rec-row'} aria-pressed={playsAnalysis} onClick={toAnalysis}>
+                    <span className="rec-cov rec-an"><Icon name="ai" /></span>
+                    <span className="rec-t1">
+                        <b>{header!.title}</b>
+                        <span>{[header!.artists.join(', '), t('player.analysisRecording')].filter(Boolean).join(' · ')}</span>
+                    </span>
+                    <span className="d">{clock(recording!.duration)}</span>
+                </button>
+            )}
             {shown.map(r => (
-                <button type="button" key={r.itemId} className={r === chosen ? 'rec-row on' : 'rec-row'} aria-pressed={r === chosen} onClick={() => choose(r.itemId)}>
-                    <RecordingLine track={r.track} />
+                <button type="button" key={r.itemId} className={r === lit ? 'rec-row on' : 'rec-row'} aria-pressed={r === lit}
+                    onClick={() => (r === sameRow ? toAnalysis() : choose(r.itemId))}>
+                    <RecordingLine track={r.track} analysed={r === sameRow} />
                 </button>
             ))}
-            <div className="links">
+            {!readOnly && <div className="links">
                 {list.length > shown.length && <button type="button" className="lnk" onClick={() => setAll(true)}>{t('recordings.more', { count: list.length - shown.length })}</button>}
                 <button type="button" className="lnk" onClick={e => setAnchor(anchor ? null : e.currentTarget)}>{t('recordings.findAnother')}</button>
                 {!analysed && chosen && <span className="lnk off"><Icon name="ai" />{t('music.analyse')} <Soon /></span>}
-            </div>
-            <Popover anchor={anchor} onClose={() => setAnchor(null)} width={380} label={t('recordings.findAnother')}>
-                <FindAnother song={song} data={data} />
-            </Popover>
+            </div>}
+            {!readOnly && (
+                <Popover anchor={anchor} onClose={() => setAnchor(null)} width={380} label={t('recordings.findAnother')}>
+                    <FindAnother song={song} data={data} />
+                </Popover>
+            )}
         </div>
     );
 }
 
-function RecordingLine({ track }: { track: MusicTrack }) {
-    const sub = [artistNames(track.artists), track.version, track.album?.title].filter(Boolean).join(' · ');
+function RecordingLine({ track, analysed = false }: { track: MusicTrack; analysed?: boolean }) {
+    const { t } = useTranslation();
+    const sub = [artistNames(track.artists), track.version, track.album?.title, analysed ? t('player.analysisRecording') : null].filter(Boolean).join(' · ');
     return (
         <>
             {track.coverUrl ? <img className="rec-cov" src={track.coverUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span className="rec-cov" />}
