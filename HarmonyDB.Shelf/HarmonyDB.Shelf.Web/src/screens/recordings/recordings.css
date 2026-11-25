@@ -1,0 +1,17 @@
+/* A song's recordings: a line each, the one that plays lit; "find another" in its menu. */
+
+.rec-list { max-width: 720px; }
+.rec-lab { font-size: 11px; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin: 12px 0 3px; }
+.rec-row { display: flex; align-items: center; gap: 10px; width: calc(100% + 20px); margin: 0 -10px 1px; padding: 5px 10px; border-radius: 8px; text-align: left; min-width: 0; }
+.rec-row:hover { background: color-mix(in srgb, var(--surface2) 70%, transparent); }
+.rec-row.on { background: color-mix(in srgb, var(--surface2) 85%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.rec-cov { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; flex: none; }
+span.rec-cov { background: var(--surface2); }
+.rec-t1 { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.rec-t1 b { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-t1 span { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-row .d, .rec-it .d { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.rec-list .links { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 2px; align-items: center; }
+.rec-list .lnk.off { color: var(--muted); cursor: default; }
+.pop .rec-it { display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 12px; }
+.pop .rec-it .xbtn { width: 32px; height: 32px; }

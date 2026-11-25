@@ -1,0 +1,97 @@
+/* The views of an analysis (the mock-up's first style): the tabs, the time line, the grid, the lead sheet, iReal Pro,
+   the score, the notes. What sounds is lit with the accent; a section's kind has a tint of a token's colour. */
+
+.an-aviews { margin-top: 8px; }
+.an-rtabs { display: flex; gap: 2px; overflow-x: auto; margin: 6px 0 0; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+.an-rtabs button { flex: none; padding: 7px 10px; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.an-rtabs button.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.an-vbody { padding-top: 12px; min-width: 0; }
+
+.an-achord { white-space: nowrap; }
+.an-adeg { font-size: .62em; color: var(--muted); margin-left: 2px; vertical-align: super; font-weight: 500; }
+
+/* the time line */
+.an-tvtools { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.an-tvtools .step button { width: 30px; height: 30px; }
+.an-tlv { position: relative; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding-bottom: 6px; }
+.an-tlin { position: relative; touch-action: pan-x pan-y; cursor: pointer; }
+.an-tsec { position: absolute; top: 0; left: 0; right: 0; height: 20px; }
+.an-sk { position: absolute; top: 0; height: 18px; border-radius: 4px; font-size: 11px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;
+    color: var(--ink); background: color-mix(in srgb, var(--muted) 16%, var(--surface)); }
+.an-sk-verse { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+.an-sk-chorus { background: color-mix(in srgb, var(--here) 22%, var(--surface)); }
+.an-sk-bridge { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); }
+.an-sk-solo, .an-sk-instrumental, .an-sk-break { background: color-mix(in srgb, var(--chord-ink) 14%, var(--surface)); }
+.an-sk.now { box-shadow: inset 0 -2px 0 var(--accent); font-weight: 600; }
+.an-truler { position: absolute; left: 0; right: 0; height: 18px; }
+.an-tbar { position: absolute; top: 0; height: 18px; border-left: 1px solid var(--line); font: 10.5px var(--mono); color: var(--muted); padding-left: 3px; pointer-events: none; }
+.an-twave { position: absolute; display: block; pointer-events: none; }
+.an-tkey { position: absolute; border-left: 1.5px dashed var(--here); pointer-events: none; }
+.an-tkey span { position: absolute; top: 2px; left: 4px; font: 600 10.5px var(--sans); color: var(--here); white-space: nowrap; background: color-mix(in srgb, var(--bg) 80%, transparent); padding: 0 3px; border-radius: 3px; }
+.an-tkey.first { border-left-color: transparent; }
+.an-tloop { position: absolute; background: color-mix(in srgb, var(--accent) 16%, transparent); border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); pointer-events: none; }
+.an-tloop.drawing { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.an-tchords { position: absolute; left: 0; right: 0; }
+.an-tch { position: absolute; top: 0; height: 44px; border-radius: 6px; background: var(--surface2); font: 600 14px var(--mono); text-align: left; padding: 0 6px; overflow: hidden; white-space: nowrap; color: var(--ink); }
+.an-tch.nc { color: var(--muted); font-weight: 500; }
+/* a name too wide for its block: smaller, without its degree (analysis/fit.ts) */
+.an-tch { font-size: calc(14px * var(--fit, 1)); }
+.an-tch.fit-nodeg .an-adeg { display: none; }
+.an-tch.fit-two { line-height: 1.05; }
+.an-tch.fit-two .an-achord { white-space: normal; }
+.an-tch.now { background: var(--accent); color: var(--on-accent); }
+.an-tch.now .an-adeg { color: inherit; opacity: .8; }
+.an-phead { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: var(--accent); pointer-events: none; }
+
+/* the grid of bars */
+.an-gridv { max-width: 900px; display: grid; gap: 4px; }
+.an-grow { display: grid; grid-template-columns: repeat(var(--per-row, 4), minmax(0, 1fr)); gap: 4px; }
+.an-grow.head { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; padding: 10px 2px 0; font-size: 12.5px; }
+.an-grow.head b { font-weight: 600; color: var(--ink); }
+.an-gchange { color: var(--here); font-weight: 600; }
+.an-gbar { position: relative; display: flex; min-height: 50px; border-radius: 6px; background: var(--surface2); box-shadow: inset 2px 0 0 var(--line); padding-top: 14px; overflow: hidden; }
+.an-gbar.now { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.an-gno { position: absolute; top: 2px; left: 5px; font: 10px var(--mono); color: var(--muted); font-style: normal; pointer-events: none; }
+.an-gbeat { position: relative; flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; padding: 0 0 6px; text-align: left; font: 600 15px var(--mono); color: var(--ink); }
+.an-gbeat + .an-gbeat { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--line) 70%, transparent); }
+.an-gbeat.now { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.an-gpart { flex: 1 1 0; min-width: 0; padding-left: 5px; overflow: visible; white-space: nowrap; }
+/* a crowded bar's names: smaller, on two lines in turn, without degrees (analysis/fit.ts, GridView) */
+.an-gbeat .an-achord { display: inline-block; font-size: calc(1em * var(--glabel-fit, 1)); }
+.an-gbar.labels-two { min-height: 68px; }
+.an-gbar.labels-nodeg .an-adeg { display: none; }
+.an-gheld { color: var(--muted); font-weight: 400; }
+.an-gempty { flex: 1 1 0; }
+.an-gferm { position: absolute; top: -12px; left: 4px; font-size: 14px; color: var(--muted); }
+.an-ghead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); opacity: 0; pointer-events: none; }
+.an-gbar.now .an-ghead { opacity: .7; }
+
+/* iReal Pro */
+.an-irv { max-width: 860px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 14px 14px 12px; font-family: Georgia, "Times New Roman", serif; }
+.an-irh { display: flex; flex-wrap: wrap; gap: 0 12px; align-items: baseline; margin-bottom: 10px; }
+.an-irh b { font-size: 20px; }
+.an-irh span { font-size: 14px; }
+.an-irh i { margin-left: auto; font-size: 13px; }
+.an-irr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-left: 3px solid var(--ink); }
+.an-irb { position: relative; min-height: 50px; border-right: 1px solid var(--ink); text-align: left; font: italic 700 17px Georgia, serif; color: var(--ink); overflow: hidden; }
+.an-irchords { position: absolute; left: 6px; right: 4px; bottom: 5px; display: flex; justify-content: space-between; gap: 4px; min-width: 0; }
+.an-irchords b { white-space: nowrap; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: clip; }
+.an-irchords.n1 b { font-size: 17px; }
+.an-irchords.n2 b { font-size: 14px; }
+.an-irchords.n3 b { font-size: 11.5px; }
+.an-irchords.n1 { justify-content: flex-start; }
+.an-irb.now { background: var(--accent-soft); }
+.an-irm { position: absolute; left: 3px; top: 2px; font: 700 11px var(--sans); font-style: normal; border: 1.5px solid var(--ink); padding: 0 3px; }
+.an-irc { position: absolute; right: 4px; top: 2px; font: 600 10px var(--sans); font-style: normal; color: var(--here); }
+.an-irf { position: absolute; left: 45%; top: 0; font-size: 13px; font-style: normal; }
+.an-irlink { margin: 10px 0 0; font-family: var(--sans); }
+
+/* the score */
+.an-scorev .chips { margin-bottom: 8px; }
+.an-scorebox { position: relative; overflow-x: auto; background: var(--surface); border-radius: 8px; }
+.an-scorehost svg { display: block; }
+.an-smeasure { position: absolute; cursor: pointer; border-radius: 4px; }
+.an-smeasure.now { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* a lit bar brought into sight stops clear of the player at the bottom (follow.ts) */
+.an-gbar, .an-irb, .an-smeasure, .ls-barbg { scroll-margin: 12px 0 96px; }

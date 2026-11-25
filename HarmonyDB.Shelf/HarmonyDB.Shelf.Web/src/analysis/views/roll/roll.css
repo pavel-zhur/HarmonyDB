@@ -1,0 +1,60 @@
+/* The notes: the parts' chips, the zoom, the roll. The roll is drawn on canvas with the design's tokens, read at
+   drawing (roll.ts); a part's colour is one of five tokens by its place, the drums' is --muted. */
+
+.rl-view .chips { gap: 4px; margin-bottom: 6px; }
+.rl-sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--muted); }
+.rl-sw.c0 { background: var(--accent); }
+.rl-sw.c1 { background: var(--here); }
+.rl-sw.c2 { background: var(--ok); }
+.rl-sw.c3 { background: var(--danger); }
+.rl-sw.c4 { background: var(--chord-ink); }
+.rl-sw.drums { background: var(--muted); }
+
+.rl-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 6px; }
+.rl-steps { display: inline-flex; align-items: center; gap: 6px; }
+.rl-steps .step button { width: 30px; height: 30px; }
+.rl-hint-touch { display: none; }
+@media (pointer: coarse) {
+    .rl-hint { display: none; }
+    .rl-hint-touch { display: inline; }
+}
+
+/* the roll */
+.rl-frame { position: relative; }
+.rl-roll { height: clamp(300px, 62vh, 640px); }
+.rl-scroll { overflow: auto; position: relative; border-radius: 8px; background: var(--surface); overscroll-behavior: contain; touch-action: pan-x pan-y; scrollbar-width: thin; }
+.rl-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rl-track { position: relative; }
+.rl-stage { position: sticky; left: 0; top: 0; overflow: hidden; cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+.rl-canvas { position: absolute; left: 0; top: 0; display: block; }
+.rl-canvas:not(.rl-over) { pointer-events: none; }
+/* the sections, in a band above the ruler: the time line's own buttons (analysis.css, .sk) */
+.rl-sections { position: absolute; top: 2px; right: 0; height: 20px; overflow: hidden; cursor: default; }
+.rl-sections[hidden], .rl-sections .sk[hidden] { display: none; }
+/* the chord strip's stop for the keyboard: over the strip drawn on the canvas, which the pointer presses through it */
+.rl-strip { position: absolute; right: 0; height: 26px; pointer-events: none; }
+.rl-strip[hidden] { display: none; }
+.rl-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rl-handle { position: absolute; left: 0; top: 0; width: 14px; height: 20px; margin-left: -1px; cursor: ew-resize; touch-action: none; background: var(--accent); border-radius: 0 0 5px 0; }
+.rl-handle-end { margin-left: -13px; border-radius: 0 0 0 5px; }
+.rl-handle[hidden] { display: none; }
+.rl-handle:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+/* under a finger a handle is a tab large enough to take hold of */
+@media (pointer: coarse) {
+    .rl-handle { width: 26px; height: 38px; border-radius: 0 0 9px 0; }
+    .rl-handle-end { margin-left: -25px; border-radius: 0 0 0 9px; }
+    .rl-handle::before { content: ""; position: absolute; inset: 0 -10px -8px; }
+}
+.rl-tip { position: absolute; z-index: 2; pointer-events: none; padding: 6px 9px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line);
+    box-shadow: var(--shadow); font-size: 12.5px; line-height: 1.35; color: var(--muted); white-space: nowrap; }
+.rl-tip[hidden] { display: none; }
+.rl-tip-head { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.rl-tip-head strong { font-size: 14px; margin-right: 2px; }
+.rl-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+.rl-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; padding: 8px 12px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted); text-align: center; }
+
+.rl-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; }
+.rl-about { display: inline-flex; align-items: center; gap: 6px; }
+.rl-swatch { display: inline-block; width: 22px; height: 8px; border-radius: 2px; background: var(--ink); }
+.rl-swatch.faint { opacity: .5; margin-left: 8px; }

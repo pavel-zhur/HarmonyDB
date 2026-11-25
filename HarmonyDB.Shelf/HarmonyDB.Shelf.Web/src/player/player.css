@@ -1,0 +1,40 @@
+/* The player at the bottom of a song's page (the mock-up's first style): the track of time with the loop, a row of
+   play, what plays, the time and its buttons; its menus; the clip. */
+
+.pl-bar { position: sticky; bottom: 0; z-index: 4; margin-top: 16px; background: color-mix(in srgb, var(--bg) 93%, transparent);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 4px var(--gr) 8px var(--gl); }
+.pl-track { position: relative; height: 14px; cursor: pointer; touch-action: none; }
+.pl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--line); border-radius: 2px; }
+.pl-track i { position: absolute; left: 0; top: 6px; height: 2px; width: 0; background: var(--accent); border-radius: 2px; }
+.pl-track .lp { position: absolute; top: 2px; height: 10px; background: color-mix(in srgb, var(--accent) 20%, transparent); border-radius: 3px; }
+.pl-row2 { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.pl-play { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; margin-right: 6px; }
+.pl-play:disabled { opacity: .5; }
+.pl-play svg.ic { width: 18px; height: 18px; }
+.pl-info { flex: 1; min-width: 0; line-height: 1.2; }
+.pl-info b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-info span { display: block; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-time { font: 12px var(--mono); color: var(--muted); white-space: nowrap; margin: 0 4px; }
+@media (max-width: 420px) { .pl-time { display: none; } }
+.pl-btn { height: 32px; min-width: 32px; padding: 0 6px; border-radius: 8px; color: var(--muted); display: inline-grid; place-items: center; font-size: 12.5px; font-family: var(--mono); flex: none; }
+.pl-btn:hover { background: var(--surface2); color: var(--ink); }
+.pl-btn.on { background: var(--accent-soft); color: var(--accent); }
+.pl-btn:disabled { opacity: .45; }
+.pl-btn svg.ic { width: 19px; height: 19px; }
+
+/* the tempo */
+.pl-tempo { display: flex; gap: 10px; align-items: center; padding: 2px 12px 4px; }
+
+/* the sound: a row an instrument — its name, its switch, its volume, "only this" */
+.pl-mixer { display: grid; gap: 6px; padding: 2px 12px 8px; font-size: 13.5px; }
+.pl-mxr { display: grid; grid-template-columns: minmax(96px, auto) auto 1fr 34px; gap: 10px; align-items: center; }
+.pl-mxr input[type="range"] { width: 100%; accent-color: var(--accent); }
+.pl-mxr.sub .pl-mxn { padding-left: 12px; color: var(--muted); }
+.pl-mxr .pl-mxwide { grid-column: 3 / 5; }
+.pl-mxseg { margin: 0 0 4px; }
+.pl-note { padding: 4px 0 2px; }
+
+/* the clip */
+.pl-clip { padding: 10px 0 0; }
+.pl-clip .pl-vid { position: relative; max-width: 640px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--surface2); }
+.pl-clip video { width: 100%; height: 100%; display: block; object-fit: contain; }

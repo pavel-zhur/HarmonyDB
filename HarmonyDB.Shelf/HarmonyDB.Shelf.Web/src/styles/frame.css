@@ -1,0 +1,82 @@
+/* The frame (src/app): the black header with notes, the side menu (wide) or the bottom tabs (phone), the panes.
+   Phone: one scrolling column — the header scrolls away with the page. Wide (≥ 960px): the header stays, the side
+   menu on the left, each pane scrolls on its own; a list and its song stand side by side. */
+
+.app { height: 100%; display: flex; flex-direction: column; }
+/* two fingers are the app's (app/zoom.ts), not the browser's; nothing ever scrolls sideways */
+#root { touch-action: pan-x pan-y; }
+.mid, .pane { overflow-x: hidden; }
+
+/* header */
+.top { position: relative; background: var(--header-bg); color: var(--header-ink); height: 56px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: var(--gl); padding-right: var(--gr); overflow: hidden; z-index: 5; }
+.top .notes { position: absolute; inset: 0; pointer-events: none; background-image: url(/img/header.png); background-repeat: repeat-x; background-position: 0 center; opacity: .26; animation: float 360s linear infinite; }
+@keyframes float { to { background-position-x: -1216px; } }
+@media (prefers-reduced-motion: reduce) { .top .notes { animation: none; } }
+.top > *:not(.notes) { position: relative; }
+.brand { white-space: nowrap; display: flex; align-items: center; gap: 8px; color: var(--header-ink); font-weight: 700; font-size: 18px; letter-spacing: -.01em; text-shadow: 0 1px 6px #000; }
+.logo { width: 50px; height: 50px; margin: -4px -4px -4px -8px; background-repeat: no-repeat; transition: all .3s linear; flex: none; }
+.top .sp { flex: 1; }
+.top .tbtn { color: var(--header-ink); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; }
+.top .tbtn:hover { background: rgba(255, 255, 255, .14); }
+.top .syncb { opacity: .55; }
+.top .syncb.spin { opacity: 1; }
+.top .btn.tg, .top .btn.signin { padding: 7px 14px; }
+.top .signin { background: var(--telegram); color: #fff; border-color: var(--telegram); }
+
+/* the middle: on a phone the one scrolling column (header inside it), wide a row of side menu and main */
+.mid { flex: 1; min-height: 0; display: flex; }
+.main { flex: 1; min-width: 0; display: flex; }
+.pane { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; position: relative; }
+.pad { padding: 16px var(--gr) 96px var(--gl); max-width: 760px; }
+.pad.wide { max-width: 1100px; }
+
+/* side menu (wide) */
+.side { width: 232px; flex: none; background: var(--bg); overflow-y: auto; padding: 14px 8px; display: none; }
+.side h6 { margin: 18px 10px 4px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; opacity: .7; }
+.side a, .side button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 7px 10px; border-radius: 10px; text-align: left; font-weight: 500; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side a:hover, .side button:hover { background: var(--surface2); }
+.side a.on { background: var(--surface2); color: var(--ink); font-weight: 600; }
+.side svg.ic { width: 18px; height: 18px; flex: none; opacity: .8; }
+.side .soon { margin-left: auto; }
+
+/* bottom tabs (phone) */
+.tabs { flex: none; display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 4px max(4px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px)); }
+.tabs a, .tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px 4px; border-radius: 12px; font-size: 11px; font-weight: 500; color: var(--muted); }
+.tabs .on { color: var(--accent); font-weight: 700; }
+.tabs .on svg.ic { stroke-width: 2.2; }
+
+@media (min-width: 960px) {
+    .side { display: block; }
+    .tabs { display: none; }
+    .pad { padding-top: 20px; }
+}
+@media (max-width: 959px) {
+    .mid { display: block; overflow-y: auto; overscroll-behavior: contain; }
+    .main { display: block; }
+    .pane { overflow: visible; }
+}
+
+/* a list and its song side by side (wide); on a phone the song covers the list */
+.lib { display: flex; flex: 1; min-width: 0; }
+.lib:not(.open) .pane.song { display: none; }
+.split { display: none; }
+@media (min-width: 960px) {
+    .lib.open .pane.list { flex: 0 0 var(--lw, 44%); max-width: var(--lw, 560px); }
+    .lib.open .split { display: block; flex: none; width: 9px; margin: 0 -4px; cursor: col-resize; position: relative; z-index: 3; background: linear-gradient(var(--line), var(--line)) center/1px 100% no-repeat; }
+    .lib.open .split:hover, .resizing .split { background: linear-gradient(var(--accent), var(--accent)) center/3px 100% no-repeat; }
+}
+@media (max-width: 959px) {
+    .lib { display: block; }
+    .lib.open .pane.list { display: none; }
+}
+.resizing { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+
+/* "to top": one per scrolling list or song, hidden while already at the top */
+.totop { position: sticky; bottom: 16px; margin: -60px var(--gr) 16px auto; width: 38px; height: 38px; border-radius: 50%; background: var(--surface); color: var(--muted); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line), 0 2px 8px rgba(13, 20, 48, .12); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 4; }
+.totop.show { opacity: 1; pointer-events: auto; }
+
+/* "soon" lines of the menus */
+.side .nav-soon, .soonline { display: flex; align-items: center; gap: 11px; padding: 7px 10px; font-size: 14px; font-weight: 500; color: var(--muted); opacity: .65; cursor: default; }
+.side .nav-soon svg.ic { width: 18px; height: 18px; opacity: .8; }
+.menu > .soonline { padding: 11px 0; gap: 14px; font-size: 15px; opacity: .6; }
+.menu > .soonline:hover { color: var(--muted); }

@@ -1,0 +1,3 @@
+/* The profile. */
+.me { display: flex; gap: 14px; align-items: center; max-width: 620px; padding: 4px 0; }
+.me b { flex: 1; min-width: 0; font-size: 18px; }

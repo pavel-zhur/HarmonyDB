@@ -1,0 +1,29 @@
+/* The lead sheet: the staff, the signs and the words in the ink of the page; what sounds lit with the accent. */
+
+@font-face {
+    font-family: "Bravura";
+    src: url("./Bravura.woff2") format("woff2");
+    font-display: block;
+}
+
+.ls-root { font-family: var(--sans); }
+.ls-root .seg { margin-bottom: 10px; }
+.ls-sheet { overflow-x: auto; }
+.ls-message { color: var(--muted); margin: 8px 0; }
+
+.ls-sys { display: block; overflow: visible; margin: 0 0 10px; user-select: none; -webkit-user-select: none; }
+.ls-sys text { fill: var(--ink); }
+.ls-sys text.ls-soft { fill: var(--muted); }
+.ls-staff { stroke: color-mix(in srgb, var(--ink) 60%, transparent); }
+.ls-solid { fill: var(--ink); }
+.ls-section { fill: none; stroke: var(--ink); }
+
+.ls-barbg, .ls-beatbg, .ls-hit { fill: transparent; }
+.ls-barbg.now { fill: color-mix(in srgb, var(--accent) 9%, transparent); }
+.ls-beatbg.now { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
+.ls-mark.now text, .ls-mark.now .ls-solid { fill: var(--accent); }
+
+.ls-hit { cursor: pointer; pointer-events: all; }
+.ls-hit:hover { fill: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ls-hit:focus { outline: none; }
+.ls-hit:focus-visible { fill: color-mix(in srgb, var(--accent) 10%, transparent); stroke: var(--accent); stroke-width: 2; }

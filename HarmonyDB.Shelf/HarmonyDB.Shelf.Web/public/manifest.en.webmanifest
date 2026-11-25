@@ -1,0 +1,17 @@
+{
+  "name": "One Shelf",
+  "short_name": "One Shelf",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/maskable_icon_x192.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "/maskable_icon_x512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

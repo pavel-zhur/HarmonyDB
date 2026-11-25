@@ -1,0 +1,92 @@
+/* The design's tokens: the mock-up's first style (OneShelf.Frontend.WebTs.v3, src.html), light and dark.
+   Colours only through these names; a component never writes a colour of its own (the dialogs' and Telegram's few
+   fixed ones are named here too). */
+
+:root {
+    --bg: #f3f5fa;
+    --surface: #ffffff;
+    --surface2: #e9edf6;
+    --ink: #0d1430;
+    --muted: #626b8a;
+    --line: #dde2ee;
+    --accent: #2a56e8;
+    --accent-soft: #e3eaff;
+    --on-accent: #ffffff;
+    --chord-bg: #d7f0fb;
+    --chord-ink: #0a3a55;
+    --chord-hl: #bff0c4;
+    --chord-hl-ink: #0c4a1c;
+    --here: #a35a00;
+    --here-soft: #ffeccf;
+    --mark: #fff0b0;
+    --last: #e3eaff;
+    --danger: #c4302b;
+    --ok: #167a43;
+    --shadow: 0 6px 24px rgba(13, 20, 48, .14);
+    --shadow-small: 0 1px 2px rgba(13, 20, 48, .12);
+    --scrim: rgba(5, 8, 20, .62);
+    --telegram: #229ed9;
+    --header-bg: #000000;
+    --header-ink: #ffffff;
+
+    --sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+    /* the side gutters, past the phone's rounded corners */
+    --gl: max(16px, env(safe-area-inset-left, 0px));
+    --gr: max(16px, env(safe-area-inset-right, 0px));
+
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #090d19;
+        --surface: #121728;
+        --surface2: #1a2036;
+        --ink: #e9ecf8;
+        --muted: #98a1bf;
+        --line: #252c45;
+        --accent: #86a0ff;
+        --accent-soft: #1b2752;
+        --on-accent: #0a1030;
+        --chord-bg: #123a4d;
+        --chord-ink: #c8efff;
+        --chord-hl: #1d5a2a;
+        --chord-hl-ink: #d4ffd9;
+        --here: #ffc670;
+        --here-soft: #3a2a0d;
+        --mark: #5b4a05;
+        --last: #1a2548;
+        --danger: #ff8a80;
+        --ok: #6bdc9a;
+        --shadow: 0 6px 24px rgba(0, 0, 0, .5);
+        --shadow-small: 0 1px 2px rgba(0, 0, 0, .4);
+        color-scheme: dark;
+    }
+}
+
+:root[data-theme="dark"] {
+    --bg: #090d19;
+    --surface: #121728;
+    --surface2: #1a2036;
+    --ink: #e9ecf8;
+    --muted: #98a1bf;
+    --line: #252c45;
+    --accent: #86a0ff;
+    --accent-soft: #1b2752;
+    --on-accent: #0a1030;
+    --chord-bg: #123a4d;
+    --chord-ink: #c8efff;
+    --chord-hl: #1d5a2a;
+    --chord-hl-ink: #d4ffd9;
+    --here: #ffc670;
+    --here-soft: #3a2a0d;
+    --mark: #5b4a05;
+    --last: #1a2548;
+    --danger: #ff8a80;
+    --ok: #6bdc9a;
+    --shadow: 0 6px 24px rgba(0, 0, 0, .5);
+    --shadow-small: 0 1px 2px rgba(0, 0, 0, .4);
+    color-scheme: dark;
+}

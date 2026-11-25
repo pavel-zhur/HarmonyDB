@@ -1,0 +1,9 @@
+/* A playlist's head and settings. */
+.mem { display: flex; align-items: center; gap: 10px; padding: 10px 0; flex-wrap: wrap; }
+.mem .n { flex: 1; min-width: 0; font-weight: 500; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.contact { font-size: 13px; font-weight: 400; }
+.invite { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 6px; }
+.invitation { padding: 6px 0 14px; border-top: 1px solid var(--line); }
+.origin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: -2px 0 10px; }
+.quietlinks { display: flex; flex-wrap: wrap; gap: 0 18px; margin: 6px 0 0; }
+.keep { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -2px 0 10px; font-size: 13px; color: var(--muted); }

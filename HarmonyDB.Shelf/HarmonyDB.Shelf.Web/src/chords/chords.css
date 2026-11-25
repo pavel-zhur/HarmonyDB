@@ -1,0 +1,64 @@
+/* The chord sheet: the old frontend's styles of div.chords-block (public/css/app.scss), kept as they were — the
+   chords' places over their words and the wrapping rest on them — in the design's colours and font. The size: 14px
+   times the chords' scale (two fingers on the sheet). */
+.sheet { font: calc(14px * var(--chords-scale, 1)) / 1.5715 var(--mono); user-select: none; -webkit-user-select: none; touch-action: pan-y; overflow-wrap: break-word; }
+/* as the old pre: the text keeps 1.25rem free on the right, where a chord flying over the line's last word may hang */
+.sheet pre { white-space: pre-wrap; margin: 0; padding: 0 1.25rem 6px 0; overflow: visible; font: inherit; }
+.sheet div.pre-variable-width { white-space: pre-wrap; font-family: var(--sans); }
+.sheet div.pre-variable-width span.flying2 { top: -20px; }
+.sheet div.pre-variable-width .chord { border-left: 1px solid var(--surface); font-size: 90%; }
+
+.sheet .chord { background: var(--chord-bg); color: var(--chord-ink); font-weight: 600; padding: 0 3px; border-radius: 4px; cursor: pointer; text-wrap: nowrap; white-space: nowrap; }
+.sheet .chord sub, .sheet .chord sup { position: relative; font-size: .75em; line-height: 0; vertical-align: baseline; background-color: inherit; }
+.sheet .chord sub { bottom: -.25em; }
+.sheet .chord sup { top: -.5em; }
+.sheet .chord sup.chord-degree { margin-left: .25em; font-weight: 500; opacity: .7; }
+.sheet .chord[chord-custom="search"] { background: var(--chord-hl); color: var(--chord-hl-ink); }
+.sheet .chord[chord-custom="search-first"] { background: var(--chord-hl); color: var(--chord-hl-ink); border-left: solid 2px var(--ok); margin-left: -2px; }
+.sheet .chord.now { background: var(--accent); color: var(--on-accent); }
+.sheet .chords-line.lnow { background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
+
+.sheet div.bold-div { font-weight: bold; }
+.sheet span.chords-line { line-height: inherit; }
+.sheet div.chords-double-line { margin-bottom: .142917em; padding-right: 1.15em; }
+.sheet span.chords-double-line { line-height: 2.5725em; position: relative; top: .57167em; display: inline-block; }
+.sheet span.flying { position: absolute; margin-right: -1.25rem; }
+.sheet span.flying2 { position: relative; top: -1.28625em; margin-right: -1.4375em; }
+
+/* the marks of a key, a time signature and a tempo (NodeMark): on a line of their own, as a musician writes them
+   (the .NET side writes these two rules inline; the port leaves them out for the page's policy, so they are here) */
+.sheet .sheet-mark { white-space: nowrap; color: var(--here); font-weight: 600; font-size: 1.2em; display: inline-block; margin: .25em 0; }
+.sheet .sheet-mark svg { vertical-align: middle; }
+.sheet .sheet-mark-key-name { font-family: var(--sans); }
+.sheet .sheet-mark-tempo { font-family: var(--sans); }
+
+/* the circle of fifths */
+.cof { max-width: 320px; width: 100%; margin: 0 auto; display: block; }
+.cof text { font: 600 11px var(--sans); fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.cof text.mi { font-size: 9.5px; }
+.cof path { cursor: pointer; stroke: var(--line); }
+.cof .seg0 { fill: var(--surface); }
+.cof .seg1 { fill: var(--surface2); }
+.cof .u { fill: var(--chord-bg); }
+.cof .b { fill: var(--here-soft); }
+
+/* the fingerings of the chord tapped: a window with all of them, or ("Less") a small plate with the first */
+.fing { position: fixed; z-index: 40; right: var(--gr); top: calc(64px + env(safe-area-inset-top, 0px)); width: min(300px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 8px 10px 10px; }
+.fing .fh { display: flex; align-items: center; gap: 6px; }
+.fing .fh b { font: 600 17px var(--mono); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fing .fh .xbtn { width: 32px; height: 32px; }
+/* the pictures are drawn on white: one calm card holds them all (in the dark theme too, framed, a little dimmed) */
+.fing .pics { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; padding: 6px; max-height: 50vh; overflow: auto; background: #fff; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.fing .pics img { width: 80px; height: auto; }
+.fing .fstate { margin: 6px 2px 10px; }
+:root[data-theme="dark"] .fing .pics, :root[data-theme="dark"] .fing.plate .card { filter: brightness(.86); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fing .pics, :root:not([data-theme="light"]) .fing.plate .card { filter: brightness(.86); } }
+.fing .less { display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; padding: 8px 2px 0; border-top: 1px solid var(--line); }
+.fing .less .ck { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line); display: grid; place-items: center; flex: none; }
+.fing .less.on .ck { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.fing .less .ck svg.ic { width: 14px; height: 14px; stroke-width: 3; }
+.fing .less small { display: block; color: var(--muted); font-size: 12.5px; }
+.fing.plate { width: auto; padding: 6px 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left; }
+.fing.plate b { font: 600 15px var(--mono); }
+.fing.plate .card { display: block; background: #fff; border-radius: 6px; padding: 2px; box-shadow: inset 0 0 0 1px var(--line); }
+.fing.plate img { display: block; width: 56px; height: auto; }

@@ -1,0 +1,166 @@
+/* The page and the kit (src/kit): the mock-up's first style, with its own overrides already applied. */
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); overflow: hidden; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; }
+/* the interface's size (two fingers anywhere but on the chords; the profile's setting) */
+#root { zoom: var(--ui-scale, 1); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+button:disabled { cursor: default; }
+a { color: var(--accent); text-decoration: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+p { margin: 0 0 1em; }
+
+svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* type: no huge headings */
+h1 { font-size: 22px; line-height: 1.2; margin: 4px 0 18px; letter-spacing: -.02em; text-wrap: balance; }
+h1 svg.ic { width: 24px; height: 24px; vertical-align: -3px; color: var(--accent); }
+h2 { margin: 30px 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.h2l { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; }
+.h2l:hover { color: var(--accent); }
+.h2l svg.ic { width: 14px; height: 14px; }
+.hsw { display: flex; justify-content: space-between; align-items: baseline; }
+.hsw > span { font-size: 11px; letter-spacing: .02em; text-transform: none; font-weight: 400; color: var(--muted); opacity: .8; padding-right: 2px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.lead { color: var(--muted); max-width: 620px; margin-top: -6px; }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+/* buttons: quiet everywhere; the one solid button lives in dialogs */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 13px; border-radius: 10px; background: var(--surface2); border: 1px solid transparent; color: var(--ink); font-weight: 500; white-space: nowrap; }
+.btn:hover { background: var(--line); }
+.btn:disabled { opacity: .5; background: var(--surface2); }
+.btn.pri { background: var(--accent-soft); color: var(--accent); }
+.btn.pri:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.btn.solid { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; padding: 9px 14px; border-radius: 12px; }
+.btn.solid:hover { background: var(--accent); filter: brightness(1.06); }
+.btn.dan { color: var(--danger); }
+.btn.tg { background: var(--telegram); border-color: var(--telegram); color: #fff; }
+.btn.tg:hover { background: var(--telegram); filter: brightness(1.06); }
+.btn.sm { padding: 6px 12px; font-size: 13.5px; }
+.lnk { display: inline-flex; align-items: center; gap: 5px; padding: 7px 0; color: var(--accent); font-weight: 500; font-size: 14px; }
+.lnk svg.ic { width: 16px; height: 16px; }
+.xbtn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--muted); }
+.xbtn:hover { background: var(--surface2); color: var(--ink); }
+
+/* "soon": there, marked, does nothing */
+.soon { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 1px 7px; border-radius: 999px; background: var(--surface2); color: var(--muted); white-space: nowrap; vertical-align: 1px; }
+
+/* chips: the filters and choices */
+.chips { display: flex; flex-wrap: wrap; gap: 2px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 8px; border-radius: 999px; background: none; border: 1px solid transparent; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; max-width: 100%; }
+.chip:hover { background: var(--surface2); }
+.chip.on { background: var(--surface2); color: var(--ink); font-weight: 600; }
+.chip svg.ic { width: 13px; height: 13px; }
+.chip .el { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+
+/* fields */
+.field { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+.field:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+textarea.field { resize: vertical; min-height: 80px; }
+.search { position: relative; }
+.search > svg.ic { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input { padding-left: 44px; padding-right: 44px; }
+.search .x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); }
+.inline-form { display: flex; gap: 8px; max-width: 420px; }
+.inline-form .field { flex: 1; min-width: 0; }
+
+/* switch, segmented choice, stepper */
+.sw { position: relative; width: 36px; height: 21px; border-radius: 999px; background: var(--line); flex: none; transition: background .15s; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.sw.on { background: var(--accent); }
+.sw.on::after { transform: translateX(15px); }
+.sw:disabled { opacity: .5; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 0; background: var(--surface2); padding: 3px; border-radius: 10px; gap: 2px; }
+.seg button { border-radius: 8px; min-height: 30px; padding: 4px 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-small); }
+.seg button:disabled:not(.on) { opacity: .5; }
+.step { display: inline-flex; align-items: center; border-radius: 10px; background: var(--surface2); overflow: hidden; }
+.step button { width: 34px; height: 34px; display: grid; place-items: center; font-size: 18px; font-weight: 600; color: var(--muted); }
+.step button:hover { color: var(--ink); }
+.step .v { min-width: 58px; text-align: center; font: 600 14px var(--mono); cursor: pointer; }
+
+/* lists with thin dividers (no boxes) */
+.lines { max-width: 720px; }
+.lines > * + * { border-top: 1px solid var(--line); }
+.setrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 0; }
+.setrow > span:first-child { flex: 1 1 190px; min-width: 0; }
+.setrow .sub { display: block; color: var(--muted); font-size: 13px; }
+.menu { max-width: 720px; }
+.menu > * { display: flex; align-items: center; gap: 14px; width: 100%; padding: 11px 0; text-align: left; font-weight: 500; color: var(--ink); border-top: 1px solid var(--line); }
+.menu > *:hover { color: var(--accent); }
+.menu > * svg.ic { color: var(--muted); }
+.menu small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+
+/* the avatar: a picture, or the first letter on a colour of the person */
+.av { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; flex: none; object-fit: cover; overflow: hidden; }
+.av.s { width: 20px; height: 20px; font-size: 10px; }
+.av.l { width: 56px; height: 56px; font-size: 22px; }
+.avs { display: inline-flex; align-items: center; gap: 3px; }
+
+/* the anchored menu (popover) */
+.pop { position: fixed; z-index: 50; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 6px; overflow: auto; }
+.pop .it { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; font-weight: 500; }
+.pop .it:hover { background: var(--surface2); }
+.pop .it.on { color: var(--accent); font-weight: 600; }
+.pop .it small { color: var(--muted); font-weight: 400; display: block; }
+.pop .it .ck { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line); display: grid; place-items: center; flex: none; }
+.pop .it.on .ck { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.pop .it .ck svg.ic { width: 14px; height: 14px; stroke-width: 3; }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 6px; }
+.pop .ttl { padding: 8px 12px 4px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.pop .note { padding: 6px 12px 8px; font-size: 13px; color: var(--muted); }
+.emo { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; padding: 4px; }
+.emo button { font-size: 24px; width: 44px; height: 44px; border-radius: 12px; }
+.emo button:hover { background: var(--surface2); }
+.emo button.on { background: var(--accent-soft); outline: 1.5px solid var(--accent); }
+
+/* the dialog: a card over a dim page, with the one solid button */
+.scrim { position: fixed; inset: 0; z-index: 70; background: var(--scrim); display: grid; place-items: center; padding: 16px; }
+.dialog { max-width: 380px; width: 100%; padding: 22px; display: grid; gap: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.dialog h1 { margin: 0; font-size: 20px; }
+.dialog p { margin: 0; }
+.dialog .row2 { display: flex; gap: 8px; }
+.dialog .row2 .field { flex: 1; min-width: 0; }
+
+/* the inline confirmation of a dangerous step */
+.confirm { padding: 14px; border: 1px solid var(--danger); border-radius: 16px; background: var(--surface); max-width: 620px; }
+.confirm p { margin: 0 0 12px; }
+.confirm .chips { gap: 8px; }
+
+/* the toast, with Undo */
+.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 12px 10px 18px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); width: max-content; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 14px; }
+.toast button { color: inherit; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 22%, transparent); white-space: nowrap; }
+@media (min-width: 960px) { .toast { bottom: 24px; } }
+
+/* busy */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin svg.ic, svg.ic.spin { animation: spin 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .spin svg.ic, svg.ic.spin { animation: none; } }
+.loading { padding: 20px 8px; color: var(--muted); }
+.empty { padding: 20px 8px; color: var(--muted); }
+.failed { padding: 14px 0; color: var(--danger); }
+
+/* settings forms: a label, then lines with thin dividers */
+.form { display: grid; gap: 22px; max-width: 620px; }
+.form h1 { margin-bottom: 0; }
+.lab { font-weight: 600; margin-bottom: 4px; display: block; }
+.lab svg.ic { vertical-align: -4px; margin-right: 4px; }
+.danger { color: var(--danger); }
+
+/* a link to copy, with its QR code (kit/LinkBox) */
+.linkbox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.linkbox code { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 12px; background: var(--surface2); font: 13px var(--mono); overflow-wrap: anywhere; user-select: all; }
+.qr { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
+.qrcode { display: block; background: #fff; padding: 8px; border-radius: 10px; flex: none; }
+.qrcode svg { display: block; width: 100%; height: 100%; }
+
+/* a closed thing, an invitation, a guest at a person's page: centred, quiet */
+.locked { padding: 28px 18px; text-align: center; max-width: 520px; margin: 12px auto; display: grid; justify-items: center; gap: 4px; }
+.locked h1 { margin: 10px 0 6px; }
+.locked p { margin: 0 0 10px; }
+.lockic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--surface2); color: var(--muted); }
