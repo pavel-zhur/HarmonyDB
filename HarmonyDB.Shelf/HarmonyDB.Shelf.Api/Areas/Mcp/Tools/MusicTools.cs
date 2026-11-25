@@ -171,14 +171,15 @@ public static class MusicTools
             "The service's genres and moods (id, title, group) for music_genre.",
             McpToolEffect.ReadOutside,
             async (
-                ClaimsPrincipal user, PermissionCatalog permissions, MusicCatalog catalog,
+                ClaimsPrincipal user, PermissionCatalog permissions, MusicCatalog catalog, MusicLanguages languages,
                 MusicService service,
                 int? offset = null,
                 [Description("1-25, default 25.")] int? limit = null,
                 CancellationToken cancellationToken = default) =>
             {
                 Allowed(user, permissions, service, false);
-                var categories = await catalog.GetCategoriesAsync(service, cancellationToken);
+                // in the person's language (an assistant has no browser to tell it)
+                var categories = await catalog.GetCategoriesAsync(service, await languages.OfAsync(user, null, null, cancellationToken), cancellationToken);
                 var all = categories.Groups
                     .SelectMany(g => g.Categories.SelectMany(c => c.Children.Prepend(c)).Select(c => new { c.Id, c.Title, group = g.Title }))
                     .ToList();
@@ -189,7 +190,7 @@ public static class MusicTools
             "A genre or mood: its tracks (paged), and its first albums, playlists and artists.",
             McpToolEffect.ReadOutside,
             async (
-                ClaimsPrincipal user, PermissionCatalog permissions, MusicCatalog catalog,
+                ClaimsPrincipal user, PermissionCatalog permissions, MusicCatalog catalog, MusicLanguages languages,
                 MusicService service,
                 string genreId,
                 int? offset = null,
@@ -197,7 +198,7 @@ public static class MusicTools
                 CancellationToken cancellationToken = default) =>
             {
                 var library = Allowed(user, permissions, service, false);
-                var page = await catalog.GetCategoryAsync(user, service, genreId, 0, cancellationToken);
+                var page = await catalog.GetCategoryAsync(user, service, genreId, 0, await languages.OfAsync(user, null, null, cancellationToken), cancellationToken);
                 return new
                 {
                     page.Title,

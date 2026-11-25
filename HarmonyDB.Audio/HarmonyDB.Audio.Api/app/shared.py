@@ -1,7 +1,7 @@
 """What the routes share."""
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import Query
 
@@ -11,6 +11,11 @@ from errors import Problem
 
 Fresh = Annotated[bool, Query(description="Ask the service anew instead of giving the stored answer; "
                                           "the new answer is stored.")]
+
+# the languages names are asked in (of genres, moods and the like); each is stored apart
+LANGUAGES = ("en", "ru")
+Lang = Annotated[Literal["en", "ru"], Query(description="The language of the names (genres, moods …): en or ru. "
+                                                         "A name the service has not in it is given in another.")]
 
 FILE_RESPONSES = {
     200: {"description": "The whole file", "content": {"application/octet-stream": {}}},

@@ -13,7 +13,7 @@ from errors import NOT_FOUND, ApiError
 from models import (Answer, FileInfo, Who, YAlbumPage, YAlbums, YArtistPage, YArtists, YCategories, YCategory,
                     YChart, YHistory, YLikes, YLyrics, YPagedTracks, YPlaylistPage, YPlaylists, YRecommendFor,
                     YSearch, YSuggest, YTrack, YTracks)
-from shared import SERVICE_PROBLEMS, Fresh, envelope, file_info, file_route, problems
+from shared import SERVICE_PROBLEMS, Fresh, Lang, envelope, file_info, file_route, problems
 
 nav = APIRouter(prefix="/internal/yandex", tags=["yandex"], dependencies=[Depends(require(READ))],
                 responses=SERVICE_PROBLEMS)
@@ -108,14 +108,14 @@ async def chart(fresh: Fresh = False, a: Acting = Depends(acting)):
 
 
 @nav.get("/categories", response_model=Answer[YCategories], summary="Genres, with their sub-genres")
-async def categories(fresh: Fresh = False, a: Acting = Depends(acting)):
-    return envelope(await Y.categories(a, fresh))
+async def categories(lang: Lang = "en", fresh: Fresh = False, a: Acting = Depends(acting)):
+    return envelope(await Y.categories(a, fresh, lang))
 
 
 @nav.get("/categories/{id}", response_model=Answer[YCategory], summary="A genre's albums, page by page")
 async def category(id: str, offset: int = Query(0, ge=0), limit: int = Query(24, ge=1, le=100),
-                   fresh: Fresh = False, a: Acting = Depends(acting)):
-    return envelope(await Y.category(id, offset, limit, a, fresh))
+                   lang: Lang = "en", fresh: Fresh = False, a: Acting = Depends(acting)):
+    return envelope(await Y.category(id, offset, limit, a, fresh, lang))
 
 
 @nav.get("/me/playlists", response_model=Answer[YPlaylists], summary="The person's playlists (person mode)")

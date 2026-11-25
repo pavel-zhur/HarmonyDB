@@ -83,6 +83,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -115,16 +125,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -256,6 +256,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -288,16 +298,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -429,6 +429,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -461,16 +471,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -600,6 +600,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -632,16 +642,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -796,6 +796,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -828,16 +838,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -978,6 +978,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1010,16 +1020,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -1149,6 +1149,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1181,16 +1191,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -1320,6 +1320,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1352,16 +1362,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -1491,6 +1491,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1523,16 +1533,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -1662,6 +1662,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1694,16 +1704,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -1833,6 +1833,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -1865,16 +1875,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2004,6 +2004,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2036,16 +2046,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2122,10 +2122,10 @@
                 "service"
               ],
               "type": "string",
-              "description": "How to act: anonymous, person or service.",
+              "description": "How to act: anonymous or person (not service).",
               "title": "X-Audio-Mode"
             },
-            "description": "How to act: anonymous, person or service."
+            "description": "How to act: anonymous or person (not service)."
           },
           {
             "name": "X-Audio-Subject",
@@ -2175,6 +2175,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2207,16 +2217,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2293,10 +2293,10 @@
                 "service"
               ],
               "type": "string",
-              "description": "How to act: anonymous, person or service.",
+              "description": "How to act: anonymous or person (not service).",
               "title": "X-Audio-Mode"
             },
-            "description": "How to act: anonymous, person or service."
+            "description": "How to act: anonymous or person (not service)."
           },
           {
             "name": "X-Audio-Subject",
@@ -2346,6 +2346,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2378,16 +2388,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2518,6 +2518,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2550,16 +2560,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2680,6 +2680,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2712,16 +2722,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2766,6 +2766,22 @@
           }
         ],
         "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "ru"
+              ],
+              "type": "string",
+              "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another.",
+              "default": "en",
+              "title": "Lang"
+            },
+            "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another."
+          },
           {
             "name": "fresh",
             "in": "query",
@@ -2842,6 +2858,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -2874,16 +2900,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -2961,6 +2977,22 @@
             }
           },
           {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "ru"
+              ],
+              "type": "string",
+              "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another.",
+              "default": "en",
+              "title": "Lang"
+            },
+            "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another."
+          },
+          {
             "name": "fresh",
             "in": "query",
             "required": false,
@@ -3036,6 +3068,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3068,16 +3110,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -3198,6 +3230,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3230,16 +3272,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -3360,6 +3392,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3392,16 +3434,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -3522,6 +3554,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3554,16 +3596,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -3666,6 +3698,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3708,16 +3750,6 @@
           },
           "416": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -3809,10 +3841,14 @@
               "application/octet-stream": {}
             }
           },
-          "206": {
-            "description": "The part the Range asked for",
+          "500": {
+            "description": "An unexpected error: { code, message }",
             "content": {
-              "application/octet-stream": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
             }
           },
           "400": {
@@ -3865,16 +3901,6 @@
               }
             }
           },
-          "500": {
-            "description": "An unexpected error: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
           "502": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -3893,6 +3919,12 @@
                   "$ref": "#/components/schemas/Problem"
                 }
               }
+            }
+          },
+          "206": {
+            "description": "The part the Range asked for",
+            "content": {
+              "application/octet-stream": {}
             }
           }
         }
@@ -3958,10 +3990,14 @@
               "application/octet-stream": {}
             }
           },
-          "206": {
-            "description": "The part the Range asked for",
+          "500": {
+            "description": "An unexpected error: { code, message }",
             "content": {
-              "application/octet-stream": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
             }
           },
           "400": {
@@ -4014,16 +4050,6 @@
               }
             }
           },
-          "500": {
-            "description": "An unexpected error: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
           "502": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4042,6 +4068,12 @@
                   "$ref": "#/components/schemas/Problem"
                 }
               }
+            }
+          },
+          "206": {
+            "description": "The part the Range asked for",
+            "content": {
+              "application/octet-stream": {}
             }
           }
         }
@@ -4124,6 +4156,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4156,16 +4198,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -4297,6 +4329,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4329,16 +4371,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -4470,6 +4502,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4502,16 +4544,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -4641,6 +4673,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4673,16 +4715,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -4812,6 +4844,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -4844,16 +4886,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -4983,6 +5015,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5015,16 +5057,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -5154,6 +5186,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5186,16 +5228,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -5325,6 +5357,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5357,16 +5399,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -5496,6 +5528,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5528,16 +5570,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -5667,6 +5699,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5699,16 +5741,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -5785,10 +5817,10 @@
                 "service"
               ],
               "type": "string",
-              "description": "How to act: anonymous, person or service.",
+              "description": "How to act: anonymous or person (not service).",
               "title": "X-Audio-Mode"
             },
-            "description": "How to act: anonymous, person or service."
+            "description": "How to act: anonymous or person (not service)."
           },
           {
             "name": "X-Audio-Subject",
@@ -5838,6 +5870,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -5870,16 +5912,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6012,6 +6044,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6044,16 +6086,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6098,6 +6130,22 @@
           }
         ],
         "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "ru"
+              ],
+              "type": "string",
+              "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another.",
+              "default": "en",
+              "title": "Lang"
+            },
+            "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another."
+          },
           {
             "name": "fresh",
             "in": "query",
@@ -6174,6 +6222,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6206,16 +6264,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6268,6 +6316,22 @@
               "type": "string",
               "title": "Id"
             }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "ru"
+              ],
+              "type": "string",
+              "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another.",
+              "default": "en",
+              "title": "Lang"
+            },
+            "description": "The language of the names (genres, moods …): en or ru. A name the service has not in it is given in another."
           },
           {
             "name": "fresh",
@@ -6345,6 +6409,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6377,16 +6451,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6507,6 +6571,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6539,16 +6613,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6669,6 +6733,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6701,16 +6775,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6831,6 +6895,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -6863,16 +6937,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -6993,6 +7057,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7025,16 +7099,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -7137,6 +7201,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7169,16 +7243,6 @@
           },
           "416": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -7271,6 +7335,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7303,16 +7377,6 @@
           },
           "416": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -7394,10 +7458,14 @@
               "application/octet-stream": {}
             }
           },
-          "206": {
-            "description": "The part the Range asked for",
+          "500": {
+            "description": "An unexpected error: { code, message }",
             "content": {
-              "application/octet-stream": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
             }
           },
           "400": {
@@ -7440,16 +7508,6 @@
               }
             }
           },
-          "500": {
-            "description": "An unexpected error: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
           "502": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7458,6 +7516,12 @@
                   "$ref": "#/components/schemas/Problem"
                 }
               }
+            }
+          },
+          "206": {
+            "description": "The part the Range asked for",
+            "content": {
+              "application/octet-stream": {}
             }
           }
         }
@@ -7523,10 +7587,14 @@
               "application/octet-stream": {}
             }
           },
-          "206": {
-            "description": "The part the Range asked for",
+          "500": {
+            "description": "An unexpected error: { code, message }",
             "content": {
-              "application/octet-stream": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
             }
           },
           "400": {
@@ -7569,16 +7637,6 @@
               }
             }
           },
-          "500": {
-            "description": "An unexpected error: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
           "502": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7587,6 +7645,12 @@
                   "$ref": "#/components/schemas/Problem"
                 }
               }
+            }
+          },
+          "206": {
+            "description": "The part the Range asked for",
+            "content": {
+              "application/octet-stream": {}
             }
           }
         }
@@ -7606,6 +7670,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -7642,16 +7716,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -7724,6 +7788,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7756,16 +7830,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -7844,10 +7908,10 @@
                 "service"
               ],
               "type": "string",
-              "description": "How to act: anonymous, person or service.",
+              "description": "How to act: anonymous or person (not service).",
               "title": "X-Audio-Mode"
             },
-            "description": "How to act: anonymous, person or service."
+            "description": "How to act: anonymous or person (not service)."
           },
           {
             "name": "X-Audio-Subject",
@@ -7897,6 +7961,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -7929,16 +8003,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -8006,6 +8070,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -8038,16 +8112,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -8126,6 +8190,16 @@
               "application/octet-stream": {}
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "206": {
             "description": "The part the Range asked for",
             "content": {
@@ -8184,16 +8258,6 @@
           },
           "416": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -8249,6 +8313,16 @@
               }
             }
           },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "400": {
             "description": "A refusal: { code, message }",
             "content": {
@@ -8281,16 +8355,6 @@
           },
           "413": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {
@@ -8342,6 +8406,16 @@
                 "schema": {}
               },
               "application/octet-stream": {}
+            }
+          },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
             }
           },
           "206": {
@@ -8399,16 +8473,6 @@
                 }
               }
             }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
           }
         }
       },
@@ -8437,6 +8501,16 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           },
           "400": {
             "description": "A refusal: { code, message }",
@@ -8470,16 +8544,6 @@
           },
           "404": {
             "description": "A refusal: { code, message }",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected error: { code, message }",
             "content": {
               "application/json": {
                 "schema": {

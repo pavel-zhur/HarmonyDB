@@ -15,7 +15,7 @@ from acting import Acting, acting, media_acting, playlist_acting
 from auth import MEDIA, READ, require
 from models import (Answer, FileInfo, TAlbumPage, TAlbums, TArtistPage, TCategories, TCategory, TChart, TLikes,
                     TLyrics, TPlaylistPage, TPlaylists, TSearch, TSimilar, TSuggest, TTrackPage, TTracks, Who)
-from shared import SERVICE_PROBLEMS, Fresh, envelope, file_info, file_route, problems
+from shared import SERVICE_PROBLEMS, Fresh, Lang, envelope, file_info, file_route, problems
 
 nav = APIRouter(prefix="/internal/youtube", tags=["youtube"],
                 dependencies=[Depends(require(READ)), Depends(acting)], responses=SERVICE_PROBLEMS)
@@ -87,14 +87,14 @@ async def chart(country: str = Query("ZZ", min_length=2, max_length=2), fresh: F
 
 
 @nav.get("/categories", response_model=Answer[TCategories], summary="Moods and genres, by sections")
-async def categories(fresh: Fresh = False):
-    return envelope(await T.categories(fresh))
+async def categories(lang: Lang = "en", fresh: Fresh = False):
+    return envelope(await T.categories(fresh, lang))
 
 
 @nav.get("/categories/{id}", response_model=Answer[TCategory],
          summary="A mood or genre: its playlists, albums, artists and songs by sections")
-async def category(id: str, fresh: Fresh = False):
-    return envelope(await T.category(id, fresh))
+async def category(id: str, lang: Lang = "en", fresh: Fresh = False):
+    return envelope(await T.category(id, fresh, lang))
 
 
 @nav.get("/me/playlists", response_model=Answer[TPlaylists], summary="The person's playlists (person mode)")

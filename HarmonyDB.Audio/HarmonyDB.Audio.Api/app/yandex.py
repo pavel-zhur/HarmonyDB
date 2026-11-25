@@ -51,8 +51,9 @@ def token_of(acting: Acting) -> str | None:
 class _Session:
     """One call's conversation with Yandex, under one token (or none)."""
 
-    def __init__(self, acting: Acting, timeout: float):
+    def __init__(self, acting: Acting, timeout: float, lang: str):
         self.mode = acting.mode
+        self.lang = lang
         self.token = token_of(acting)
         self.http = httpx.AsyncClient(timeout=timeout, follow_redirects=True)
 
@@ -63,7 +64,7 @@ class _Session:
         await self.http.aclose()
 
     def headers(self) -> dict:
-        h = {"X-Yandex-Music-Client": CLIENT, "Accept-Language": "ru", "User-Agent": "Yandex-Music-API"}
+        h = {"X-Yandex-Music-Client": CLIENT, "Accept-Language": self.lang, "User-Agent": "Yandex-Music-API"}
         if self.token:
             h["Authorization"] = f"OAuth {self.token}"
         return h
@@ -122,8 +123,9 @@ def _result(r: httpx.Response):
         raise ApiError(502, UPSTREAM_FAILED, f"Yandex answered {r.status_code} with no JSON") from None
 
 
-def _session(acting: Acting, timeout: float = 30) -> _Session:
-    return _Session(acting, timeout)
+def _session(acting: Acting, timeout: float = 30, lang: str = "ru") -> _Session:
+    """A conversation with Yandex; what it names (genres, a page's title) it names in the language given."""
+    return _Session(acting, timeout, lang)
 
 
 def img(uri: str | None, size: str = "200x200") -> str | None:
@@ -529,7 +531,8 @@ async def recommend_for(tracks: list[tuple[str, str | None]], acting: Acting, fr
     """Recommendations for any set of tracks, given as (trackId, albumId or None). Yandex
     recommends only for a playlist, so a temporary private one is made in the service account,
     filled, read and deleted again in `finally`. A track without its album id gets it from the
-    track's own page."""
+    track's own page; a track that has no album (Yandex gives some so) cannot be put into a
+    playlist and is left out, and when none is left there is nothing to recommend for."""
     if acting.mode != "service":
         raise ApiError(400, SERVICE_REQUIRED, "recommendations for a set of tracks are made by the service account")
     if not config.settings().yandex_token:
@@ -538,9 +541,13 @@ async def recommend_for(tracks: list[tuple[str, str | None]], acting: Acting, fr
     for tid, alb in tracks:
         if not alb:
             alb = ((await track(tid, acting, False)).body.get("album") or {}).get("id")
-        if not alb:
-            raise ApiError(400, BAD_REQUEST, f"track {tid} has no album")
-        want.append({"id": tid, "albumId": alb})
+        if alb:
+            want.append({"id": tid, "albumId": alb})
+
+    if not want:
+        async def nothing():
+            return {"tracks": []}
+        return await cache.shared(S, "recommend-for", "", fresh, nothing)
 
     async def make():
         async with _session(acting, 60) as y:
@@ -577,33 +584,40 @@ async def chart(acting: Acting, fresh: bool) -> Answer:
     return await cache.shared(S, "chart", "", fresh, make)
 
 
-async def categories(acting: Acting, fresh: bool) -> Answer:
-    """The genres, with their sub-genres; a genre's id opens its page (category)."""
+def _title(item: dict, lang: str) -> str | None:
+    """A genre's name in the language asked; else in English, else in Russian, else in any Yandex has; else its id."""
+    titles = item.get("titles") or {}
+    for code in (lang, "en", "ru", *titles.keys()):
+        if (titles.get(code) or {}).get("title"):
+            return titles[code]["title"]
+    return item.get("urlPart") or item.get("id")
+
+
+async def categories(acting: Acting, fresh: bool, lang: str) -> Answer:
+    """The genres, with their sub-genres, named in the language asked; a genre's id opens its page (category)."""
     async def make():
-        async with _session(acting) as y:
+        async with _session(acting, lang=lang) as y:
             res = await y.get("genres") or []
         out = []
         for g in res:
-            t = g.get("titles") or {}
             imgs = g.get("images") or {}
             out.append({"id": g.get("urlPart") or g.get("id"),
-                        "title": (t.get("ru") or t.get("en") or {}).get("title") or g.get("id"),
+                        "title": _title(g, lang),
                         "image": imgs.get("300x300") or imgs.get("208x208"), "color": g.get("color"),
-                        "subGenres": [{"id": s.get("urlPart") or s.get("id"),
-                                       "title": ((s.get("titles") or {}).get("ru") or {}).get("title") or s.get("id")}
+                        "subGenres": [{"id": s.get("urlPart") or s.get("id"), "title": _title(s, lang)}
                                       for s in (g.get("subGenres") or [])]})
         return {"genres": out}
-    return await cache.shared(S, "categories", "", fresh, make)
+    return await cache.shared(S, "categories", lang, fresh, make)
 
 
-async def category(tag: str, offset: int, limit: int, acting: Acting, fresh: bool) -> Answer:
-    """Albums of a genre / meta-tag, page by page (a catalogue, not a search)."""
+async def category(tag: str, offset: int, limit: int, acting: Acting, fresh: bool, lang: str) -> Answer:
+    """Albums of a genre / meta-tag, page by page (a catalogue, not a search); its title in the language asked."""
     async def make():
-        async with _session(acting) as y:
+        async with _session(acting, lang=lang) as y:
             res = await y.get(f"metatags/{tag}/albums", {"offset": offset, "limit": limit}) or {}
         return {"title": (res.get("title") or {}).get("title"), "pager": res.get("pager") or {},
                 "albums": [n_album(a) for a in (res.get("albums") or [])]}
-    return await cache.shared(S, "category", f"{tag}|{offset}|{limit}", fresh, make)
+    return await cache.shared(S, "category", f"{tag}|{offset}|{limit}|{lang}", fresh, make)
 
 
 # ---------------------------------------------------------------- sound

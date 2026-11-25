@@ -65,11 +65,12 @@ public sealed class MusicArea : IShelfArea
         group.MapGet("/chart", (ClaimsPrincipal user, string service, string? country, MusicCatalog catalog, CancellationToken cancellationToken)
             => catalog.GetChartAsync(user, Parse(service), country, cancellationToken)).WithName("GetMusicChart");
 
-        group.MapGet("/categories", (string service, MusicCatalog catalog, CancellationToken cancellationToken)
-            => catalog.GetCategoriesAsync(Parse(service), cancellationToken)).WithName("GetMusicCategories");
+        // names (genres, moods, their pages' titles) in the app's language: ?locale=, else the person's, else the browser's
+        group.MapGet("/categories", async (HttpRequest request, ClaimsPrincipal user, string service, string? locale, MusicCatalog catalog, MusicLanguages languages, CancellationToken cancellationToken)
+            => await catalog.GetCategoriesAsync(Parse(service), await languages.OfAsync(user, locale, request.Headers.AcceptLanguage, cancellationToken), cancellationToken)).WithName("GetMusicCategories");
 
-        group.MapGet("/categories/{id}", (ClaimsPrincipal user, string service, string id, int? offset, MusicCatalog catalog, CancellationToken cancellationToken)
-            => catalog.GetCategoryAsync(user, Parse(service), id, Math.Max(0, offset ?? 0), cancellationToken)).WithName("GetMusicCategory");
+        group.MapGet("/categories/{id}", async (HttpRequest request, ClaimsPrincipal user, string service, string id, int? offset, string? locale, MusicCatalog catalog, MusicLanguages languages, CancellationToken cancellationToken)
+            => await catalog.GetCategoryAsync(user, Parse(service), id, Math.Max(0, offset ?? 0), await languages.OfAsync(user, locale, request.Headers.AcceptLanguage, cancellationToken), cancellationToken)).WithName("GetMusicCategory");
 
         // the home page's blocks from the person's playlists (empty for a guest)
         group.MapGet("/home/artists", (ClaimsPrincipal user, string service, MusicHome home, CancellationToken cancellationToken)
@@ -121,6 +122,7 @@ public static class MusicCatalogExtensions
         services.AddAudioMusicClients(configuration);
         services.AddScoped<TrackMarks>();
         services.AddScoped<MusicCatalog>();
+        services.AddScoped<MusicLanguages>();
         services.AddScoped<MusicHome>();
         services.AddScoped<MusicMine>();
         return services;

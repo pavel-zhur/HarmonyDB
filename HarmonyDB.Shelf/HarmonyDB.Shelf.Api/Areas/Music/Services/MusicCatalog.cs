@@ -182,11 +182,12 @@ public sealed class MusicCatalog(AudioMusicClient audio, TrackMarks marks)
         }, cancellationToken);
     }
 
-    public async Task<MusicCategories> GetCategoriesAsync(MusicService service, CancellationToken cancellationToken)
+    /// <param name="language">The language the names are given in (<see cref="MusicLanguages"/>).</param>
+    public async Task<MusicCategories> GetCategoriesAsync(MusicService service, string language, CancellationToken cancellationToken)
     {
         if (service == MusicService.Yandex)
         {
-            var x = await GetAsync<YCategories>(service, "categories", cancellationToken);
+            var x = await GetAsync<YCategories>(service, $"categories?lang={E(language)}", cancellationToken);
             return new()
             {
                 Groups =
@@ -207,7 +208,7 @@ public sealed class MusicCatalog(AudioMusicClient audio, TrackMarks marks)
             };
         }
 
-        var t = await GetAsync<TCategories>(service, "categories", cancellationToken);
+        var t = await GetAsync<TCategories>(service, $"categories?lang={E(language)}", cancellationToken);
         return new()
         {
             Groups = (t.Sections ?? []).Select(s => new MusicCategoryGroup
@@ -219,15 +220,16 @@ public sealed class MusicCatalog(AudioMusicClient audio, TrackMarks marks)
     }
 
     /// <param name="offset">Yandex: how many of the genre's albums to skip.</param>
-    public async Task<MusicCategoryPage> GetCategoryAsync(ClaimsPrincipal user, MusicService service, string id, int offset, CancellationToken cancellationToken)
+    /// <param name="language">The language the page's names are given in (<see cref="MusicLanguages"/>).</param>
+    public async Task<MusicCategoryPage> GetCategoryAsync(ClaimsPrincipal user, MusicService service, string id, int offset, string language, CancellationToken cancellationToken)
     {
         if (service == MusicService.Yandex)
         {
-            var x = await GetAsync<YCategory>(service, $"categories/{E(id)}?offset={offset}", cancellationToken);
+            var x = await GetAsync<YCategory>(service, $"categories/{E(id)}?offset={offset}&lang={E(language)}", cancellationToken);
             return new() { Title = x.Title, Albums = MusicShapes.Albums(x.Albums), Playlists = [], Tracks = [], Artists = [] };
         }
 
-        var t = await GetAsync<TCategory>(service, $"categories/{E(id)}", cancellationToken);
+        var t = await GetAsync<TCategory>(service, $"categories/{E(id)}?lang={E(language)}", cancellationToken);
         var sections = t.Sections ?? [];
         return await marks.ApplyAsync(user, m => new MusicCategoryPage
         {

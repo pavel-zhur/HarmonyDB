@@ -39,6 +39,12 @@ S = "youtube"
 _anon = YTMusic()
 
 
+@lru_cache(maxsize=None)
+def _anon_in(lang: str) -> YTMusic:
+    """An anonymous client that has YouTube name things (moods, genres, shelves) in the language given."""
+    return YTMusic(language=lang)
+
+
 @lru_cache(maxsize=1)
 def _service_client() -> YTMusic | None:
     auth = config.settings().youtube_auth
@@ -367,10 +373,10 @@ def _sections(raw: dict) -> list:
             .get("sectionListRenderer") or {}).get("contents") or [] if tabs else []
 
 
-def _moods_raw() -> list:
+def _moods_raw(lang: str) -> list:
     """Moods and genres from the raw browse: ytmusicapi drops each tile's colour (YouTube ships no
     pictures for them), so the grid is read here."""
-    raw = _anon._send_request("browse", {"browseId": "FEmusic_moods_and_genres"})
+    raw = _anon_in(lang)._send_request("browse", {"browseId": "FEmusic_moods_and_genres"})
     out = []
     for s in _sections(raw):
         grid = s.get("gridRenderer") or {}
@@ -389,11 +395,11 @@ def _moods_raw() -> list:
     return out
 
 
-async def categories(fresh: bool) -> Answer:
-    """Moods and genres, by sections; an item's id opens its page (category)."""
+async def categories(fresh: bool, lang: str) -> Answer:
+    """Moods and genres, by sections, named in the language asked; an item's id opens its page (category)."""
     async def make():
-        return {"sections": await _run(_moods_raw)}
-    return await cache.shared(S, "categories", "", fresh, make)
+        return {"sections": await _run(_moods_raw, lang)}
+    return await cache.shared(S, "categories", lang, fresh, make)
 
 
 def _two_row(it: dict):
@@ -424,9 +430,9 @@ def _two_row(it: dict):
     return None, None
 
 
-def _mood_raw(params: str) -> list:
+def _mood_raw(params: str, lang: str) -> list:
     """A mood page from the raw browse: ytmusicapi trips over shelves whose tiles are songs."""
-    raw = _anon._send_request("browse", {"browseId": "FEmusic_moods_and_genres_category", "params": params})
+    raw = _anon_in(lang)._send_request("browse", {"browseId": "FEmusic_moods_and_genres_category", "params": params})
     out = []
     for s in _sections(raw):
         shelf, grid = s.get("musicCarouselShelfRenderer") or {}, s.get("gridRenderer") or {}
@@ -444,10 +450,10 @@ def _mood_raw(params: str) -> list:
     return out
 
 
-async def category(params: str, fresh: bool) -> Answer:
+async def category(params: str, fresh: bool, lang: str) -> Answer:
     async def make():
-        return {"sections": await _run(_mood_raw, params)}
-    return await cache.shared(S, "category", params, fresh, make)
+        return {"sections": await _run(_mood_raw, params, lang)}
+    return await cache.shared(S, "category", f"{params}|{lang}", fresh, make)
 
 
 # ---------------------------------------------------------------- sound and video

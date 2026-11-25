@@ -1,10 +1,25 @@
-﻿@using Microsoft.Extensions.Hosting;
-@inject IHostEnvironment HostEnvironment
-@{
-    ViewData["Title"] = "Home Page";
+﻿@{
+    ViewBag.Title = "Home";
+    Layout = "_Layout";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome to @HostEnvironment.EnvironmentName</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h2>Admin</h2>
+
+<ul class="list-unstyled">
+    <li class="mb-2">
+        <a asp-controller="ShelfPeople" asp-action="Index">Shelf people</a>
+        &mdash; the people of the new shelf: their sign-ins and permissions, given and taken away, and the record of changes.
+    </li>
+    <li class="mb-2">
+        <a asp-action="Illustrations">Illustrations</a>
+        &mdash; the illustrations drawn for the songs.
+    </li>
+    <li class="mb-2">
+        <a asp-action="Billing">Billing</a>
+        &mdash; what the AI services were used for, and by whom.
+    </li>
+    <li class="mb-2">
+        <a asp-action="Admin">Tools</a>
+        &mdash; the chords test.
+    </li>
+</ul>
