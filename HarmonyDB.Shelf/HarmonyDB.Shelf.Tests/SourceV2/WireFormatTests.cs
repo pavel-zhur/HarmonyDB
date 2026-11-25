@@ -93,7 +93,7 @@ public sealed class WireFormatTests
             new() { Start = 1.125, End = 3.469, Symbol = new() { Kind = ChordSymbolKind.NoChord }, Place = new() { Bar = 1, Beat = 1 } },
             new() { Start = 3.469, End = 13.5, Symbol = new() { Kind = ChordSymbolKind.Stop }, Place = new() { Bar = 1, Beat = 4, At = new() { Numerator = 3, Denominator = 4 } } },
         ],
-        Sections = [new() { Start = 0.5, End = 13.5, Label = SectionLabel.Chorus, Number = 1, Part = 2 }],
+        Sections = [new() { Start = 0.5, End = 13, Label = SectionLabel.Chorus, Name = "Chorus 1b", Number = 1, Part = 2 }, new() { Start = 13, End = 13.5, Name = "Coda" }],
     };
 
     private static Lyrics Lyrics() => new()

@@ -87,7 +87,7 @@ public sealed class SheetBuilderTests
             Intro
             Am  F  C  G
 
-            Verse 1
+            Verse
             Am  E
             Am
             Sing
@@ -96,24 +96,64 @@ public sealed class SheetBuilderTests
     }
 
     [Fact]
-    public void HeadersAreInTheLanguageOfTheWords()
+    public void ASectionsNameIsItsOwnElseMadeOfItsLabelAndPlace()
     {
+        // a bar each: neighbours of one label are parts of one section, a label of more than one section is numbered, a
+        // name given is shown as it is (in any language, whatever the words' language is)
         var sheet = Build(
-            Chords((0, "Am"), (8, "C")),
-            Lines(Line((8, 10, "ля"))) with { Language = "ru" },
-            sections: [Section(SectionLabel.Intro, null, 0, 8), new() { Label = SectionLabel.Verse, Number = 1, Part = 2, Start = 8, End = 16 }]);
+            Chords((0, "C"), (4, "D"), (8, "E"), (12, "F"), (16, "G"), (20, "A"), (24, "B")),
+            Lines(Line((30, 31, "la"))) with { Language = "ru" },
+            sections:
+            [
+                Section(SectionLabel.Intro, null, 0, 4), Section(SectionLabel.Verse, null, 4, 8), Section(SectionLabel.Verse, null, 8, 12),
+                Section(SectionLabel.Chorus, null, 12, 16), new() { Label = SectionLabel.Verse, Name = "Куплет 2", Start = 16, End = 20 },
+                Section(SectionLabel.Outro, null, 20, 24), Section(SectionLabel.Outro, null, 24, 28),
+            ]);
 
         Assert.Equal(
             """
             [4/4 60]
-            Вступление
-            Am
-
-            Куплет 1б
+            Intro
             C
-            ля
+
+            Verse 1
+            D
+
+            Verse 1b
+            E
+
+            Chorus
+            F
+
+            Куплет 2
+            G
+
+            Outro
+            A
+
+            Outro b
+            B
+            la
             """,
             Text(sheet));
+    }
+
+    [Fact]
+    public void TwoBoundariesOnOneBarLineAreOneAndWithoutBarsThereAreNoSections()
+    {
+        // the intro ends, and the verse begins, before the first bar line is half a bar away: the verse begins there
+        var sections = new[] { Section(SectionLabel.Intro, null, 0, 0.9), Section(SectionLabel.Verse, null, 0.9, 16) };
+        var sheet = Build(Chords((0, "C"), (4, "G")), null, sections: sections);
+        Assert.Equal(
+            """
+            [4/4 60]
+            Verse
+            C  G
+            """,
+            Text(sheet));
+
+        var noBars = Build(Chords((0, "C"), (4, "G")), null, sections: sections, bars: []);
+        Assert.DoesNotContain(noBars.Children, x => x.NodeHtml != null);
     }
 
     [Fact]

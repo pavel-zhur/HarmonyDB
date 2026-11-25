@@ -129,13 +129,13 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
         Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Put, "/internal/analyses", SourceKey, Put("scopes", "x", null))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Post, "/internal/source/V2Search", WriteKey, new SearchRequest { Caller = Caller(null), Query = "x" })).StatusCode);
 
-        // no caller, a part of a section beyond the table, a meter that is not one
+        // no caller, a section with neither a label nor a name, a meter that is not one
         Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Post, "/internal/source/V2Search", SourceKey, new { query = "x" })).StatusCode);
         var parts = Put("bad-part", "x", null) with
         {
             Content = Put("bad-part", "x", null).Content with
             {
-                Timeline = Timeline() with { Sections = [new() { Label = SectionLabel.Verse, Part = 40, Start = 0, End = 4 }] },
+                Timeline = Timeline() with { Sections = [new() { Start = 0, End = 4 }] },
             },
         };
         Assert.Equal(HttpStatusCode.BadRequest, (await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, parts)).StatusCode);

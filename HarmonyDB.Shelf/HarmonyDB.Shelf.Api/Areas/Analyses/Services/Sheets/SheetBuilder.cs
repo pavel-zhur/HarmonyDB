@@ -21,10 +21,10 @@ namespace HarmonyDB.Shelf.Api.Areas.Analyses.Services.Sheets;
 ///   and where the key, the tempo or the meter changes. A section that begins while a line's last word is held begins
 ///   there: what is played from then on is not the line's.
 /// - A chord written again (struck again) stands again; no chord and a stop are "N.C.", once for a run of them.
-/// - The sections are put on the bar lines first: each start and end on the nearest one.
+/// - The sections are put on the bar lines first, and named (<see cref="OnBarLines"/>).
 /// - A line lasts until the next line of the sheet begins, and is in the section, the key, the meter and the tempo
 ///   where its middle is: a line sung from before a bar line (a pickup) is in what it leads into. Every section has its
-///   header (named in the language of the words; English when there are none, or another), before its first line; a
+///   header, its name as it is, before its first line; a
 ///   section where no line begins has its header alone, in its place. The marks of a key, a tempo or a meter stand on
 ///   lines of their own, under the header. A sung line is never cut: a change while it is sung is marked before it or
 ///   after it, by where most of the line is; a change between lines (a bar of another meter where nothing is sung) has
@@ -72,29 +72,95 @@ public static class SheetBuilder
         var chords = song.ChordEvents();
         var lines = LyricLines(lyrics);
         var rows = Rows(song, chords, lines);
-        return Write(song, rows, lyrics?.Language);
+        return Write(song, rows);
     }
 
     /// <summary>
-    /// The sections put on the bar lines, as the other views of the material put them: each start and end on the bar
-    /// line nearest to it (a bar's start, or where the last bar ends; of two as near, the earlier). A section left with no
-    /// bar of its own is no section of the sheet.
+    /// The sections as the sheet has them: on the bar lines (a bar's start, or where the last bar ends), each named.
+    /// - Each boundary — a section's start, and its end where the next section does not begin at once — goes to the bar
+    ///   line nearest to it; of two as near, the earlier.
+    /// - Two boundaries on one line are one: what begins at the later of them begins there. A section runs from its line
+    ///   to the next boundary's line (or the last line); one left with no bar of its own is gone.
+    /// - Its name is its own, as given. Without one it is named of its label and its place: neighbours of one label are
+    ///   the parts of one section, lettered from the second ("Verse 1b"; "Outro b" without a number); a label that
+    ///   occurs more than once is numbered in order ("Verse 1", "Verse 2"); the label's word with a capital.
+    /// - Without bars there are no sections.
     /// </summary>
     private static Timeline OnBarLines(Timeline timeline)
     {
         if (timeline.Bars.Count == 0)
-            return timeline;
+            return timeline with { Sections = [] };
 
         var lines = timeline.Bars.Select(x => x.Start).Append(timeline.Bars[^1].End).ToList();
-        double Nearest(double time) => lines.MinBy(x => Math.Abs(x - time));
+        int Nearest(double time) => Enumerable.Range(0, lines.Count).MinBy(i => Math.Abs(lines[i] - time));
 
-        return timeline with
+        // the boundaries on the lines: a section that begins there, or null where one ends with none after it at once
+        var placed = new SortedDictionary<int, Section?>();
+        double? end = null;
+        foreach (var section in timeline.Sections)
         {
-            Sections = timeline.Sections
-                .Select(x => x with { Start = Nearest(x.Start), End = Nearest(x.End) })
-                .Where(x => x.End > x.Start)
-                .ToList(),
-        };
+            if (section.Label == null && string.IsNullOrWhiteSpace(section.Name))
+                throw new ArgumentOutOfRangeException(nameof(timeline), "A section has a label or a name.");
+
+            if (end.HasValue && end != section.Start) placed[Nearest(end.Value)] = null;
+            placed[Nearest(section.Start)] = section;
+            end = section.End;
+        }
+
+        if (end.HasValue) placed[Nearest(end.Value)] = null;
+
+        var marks = placed.ToList();
+        var sections = new List<(int from, int to, Section section)>();
+        for (var i = 0; i < marks.Count; i++)
+        {
+            var to = i + 1 < marks.Count ? marks[i + 1].Key : lines.Count - 1;
+            if (marks[i].Value is { } section && to > marks[i].Key)
+                sections.Add((marks[i].Key, to, section));
+        }
+
+        // neighbours of one label are the parts of one section; a label of more than one section is numbered
+        var runs = new List<List<(int from, int to, Section section)>>();
+        foreach (var x in sections)
+        {
+            if (runs.Count > 0 && x.section.Label != null && runs[^1][^1].section.Label == x.section.Label && runs[^1][^1].to == x.from)
+                runs[^1].Add(x);
+            else
+                runs.Add([x]);
+        }
+
+        var total = runs.Where(x => x[0].section.Label != null).GroupBy(x => x[0].section.Label).ToDictionary(x => x.Key!.Value, x => x.Count());
+        var seen = new Dictionary<SectionLabel, int>();
+        var named = new List<Section>();
+        foreach (var run in runs)
+        {
+            var label = run[0].section.Label;
+            int? number = null;
+            if (label.HasValue)
+            {
+                seen[label.Value] = seen.GetValueOrDefault(label.Value) + 1;
+                number = total[label.Value] > 1 ? seen[label.Value] : null;
+            }
+
+            for (var i = 0; i < run.Count; i++)
+            {
+                var (from, to, section) = run[i];
+                var part = label.HasValue && run.Count > 1 ? i + 1 : (int?)null;
+                var letter = i > 0 ? ((char)('a' + Math.Min(i, 25))).ToString() : string.Empty;
+                var made = label.HasValue
+                    ? label.Value + (number.HasValue ? $" {number}{letter}" : letter.Length > 0 ? $" {letter}" : string.Empty)
+                    : null;
+                named.Add(section with
+                {
+                    Start = lines[from],
+                    End = lines[to],
+                    Number = number,
+                    Part = part,
+                    Name = string.IsNullOrWhiteSpace(section.Name) ? made : section.Name,
+                });
+            }
+        }
+
+        return timeline with { Sections = named };
     }
 
     // ------------------------------------------------------------------ the chords
@@ -372,7 +438,7 @@ public static class SheetBuilder
 
     // ------------------------------------------------------------------ the sheet
 
-    private static NodeHtml Write(Song song, IReadOnlyList<Row> rows, string? language)
+    private static NodeHtml Write(Song song, IReadOnlyList<Row> rows)
     {
         var keys = song.Keys.Where(x => x.Key != null).Select(x => SheetKey.Parse(x.Key!)).Distinct().ToList();
         var sheet = new NodeHtml { Name = "pre", Keys = keys.Count > 0 ? keys : null };
@@ -409,7 +475,7 @@ public static class SheetBuilder
                 // An empty line before a header (not right under the marks at the top): it also keeps a line of
                 // chords alone off the header's words.
                 if (!lines.All(x => x is [NodeMark])) lines.Add([]);
-                lines.Add([new NodeHtml { Name = "b", Children = { new NodeText(SectionName(sections[header], language)).AsChild() } }]);
+                lines.Add([new NodeHtml { Name = "b", Children = { new NodeText(sections[header].Name!).AsChild() } }]);
             }
         }
 
@@ -511,60 +577,6 @@ public static class SheetBuilder
         }
 
         return nodes;
-    }
-
-    /// <summary>
-    /// The names of the sections, and the letters of their parts, in the languages the sheet speaks: the language of the
-    /// words, English where it is another or there are no words.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, (IReadOnlyDictionary<SectionLabel, string> names, string parts)> SectionNames =
-        new Dictionary<string, (IReadOnlyDictionary<SectionLabel, string>, string)>
-        {
-            ["en"] = (new Dictionary<SectionLabel, string>
-            {
-                [SectionLabel.Intro] = "Intro",
-                [SectionLabel.Verse] = "Verse",
-                [SectionLabel.Chorus] = "Chorus",
-                [SectionLabel.Bridge] = "Bridge",
-                [SectionLabel.Solo] = "Solo",
-                [SectionLabel.Instrumental] = "Instrumental",
-                [SectionLabel.Break] = "Break",
-                [SectionLabel.Outro] = "Outro",
-            }, "abcdefghij"),
-            ["ru"] = (new Dictionary<SectionLabel, string>
-            {
-                [SectionLabel.Intro] = "Вступление",
-                [SectionLabel.Verse] = "Куплет",
-                [SectionLabel.Chorus] = "Припев",
-                [SectionLabel.Bridge] = "Бридж",
-                [SectionLabel.Solo] = "Соло",
-                [SectionLabel.Instrumental] = "Проигрыш",
-                [SectionLabel.Break] = "Брейк",
-                [SectionLabel.Outro] = "Окончание",
-            }, "абвгдежзик"),
-            ["be"] = (new Dictionary<SectionLabel, string>
-            {
-                [SectionLabel.Intro] = "Уступ",
-                [SectionLabel.Verse] = "Куплет",
-                [SectionLabel.Chorus] = "Прыпеў",
-                [SectionLabel.Bridge] = "Брыдж",
-                [SectionLabel.Solo] = "Сола",
-                [SectionLabel.Instrumental] = "Пройгрыш",
-                [SectionLabel.Break] = "Брэйк",
-                [SectionLabel.Outro] = "Канцоўка",
-            }, "абвгдежзік"),
-        };
-
-    private static string SectionName(Section section, string? language)
-    {
-        var (names, parts) = SectionNames.GetValueOrDefault(language ?? string.Empty, SectionNames["en"]);
-        var name = names[section.Label];
-        if (section.Number.HasValue) name += $" {section.Number}";
-        if (section.Part is > 1)
-            name += (section.Number.HasValue ? "" : " ") + (section.Part.Value <= parts.Length
-                ? parts[section.Part.Value - 1]
-                : throw new ArgumentOutOfRangeException(nameof(section), section.Part, $"A section is in at most {parts.Length} parts."));
-        return name;
     }
 
     // ------------------------------------------------------------------ the song: its keys, bars and sections

@@ -226,7 +226,16 @@ public record Section
 
     public required double End { get; init; }
 
-    public required SectionLabel Label { get; init; }
+    /// <summary>
+    /// What kind of part it is, when known. A section has a label, a name, or both.
+    /// </summary>
+    public SectionLabel? Label { get; init; }
+
+    /// <summary>
+    /// Its name as its maker wrote it, in any language ("Verse 2", "Куплет 2", "Pre-chorus"); shown as it is. Null: named
+    /// of its label and its place among the sections.
+    /// </summary>
+    public string? Name { get; init; }
 
     /// <summary>
     /// Which of its label it is ("Verse 2"), counted from 1; null when not counted.
