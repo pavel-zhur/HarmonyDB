@@ -17,7 +17,8 @@ export const home = {
         ctaText: 'Marks, favourite keys, notes and playlists are kept in a profile. Signing in takes one tap, no passwords.',
         publicPlaylists: 'Open playlists',
         cards: {
-            playAlong: { title: 'Play along with the recording', text: 'The original, the clip, live shows, covers. The current chord lights up; a loop, the tempo and a trainer; the voice and the instruments apart.' },
+            playAlong: { title: 'Play along with the recording', text: 'Songs with their recordings analysed: the chord lights up as it sounds; a loop, the tempo, the voice and the instruments apart.' },
+            importPlaylist: { title: 'Your playlist from YouTube or Yandex Music', text: 'Paste its link: it becomes a playlist of the shelf, each song with its recording to play along; chords are added to the songs here.' },
             analysis: { title: 'Chords of any song', text: 'Press “Analyse” on a recording, paste a link or upload your file — the shelf takes the chords by bars, the key, the words and the notes.' },
             music: { title: 'Music around the chords', text: 'Artists, albums, genres and moods, the chart, similar songs and radio — moving around as in a music service.' },
             import: { title: 'Import', text: 'Links to chords work now; PDF, a photo of a sheet and a message to the bot are coming.' },

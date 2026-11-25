@@ -23,6 +23,7 @@ export const ai = {
             back: 'Goes back to',
             puny: 'This address is written with letters of other alphabets in a coded form (xn--…): it is not the address it may look like. Check it letter by letter.',
             calls: 'It calls itself “{{name}}”',
+            owner: '(the site {{site}})',
         },
         clients: {
             title: 'Connected assistants',

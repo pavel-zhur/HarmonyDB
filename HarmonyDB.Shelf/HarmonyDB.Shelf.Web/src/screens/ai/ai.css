@@ -25,7 +25,9 @@
 .ai-edit { display: grid; gap: 10px; margin-top: 8px; max-width: 620px; }
 .ai-made { display: grid; gap: 8px; max-width: 620px; margin-bottom: 10px; justify-items: start; }
 .ai-made p { margin: 0; }
-.ai-host { font: 600 14px var(--mono); color: var(--ink); overflow-wrap: anywhere; background: none; padding: 0; }
+.ai-host { font: 400 14px var(--mono); color: var(--muted); overflow-wrap: anywhere; background: none; padding: 0; }
+.ai-host b { font-weight: 700; color: var(--ink); }
+.ai-owner { font-size: 13px; color: var(--muted); }
 .ai-ident { display: grid; gap: 2px; min-width: 0; }
 .ai-hl { display: block; overflow-wrap: anywhere; }
 .ai-hk { color: var(--muted); font-size: 13px; }

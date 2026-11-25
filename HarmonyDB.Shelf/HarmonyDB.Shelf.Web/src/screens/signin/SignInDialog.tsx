@@ -9,31 +9,13 @@ import { Icon } from '../../kit/Icon';
 import { closeSignIn, forgetPending, useSignInOffer } from '../../data/signInOffer';
 import { signIn, useConfiguration } from '../../data/session';
 import { en } from '../../i18n/en';
-import { isGuestPreview } from '../../app/guestMode';
 
 const named = Object.keys(en.signIn.with) as (keyof typeof en.signIn.with)[];
 
 export function SignInDialog() {
     const offer = useSignInOffer();
     if (!offer) return null;
-    return isGuestPreview ? <PreviewBox what={offer.what} /> : <SignInBox what={offer.what} />;
-}
-
-/** In the guest's preview: here a guest is asked to sign in; the preview says so, and signs no one in. */
-function PreviewBox({ what }: { what: string | null }) {
-    const { t } = useTranslation();
-    const close = () => {
-        forgetPending();
-        closeSignIn();
-    };
-    return (
-        <Dialog label={t('signIn.title')} onClose={close}>
-            <h1>{t('signIn.title')}</h1>
-            <p>{what ? t('signIn.why', { what: t(`signIn.what.${what}` as 'signIn.what.mark') }) : t('signIn.default')}</p>
-            <p className="muted">{t('song.share.guest.signIn')}</p>
-            <button type="button" className="btn" onClick={close}>{t('signIn.notNow')}</button>
-        </Dialog>
-    );
+    return <SignInBox what={offer.what} />;
 }
 
 function SignInBox({ what }: { what: string | null }) {

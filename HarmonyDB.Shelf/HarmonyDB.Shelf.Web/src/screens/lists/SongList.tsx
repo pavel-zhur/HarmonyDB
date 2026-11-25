@@ -222,7 +222,7 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
                     extra={<span className="in">{song.playlistTitle}</span>} />
             ))}
             <MusicSearch q={q} />
-            <div className="sec"><Icon name="globe" />{t('library.fromSources')} · {chords.length}</div>
+            <div className="sec"><Icon name="frets" />{t('library.fromSources')} · {chords.length}</div>
             {chords.map(header => (
                 <SongRow noMarks key={'c' + header.id} to={href(p.chordsHref(header.id))} lit={lit === header.id} q={q}
                     title={header.title ?? ''} artists={header.artists}

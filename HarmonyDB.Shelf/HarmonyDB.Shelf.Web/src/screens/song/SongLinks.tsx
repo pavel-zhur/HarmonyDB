@@ -1,6 +1,6 @@
 // The quiet links under a song's variants (the mock-up's): my own variant of the song (the editor, starting from the
-// text of the variant open); with a recording of the song, other performances of it and similar ones (the music's
-// pages; other performances are not served yet), without one, more of the artist in this playlist; the song looked
+// text of the variant open); with a recording of the song, similar ones (the music's pages), without one, more of the
+// artist in this playlist; the song looked
 // for everywhere (the one search, the sources too); ordering illustrations when the song has none yet (its
 // illustrations' view, where each variant's are ordered).
 
@@ -11,7 +11,6 @@ import { drawPermission } from '../../data/illustrations';
 import { useSongRecordings } from '../../data/recordings';
 import { useSession } from '../../data/session';
 import { Icon } from '../../kit/Icon';
-import { Soon } from '../../kit/controls';
 import './illustrations.css';
 
 export function SongLinks({ page, from, share, illustrated, onIllustrations }: {
@@ -34,10 +33,7 @@ export function SongLinks({ page, from, share, illustrated, onIllustrations }: {
                 </Link>
             )}
             {chosen && signedIn ? (
-                <>
-                    <span className="lnk off" aria-disabled="true">{t('song.links.otherPerformances')}<Soon /></span>
-                    <Link className="lnk" to={`/music/${chosen.track.service}/tracks/${encodeURIComponent(chosen.track.id)}/similar`}>{t('song.links.similar')}</Link>
-                </>
+                <Link className="lnk" to={`/music/${chosen.track.service}/tracks/${encodeURIComponent(chosen.track.id)}/similar`}>{t('song.links.similar')}</Link>
             ) : artist && !share && (
                 <Link className="lnk" to={`/playlists/${encodeURIComponent(song.playlistId)}?q=${encodeURIComponent(artist)}`}>{t('song.links.moreOf', { artist })}</Link>
             )}

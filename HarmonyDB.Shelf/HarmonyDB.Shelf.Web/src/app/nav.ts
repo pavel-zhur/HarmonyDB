@@ -17,6 +17,8 @@ export interface NavItem {
     soon?: boolean;
     /** the address is one of its section's (its tab is lit on them too) */
     match?: string[];
+    /** shown only to whom it is open: the person's permissions (a guest has none) */
+    open?: (permissions: readonly string[]) => boolean;
 }
 
 export const mainNav: NavItem[] = [
@@ -33,8 +35,13 @@ export const toolsNav: NavItem[] = [
     { to: '/illustrations', icon: 'img', label: 'tools.illustrations', sub: 'tools.illustrationsSub' },
     { to: '/fingerings', icon: 'frets', label: 'tools.fingerings', sub: 'tools.fingeringsSub' },
     { to: '/tuner', icon: 'gauge', label: 'tools.tuner', sub: 'tools.tunerSub' },
-    { to: '/ai', icon: 'mcp', label: 'tools.mcp', sub: 'tools.mcpSub' },
+    { to: '/ai', icon: 'mcp', label: 'tools.mcp', sub: 'tools.mcpSub', open: permissions => permissions.some(p => p.startsWith('mcp.')) },
 ];
+
+/** The items open to whom has these permissions. */
+export function openTo<T extends NavItem>(items: readonly T[], permissions: readonly string[] | undefined): T[] {
+    return items.filter(item => !item.open || item.open(permissions ?? []));
+}
 
 export const otherNav: NavItem[] = [
     { to: '/offline', icon: 'cloud', label: 'tools.offline', sub: 'tools.offlineSub' },

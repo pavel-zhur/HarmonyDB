@@ -1,4 +1,4 @@
-// My playlists: mine and shared with me, one line each, the "in my library" switch on the right (its label once
+// My playlists: mine, shared with me (I am a member), and open ones I keep (follow), one line each, the "in my library" switch on the right (its label once
 // over the column, its meaning small at the bottom); a new one by its title; the public ones and an import by a link.
 
 import { useState } from 'react';
@@ -19,7 +19,8 @@ export function PlaylistsScreen() {
     const { accountId } = useSession();
     const playlists = useMyPlaylists();
     const mine = playlists.data?.filter(p => p.owner.id === accountId) ?? [];
-    const shared = playlists.data?.filter(p => p.owner.id !== accountId) ?? [];
+    const shared = playlists.data?.filter(p => p.owner.id !== accountId && p.myRole) ?? [];
+    const followed = playlists.data?.filter(p => p.owner.id !== accountId && !p.myRole) ?? [];
     return (
         <Page>
             <h1>{t('playlists.title')}</h1>
@@ -38,6 +39,12 @@ export function PlaylistsScreen() {
                         <>
                             <h2 className="hsw">{t('playlists.shared')}<span>{t('playlists.inLibrary')}</span></h2>
                             <div className="pls">{shared.map(p => <PlaylistLine key={p.id} playlist={p} />)}</div>
+                        </>
+                    )}
+                    {followed.length > 0 && (
+                        <>
+                            <h2 className="hsw">{t('playlists.followed')}<span>{t('playlists.inLibrary')}</span></h2>
+                            <div className="pls">{followed.map(p => <PlaylistLine key={p.id} playlist={p} />)}</div>
                         </>
                     )}
                     <p className="muted small plnote">{t('playlists.note')}</p>

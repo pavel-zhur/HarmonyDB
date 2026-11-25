@@ -5,7 +5,8 @@
 
 /* one column, in the middle of a wide screen */
 .pub .pad { margin: 0 auto; }
-.pub .songpage { max-width: 1100px; margin: 0 auto; }
+/* width: auto margins in a column of flex would shrink it to its content (up to the max), wider than a phone */
+.pub .songpage { width: 100%; max-width: 1100px; margin: 0 auto; }
 /* a short analysis on a tall screen: the player still at the bottom */
 .pub .songpage { display: flex; flex-direction: column; min-height: 100%; }
 .pub .songpage > .songfoot { margin-top: auto; }

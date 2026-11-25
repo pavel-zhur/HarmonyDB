@@ -37,7 +37,7 @@ export const library = {
         otherPlaylists: 'В других моих плейлистах',
         foundInPlaylists: 'Нашлось в моих плейлистах',
         foundInOpen: 'Нашлось в открытых плейлистах',
-        fromSources: 'Аккорды из интернета',
+        fromSources: 'Аккорды',
         sourcesFailed: 'Не все источники ответили; попробуйте позже.',
         notOpen: 'вам недоступны',
         unavailable: 'сейчас не отвечают',

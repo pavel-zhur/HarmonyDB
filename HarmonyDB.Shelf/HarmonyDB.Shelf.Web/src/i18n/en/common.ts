@@ -13,7 +13,6 @@ export const common = {
         retry: 'Try again',
         open: 'Open',
         soon: 'soon',
-        framed: 'The shelf opens only in a window of its own.',
         showMore: 'Show more',
         loading: 'Loading…',
         clear: 'Clear',

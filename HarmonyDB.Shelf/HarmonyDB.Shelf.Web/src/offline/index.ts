@@ -169,19 +169,21 @@ async function attachCopy(accountId: string | null): Promise<void> {
         return;
     }
     const opened = await Copy.open(accountId);
-    const state = await opened.getState();
+    const kept = await opened.getState();
     const entries = await opened.sizes();
     if (account !== accountId) {
         opened.close();
         return;
     }
     copy = opened;
-    copyState = state;
+    copyState = kept;
     songs = new Set(copyState.songs);
     chords = new Set(copyState.chords);
     sizes = new Map(entries.map(x => [x.key, x.bytes]));
     recount();
     set({ ready: true });
+    // a taking stopped before it was done (the tab closed, the connection lost) goes on when the app opens again
+    if (state.unfinished && navigator.onLine) void download();
 }
 
 /** The copy's counts and size, from what is followed in memory. */
@@ -199,7 +201,7 @@ function recount(): void {
         chords: { kept: chordsKept, all: chords.size - copyState.closed.length },
         later,
         closed: copyState.closed.length,
-        unfinished: copyState.enabled && sizes.size > 0 && (copyState.downloadedAt === null || chordsKept + later < chords.size - copyState.closed.length),
+        unfinished: copyState.enabled && (copyState.downloadedAt === null || chordsKept + later < chords.size - copyState.closed.length),
         bytes,
     });
 }

@@ -21,6 +21,11 @@
 .hero { position: relative; padding: 18px var(--gr) 12px var(--gl); overflow: hidden; }
 .hero .bgart { position: absolute; inset: 0; background: center / cover; opacity: .4; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
 .hero > *:not(.bgart) { position: relative; }
+/* over the picture the words keep the page's ground close around them, and their full ink: readable on any picture */
+.hero:has(.bgart) .htop .t, .hero:has(.bgart) .vers { text-shadow: 0 0 2px var(--bg), 0 0 6px var(--bg), 0 0 14px var(--bg); }
+/* the quiet labels and lines under the head too: the ink, not the muted grey, over a picture */
+.hero:has(.bgart) .vlab, .hero:has(.bgart) .rec-lab, .hero:has(.bgart) .rec-list > .muted { color: var(--ink); }
+.hero:has(.bgart) .htop .a, .hero:has(.bgart) .htop .ctx { opacity: 1; }
 .htop { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
 .htop .t { flex: 1; min-width: 0; }
 .htop .a { font-size: 14px; font-weight: 500; opacity: .8; }
@@ -196,15 +201,3 @@ button.plb:hover, .plb.on { color: var(--accent); }
 .il-links .lnk { color: var(--muted); font-size: 12.5px; padding: 5px 0; font-weight: 400; }
 .il-links .lnk:hover { color: var(--accent); }
 .il-links .lnk svg.ic { width: 14px; height: 14px; }
-.il-links .lnk.off { cursor: default; gap: 6px; }
-.il-links .lnk.off:hover { color: var(--muted); }
-
-/* the guest's preview (screens/share/GuestPreview.tsx): the band (what it is, the way back) over the app as a guest's */
-.guestpreview { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.guestpreview iframe { flex: 1; min-height: 0; width: 100%; border: 0; display: block; background: var(--bg); }
-/* on a phone the page scrolls as a whole: the frame is a screen tall */
-@media (max-width: 959px) { .guestpreview iframe { flex: none; height: 100dvh; } }
-.guestframe { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px var(--gr) 10px var(--gl); background: var(--accent-soft); color: var(--accent); font-size: 13.5px; font-weight: 500; }
-.guestframe > span { flex: 1; min-width: 0; }
-.guestframe svg.ic { width: 18px; height: 18px; flex: none; }
-.sharepop .guestp { margin: 6px 0 0; }

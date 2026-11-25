@@ -1,13 +1,13 @@
 // The guest's home: it invites, it does not begin with "you are not signed in". Under the search that really searches:
-// a welcome, songs to try right now (the most liked of the biggest public playlist), what can be done here (the most
-// interesting first; "soon" where it is not there yet), a quiet offer to sign in, the public playlists.
+// a welcome, songs to try right now (the most liked of the biggest public playlist), the public playlists; then (the
+// home's) a few things worth trying and a quiet offer to sign in. Also the cards' small pictures, for those and for
+// "What the shelf can do".
 
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { offerSignIn } from '../../data/signInOffer';
 import { usePublicPlaylists } from '../../data/playlists';
 import { rowId, useSongList } from '../../data/songs';
-import { Soon } from '../../kit/controls';
 import { Icon, type IconName } from '../../kit/Icon';
 import { SongRow } from '../../kit/SongRow';
 import { PlaylistLine } from '../playlists/PlaylistsScreen';
@@ -15,21 +15,6 @@ import type { en } from '../../i18n/en';
 import './home.css';
 
 export type Card = keyof typeof en.guest.cards;
-
-const cards: { key: Card; soon?: boolean; wide?: boolean }[] = [
-    { key: 'analysis', soon: true },
-    { key: 'playAlong' },
-    { key: 'music' },
-    { key: 'import' },
-    { key: 'fingerings' },
-    { key: 'wrap', wide: true },
-    { key: 'keys' },
-    { key: 'ai' },
-    { key: 'book' },
-    { key: 'illustrations' },
-    { key: 'playlists' },
-    { key: 'noAds' },
-];
 
 export function GuestHome() {
     const { t } = useTranslation();
@@ -42,7 +27,6 @@ export function GuestHome() {
                 <span>{t('guest.welcomeText')}</span>
             </div>
             {biggest && <TryNow playlistId={biggest.id} />}
-            <Invitations />
             {!!playlists.data?.length && (
                 <>
                     <h2>{t('guest.publicPlaylists')}</h2>
@@ -53,23 +37,11 @@ export function GuestHome() {
     );
 }
 
-/** What can be done here, and the quiet offer to sign in: the guest's home, and where a guest closed the chords. */
-export function Invitations() {
+/** The quiet offer to sign in: the guest's home, and where a guest closed the chords. */
+export function SignInOffer() {
     const { t } = useTranslation();
     return (
         <>
-            <h2>{t('guest.whatHere')}</h2>
-            <div className="fgridc">
-                {cards.map(card => (
-                    <div key={card.key} className={card.wide ? 'fcard tall' : 'fcard'}>
-                        <span className="fvis"><Visual card={card.key} /></span>
-                        <span className="fbody">
-                            <b>{t(`guest.cards.${card.key}.title`)} {card.soon && <Soon />}</b>
-                            <small>{t(`guest.cards.${card.key}.text`)}</small>
-                        </span>
-                    </div>
-                ))}
-            </div>
             <div className="softcta">
                 <div><b>{t('guest.ctaTitle')}</b><span className="muted">{t('guest.ctaText')}</span></div>
                 <button type="button" className="btn pri" onClick={() => offerSignIn()}>{t('nav.signIn')}</button>
@@ -107,6 +79,7 @@ export function Visual({ card }: { card: Card }) {
         case 'playAlong': return <><span className="fplay"><Icon name="play" /></span><span className="fbar"><i /></span><Icon name="mixer" /></>;
         case 'music': return icons(['vol', 'yt', 'phones']);
         case 'import': return icons(['link', 'file', 'cam', 'tg']);
+        case 'importPlaylist': return <>{icons(['yt', 'vol'])}<Icon name="right" />{icons(['pls'])}</>;
         case 'fingerings': return <>{pills(['Am', 'E7'], 0)}<Icon name="vol" /></>;
         case 'wrap': return <WrapDemo />;
         case 'keys': return <><span className="step fs"><i>−</i><span>+2</span><i>+</i></span><span className="kchip">{t('guest.cards.keys.mine')} <b>+2</b></span><span className="kchip h">{t('guest.cards.keys.here')} <b>+5</b></span></>;

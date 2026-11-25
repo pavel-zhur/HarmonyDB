@@ -245,7 +245,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 <ChordsViewProvider value={representation}>
                     {timed
                         ? <AnalysisViews chordsId={chordsId} sheet={sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
-                            edit={place.page ? `/editor?playlist=${place.page.song.playlistId}&song=${place.page.song.id}&from=${chordsId}` : null} />
+                            edit={place.page?.canAdd ? `/editor?playlist=${place.page.song.playlistId}&song=${place.page.song.id}&from=${chordsId}` : `/editor?from=${encodeURIComponent(chordsId)}`} />
                         : sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
                 </ChordsViewProvider>
             )}

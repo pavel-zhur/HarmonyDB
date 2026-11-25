@@ -20,7 +20,7 @@ export const nav = {
     },
     tools: {
         import: 'Импорт аккордов',
-        importSub: 'Ссылки, файлы, фото, Telegram',
+        importSub: 'По ссылкам на страницы с аккордами; файлы и фото — скоро',
         analysis: 'Разбор',
         analysisSub: 'Аккорды по записи, ссылке или своему файлу',
         editor: 'Новая песня',

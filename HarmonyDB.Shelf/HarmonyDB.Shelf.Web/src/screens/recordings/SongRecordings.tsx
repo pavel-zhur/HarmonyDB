@@ -7,6 +7,8 @@
 //   analysisId: the analysis open on the page — its recording is one of the song's: listed (its own row, or the row of
 //   the same recording on its service), and lit while it plays. A tap on a row plays that recording.
 //   readOnly: only the recordings, to listen to (the public page): nothing to find, add or analyse
+//   anyOpen: whether any chords of the song are open to the person — recordings are looked for by open chords' titles
+//   only, so with none open and none kept there is nothing to say (not "none found")
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -22,6 +24,7 @@ import { ServiceMark, artistNames, clock } from '../music/parts';
 import { useAnalysis } from '../../data/analysis';
 import { player } from '../../player/controller';
 import { chooseAnalysis, chooseHere, useChosenRecording, usePlaysAnalysis } from './choice';
+import { keptPlace } from '../../analysis/clock';
 import './recordings.css';
 
 type SongPath = { playlistId: string; songId: string; share?: string | null };
@@ -29,7 +32,7 @@ type SongPath = { playlistId: string; songId: string; share?: string | null };
 /** How many recordings are shown before "more". */
 const shownFirst = 3;
 
-type Props = { song: SongPath; analysed: boolean; analysisId?: string | null; readOnly?: boolean };
+type Props = { song: SongPath; analysed: boolean; analysisId?: string | null; readOnly?: boolean; anyOpen?: boolean };
 
 export function SongRecordings(props: Props) {
     // (read-only — the public page, always a guest — asks for no session)
@@ -41,7 +44,7 @@ function RecordingsOfPerson(props: Props) {
     return <Recordings {...props} signedIn={signedIn} />;
 }
 
-function Recordings({ song, analysed, analysisId = null, readOnly = false, signedIn }: Props & { signedIn: boolean }) {
+function Recordings({ song, analysed, analysisId = null, readOnly = false, anyOpen = true, signedIn }: Props & { signedIn: boolean }) {
     const { t } = useTranslation();
     const recordings = useSongRecordings(song);
     const chosen = useChosenRecording(recordings.data);
@@ -67,7 +70,7 @@ function Recordings({ song, analysed, analysisId = null, readOnly = false, signe
             player.toggle();
             return;
         }
-        player.playChosen();
+        player.playChosen(keptPlace(analysisId));
         chooseAnalysis(song);
     };
     // the analysis's recording: the row of the same recording on its service, else a row of its own
@@ -77,8 +80,11 @@ function Recordings({ song, analysed, analysisId = null, readOnly = false, signe
     const ownRow = !!analysisId && !!header && !!recording && !sameRow;
     const lit = playsAnalysis ? sameRow : chosen;
     const list = data.recordings;
+    if (!list.length && !ownRow && !anyOpen) return null;
     const shown = all ? list : list.slice(0, shownFirst);
     if (lit && !shown.includes(lit)) shown.push(lit);
+    // "another" only when there is one already
+    const find = t(list.length || ownRow ? 'recordings.findAnother' : 'recordings.find');
 
     return (
         <div className="rec-list">
@@ -102,11 +108,11 @@ function Recordings({ song, analysed, analysisId = null, readOnly = false, signe
             ))}
             {!readOnly && <div className="links">
                 {list.length > shown.length && <button type="button" className="lnk" onClick={() => setAll(true)}>{t('recordings.more', { count: list.length - shown.length })}</button>}
-                <button type="button" className="lnk" onClick={e => setAnchor(anchor ? null : e.currentTarget)}>{t('recordings.findAnother')}</button>
+                <button type="button" className="lnk" onClick={e => setAnchor(anchor ? null : e.currentTarget)}>{find}</button>
                 {!analysed && chosen && <span className="lnk off"><Icon name="ai" />{t('music.analyse')} <Soon /></span>}
             </div>}
             {!readOnly && (
-                <Popover anchor={anchor} onClose={() => setAnchor(null)} width={380} label={t('recordings.findAnother')}>
+                <Popover anchor={anchor} onClose={() => setAnchor(null)} width={380} label={find}>
                     <FindAnother song={song} data={data} />
                 </Popover>
             )}

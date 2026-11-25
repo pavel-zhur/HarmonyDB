@@ -9,8 +9,6 @@
 // Otherwise it waits for the next change of page. A part of the old version that is not there any more makes the page
 // load the new version at once — once.
 
-import { isGuestPreview } from './guestMode';
-
 const reloadedKey = 'shelf.reloadedForMissingPart';
 
 export function installWorker(): void {
@@ -64,8 +62,6 @@ export function installWorker(): void {
         location.reload();
     });
 
-    // the guest's preview (framed by the app) is served by the app's worker and registers none of its own
-    if (isGuestPreview) return;
     void navigator.serviceWorker.register('/service-worker.js').then(registration => {
         // a page kept open for days looks for a new version now and then
         setInterval(() => void registration.update(), 60 * 60 * 1000);

@@ -16,6 +16,7 @@ import { useChangeWords } from './marks';
 import type { Piece } from './piece';
 import { useAnalysisPiece } from './useAnalysisPiece';
 import { useFollowLit } from './follow';
+import { analysisPlayer, useAnotherPlays } from './clock';
 import { TimeView } from './views/TimeView';
 import { GridView } from './views/GridView';
 import { IRealView } from './views/IRealView';
@@ -86,6 +87,7 @@ export function AnalysisViewsBody({ chordsId, sheet, share, edit = null }: { cho
     return (
         <div className="an-aviews">
             {piece && <AnalysisHint piece={piece} edit={edit} />}
+            {piece && <AnotherPlays chordsId={chordsId} />}
             <div className="an-rtabs" role="tablist">
                 {tabs.map(name => (
                     <button type="button" key={name} role="tab" aria-selected={name === shown} className={name === shown ? 'on' : ''} onClick={() => choose(name)}>
@@ -111,10 +113,25 @@ export function AnalysisViewsBody({ chordsId, sheet, share, edit = null }: { cho
     );
 }
 
+/** Another recording of the song plays: the views light nothing — said, with the way back to the analysed one. */
+function AnotherPlays({ chordsId }: { chordsId: string }) {
+    const { t } = useTranslation();
+    if (!useAnotherPlays()) return null;
+    return (
+        <p className="an-hint">
+            <Icon name="phones" />
+            <span>
+                {t('analysis.another')}{' '}
+                <button type="button" className="lnk" onClick={() => analysisPlayer.back(chordsId)}>{t('analysis.backToAnalysed')}</button>
+            </span>
+        </p>
+    );
+}
+
 /**
  * What the analysis is, in one line (the mock-up's): ours, of this recording; its key (and where it goes), meter and
- * tempo; and, wrong somewhere, "fix it by hand" — its chords copied into the editor as the person's own variant, no
- * longer tied to the time. (`edit`: the editor's address for this song; none where there is no song to add it to.)
+ * tempo; and, wrong somewhere, "fix it by hand" — its chords copied into the editor as the person's own chords, no
+ * longer tied to the time. (`edit`: the editor's address; none: no such line, as on the public page.)
  */
 function AnalysisHint({ piece, edit }: { piece: Piece; edit: string | null }) {
     const { t } = useTranslation();

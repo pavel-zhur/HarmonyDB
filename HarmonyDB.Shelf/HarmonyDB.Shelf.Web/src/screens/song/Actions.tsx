@@ -36,8 +36,6 @@ export function SharePop({ anchor, onClose, target, title, chords }: {
     const { t } = useTranslation();
     const [link, setLink] = useState<string | null>(null);
     const [failed, setFailed] = useState<unknown>(null);
-    const { signedIn } = useSession();
-    const navigate = useNavigate();
     useEffect(() => {
         if (!anchor) return;
         let gone = false;
@@ -63,9 +61,6 @@ export function SharePop({ anchor, onClose, target, title, chords }: {
                 )}
                 {!link && !failed && <p className="loading">{t('common.loading')}</p>}
                 {failed !== null && <p className="failed">{errorText(failed)}</p>}
-                {link && signedIn && (
-                    <p className="guestp"><button type="button" className="btn" onClick={() => { onClose(); navigate(guestAddress(link)); }}><Icon name="eye" />{t('song.share.guest.button')}</button></p>
-                )}
                 {anchor && <StaticLink chords={chords} />}
             </div>
         </Popover>
@@ -92,12 +87,6 @@ function Pdf({ chordsId }: { chordsId: string }) {
             {(make.isError || job.data?.status === 'failed') && <span className="failed small">{make.isError ? errorText(make.error) : t('song.share.pdfFailed')}</span>}
         </>
     );
-}
-
-/** The guest's preview of a link of the app (/s/<token>[?chords=…] → /s/<token>/guest[?chords=…]). */
-function guestAddress(link: string): string {
-    const url = new URL(link);
-    return `${url.pathname}/guest${url.search}`;
 }
 
 /**

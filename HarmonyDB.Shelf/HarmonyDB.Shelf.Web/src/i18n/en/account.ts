@@ -1,5 +1,6 @@
 export const account = {
     account: {
+        signedOutHere: 'This device is signed out: the sign-in ended elsewhere (or the profile was merged into another). Sign in again to go on.',
         nameFrom: { telegram: 'Name and picture come from Telegram.', google: 'Name and picture come from Google.', yandex: 'Name and picture come from Yandex.', dev: 'Name from the test sign-in.' },
         provider: { telegram: 'Telegram', google: 'Google', yandex: 'Yandex', dev: 'Test sign-in' },
         signIns: {
@@ -81,6 +82,7 @@ export const account = {
             title: 'What I have',
             playlists: 'My playlists',
             member: 'Playlists I am a member of',
+            followed: 'Open playlists I keep',
             marks: 'Marks',
             keys: 'Keys',
             notes: 'Notes',

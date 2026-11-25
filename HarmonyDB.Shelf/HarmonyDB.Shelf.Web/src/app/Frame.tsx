@@ -18,7 +18,7 @@ import { toast } from './toasts';
 import { isDark, useAppearance } from './appearance';
 import { useWide } from './layout';
 import { useLogo } from './logo';
-import { guestOtherNav, isOn, mainNav, moreAddresses, otherNav, toolsNav, type NavItem } from './nav';
+import { guestOtherNav, isOn, mainNav, moreAddresses, openTo, otherNav, toolsNav, type NavItem } from './nav';
 
 export function Frame() {
     useAppearance();
@@ -114,7 +114,7 @@ export function NavEntry({ item, className }: { item: NavItem; className?: (on: 
 
 function Side() {
     const { t } = useTranslation();
-    const { signedIn, known } = useSession();
+    const { signedIn, known, session } = useSession();
     if (!known) return <aside className="side" />;
     return (
         <aside className="side">
@@ -125,7 +125,7 @@ function Side() {
                 </>
             )}
             <h6>{t('nav.tools')}</h6>
-            {toolsNav.map(item => <NavEntry key={item.to} item={item} />)}
+            {openTo(toolsNav, session?.permissions).map(item => <NavEntry key={item.to} item={item} />)}
             <h6>{t('nav.other')}</h6>
             {(signedIn ? otherNav : guestOtherNav).map(item => <NavEntry key={item.to} item={item} />)}
         </aside>

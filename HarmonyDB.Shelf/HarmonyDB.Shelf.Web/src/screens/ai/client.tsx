@@ -1,6 +1,7 @@
 // Who an assistant is, as the person is shown it — everywhere a client is named (the consent, "Your AI"). The hosts
 // tell clients apart, so they come first, plain, each on its own line, exactly as the server gives them (in a face
-// where look-alike letters differ; never turned into other letters by the page). The client's name is only what it
+// where look-alike letters differ; never turned into other letters by the page), the site that owns each in bold — its
+// end, which a look-alike cannot borrow (assistant.example.evil.test is evil.test's), and said in words beside it. The client's name is only what it
 // calls itself: anyone may take a well-known one; it is shown after the hosts, on its own line, marked so, without
 // control and direction characters, its spaces made plain, clipped to a sane length.
 
@@ -28,14 +29,38 @@ export function clientHost(client: { clientIdHost?: string | null; redirectHosts
     return client.clientIdHost ?? client.redirectHost ?? client.redirectHosts?.[0] ?? '';
 }
 
+/**
+ * The end of a host that names whose it is: its last two labels, three where the second-to-last is a short one under a
+ * country (example.co.uk). Only for showing; an address of numbers is shown whole.
+ */
+export function ownerOf(host: string): string {
+    const labels = host.split('.');
+    if (labels.length <= 2 || /^[\d.]+$|:/.test(host)) return host;
+    const country = labels[labels.length - 1]!.length === 2 && labels[labels.length - 2]!.length <= 3;
+    return labels.slice(country && labels.length > 3 ? -3 : -2).join('.');
+}
+
+/** A host with the site that owns it in bold, and that site said in words when the host is longer than it. */
+function Host({ host }: { host: string }) {
+    const { t } = useTranslation();
+    const owner = ownerOf(host);
+    const before = host.slice(0, host.length - owner.length);
+    return (
+        <>
+            <code className="ai-host">{before}<b>{owner}</b></code>
+            {before && <span className="ai-owner"> {t('ai.hosts.owner', { site: owner })}</span>}
+        </>
+    );
+}
+
 /** The hosts first, then the name the client calls itself. */
 export function ClientIdentity({ idHost, redirectHosts, name }: { idHost: string | null; redirectHosts: readonly string[]; name: string | null | undefined }) {
     const { t } = useTranslation();
     const shown = cleanName(name);
     return (
         <span className="ai-ident">
-            {idHost && <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.id')}</span> <code className="ai-host">{idHost}</code></span>}
-            <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.back')}</span> {redirectHosts.map((host, i) => <span key={host}>{i > 0 && ', '}<code className="ai-host">{host}</code></span>)}</span>
+            {idHost && <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.id')}</span> <Host host={idHost} /></span>}
+            <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.back')}</span> {redirectHosts.map((host, i) => <span key={host}>{i > 0 && ', '}<Host host={host} /></span>)}</span>
             {shown && <span className="ai-calls">{t('ai.hosts.calls', { name: shown })}</span>}
             {[idHost, ...redirectHosts].some(host => host?.split('.').some(label => label.startsWith('xn--'))) && (
                 <span className="ai-puny">{t('ai.hosts.puny')}</span>

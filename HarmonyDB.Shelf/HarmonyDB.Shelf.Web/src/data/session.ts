@@ -81,13 +81,17 @@ export async function finishSignOut(): Promise<boolean> {
 
 /**
  * Who the browser is: the server's word, remembered; with no connection, the word it said last (the person goes on
- * offline with the library kept on the device — offline/index.ts), or a guest after an offline sign-out.
+ * offline with the library kept on the device — offline/index.ts), or a guest after an offline sign-out. A browser
+ * signed out by no step of its own (its session ended elsewhere: revoked, its profile merged into another, too long
+ * unused) is told so, with the way to sign in again.
  */
 async function readSession(): Promise<Schemas['CurrentSession']> {
     const guest: Schemas['CurrentSession'] = { accountId: null, permissions: [] };
     if (!(await finishSignOut())) return guest;
     try {
         const session = await call(api.GET('/api/auth/session'));
+        if (!session.accountId && remembered<Schemas['CurrentSession']>(lastSessionKey)?.accountId)
+            toast(i18n.t('account.signedOutHere'), { action: { label: i18n.t('nav.signIn'), run: () => offerSignIn() }, stays: true });
         remember(lastSessionKey, session);
         if (!session.accountId || remembered<Schemas['Profile']>(lastProfileKey)?.id !== session.accountId) remember(lastProfileKey, null);
         return session;
@@ -102,6 +106,11 @@ if (typeof addEventListener === 'function') {
     addEventListener('online', () => {
         if (remembered<boolean>(signOutPendingKey)) void finishSignOut();
     });
+}
+
+/** This browser's last word on the session forgotten: it is a guest by its own step (its profile deleted). */
+export function forgetSession(): void {
+    remember(lastSessionKey, null);
 }
 
 export const sessionQuery = {

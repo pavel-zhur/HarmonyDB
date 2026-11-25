@@ -5,6 +5,11 @@
 .fgridc { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); max-width: 940px; }
 .fcard { display: flex; flex-direction: column; align-items: stretch; text-align: left; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 .fcard.tall { grid-column: 1 / -1; }
+/* a card that leads somewhere (the home's few) */
+.fcard.go { color: var(--ink); }
+.fcard.go:hover { border-color: var(--accent); }
+/* the home's few: all seen (a column on a phone), their pictures lower than the showcase's */
+.fgridc.few .fvis { height: 56px; }
 .fvis { height: 92px; background: var(--surface2); display: flex; align-items: center; justify-content: center; gap: 10px; overflow: hidden; padding: 0 14px; color: var(--ink); }
 .fvis > svg.ic { width: 26px; height: 26px; color: var(--accent); }
 .fcard.tall .fvis { height: auto; min-height: 92px; align-items: flex-start; justify-content: flex-start; padding: 12px 14px; gap: 14px; flex-wrap: wrap; }

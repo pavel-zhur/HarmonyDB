@@ -147,6 +147,8 @@ class PlayerController {
     private streamRetried = false;
     /** a recording chosen with a tap: it plays once it is open (playChosen) */
     private wantPlay = false;
+    /** and where it starts (seconds; 0: the beginning) */
+    private wantFrom = 0;
     private clipRetried = false;
     private watch: Worker | null = null;
 
@@ -170,6 +172,9 @@ class PlayerController {
         if (patch.status === 'failed') this.wantPlay = false;
         if (patch.status === 'ready' && this.wantPlay) {
             this.wantPlay = false;
+            const from = this.wantFrom;
+            this.wantFrom = 0;
+            if (from > 0) this.seek(from);
             void this.play();
         }
     }
@@ -417,10 +422,12 @@ class PlayerController {
     // ---- the transport --------------------------------------------------------------------------------
 
     /**
-     * A recording chosen with a tap plays: the source opened next, as soon as it is ready (the tap lets sound begin).
+     * A recording chosen with a tap plays: the source opened next, as soon as it is ready (the tap lets sound begin),
+     * from `from` seconds (the place it was left, when it is one coming back).
      */
-    playChosen(): void {
+    playChosen(from = 0): void {
         this.wantPlay = true;
+        this.wantFrom = from;
     }
 
     /** Plays; called from a tap (the browser lets sound begin only then). */

@@ -1,5 +1,6 @@
 // A track of a music service: to listen to (the player at the bottom, its clip), to put into a playlist as a song made of
-// this one recording, to go on from — its artists, album, similar tracks, radio; its words. Analysing it is "soon".
+// this one recording, to go on from — its chords (the one search, by its artists and title), its artists, album, similar
+// tracks, radio; its words. Analysing it is "soon".
 
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -64,6 +65,7 @@ function TrackBody({ track, lyrics }: { track: MusicTrack; lyrics: boolean }) {
             <div className="mu-mlinks">
                 {track.inMyPlaylists && <span className="lnk muted"><Icon name="pls" />{t('music.inMyPlaylists')}</span>}
                 {track.analysisChords && <Link className="lnk" to={`/chords/${encodeURIComponent(track.analysisChords)}`}><Icon name="ai" />{t('music.openAnalysis')}</Link>}
+                {track.title && <Link className="lnk" to={`/?q=${encodeURIComponent([...track.artists.map(artist => artist.name), track.title].filter(Boolean).join(' '))}`}><Icon name="search" />{t('music.findChords')}</Link>}
                 <Link className="lnk" to={musicHref.similar(service, track.id)}><Icon name="simil" />{t('music.similar')}</Link>
                 <Link className="lnk" to={musicHref.radio(service, track.id)}><Icon name="loop" />{t('music.radio')}</Link>
             </div>

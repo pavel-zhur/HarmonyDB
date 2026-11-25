@@ -5,8 +5,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, createBrowserRouter, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { i18n } from '../i18n';
-import { isGuestPreview } from './guestMode';
 import { Frame } from './Frame';
 import { Page } from './panes';
 import { useSession } from '../data/session';
@@ -24,7 +22,6 @@ import { InvitationScreen } from '../screens/playlists/InvitationScreen';
 import { MoreScreen } from '../screens/more/MoreScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { ShareScreen } from '../screens/share/ShareScreen';
-import { GuestPreview } from '../screens/share/GuestPreview';
 import { ChordsScreen } from '../screens/song/ChordsScreen';
 import { musicRoutes } from '../screens/music/routes';
 import { DeletedScreen } from '../screens/profile/DeletedScreen';
@@ -80,7 +77,6 @@ export const router = createBrowserRouter([
 
             // links; chords alone
             { path: '/s/:token', element: <ShareScreen /> },
-            { path: '/s/:token/guest', element: <GuestPreview /> },
             { path: '/chords/:chordsId', element: <ChordsScreen /> },
 
             // the music: artists, albums, tracks, genres and moods, the chart, radio, a linked account's lists
@@ -105,8 +101,7 @@ export const router = createBrowserRouter([
             // It shows, beside the client's name, the host of its redirect address and of its client id, and warns of a
             // client that is local only — a client may call itself by a well-known assistant's name; only the host
             // tells them apart.
-            // the MCP consent: never in the guest's preview (a framed app is never anything else; app/guestMode.ts)
-            { path: '/connect', element: isGuestPreview ? <p className="framed">{i18n.t('common.framed')}</p> : <ConsentScreen /> },
+            { path: '/connect', element: <ConsentScreen /> },
 
             { path: '*', element: <Navigate to="/" replace /> },
         ],

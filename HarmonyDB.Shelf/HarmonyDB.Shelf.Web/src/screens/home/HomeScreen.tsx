@@ -1,6 +1,7 @@
 // The home. A person: the search (results under it as one types — the library's list and the one search), then
-// "Continue" (opened lately) and "My playlists". A guest: the inviting home (GuestHome). Under them, for both, the music
-// (screens/music/MusicHome: artists I play, similar, genres and moods, the chart).
+// "Continue" (opened lately) and "My playlists". A guest: the inviting home (GuestHome). Under them, for both, a few
+// things worth trying (Features; a guest's with the offer to sign in), then the music (screens/music/MusicHome: genres
+// and moods first).
 
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +14,8 @@ import { SongList } from '../lists/SongList';
 import { useListState } from '../lists/listParams';
 import { RecentList } from '../recent/RecentScreen';
 import { Cover } from '../playlists/PlaylistMeta';
-import { GuestHome } from './GuestHome';
+import { Features } from './Features';
+import { GuestHome, SignInOffer } from './GuestHome';
 import { MusicHome } from '../music/MusicHome';
 
 export function HomeScreen() {
@@ -26,8 +28,14 @@ export function HomeScreen() {
             <SongList source={{ kind: 'library' }} listKey="home" openId={null} sorts={['popular']}
                 songHref={(p, s) => `/library/songs/${p}/${s}`} chordsHref={id => (signedIn ? `/library/chords/${id}` : `/chords/${id}`)}
                 searchOnly={{ placeholder: t('home.searchPlaceholder') }}>
-                {known && !searching && (signedIn ? <PersonHome /> : <GuestHome />)}
-                {known && !searching && <MusicHome />}
+                {known && !searching && (
+                    <>
+                        {signedIn ? <PersonHome /> : <GuestHome />}
+                        <Features />
+                        {!signedIn && <SignInOffer />}
+                        <MusicHome />
+                    </>
+                )}
             </SongList>
             <ToTop />
         </div>

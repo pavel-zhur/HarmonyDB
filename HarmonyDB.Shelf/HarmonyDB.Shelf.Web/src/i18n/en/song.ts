@@ -28,14 +28,13 @@ export const song = {
             prev: 'Previous chords',
             next: 'Next chords',
             close: 'Close the chords',
-            notOpen: 'These chords are closed: they open only for those who have access to them.',
+            notOpen: 'These chords are not open to you.',
             notOpenShort: 'closed',
             unavailable: 'The source did not answer. Try again later.',
             unavailableShort: 'the source did not answer',
             noSheet: 'These chords have no text with chords.',
         },
         links: {
-            otherPerformances: 'Other performances',
             similar: 'Similar',
             moreOf: 'More of {{artist}}',
             everywhere: 'Everywhere',
@@ -124,12 +123,6 @@ export const song = {
             pdfMaking: 'Making the PDF…',
             pdfReady: 'Download the PDF',
             pdfFailed: 'The PDF was not made.',
-            guest: {
-                button: 'How a guest sees it',
-                frame: 'This is how a guest sees this link: someone not signed in.',
-                back: 'Back',
-                signIn: 'This is a preview: here a guest is asked to sign in. No one is signed in from it.',
-            },
             static: {
                 title: 'A link that opens in any browser, without the app',
                 note: 'Whoever has this link sees these chords as you see them, even if they could not open them themselves.',

@@ -1,5 +1,6 @@
 export const account = {
     account: {
+        signedOutHere: 'На этом устройстве вы вышли: вход закончился в другом месте (или профиль объединили с другим). Войдите снова, чтобы продолжить.',
         nameFrom: { telegram: 'Имя и фотография берутся из Telegram.', google: 'Имя и фотография берутся из Google.', yandex: 'Имя и фотография берутся из Яндекса.', dev: 'Имя — из тестового входа.' },
         provider: { telegram: 'Telegram', google: 'Google', yandex: 'Яндекс', dev: 'Тестовый вход' },
         signIns: {
@@ -95,6 +96,7 @@ export const account = {
             title: 'Что у меня есть',
             playlists: 'Мои плейлисты',
             member: 'Плейлисты, где я участник',
+            followed: 'Открытые плейлисты, которые я держу',
             marks: 'Отметки',
             keys: 'Тональности',
             notes: 'Заметки',

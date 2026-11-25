@@ -10,7 +10,7 @@ import { attach, local } from '../local';
 import { action } from './actions';
 import { closeMerge } from './mergeQuestion';
 import { queryClient } from './queryClient';
-import { sessionQuery, toastFresh, useSession } from './session';
+import { forgetSession, sessionQuery, toastFresh, useSession } from './session';
 
 export type LoginItem = Schemas['LoginItem'];
 export type MusicLinkItem = Schemas['MusicLinkItem'];
@@ -96,6 +96,7 @@ export async function deleteProfile(): Promise<void> {
         throw error;
     }
     // a guest from now: the screens stop asking what only a person may read, then everything is read anew
+    forgetSession();
     queryClient.setQueryData(sessionQuery.queryKey, { accountId: null, permissions: [] });
     queryClient.removeQueries({ predicate: query => query.queryKey[0] !== 'session' });
     attach(null);

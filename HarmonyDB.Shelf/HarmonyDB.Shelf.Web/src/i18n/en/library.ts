@@ -35,7 +35,7 @@ export const library = {
         otherPlaylists: 'In my other playlists',
         foundInPlaylists: 'Found in my playlists',
         foundInOpen: 'Found in open playlists',
-        fromSources: 'Chords from the internet',
+        fromSources: 'Chords',
         sourcesFailed: 'Not every source answered; try again later.',
         notOpen: 'not available to you',
         unavailable: 'not answering now',

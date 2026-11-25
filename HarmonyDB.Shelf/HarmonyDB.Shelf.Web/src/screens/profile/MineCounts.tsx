@@ -1,4 +1,4 @@
-// "What I have": my playlists, those I am a member of, my marks, keys and notes (as I see them now), the chords I wrote.
+// "What I have": my playlists, those I am a member of, the open ones I keep (follow), my marks, keys and notes (as I see them now), the chords I wrote.
 
 import { useTranslation } from 'react-i18next';
 import { useMyPlaylists } from '../../data/playlists';
@@ -12,9 +12,11 @@ export function MineCounts() {
     const view = useLocalView();
     const mine = playlists.data?.filter(p => p.myRole === 'owner' && p.systemKind === 'none').length;
     const member = playlists.data?.filter(p => p.myRole && p.myRole !== 'owner').length;
+    const followed = playlists.data?.filter(p => !p.myRole && p.following).length;
     const rows: [string, number | undefined][] = [
         [t('account.mine.playlists'), mine],
         [t('account.mine.member'), member],
+        [t('account.mine.followed'), followed],
         [t('account.mine.marks'), view.watermark === null ? undefined : Object.keys(view.marks).length],
         [t('account.mine.keys'), view.watermark === null ? undefined : Object.keys(view.keys).length],
         [t('account.mine.notes'), view.watermark === null ? undefined : Object.values(view.notes).filter(n => n.text).length],

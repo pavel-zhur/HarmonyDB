@@ -14,7 +14,7 @@ import { chordAt } from '../analysis/piece';
 import { useAnalysisPiece } from '../analysis/useAnalysisPiece';
 import { sheetTime } from '../chords/time';
 import { chooseAnalysis, useChosenRecording, usePlaysAnalysis } from '../screens/recordings/choice';
-import { analysisPlayer, offerAnalysis, takePending } from '../analysis/clock';
+import { analysisPlayer, keepPlace, offerAnalysis, takePending } from '../analysis/clock';
 import { ClipBox, PlayerBar } from './PlayerBar';
 import { player, useClock, usePlayer, type PlayerSource } from './controller';
 
@@ -44,6 +44,9 @@ function AnalysisPlayer({ chordsId, share }: { chordsId: string; share: string |
     useEffect(() => {
         const stop = sheetTime.onSeek(seconds => player.seek(seconds));
         return () => {
+            // another recording chosen (or the page left): where this one was, to go on from there when it comes back
+            const source = player.getState().source;
+            if (source?.kind === 'analysis' && source.chordsId === chordsId) keepPlace(chordsId, player.position());
             stop();
             sheetTime.show(null);
             started.current = false;

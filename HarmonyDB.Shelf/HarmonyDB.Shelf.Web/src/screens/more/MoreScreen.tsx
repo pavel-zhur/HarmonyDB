@@ -3,7 +3,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Page } from '../../app/panes';
-import { guestOtherNav, otherNav, toolsNav, type NavItem } from '../../app/nav';
+import { guestOtherNav, openTo, otherNav, toolsNav, type NavItem } from '../../app/nav';
 import { isDark } from '../../app/appearance';
 import { useSession } from '../../data/session';
 import { updateSettings, useSettings } from '../../data/settings';
@@ -12,13 +12,13 @@ import { Icon } from '../../kit/Icon';
 
 export function MoreScreen() {
     const { t } = useTranslation();
-    const { signedIn } = useSession();
+    const { signedIn, session } = useSession();
     useSettings();
     return (
         <Page>
             <h1>{signedIn ? t('nav.more') : t('nav.tools')}</h1>
             {signedIn && <h2 style={{ marginTop: 8 }}>{t('nav.tools')}</h2>}
-            <div className="menu">{toolsNav.map(item => <Line key={item.to} item={item} />)}</div>
+            <div className="menu">{openTo(toolsNav, session?.permissions).map(item => <Line key={item.to} item={item} />)}</div>
             <h2>{t('nav.other')}</h2>
             <div className="menu">
                 {(signedIn ? otherNav : guestOtherNav).map(item => <Line key={item.to} item={item} />)}

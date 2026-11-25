@@ -1,7 +1,7 @@
 // The views of an analysis, as tabs above its chords (AnalysisViewsBody.tsx): loaded when an analysis is opened.
 //
 //   <AnalysisViews chordsId={…} sheet={<the chord sheet/> | null} />   share={token}: opened by a share link, read through it
-//   edit={the editor's address}: "fix it by hand" — the analysis's chords as the person's own variant of the song
+//   edit={the editor's address}: "fix it by hand" — the analysis's chords as the person's own chords (a variant of the song where they may add to its playlist)
 
 import { lazy, Suspense, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

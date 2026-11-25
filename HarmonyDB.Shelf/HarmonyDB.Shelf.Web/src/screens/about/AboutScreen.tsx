@@ -16,7 +16,7 @@ type Own = keyof typeof en.about.cards;
 type Item = { guest: Card; to?: string; soon?: boolean; wide?: boolean } | { own: Own; to?: string };
 
 const groups: { key: keyof typeof en.about.groups; items: Item[] }[] = [
-    { key: 'best', items: [{ guest: 'analysis', soon: true }, { guest: 'playAlong', to: '/library' }, { guest: 'music', to: '/' }, { guest: 'import', to: '/import' }, { guest: 'ai', to: '/ai' }, { guest: 'illustrations', to: '/illustrations' }, { guest: 'book', to: '/playlists' }] },
+    { key: 'best', items: [{ guest: 'playAlong', to: '/library' }, { guest: 'importPlaylist', to: '/playlists/import' }, { guest: 'music', to: '/' }, { guest: 'import', to: '/import' }, { guest: 'ai', to: '/ai' }, { guest: 'illustrations', to: '/illustrations' }, { guest: 'book', to: '/playlists' }, { guest: 'analysis', soon: true }] },
     { key: 'play', items: [{ guest: 'fingerings', to: '/library' }, { guest: 'keys', to: '/library' }, { guest: 'wrap', to: '/library', wide: true }] },
     { key: 'own', items: [{ guest: 'playlists', to: '/playlists' }, { own: 'linking', to: '/playlists' }, { own: 'marks', to: '/library' }, { own: 'together', to: '/playlists' }, { own: 'own', to: '/editor' }] },
     { key: 'more', items: [{ guest: 'noAds' }, { own: 'links' }, { own: 'yourMusic', to: '/profile' }, { own: 'look', to: '/profile' }] },

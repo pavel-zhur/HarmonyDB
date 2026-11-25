@@ -20,7 +20,7 @@ export const nav = {
     },
     tools: {
         import: 'Import chords',
-        importSub: 'Links, files, photos, Telegram',
+        importSub: 'By links to pages with chords; files and photos soon',
         analysis: 'Analysis',
         analysisSub: 'Chords from a recording, a link or your own file',
         editor: 'New song',

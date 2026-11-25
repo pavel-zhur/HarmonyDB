@@ -1,5 +1,5 @@
-// The home's music: the home is the library with music in it. For a person — the artists they play, music like one of
-// their playlists, genres and moods, the chart; for a guest — genres and moods, and the chart.
+// The home's music: the home is the library with music in it. Genres and moods; for a person then the artists they
+// play and music like one of their playlists; the chart.
 //
 // Which service: the one the person linked an account of (when it is one), else Yandex Music.
 
@@ -24,9 +24,9 @@ export function MusicHome() {
     const service = useHomeService();
     return (
         <>
+            <GenresAndMoods service={service} />
             {signedIn && <ArtistsIPlay service={service} />}
             {signedIn && <SimilarToMine service={service} />}
-            <GenresAndMoods service={service} />
             <Chart service={service} />
         </>
     );
