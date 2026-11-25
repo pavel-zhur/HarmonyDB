@@ -19,13 +19,7 @@ public class NodeLine : NodeCollectionBase
         }
 
         // The line's time is the time of the first thing in it that has one.
-        var time = TraverseAll().Select(x => x.element switch
-        {
-            NodeText text => text.Time,
-            NodeChord chord => chord.Time,
-            NodeMark mark => mark.Time,
-            _ => null,
-        }).FirstOrDefault(x => x.HasValue);
+        var time = TraverseAll().Select(x => x.element.Moment(traversalContext.Times)).FirstOrDefault(x => x.HasValue);
 
         builder.Append($"<span class='chords-line {(_isDouble ? "chords-double-line" : null)}'{(time.HasValue ? $" {TimeAttribute.Format(time.Value)}" : null)}>");
 

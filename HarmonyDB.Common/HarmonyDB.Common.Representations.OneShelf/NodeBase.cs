@@ -30,5 +30,21 @@ public abstract class NodeBase
 
     public abstract NodeBase ShallowClone();
 
+    /// <summary>
+    /// The moment of this node, in seconds: its time, or its place in the sheet's bars; none (null) when it has neither,
+    /// or when its place is not in the bars (or the sheet has none). Every time the rendering reads is read here.
+    /// </summary>
+    internal virtual double? Moment(SheetTimes? times) => null;
+
+    /// <summary>
+    /// The moment of a node that has a time or a place (<see cref="Moment"/>). A node with both has no time: the two may disagree.
+    /// </summary>
+    internal static double? Moment(double? time, SheetPlace? place, SheetTimes? times)
+    {
+        if (time.HasValue && place != null) return null;
+
+        return time ?? (place != null ? times?.Moment(place) : null);
+    }
+
     public NodeChild AsChild() => new(this);
 }

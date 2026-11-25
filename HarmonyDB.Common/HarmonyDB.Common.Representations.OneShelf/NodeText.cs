@@ -29,9 +29,9 @@ public class NodeText : NodeBase
             return;
         }
 
-        if (Time.HasValue)
+        if (Moment(traversalContext.Times) is { } moment)
         {
-            builder.Append($"<span {TimeAttribute.Format(Time.Value)}>");
+            builder.Append($"<span {TimeAttribute.Format(moment)}>");
             builder.Append(HttpUtility.HtmlEncode(Text));
             builder.Append("</span>");
             return;
@@ -88,4 +88,6 @@ public class NodeText : NodeBase
     }
 
     public override NodeBase ShallowClone() => new NodeText(Text) { Time = Time };
+
+    internal override double? Moment(SheetTimes? times) => Time;
 }

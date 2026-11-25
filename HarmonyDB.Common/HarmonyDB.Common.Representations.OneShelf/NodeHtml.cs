@@ -19,6 +19,13 @@ public class NodeHtml : NodeCollectionBase
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<SheetKey>? Keys { get; init; }
 
+    /// <summary>
+    /// On the sheet's root: the sheet's own bars, when it has them. Its chords and marks may then stand at places in them
+    /// (<see cref="NodeChord.Place"/>, <see cref="NodeMark.Place"/>) instead of at seconds.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SheetTimes? Times { get; init; }
+
     [JsonIgnore]
     public bool IsBlock { get; set; }
 
@@ -49,7 +56,7 @@ public class NodeHtml : NodeCollectionBase
     {
         var final = CreateFinal(representationSettings);
         var builder = new StringBuilder();
-        final.AppendHtmlTo(builder, representationSettings, new());
+        final.AppendHtmlTo(builder, representationSettings, new() { Times = Times });
         return builder.ToString();
     }
 
@@ -180,6 +187,7 @@ public class NodeHtml : NodeCollectionBase
         Name = Name,
         Classes = Classes,
         Keys = Keys,
+        Times = Times,
     };
 
     /// <summary>

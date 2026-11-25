@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace HarmonyDB.Common.Representations.OneShelf;
@@ -34,23 +35,41 @@ public class NodeMark : NodeBase
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Time { get; init; }
 
+    /// <summary>
+    /// Where the change happens in the sheet's bars (<see cref="NodeHtml.Times"/>), in place of <see cref="Time"/>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SheetPlace? Place { get; init; }
+
+    /// <summary>
+    /// In a sheet with bars (<see cref="NodeHtml.Times"/>): show here the time signature that the bar of the mark's <see cref="Place"/> has there,
+    /// in place of a <see cref="TimeSignature"/> of the mark's own. Without bars, or with a place that does not resolve (<see cref="SheetTimes.Moment"/>), it shows nothing.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Meter { get; init; }
+
+    internal override double? Moment(SheetTimes? times) => Moment(Time, Place, times);
+
     internal override void AppendHtmlTo(StringBuilder builder, RepresentationSettings representationSettings, TraversalContext traversalContext)
     {
-        if (Key == null && Tempo == null && TimeSignature == null)
-            throw new InvalidOperationException("A mark carries a key, a tempo or a time signature.");
+        if (Key == null && Tempo == null && TimeSignature == null && !Meter)
+            throw new InvalidOperationException("A mark carries a key, a tempo, a time signature or the meter.");
 
         builder.Append("<span class='sheet-mark' style='white-space: nowrap'");
-        if (Time.HasValue)
+        if (Moment(traversalContext.Times) is { } moment)
         {
             builder.Append(' ');
-            builder.Append(TimeAttribute.Format(Time.Value));
+            builder.Append(TimeAttribute.Format(moment));
         }
 
         builder.Append('>');
 
         var parts = new List<string>();
         if (Key != null) parts.Add(KeyHtml(Key.Shown(representationSettings)));
-        if (TimeSignature != null) parts.Add(TimeSignatureHtml(TimeSignature));
+        if (TimeSignature != null) parts.Add(TimeSignatureHtml(TimeSignature.Beats.ToString(), TimeSignature.Unit.ToString()));
+        // The meter of the bar of the mark's place, when the place resolves.
+        if (Meter && Place != null && Moment(traversalContext.Times) != null && traversalContext.Times!.TimeSignatureOf(Place.Bar) is { } meter)
+            parts.Add(MeterHtml(meter));
         if (Tempo != null) parts.Add(TempoHtml(Tempo));
         builder.Append(string.Join(" ", parts));
 
@@ -102,13 +121,30 @@ public class NodeMark : NodeBase
         => $"<line x1='{N(x - 3)}' x2='{N(x - 3)}' y1='{N(y - 16)}' y2='{N(y + 5)}' stroke-width='1.4'/>"
            + $"<path fill='none' stroke-width='1.8' d='M {N(x - 3)} {N(y + 5)} C {N(x + 1)} {N(y + 2)} {N(x + 6)} {N(y - 2)} {N(x + 3)} {N(y - 4)} C {N(x + 1)} {N(y - 5.5)} {N(x - 1)} {N(y - 3)} {N(x - 3)} {N(y - 1)}'/>";
 
-    private static string TimeSignatureHtml(SheetTimeSignature timeSignature)
+    /// <summary>
+    /// A time signature as a score writes it: the beats over the note, "3" over "4", "2+2+3" over "8".
+    /// </summary>
+    private static string TimeSignatureHtml(string beats, string unit)
     {
-        var digits = Math.Max(timeSignature.Beats.ToString().Length, timeSignature.Unit.ToString().Length);
-        var width = 13 * digits + 2;
-        var content = $"<text stroke='none' x='{N(width / 2.0)}' y='18' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>{timeSignature.Beats}</text>"
-                      + $"<text stroke='none' x='{N(width / 2.0)}' y='39' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>{timeSignature.Unit}</text>";
-        return $"<span class='sheet-mark-time-signature' role='img' aria-label='{timeSignature}'>{Svg(0, 0, width, 40, 1.4, content)}</span>";
+        var characters = Math.Max(beats.Length, unit.Length);
+        var width = 13 * characters + 2;
+        var content = $"<text stroke='none' x='{N(width / 2.0)}' y='18' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>{HttpUtility.HtmlEncode(beats)}</text>"
+                      + $"<text stroke='none' x='{N(width / 2.0)}' y='39' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>{HttpUtility.HtmlEncode(unit)}</text>";
+        return $"<span class='sheet-mark-time-signature' role='img' aria-label='{HttpUtility.HtmlAttributeEncode($"{beats}/{unit}")}'>{Svg(0, 0, width, 40, 1.4, content)}</span>";
+    }
+
+    /// <summary>
+    /// The time signature of a bar of the sheet's bars: a plain one ("3/4") and an additive one ("2+2+3/8") drawn as a time signature is;
+    /// a bar of no metre ("free") as a score says it, "senza misura"; anything else written as it is.
+    /// </summary>
+    private static string MeterHtml(string meter)
+    {
+        var parts = meter.Split('/');
+        if (parts.Length == 2 && Regex.IsMatch(parts[0], @"^\d+(\+\d+)*$") && Regex.IsMatch(parts[1], @"^\d+$"))
+            return TimeSignatureHtml(parts[0], parts[1]);
+
+        var text = meter == "free" ? "senza misura" : meter;
+        return $"<span class='sheet-mark-time-signature' data-time-signature='{HttpUtility.HtmlAttributeEncode(meter)}'><i>{HttpUtility.HtmlEncode(text)}</i></span>";
     }
 
     private static string TempoHtml(SheetTempo tempo)
@@ -159,5 +195,7 @@ public class NodeMark : NodeBase
         Tempo = Tempo,
         TimeSignature = TimeSignature,
         Time = Time,
+        Place = Place,
+        Meter = Meter,
     };
 }

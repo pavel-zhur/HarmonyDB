@@ -28,6 +28,14 @@ public class NodeChord : NodeCollectionBase
     public double? Time { get; init; }
 
     /// <summary>
+    /// Where the chord begins in the sheet's bars (<see cref="NodeHtml.Times"/>), in place of <see cref="Time"/>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SheetPlace? Place { get; init; }
+
+    internal override double? Moment(SheetTimes? times) => Moment(Time, Place, times);
+
+    /// <summary>
     /// The degree as it is shown, when it is: "VI", "I/V"; the bass's degree goes away with the bass (<see cref="SimplificationMode.RemoveBass"/>).
     /// </summary>
     internal string? DegreeRepresentation(RepresentationSettings representationSettings)
@@ -58,10 +66,10 @@ public class NodeChord : NodeCollectionBase
 
         builder.Append('\'');
 
-        if (Time.HasValue)
+        if (Moment(traversalContext.Times) is { } moment)
         {
             builder.Append(' ');
-            builder.Append(TimeAttribute.Format(Time.Value));
+            builder.Append(TimeAttribute.Format(moment));
         }
 
         builder.Append('>');
@@ -394,5 +402,6 @@ public class NodeChord : NodeCollectionBase
         Degree = Degree,
         BassDegree = BassDegree,
         Time = Time,
+        Place = Place,
     };
 }
