@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\HarmonyDB.Shelf.Api\HarmonyDB.Shelf.Api.csproj" />
     <ProjectReference Include="..\HarmonyDB.Shelf.Database\HarmonyDB.Shelf.Database.csproj" />
+    <ProjectReference Include="..\HarmonyDB.Shelf.Import\HarmonyDB.Shelf.Import.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Common\HarmonyDB.Common.ServiceAuth\HarmonyDB.Common.ServiceAuth.csproj" />
   </ItemGroup>
 

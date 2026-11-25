@@ -1,2 +1,3 @@
 .env
+wave2/import.json
 docker-compose.local.yml

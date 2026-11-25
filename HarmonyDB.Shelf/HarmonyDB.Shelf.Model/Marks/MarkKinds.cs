@@ -41,10 +41,12 @@ public static class MarkKinds
     ];
 
     /// <summary>
-    /// The three levels of like of the old shelf, as hearts: 1 yellow, 2 orange, 3 red (its own colours of them).
+    /// The levels of like of the old shelf, as hearts: 0 white (chords kept with no level), 1 yellow, 2 orange, 3 red
+    /// (its own colours of them).
     /// </summary>
     public static IReadOnlyDictionary<int, MarkKind> OldLikeLevels { get; } = new Dictionary<int, MarkKind>
     {
+        [0] = WhiteHeart,
         [1] = YellowHeart,
         [2] = OrangeHeart,
         [3] = RedHeart,

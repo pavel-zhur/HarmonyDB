@@ -1,0 +1,24 @@
+{
+  "Import": {
+    "TemplateTenantId": 0,
+    "TemplateOwnerTelegramId": 0,
+    "TemplatePlaylistTitle": "",
+    "PersonalPlaylistTitle": "",
+    "SharedTenants": [
+      { "TenantId": 0, "Title": "", "OwnerTelegramId": 0, "BeyondTenantId": null }
+    ],
+    "NotImportedTenants": [
+      { "TenantId": 0, "ImportPeople": [], "BeyondTenantId": null }
+    ],
+    "PermissionsByTenantTag": {
+      "<tenant tag>": [ "<custom permission key>" ]
+    }
+  },
+  "Relay": {
+    "CallerKeys": [ "<the keys under which every stored item is open and nothing is fetched>" ],
+    "SecondPassCallerKeys": [ "<the keys under which the sources may go out for an address they do not have>" ],
+    "SecondPassPause": "00:00:20",
+    "SecondPassSiteFailures": 3,
+    "BatchSize": 100
+  }
+}

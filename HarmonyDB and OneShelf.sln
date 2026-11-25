@@ -263,6 +263,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OneShelf.Sources", "OneShel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneShelf.Sources.Self.Api.Tests", "OneShelf.Sources\OneShelf.Sources.Self.Api.Tests\OneShelf.Sources.Self.Api.Tests.csproj", "{ED8F6D7E-19FF-4B98-8708-B0E03D0BE82C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarmonyDB.Shelf.Import", "HarmonyDB.Shelf\HarmonyDB.Shelf.Import\HarmonyDB.Shelf.Import.csproj", "{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -661,6 +663,10 @@ Global
 		{ED8F6D7E-19FF-4B98-8708-B0E03D0BE82C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED8F6D7E-19FF-4B98-8708-B0E03D0BE82C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED8F6D7E-19FF-4B98-8708-B0E03D0BE82C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -765,6 +771,7 @@ Global
 		{C252D52A-EA42-48CC-967A-7B7AAA263704} = {2950865E-9D1A-406E-B0C6-4C249E2E4D61}
 		{FDB8F224-A8B6-4A25-825B-E2404D455EAC} = {7548FF8E-E1B9-4939-96E9-03DBD5236709}
 		{ED8F6D7E-19FF-4B98-8708-B0E03D0BE82C} = {2E5827BD-2017-4C64-8848-0414252BC0B1}
+		{5764FDE4-EF4D-4EE1-ADE0-10AB4E407907} = {68F27C8B-9F1B-4D4A-BC2F-2831AD13B2D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {59093261-FDDA-411A-852D-EA21AEF83E07}
