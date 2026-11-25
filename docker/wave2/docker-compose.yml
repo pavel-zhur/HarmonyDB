@@ -1,0 +1,56 @@
+# The services of the new shelf, in a compose project of their own beside the shared stack (harmonydb-pg): they use its
+# PostgreSQL through its network and touch none of its containers. Secrets come from .env (see .env.example).
+#
+#   docker compose -f docker/wave2/docker-compose.yml up -d --build
+
+name: harmonydb-wave2
+
+x-dotnet-build: &dotnet-build
+  context: ../..
+  dockerfile: docker/wave2/Dockerfile
+
+services:
+
+  # Creates the databases of this project (shelf, audio) and their roles on the shared PostgreSQL; runs to its end at
+  # every start.
+  db-init:
+    image: postgres:17
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      SHELF_DB_PASSWORD: ${SHELF_DB_PASSWORD}
+      AUDIO_DB_PASSWORD: ${AUDIO_DB_PASSWORD}
+    volumes:
+      - ./db-init.sh:/db-init.sh:ro
+    entrypoint: ["sh", "/db-init.sh"]
+    networks:
+      - pg
+
+  # The shelf's backend. It applies its database's migrations when it starts.
+  shelf-api:
+    build:
+      <<: *dotnet-build
+      args:
+        PROJECT: HarmonyDB.Shelf/HarmonyDB.Shelf.Api
+    environment:
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Shelf: "Host=postgres;Database=shelf;Username=shelf;Password=${SHELF_DB_PASSWORD}"
+      Shelf__Database__MigrateOnStart: "true"
+      Shelf__Secrets__Key: ${SHELF_SECRETS_KEY}
+    ports:
+      # for debugging; the app reaches it through its own web server
+      - "127.0.0.1:14101:80"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    networks:
+      - default
+      - pg
+
+networks:
+  # The shared stack's network, for its PostgreSQL (host "postgres"). Only the services that use the database join it.
+  pg:
+    name: harmonydb-pg_default
+    external: true
