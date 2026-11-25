@@ -1,0 +1,35 @@
+@using HarmonyDB.Shelf.Model.Admin
+@using OneShelf.Admin.Web.ShelfAdmin
+@model ShelfChangesList
+@if (Model.Changes.Count == 0)
+{
+    <p class="shelf-muted">None yet.</p>
+}
+else
+{
+    <table class="shelf-table">
+        <tr class="shelf-muted">
+            <th>When (UTC)</th>
+            @if (Model.ShowPerson)
+            {
+                <th>Person</th>
+            }
+            <th>Given</th>
+            <th>Taken away</th>
+            <th>By</th>
+        </tr>
+        @foreach (var change in Model.Changes)
+        {
+            <tr>
+                <td class="shelf-muted">@ShelfPermissionNames.Time(change.At)</td>
+                @if (Model.ShowPerson)
+                {
+                    <td><a asp-action="Person" asp-route-id="@change.AccountId">@(change.DisplayName ?? "(gone)")</a></td>
+                }
+                <td><partial name="_Chips" model='new ShelfChips(Model.Catalog.Ordered(change.Added), Model.Catalog, "added")' /></td>
+                <td><partial name="_Chips" model='new ShelfChips(Model.Catalog.Ordered(change.Removed), Model.Catalog, "removed")' /></td>
+                <td class="shelf-muted">@(change.Actor.StartsWith("internal:", StringComparison.Ordinal) ? change.Actor["internal:".Length..] : change.Actor)</td>
+            </tr>
+        }
+    </table>
+}

@@ -1,0 +1,13 @@
+@using OneShelf.Admin.Web.ShelfAdmin
+@model ShelfChangesModel
+@{
+    ViewBag.Title = "Shelf permission changes";
+    Layout = "_Layout";
+}
+<partial name="_Shelf" />
+
+<p class="shelf-muted"><a asp-action="Index">← Shelf people</a></p>
+
+<h2>Recent changes of permissions</h2>
+
+<partial name="_Changes" model="new ShelfChangesList(Model.Changes, Model.Catalog, true)" />

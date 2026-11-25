@@ -1,0 +1,9 @@
+@using HarmonyDB.Shelf.Model.Admin
+@using OneShelf.Admin.Web.ShelfAdmin
+@model ShelfChips
+@* Permissions as small chips: built-in by their short names, custom by their labels; unknown keys crossed out. *@
+@foreach (var key in Model.Keys)
+{
+    var kind = Model.Kind ?? (Model.Catalog.IsCustom(key) ? "custom" : Model.Catalog.IsKnown(key) ? "" : "unknown");
+    <span class="shelf-chip @kind" title="@key">@Model.Catalog.Short(key)</span>
+}

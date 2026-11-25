@@ -12,6 +12,7 @@ builder.AddShelfFoundation();
 builder.AddArea<AppArea>();
 builder.AddArea<AuthArea>();
 builder.AddArea<MeArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Admin.AdminArea>();
 
 var app = builder.Build();
 app.UseShelfFoundation();

@@ -1,0 +1,135 @@
+@using OneShelf.Admin.Web.ShelfAdmin
+@using OneShelf.Admin.Web.Controllers
+@model ShelfPeopleModel
+@{
+    ViewBag.Title = "Shelf people";
+    Layout = "_Layout";
+    var result = Model.Page;
+}
+<partial name="_Shelf" />
+
+<h2>Shelf people</h2>
+
+<form method="get" class="d-flex gap-2 mb-2" style="max-width: 980px">
+    <input type="search" name="q" value="@Model.Search" class="form-control" placeholder="Name, @@user name, e-mail, Telegram id, account id" autofocus />
+    <select name="has" class="form-select" style="max-width: 340px" onchange="this.form.submit()">
+        <option value="" selected="@string.IsNullOrEmpty(Model.Has)">Everyone</option>
+        <option value="@ShelfPeopleController.AnyPermission" selected="@(Model.Has == ShelfPeopleController.AnyPermission)">Who may do anything</option>
+        <optgroup label="Who may, through the MCP">
+            @foreach (var permission in ShelfPermissionGroups.Mcp)
+            {
+                <option value="@permission.Key" selected="@(Model.Has == permission.Key)">@permission.Meaning</option>
+            }
+        </optgroup>
+        <optgroup label="Who may, in the app">
+            @foreach (var permission in ShelfPermissionGroups.App)
+            {
+                <option value="@permission.Key" selected="@(Model.Has == permission.Key)">@permission.Meaning</option>
+            }
+        </optgroup>
+        @if (Model.Catalog.Custom.Count > 0)
+        {
+            <optgroup label="Who has, custom">
+                @foreach (var custom in Model.Catalog.Custom)
+                {
+                    <option value="@custom.Key" selected="@(Model.Has == custom.Key)">@custom.Label</option>
+                }
+            </optgroup>
+        }
+        @foreach (var key in Model.Catalog.BuiltIn.Where(x => !ShelfPermissionGroups.IsNamed(x)))
+        {
+            <option value="@key" selected="@(Model.Has == key)">@key</option>
+        }
+    </select>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+<p class="shelf-muted">
+    @if (string.IsNullOrEmpty(Model.Search) && string.IsNullOrEmpty(Model.Has))
+    {
+        <text>@result.Total people, recently seen first.</text>
+    }
+    else
+    {
+        <text>@result.Total found. <a asp-action="Index">All people</a></text>
+    }
+    · <a asp-action="Changes">Recent changes of permissions</a>
+</p>
+
+<table class="shelf-table">
+    <thead>
+    <tr class="shelf-muted">
+        <th></th>
+        <th>Person</th>
+        <th style="min-width: 280px">Signs in with</th>
+        <th>Last seen</th>
+        <th>Has</th>
+        <th>May</th>
+    </tr>
+    </thead>
+    @foreach (var person in result.People)
+    {
+        <tr>
+            <td>
+                @if (person.PictureUrl != null)
+                {
+                    <img class="shelf-avatar" src="@person.PictureUrl" alt="" referrerpolicy="no-referrer" loading="lazy" />
+                }
+                else
+                {
+                    <div class="shelf-avatar"></div>
+                }
+            </td>
+            <td>
+                <a asp-action="Person" asp-route-id="@person.Id">@(string.IsNullOrEmpty(person.DisplayName) ? "(no name)" : person.DisplayName)</a>
+                @if (person.SystemName != null)
+                {
+                    <span class="shelf-chip">system</span>
+                }
+                <div class="shelf-muted">since @ShelfPermissionNames.Time(person.CreatedAt)</div>
+            </td>
+            <td>
+                @foreach (var login in person.Logins)
+                {
+                    <div>
+                        @login.Provider
+                        <span class="shelf-muted text-nowrap">@(login.Username != null ? "@" + login.Username : login.Email ?? (login.DisplayName != person.DisplayName ? login.DisplayName : null))</span>
+                    </div>
+                }
+            </td>
+            <td class="shelf-muted text-nowrap">@ShelfPermissionNames.Time(person.LastSeenAt)</td>
+            <td class="shelf-muted text-nowrap">
+                <div>@person.Counts.Playlists playlists, @person.Counts.Marks marks</div>
+                @if (person.Counts.Clients > 0)
+                {
+                    <div>@person.Counts.Clients MCP programs</div>
+                }
+                @if (person.MusicLinks.Count > 0)
+                {
+                    <div>linked: @string.Join(", ", person.MusicLinks)</div>
+                }
+            </td>
+            <td>
+                @if (person.Permissions.Count == 0)
+                {
+                    <span class="shelf-muted">nothing</span>
+                }
+                <partial name="_Chips" model="new ShelfChips(Model.Catalog.Ordered(person.Permissions), Model.Catalog)" />
+            </td>
+        </tr>
+    }
+</table>
+
+@if (Model.Skip > 0 || Model.Skip + result.People.Count < result.Total)
+{
+    <p class="mt-3">
+        @if (Model.Skip > 0)
+        {
+            <a asp-action="Index" asp-route-q="@Model.Search" asp-route-has="@Model.Has" asp-route-skip="@Math.Max(0, Model.Skip - ShelfPeopleController.PageSize)">← Previous</a>
+        }
+        <span class="shelf-muted mx-2">@(Model.Skip + 1)–@(Model.Skip + result.People.Count) of @result.Total</span>
+        @if (Model.Skip + result.People.Count < result.Total)
+        {
+            <a asp-action="Index" asp-route-q="@Model.Search" asp-route-has="@Model.Has" asp-route-skip="@(Model.Skip + result.People.Count)">Next →</a>
+        }
+    </p>
+}

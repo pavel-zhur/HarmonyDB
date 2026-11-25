@@ -3,6 +3,7 @@ using OneShelf.Admin.Web.Models;
 using OneShelf.Billing.Api.Client;
 using OneShelf.Common.Database.Songs;
 using OneShelf.Illustrations.Api.Client;
+using OneShelf.Admin.Web.ShelfAdmin;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -18,6 +19,7 @@ builder.Services
     .AddSongsDatabase()
     .AddIllustrationsApiClient(builder.Configuration)
     .AddBillingApiClient(builder.Configuration)
+    .AddShelfAdminClient(builder.Configuration)
     .Configure<AdminOptions>(o => builder.Configuration.GetSection(nameof(AdminOptions)).Bind(o))
     .AddHttpClient();
 

@@ -1,0 +1,233 @@
+@using OneShelf.Admin.Web.ShelfAdmin
+@model ShelfPersonModel
+@{
+    var summary = Model.Person.Summary;
+    var catalog = Model.Catalog;
+    var name = string.IsNullOrEmpty(summary.DisplayName) ? "(no name)" : summary.DisplayName;
+    ViewBag.Title = name;
+    Layout = "_Layout";
+    var deleted = summary.DeletedAt != null;
+    var unknown = Model.Person.Permissions.Where(x => !x.IsKnown).Select(x => x.Permission).ToList();
+    var otherBuiltIn = catalog.BuiltIn.Where(x => !ShelfPermissionGroups.IsNamed(x)).ToList();
+
+    void Defaults(string key)
+    {
+        if (catalog.GuestDefaults.Contains(key))
+        {
+            <span class="shelf-muted ms-1">· guests have it</span>
+        }
+        if (catalog.NewAccountDefaults.Contains(key))
+        {
+            <span class="shelf-muted ms-1">· given to new accounts</span>
+        }
+    }
+
+    void Box(string key)
+    {
+        <input class="form-check-input" type="checkbox" name="p" value="@key" id="p-@key" checked="@Model.Has.Contains(key)" disabled="@deleted" />
+    }
+
+    void Tick(string key, string label, string? hint)
+    {
+        <div class="form-check">
+            @{ Box(key); }
+            <label class="form-check-label" for="p-@key" title="@key">
+                @label
+                @if (hint != null)
+                {
+                    <span class="shelf-muted">— @hint</span>
+                }
+                @{ Defaults(key); }
+            </label>
+        </div>
+    }
+}
+<partial name="_Shelf" />
+
+<p class="shelf-muted"><a asp-action="Index">← Shelf people</a></p>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    @if (summary.PictureUrl != null)
+    {
+        <img class="shelf-avatar big" src="@summary.PictureUrl" alt="" referrerpolicy="no-referrer" />
+    }
+    else
+    {
+        <div class="shelf-avatar big"></div>
+    }
+    <div>
+        <h2 class="m-0">
+            @name
+            @if (summary.SystemName != null)
+            {
+                <span class="shelf-chip">system: @summary.SystemName</span>
+            }
+            @if (deleted)
+            {
+                <span class="shelf-chip removed">deleted @ShelfPermissionNames.Time(summary.DeletedAt)</span>
+            }
+        </h2>
+        <div class="shelf-muted">
+            since @ShelfPermissionNames.Time(summary.CreatedAt) · last seen @ShelfPermissionNames.Time(summary.LastSeenAt) (UTC)
+            · @summary.Counts.Playlists playlists · @summary.Counts.Marks marks · @summary.Counts.Sessions browser sessions
+            · @summary.Counts.Clients MCP programs
+        </div>
+        <div class="shelf-muted">account @summary.Id</div>
+    </div>
+</div>
+
+<h5>Signs in with</h5>
+<table class="shelf-table mb-3">
+    @foreach (var login in summary.Logins)
+    {
+        <tr>
+            <td>@login.Provider</td>
+            <td>
+                @login.DisplayName
+                @if (login.Username != null)
+                {
+                    <span class="shelf-muted">@@@login.Username</span>
+                }
+                @if (login.Email != null)
+                {
+                    <span class="shelf-muted">@login.Email</span>
+                }
+            </td>
+            <td class="shelf-muted">id @login.Subject</td>
+            <td class="shelf-muted">added @ShelfPermissionNames.Time(login.CreatedAt), last sign-in @ShelfPermissionNames.Time(login.LastSignInAt)</td>
+        </tr>
+    }
+    @if (summary.Logins.Count == 0)
+    {
+        <tr><td class="shelf-muted">no sign-ins</td></tr>
+    }
+</table>
+
+@if (TempData["ShelfMessage"] is string message)
+{
+    <div class="alert alert-success py-2">@message</div>
+}
+@if (TempData["ShelfError"] is string error)
+{
+    <div class="alert alert-warning py-2">@error</div>
+}
+
+<form method="post" asp-action="Person" asp-route-id="@summary.Id" class="shelf-ticks">
+    @foreach (var permission in Model.Has)
+    {
+        <input type="hidden" name="expected" value="@permission" />
+    }
+
+    <h5>Through the MCP</h5>
+    <p class="shelf-muted mb-2">What programs acting for this person may do. Each program gets only what the person also allowed it.</p>
+
+    <table class="shelf-music mb-2">
+        <tr class="shelf-muted">
+            <td></td>
+            <td>without their own account</td>
+            <td>with their linked account</td>
+        </tr>
+        @foreach (var music in ShelfPermissionGroups.McpMusic)
+        {
+            var link = Model.Person.MusicLinks.FirstOrDefault(x => x.Service == music.LinkService);
+            <tr>
+                <td>@music.Name</td>
+                <td>
+                    <div class="form-check">
+                        @{ Box(music.Anonymous.Key); }
+                        <label class="form-check-label" for="p-@music.Anonymous.Key" title="@music.Anonymous.Meaning">allowed @{ Defaults(music.Anonymous.Key); }</label>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-check">
+                        @{ Box(music.Linked.Key); }
+                        <label class="form-check-label" for="p-@music.Linked.Key" title="@music.Linked.Meaning">
+                            allowed
+                            <span class="shelf-muted">— @(link == null ? "no account linked yet" : $"linked: {link.ExternalName ?? "yes"}")</span>
+                            @{ Defaults(music.Linked.Key); }
+                        </label>
+                    </div>
+                </td>
+            </tr>
+        }
+    </table>
+
+    @foreach (var permission in ShelfPermissionGroups.McpOther)
+    {
+        Tick(permission.Key, permission.Meaning, null);
+    }
+
+    <h5>In the app</h5>
+    @foreach (var permission in ShelfPermissionGroups.App)
+    {
+        Tick(permission.Key, permission.Meaning, null);
+    }
+
+    <h5>Custom</h5>
+    @if (catalog.Custom.Count == 0)
+    {
+        <p class="shelf-muted">None in the shelf's configuration.</p>
+    }
+    @foreach (var custom in catalog.Custom)
+    {
+        Tick(custom.Key, custom.Label, null);
+    }
+
+    @if (otherBuiltIn.Count > 0)
+    {
+        <h5>Other</h5>
+        @foreach (var key in otherBuiltIn)
+        {
+            Tick(key, key, null);
+        }
+    }
+
+    @if (unknown.Count > 0)
+    {
+        <h5>No longer in the configuration</h5>
+        <p class="shelf-muted mb-2">The person has these, but the shelf does not know them any more. Untick to take away; once taken, they cannot be given again.</p>
+        @foreach (var key in unknown)
+        {
+            Tick(key, key, null);
+        }
+    }
+
+    @if (!deleted)
+    {
+        <button type="submit" class="btn btn-primary mt-3">Save</button>
+        <span class="shelf-muted ms-2">Works from the person's next request.</span>
+    }
+</form>
+
+<h5>Linked music accounts</h5>
+@if (Model.Person.MusicLinks.Count == 0)
+{
+    <p class="shelf-muted">None.</p>
+}
+else
+{
+    <table class="shelf-table mb-3">
+        @foreach (var link in Model.Person.MusicLinks)
+        {
+            <tr>
+                <td>@link.Service</td>
+                <td>@link.ExternalName</td>
+                <td class="shelf-muted">linked @ShelfPermissionNames.Time(link.CreatedAt), last used @ShelfPermissionNames.Time(link.LastUsedAt)</td>
+            </tr>
+        }
+    </table>
+}
+
+<h5>Defaults</h5>
+<p class="shelf-muted">
+    From the shelf's configuration (<code>Permissions:Defaults</code>); they are changed there, not here.<br />
+    Guests (not signed in) have:
+    @if (catalog.GuestDefaults.Count == 0) { <text>nothing</text> }
+    <partial name="_Chips" model="new ShelfChips(catalog.Ordered(catalog.GuestDefaults), catalog)" /><br />
+    A new account is given, once, when it is made:
+    @if (catalog.NewAccountDefaults.Count == 0) { <text>nothing</text> }
+    <partial name="_Chips" model="new ShelfChips(catalog.Ordered(catalog.NewAccountDefaults), catalog)" />
+</p>
+
+<h5>Changes of their permissions</h5>
+<partial name="_Changes" model="new ShelfChangesList(Model.Changes, catalog, false)" />

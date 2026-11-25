@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api.Client\OneShelf.Common.Api.Client.csproj" />
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Database.Songs\OneShelf.Common.Database.Songs.csproj" />
     <ProjectReference Include="..\..\OneShelf.Illustrations\OneShelf.Illustrations.Api.Client\OneShelf.Illustrations.Api.Client.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Shelf\HarmonyDB.Shelf.Model\HarmonyDB.Shelf.Model.csproj" />
   </ItemGroup>
 
 </Project>
