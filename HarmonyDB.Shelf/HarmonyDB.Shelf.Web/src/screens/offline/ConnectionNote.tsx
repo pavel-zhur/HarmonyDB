@@ -1,24 +1,13 @@
 // The frame's quiet line when there is no connection: what is seen is the copy kept on this device, and as of when
 // (the oldest of what the page shows from it). Nothing when the connection is there and nothing comes from the copy.
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { formatAgo } from '../../i18n';
-import { forgetServed, useServedFromCopy } from '../../offline';
+import { forgetServed, useOnline, useServedFromCopy } from '../../offline';
 import { Icon } from '../../kit/Icon';
 import './offline.css';
-
-function useOnline(): boolean {
-    return useSyncExternalStore(listener => {
-        addEventListener('online', listener);
-        addEventListener('offline', listener);
-        return () => {
-            removeEventListener('online', listener);
-            removeEventListener('offline', listener);
-        };
-    }, () => navigator.onLine);
-}
 
 export function ConnectionNote() {
     const { t } = useTranslation();

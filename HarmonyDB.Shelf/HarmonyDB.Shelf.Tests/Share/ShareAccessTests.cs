@@ -70,6 +70,13 @@ public sealed class ShareAccessTests(LibraryFixture fixture) : IClassFixture<Lib
         await Browser.AssertError(await bob.SendAsync(HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Chords, Chords = Keyed(), CarriesAccess = true }),
             HttpStatusCode.Forbidden, PlaylistErrorCodes.ChordsNotOpen);
 
+        // Ann's own private chords are open to her account, not to her keys alone: the link would open nothing; an
+        // ordinary link of them is made as before
+        var own = $"own-{annId}-{Guid.NewGuid():N}";
+        await Browser.AssertError(await ann.SendAsync(HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Chords, Chords = own, CarriesAccess = true }),
+            HttpStatusCode.Forbidden, PlaylistErrorCodes.ChordsNotOpen);
+        Assert.False((await Ok<ShareLinkItem>(ann, HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Chords, Chords = own })).CarriesAccess);
+
         // a song or a playlist does not carry access
         var playlist = (await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Post, "/api/playlists", new CreatePlaylistRequest { Title = "A playlist", Access = PlaylistAccess.Link })).Value.Playlist.Id;
         var chords = Keyed();

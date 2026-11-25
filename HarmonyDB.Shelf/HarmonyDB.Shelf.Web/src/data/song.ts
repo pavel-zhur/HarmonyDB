@@ -3,7 +3,7 @@
 // local-first store's (local/).
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api, call, type Schemas } from '../api/client';
+import { ApiError, api, call, type Schemas } from '../api/client';
 import { keys, readThrough } from '../offline';
 import { i18n } from '../i18n';
 import { action } from './actions';
@@ -144,9 +144,20 @@ export function useStaticLink(chordsId: string | null) {
     });
 }
 
+/** Makes it; chords that would not open by my keys alone (my private chords or analysis) are refused — `notOpen`,
+ * said where the link would be, as is `unavailable` (the source did not answer: not checked now). */
 export const makeStaticLink = action('makeStaticLink', 'change',
-    (chords: string) => call(api.POST('/api/share', { body: { kind: 'chords', chords, carriesAccess: true } })),
-    { invalidate: (_, chords) => [['static-link', chords]] });
+    async (chords: string): Promise<{ refused: 'notOpen' | 'unavailable' | null }> => {
+        try {
+            await call(api.POST('/api/share', { body: { kind: 'chords', chords, carriesAccess: true } }));
+            return { refused: null };
+        } catch (error) {
+            if (error instanceof ApiError && error.code === 'chords_not_open') return { refused: 'notOpen' };
+            if (error instanceof ApiError && error.code === 'unavailable') return { refused: 'unavailable' };
+            throw error;
+        }
+    },
+    { invalidate: ({ refused }, chords) => (refused ? [] : [['static-link', chords]]) });
 
 export const removeStaticLink = action('removeStaticLink', 'change',
     ({ token }: { token: string; chords: string }) => call(api.DELETE('/api/share/{token}', { params: { path: { token } } })),

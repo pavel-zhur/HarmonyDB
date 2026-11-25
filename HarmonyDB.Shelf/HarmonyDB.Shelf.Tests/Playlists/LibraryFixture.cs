@@ -100,6 +100,10 @@ public sealed class LibraryFixture : IAsyncLifetime
                 _ when id.StartsWith("test-", StringComparison.Ordinal) => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A source") },
                 _ when id.StartsWith("keyed-", StringComparison.Ordinal) && keyed => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A keyed source") },
                 _ when id.StartsWith("away-", StringComparison.Ordinal) => new HeaderAnswer { Id = id, State = ItemState.Unavailable },
+                // "own-{account}-…": open to that account only, as a person's own private chords
+                _ when id.StartsWith("own-", StringComparison.Ordinal) && caller.TryGetProperty("accountId", out var account) && account.ValueKind == JsonValueKind.String
+                                                                      && id.StartsWith($"own-{account.GetString()}-", StringComparison.Ordinal)
+                    => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "Own") },
                 _ => new HeaderAnswer { Id = id, State = ItemState.NotOpen },
             }).ToList(),
         });

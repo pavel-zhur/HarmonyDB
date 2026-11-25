@@ -7682,6 +7682,11 @@
         "required": [
           "createdAt",
           "displayName",
+          "joinedPlaylists",
+          "keys",
+          "marks",
+          "notes",
+          "ownedPlaylists",
           "providers"
         ],
         "type": "object",
@@ -7702,6 +7707,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "ownedPlaylists": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "joinedPlaylists": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "marks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "keys": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

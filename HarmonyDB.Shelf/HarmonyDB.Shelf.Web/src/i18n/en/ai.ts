@@ -22,7 +22,6 @@ export const ai = {
             id: 'Known by the address',
             back: 'Goes back to',
             calls: 'It calls itself “{{name}}”',
-            noName: 'It gives no name',
         },
         clients: {
             title: 'Connected assistants',

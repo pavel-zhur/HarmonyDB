@@ -43,6 +43,8 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         var state = await db.SignInFlows.Where(x => x.Session!.AccountId == firstId && x.CompletedLoginId != null).Select(x => x.State).SingleAsync();
         var question = await first.GetAsync<SignInResult>($"/api/auth/flows/{state}");
         Assert.Equal(["dev"], question.MergeCandidate!.Providers);
+        var candidate = question.MergeCandidate;
+        Assert.Equal((1, 0, 2, 0, 0), (candidate.OwnedPlaylists, candidate.JoinedPlaylists, candidate.Marks, candidate.Keys, candidate.Notes));
 
         var merged = await first.SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/merge");
         Assert.Equal(HttpStatusCode.OK, merged.StatusCode);

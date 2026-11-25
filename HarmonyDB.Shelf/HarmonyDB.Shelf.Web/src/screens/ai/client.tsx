@@ -36,7 +36,7 @@ export function ClientIdentity({ idHost, redirectHosts, name }: { idHost: string
         <span className="ai-ident">
             {idHost && <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.id')}</span> <code className="ai-host">{idHost}</code></span>}
             <span className="ai-hl"><span className="ai-hk">{t('ai.hosts.back')}</span> {redirectHosts.map((host, i) => <span key={host}>{i > 0 && ', '}<code className="ai-host">{host}</code></span>)}</span>
-            <span className="ai-calls">{shown ? t('ai.hosts.calls', { name: shown }) : t('ai.hosts.noName')}</span>
+            {shown && <span className="ai-calls">{t('ai.hosts.calls', { name: shown })}</span>}
         </span>
     );
 }

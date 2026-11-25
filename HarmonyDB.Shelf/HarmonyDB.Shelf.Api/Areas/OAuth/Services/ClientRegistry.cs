@@ -65,14 +65,25 @@ public sealed class ClientRegistry(ShelfDbContext db, ClientMetadataFetcher fetc
     public static McpClientKind KindOf(string clientId) => IsMetadataDocumentId(clientId) ? McpClientKind.MetadataDocument : McpClientKind.Registered;
 
     /// <summary>
-    /// The name a client gave; null when it gave none (RFC 7591 does not require one).
+    /// The name a client gave; null when it gave none (RFC 7591 does not require one), and when the name kept is not one
+    /// that may be shown (<see cref="IsShowableName"/>: one registered before names were bounded): such a client is
+    /// shown by its hosts, as one with no name.
     /// </summary>
-    public static string? NameOf(OAuthClient client) => client.ClientName;
+    public static string? NameOf(OAuthClient client) => client.ClientName is { } name && IsShowableName(name) ? name : null;
 
     /// <summary>
     /// The host of a described client's address, in its ASCII form (a look-alike letter of another script shows as such).
     /// </summary>
     public static string? IdHostOf(OAuthClient client) => IsMetadataDocumentId(client.ClientId) ? new Uri(client.ClientId).IdnHost : null;
+
+    /// <summary>
+    /// A client's own address as a person is shown it: its host in its ASCII form, as the hosts are; null when there is
+    /// none.
+    /// </summary>
+    public static string? ShownUriOf(OAuthClient client)
+        => client.ClientUri is { } given && Uri.TryCreate(given, UriKind.Absolute, out var uri)
+            ? $"{uri.Scheme}://{uri.IdnHost}{(uri.IsDefaultPort ? string.Empty : $":{uri.Port}")}{uri.PathAndQuery}"
+            : null;
 
     /// <summary>
     /// How long a client that nobody connected is kept.

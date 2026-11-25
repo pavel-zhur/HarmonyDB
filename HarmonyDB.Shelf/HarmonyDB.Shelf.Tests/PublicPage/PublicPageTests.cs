@@ -10,6 +10,7 @@ using HarmonyDB.Shelf.Tests.Playlists;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Shelf.Tests.PublicPage;
 
@@ -97,6 +98,36 @@ public sealed partial class PublicPageTests(LibraryFixture fixture) : IClassFixt
         Assert.Equal(HttpStatusCode.NoContent, (await ann.SendAsync(HttpMethod.Delete, $"/api/share/{carrying.Token}")).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync($"/api/public/preview/s/{carrying.Token}")).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/public/preview/somewhere/else")).StatusCode);
+    }
+
+    [DatabaseFact]
+    public async Task OnlyThePagesAddressesAreKeptAndAnAddressAsksWithinItsLimit()
+    {
+        using var api = fixture.Api.WithWebHostBuilder(x => x.ConfigureAppConfiguration(c => c.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["PublicPage:RateLimitPermits"] = "4",
+            ["Share:OpenRateLimitPermits"] = "2",
+        })));
+        using var client = api.CreateClient();
+        var cache = api.Services.GetRequiredService<PreviewCache>();
+
+        // an address of the page is kept; a path that is none is not
+        var open = $"test-{Guid.NewGuid():N}";
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/public/preview/chords/{open}")).StatusCode);
+        Assert.True(cache.TryGet($"/chords/{open}", out _));
+        Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/public/preview/somewhere/else")).StatusCode);
+        Assert.False(cache.TryGet("/somewhere/else", out _));
+        Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync($"/api/public/preview/songs/not-a-song")).StatusCode);
+        Assert.False(cache.TryGet("/songs/not-a-song", out _));
+
+        // the fifth preview of the window, from one address, is refused
+        Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/public/preview/s/no-such-token")).StatusCode);
+        await Browser.AssertError(await client.GetAsync("/api/public/preview/s/no-such-token"), HttpStatusCode.TooManyRequests, ErrorCodes.TooManyRequests);
+
+        // a link and its chords count together
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/share/no-such-token")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/share/no-such-token/chords")).StatusCode);
+        await Browser.AssertError(await client.GetAsync("/api/share/no-such-token"), HttpStatusCode.TooManyRequests, ErrorCodes.TooManyRequests);
     }
 
     // ------------------------------------------------------------------ helpers

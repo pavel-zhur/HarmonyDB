@@ -104,6 +104,20 @@ public record MergeCandidate
     /// The other account's sign-ins ("telegram", "google" …), each moved over by the merge.
     /// </summary>
     public required IReadOnlyList<string> Providers { get; init; }
+
+    /// <summary>
+    /// What the other account holds, each moved over by the merge: the playlists it owns (not the system ones), the
+    /// playlists of others it is a member of, its marks, its keys ("mine" and "here") and its notes.
+    /// </summary>
+    public required int OwnedPlaylists { get; init; }
+
+    public required int JoinedPlaylists { get; init; }
+
+    public required int Marks { get; init; }
+
+    public required int Keys { get; init; }
+
+    public required int Notes { get; init; }
 }
 
 /// <summary>

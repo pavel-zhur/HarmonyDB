@@ -79,3 +79,19 @@ export function answerList(kept: KeptList, query: ListQuery): SongList | null {
     const offset = query.offset ?? 0;
     return { total: found.length, offset, rows: found.slice(offset, offset + (query.limit ?? found.length)), people: kept.people };
 }
+
+/**
+ * A list's rows as the device can open them: a song whose page is not kept but whose chords are opens as those chords
+ * alone; a row with nothing kept is told apart (`notKept`), it opens only with a connection.
+ */
+export function deviceRows(rows: readonly SongRow[], hasSong: (key: string) => boolean, hasChords: (id: string) => boolean): { rows: SongRow[]; notKept: SongRow[] } {
+    const notKept: SongRow[] = [];
+    const out = rows.map(row => {
+        if (row.songId && row.playlistId && hasSong(keys.song(row.playlistId, row.songId))) return row;
+        const kept = [row.chords?.id, ...row.chordsIds].find((id): id is string => !!id && hasChords(id));
+        if (kept) return { ...row, songId: null, playlistId: null, chords: { id: kept, state: 'open' as const } };
+        notKept.push(row);
+        return row;
+    });
+    return { rows: out, notKept };
+}

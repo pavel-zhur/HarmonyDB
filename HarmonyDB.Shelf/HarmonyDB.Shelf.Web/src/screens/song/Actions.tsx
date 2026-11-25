@@ -92,8 +92,12 @@ function StaticLink({ chords }: { chords: { id: string; sourceUri: string | null
                     <p><button type="button" className="btn dan sm" disabled={remove.isPending} onClick={() => remove.mutate({ token: link.token, chords: chords.id })}>{t('song.share.static.remove')}</button></p>
                 </>
             )}
-            {mine.isSuccess && !link && (
-                <p><button type="button" className="btn sm" disabled={make.isPending} onClick={() => make.mutate(chords.id)}>{t('song.share.static.make')}</button></p>
+            {mine.isSuccess && !link && make.data?.refused === 'notOpen' && <p className="muted">{t('song.share.static.notOpen')}</p>}
+            {mine.isSuccess && !link && make.data?.refused !== 'notOpen' && (
+                <>
+                    {make.data?.refused === 'unavailable' && <p className="failed">{t('song.share.static.unavailable')}</p>}
+                    <p><button type="button" className="btn sm" disabled={make.isPending} onClick={() => make.mutate(chords.id)}>{t('song.share.static.make')}</button></p>
+                </>
             )}
         </div>
     );

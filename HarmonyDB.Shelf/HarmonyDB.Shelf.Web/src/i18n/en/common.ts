@@ -108,6 +108,7 @@ export const common = {
         own_chords_contents_required: 'The text is needed',
         own_chords_invalid: 'A field is too long',
         song_needs_playlist: 'A song needs its playlist',
+        device_full: 'This device has no room for more. What was taken stays; free some space on the device (or remove other sites’ data in the browser), then go on',
         not_downloaded: 'Not on this device: it opens when there is a connection',
         offline_unanswerable: 'Without a connection this filter cannot be shown',
         no_such_mcp_client: 'This assistant is not connected',

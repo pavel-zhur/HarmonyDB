@@ -14,7 +14,6 @@ using HarmonyDB.Shelf.Model.Chords;
 using HarmonyDB.Shelf.Model.Playlists;
 using HarmonyDB.Shelf.Model.Share;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Shelf.Api.Areas.PublicPage.Services;
@@ -33,8 +32,8 @@ namespace HarmonyDB.Shelf.Api.Areas.PublicPage.Services;
 /// Anything else, a link that does not open, or what is not open to a guest: nothing (the page keeps its own head, so
 /// nothing tells that something is there). The picture: one of the song's or chords' illustrations, chosen by the
 /// address (the same one every time), else its recording's cover, else the page's own picture. The preview of an
-/// address that is not a link is kept a few minutes for every reader of it; a link's is read each time, so that a link
-/// removed shows nothing at once.
+/// address that is not a link is kept a few minutes for every reader of it (in <see cref="PreviewCache"/>, bounded); a
+/// link's is read each time, so that a link removed shows nothing at once; a path that is no address is not kept.
 /// </summary>
 public sealed class PagePreviews(
     ShelfDbContext db,
@@ -43,7 +42,7 @@ public sealed class PagePreviews(
     ShareService shares,
     Views views,
     IllustrationsClient illustrations,
-    IMemoryCache cache,
+    PreviewCache cache,
     IOptionsMonitor<PublicPageOptions> options,
     IOptionsMonitor<AppOptions> app)
 {
@@ -70,8 +69,15 @@ public sealed class PagePreviews(
         if (!settings.IsConfigured || path.Length > MaxPathLength)
             return null;
 
-        var keep = !path.StartsWith("/s/", StringComparison.Ordinal);
-        if (keep && cache.TryGetValue(("public-preview", path), out string? kept))
+        // kept: the addresses of the page that are not links; anything else is not kept at all
+        var keep = path.Split('/', StringSplitOptions.RemoveEmptyEntries) switch
+        {
+            [] => true,
+            ["songs", var song] => Guid.TryParse(song, out _),
+            ["chords", _] => true,
+            _ => false,
+        };
+        if (keep && cache.TryGet(path, out var kept))
             return kept;
 
         Preview? preview;
@@ -87,7 +93,7 @@ public sealed class PagePreviews(
 
         var html = preview == null ? null : Write(path, preview, settings);
         if (keep)
-            cache.Set(("public-preview", path), html, settings.Keep);
+            cache.Set(path, html, settings.Keep);
         return html;
     }
 

@@ -222,6 +222,7 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
         var registered = await _api.CreateClient().PostAsJsonAsync("/oauth/register", new Dictionary<string, object>
         {
             ["client_name"] = "Assistant",
+            ["client_uri"] = "https://сlaude.ai/about",
             ["redirect_uris"] = new[] { lookAlike },
             ["token_endpoint_auth_method"] = "none",
         });
@@ -232,9 +233,17 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
         var authorize = await NoRedirects().GetAsync($"/oauth/authorize?response_type=code&client_id={clientId}&redirect_uri={Uri.EscapeDataString(lookAlike)}" +
                                                      $"&code_challenge={AuthTokens.PkceChallenge(verifier)}&code_challenge_method=S256");
         var requestId = HttpUtility.ParseQueryString(authorize.Headers.Location!.Query)["request"]!;
-        Assert.Equal(ascii, (await browser.GetAsync<AuthorizationRequestView>($"/api/oauth/requests/{requestId}")).Client.RedirectHost);
+        var view = await browser.GetAsync<AuthorizationRequestView>($"/api/oauth/requests/{requestId}");
+        Assert.Equal((ascii, $"https://{ascii}/about"), (view.Client.RedirectHost, view.Client.Uri));
         await ApproveAsync(browser, requestId, ["mcp.index"], redirectStart: lookAlike + "?");
-        Assert.Equal([ascii], Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients")).RedirectHosts);
+        var connected = Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients"));
+        Assert.Equal([ascii], connected.RedirectHosts);
+        Assert.Equal(($"https://{ascii}/about", "Assistant"), (connected.Uri, connected.Name));
+
+        // a name kept from before names were bounded is shown as none: the client by its hosts
+        await using (var db = database.CreateContext())
+            await db.OAuthClients.Where(x => x.ClientId == clientId).ExecuteUpdateAsync(x => x.SetProperty(c => c.ClientName, new string('a', ClientRegistry.MaxName + 1)));
+        Assert.Null(Assert.Single(await browser.GetAsync<List<ConnectedClient>>("/api/mcp/clients")).Name);
 
         Assert.Equal(ascii, ClientRegistry.IdHostOf(new OAuthClient { ClientId = "https://сlaude.ai/client.json", TokenEndpointAuthMethod = ClientRegistry.AuthNone }));
 

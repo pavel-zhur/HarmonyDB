@@ -13,6 +13,8 @@ import { useMyPlaylists } from '../../data/playlists';
 import { useProfile } from '../../data/session';
 import { Avatar } from '../../kit/controls';
 import { Dialog } from '../../kit/Dialog';
+import { useLocalView } from '../../local';
+import { i18n } from '../../i18n';
 import { providerName } from './SignIns';
 
 export function MergeDialog() {
@@ -31,7 +33,15 @@ export function MergeDialog() {
         closeMerge();
     };
     const myProviders = [...new Set((logins.data ?? []).map(x => providerName(x.provider)))].join(', ');
-    const myPlaylists = playlists.data?.filter(p => p.myRole === 'owner' && p.systemKind === 'none').length;
+    const view = useLocalView();
+    // what each profile holds, said the same way on both cards
+    const mine: Holdings | null = playlists.data && view.watermark !== null ? {
+        ownedPlaylists: playlists.data.filter(p => p.myRole === 'owner' && p.systemKind === 'none').length,
+        joinedPlaylists: playlists.data.filter(p => p.myRole && p.myRole !== 'owner').length,
+        marks: Object.keys(view.marks).length,
+        keys: Object.keys(view.keys).length,
+        notes: Object.values(view.notes).filter(n => n.text).length,
+    } : null;
     return (
         <Dialog label={t('account.merge.title')} onClose={close}>
             <div className="pf-dlg">
@@ -50,7 +60,7 @@ export function MergeDialog() {
                                         <b>{me.displayName}</b>
                                         <span className="muted small">{t('account.merge.since', { date: formatDate(me.createdAt) })}</span>
                                         <span className="muted small">{myProviders}</span>
-                                        {myPlaylists !== undefined && <span className="muted small">{t('account.merge.playlists', { count: myPlaylists })}</span>}
+                                        {mine && <span className="muted small">{holdings(mine)}</span>}
                                     </span>
                                 </div>
                             </div>
@@ -62,6 +72,7 @@ export function MergeDialog() {
                                         <b>{other.displayName}</b>
                                         <span className="muted small">{t('account.merge.since', { date: formatDate(other.createdAt) })}</span>
                                         <span className="muted small">{other.providers.map(providerName).join(', ')}</span>
+                                        <span className="muted small">{holdings(other)}</span>
                                     </span>
                                 </div>
                             </div>
@@ -84,4 +95,18 @@ export function MergeDialog() {
             </div>
         </Dialog>
     );
+}
+
+type Holdings = { ownedPlaylists: number; joinedPlaylists: number; marks: number; keys: number; notes: number };
+
+/** What a profile holds, in one line: "2 playlists of its own · 1 joined · 15 marks · 4 keys · no notes". */
+function holdings(h: Holdings): string {
+    const t = i18n.t.bind(i18n);
+    return [
+        t('account.merge.owned', { count: h.ownedPlaylists }),
+        t('account.merge.joined', { count: h.joinedPlaylists }),
+        t('account.merge.marks', { count: h.marks }),
+        t('account.merge.keys', { count: h.keys }),
+        t('account.merge.notes', { count: h.notes }),
+    ].join(' · ');
 }

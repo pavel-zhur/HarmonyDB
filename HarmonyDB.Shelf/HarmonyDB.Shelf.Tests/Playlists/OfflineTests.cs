@@ -103,6 +103,8 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
                      new OfflineContentsRequest { Chords = Enumerable.Range(0, OfflineContentsRequest.MaxChords + 1).Select(i => $"test-{i}").ToList() },
                      new OfflineContentsRequest { Chords = [a, a] },
                      new OfflineContentsRequest { Chords = [a], Kinds = [ChordsKind.Recording] },
+                     new OfflineContentsRequest { Chords = [a], Kinds = [ChordsKind.Sheet, ChordsKind.Score] },
+                     new OfflineContentsRequest { Chords = [a], Kinds = [ChordsKind.Notes] },
                  })
             await Browser.AssertError(await ann.SendAsync(HttpMethod.Post, "/api/library/offline/contents", bad), HttpStatusCode.BadRequest, ErrorCodes.BadRequest);
 

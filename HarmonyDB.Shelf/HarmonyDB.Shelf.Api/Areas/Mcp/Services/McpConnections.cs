@@ -131,7 +131,7 @@ public sealed class McpConnections(ShelfDbContext db, McpAddresses addresses, Pe
         Id = grant.Id,
         Kind = ClientRegistry.KindOf(grant.ClientId),
         Name = ClientRegistry.NameOf(grant.Client),
-        Uri = grant.Client.ClientUri,
+        Uri = ClientRegistry.ShownUriOf(grant.Client),
         ClientIdHost = ClientRegistry.IdHostOf(grant.Client),
         RedirectHosts = grant.Client.RedirectUris.Select(x => new Uri(x).IdnHost).Distinct().ToList(),
         ConnectedAt = grant.CreatedAt,

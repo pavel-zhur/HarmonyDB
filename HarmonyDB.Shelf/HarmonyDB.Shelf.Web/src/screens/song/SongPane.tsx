@@ -6,7 +6,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { ApiError } from '../../api/client';
 import { errorText } from '../../api/errors';
+import { songChordsOnDevice, useOnline } from '../../offline';
+import { useQuery } from '@tanstack/react-query';
 import { playlistTitle } from '../../data/playlists';
 import { useProfile, useSession } from '../../data/session';
 import { useSearch } from '../../data/songs';
@@ -93,7 +96,12 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
     const illustrations = useDrawnIllustrations(chordsId ?? (page ? firstOpen(page)?.chords.id ?? null : null));
     const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
 
-    if (song.isError) return <div className="songpage"><div className="hero"><p className="failed">{errorText(song.error)}</p></div></div>;
+    if (song.isError) {
+        // with no connection, a song whose page is not on the device opens as its chords kept, as a tap in the list does
+        return song.error instanceof ApiError && song.error.code === 'not_downloaded'
+            ? <SongAsChords playlistId={playlistId} songId={songId} closeTo={closeTo} error={song.error} />
+            : <div className="songpage"><div className="hero"><p className="failed">{errorText(song.error)}</p></div></div>;
+    }
     if (!page) return <div className="songpage"><div className="hero"><p className="loading">{t('common.loading')}</p></div></div>;
 
     const variants = page.variants;
@@ -235,6 +243,7 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
     const [shown, setShown] = useState<number | null>(null);
     const [open, setOpen] = useState(true);
     const { signedIn } = useSession();
+    const online = useOnline();
     useOpened(chordsId, null);
     const illustrations = useIllustrations(chordsId);
     const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
@@ -248,9 +257,12 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
     const pager = index >= 0 ? { index, count: ids.length, prev: at(ids[index - 1]), next: at(ids[index + 1]) } : undefined;
 
     const header = content.data?.header;
-    const context = q
-        ? <><Icon name="globe" />{t('song.fromSearch')}</>
-        : <><Icon name="link" />{t(signedIn ? 'song.chordsAlone' : 'song.chordsByLink')}</>;
+    // with no connection the app does not know where else the chords are: it says only that they are kept here
+    const context = !online
+        ? <><Icon name="cloud" />{t('offline.chordsHere')}</>
+        : q
+            ? <><Icon name="globe" />{t('song.fromSearch')}</>
+            : <><Icon name="link" />{t(signedIn ? 'song.chordsAlone' : 'song.chordsByLink')}</>;
 
     return (
         <div className="songpage">
@@ -267,4 +279,12 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
             <SongFoot><SongPlayer song={null} analysisId={header?.kinds.includes('timeline') ? chordsId : null} /></SongFoot>
         </div>
     );
+}
+
+/** A song whose page is not on the device, with no connection: its chords kept, alone; else what the reading said. */
+function SongAsChords({ playlistId, songId, closeTo, error }: { playlistId: string; songId: string; closeTo: string; error: unknown }) {
+    const chords = useQuery({ queryKey: ['song-chords-on-device', playlistId, songId], queryFn: () => songChordsOnDevice(playlistId, songId), networkMode: 'always' });
+    if (chords.data) return <ChordsAlone key={chords.data} chordsId={chords.data} closeTo={closeTo} />;
+    if (chords.isPending) return null;
+    return <div className="songpage"><div className="hero"><p className="failed">{errorText(error)}</p></div></div>;
 }

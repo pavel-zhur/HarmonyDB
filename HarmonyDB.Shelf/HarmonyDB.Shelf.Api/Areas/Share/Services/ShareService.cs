@@ -184,6 +184,16 @@ public sealed class ShareService(
 
         var (chords, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
         var keys = callers.For(user).Keys.ToList();
+
+        // the link opens as the sharer's keys alone, with no account: one that would open nothing (the sharer's own
+        // private chords, their private analysis) is not made
+        switch ((await reader.GetHeadersAsync(new Caller { Keys = keys }, [request.Chords], cancellationToken)).Single().State)
+        {
+            case ChordsState.NotOpen:
+                throw ShelfException.Forbidden(PlaylistErrorCodes.ChordsNotOpen);
+            case ChordsState.Unavailable:
+                throw new ShelfException(StatusCodes.Status503ServiceUnavailable, Model.ErrorCodes.Unavailable);
+        }
         for (var attempt = 0; ; attempt++)
         {
             var link = await db.ShareLinks.SingleOrDefaultAsync(x => x.CarriedKeys != null && x.ChordsId == chords.Id && x.CreatedById == me, cancellationToken);

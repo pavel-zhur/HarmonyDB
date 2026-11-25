@@ -24,9 +24,13 @@ export interface CopyState {
     chords: string[];
     /** my playlists' ids, as they were then */
     playlists: string[];
+    /** the server's watermark of the library's chords list kept (asked "since" it), or none yet */
+    watermark: number | null;
+    /** the library's chords not open to the person (not kept; asked again when the library changes or all is read) */
+    closed: string[];
 }
 
-export const emptyCopyState: CopyState = { enabled: false, downloadedAt: null, songs: [], chords: [], playlists: [] };
+export const emptyCopyState: CopyState = { enabled: false, downloadedAt: null, songs: [], chords: [], playlists: [], watermark: null, closed: [] };
 
 const encoder = new TextEncoder();
 export const sizeOf = (value: unknown) => encoder.encode(JSON.stringify(value)).length;

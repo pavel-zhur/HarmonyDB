@@ -37,6 +37,18 @@ public sealed class PublicPageOptions
     /// </summary>
     public TimeSpan Keep { get; set; } = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// The most previews kept at once.
+    /// </summary>
+    public int KeepLimit { get; set; } = 5000;
+
+    /// <summary>
+    /// How many previews one client address may ask for in a window.
+    /// </summary>
+    public int RateLimitPermits { get; set; } = 60;
+
+    public TimeSpan RateLimitWindow { get; set; } = TimeSpan.FromMinutes(1);
+
     public bool IsConfigured => Origin != null;
 }
 
@@ -61,6 +73,12 @@ internal sealed class PublicPageOptionsValidator : IValidateOptions<PublicPageOp
 
         if (options.Keep < TimeSpan.Zero)
             failures.Add($"{section}:{nameof(PublicPageOptions.Keep)} is negative.");
+
+        if (options.KeepLimit <= 0)
+            failures.Add($"{section}:{nameof(PublicPageOptions.KeepLimit)} is not positive.");
+
+        if (options.RateLimitPermits <= 0 || options.RateLimitWindow <= TimeSpan.Zero)
+            failures.Add($"{section}:{nameof(PublicPageOptions.RateLimitPermits)} and {nameof(PublicPageOptions.RateLimitWindow)} are not positive.");
 
         return failures.Count > 0 ? ValidateOptionsResult.Fail(failures) : ValidateOptionsResult.Success;
     }

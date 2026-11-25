@@ -53,7 +53,7 @@ public sealed class OfflineService(ShelfDbContext db, SongLists lists, IndexClie
             throw ShelfException.BadRequest(ErrorCodes.BadRequest, new Dictionary<string, string> { ["max"] = M.OfflineContentsRequest.MaxChords.ToString() });
 
         var kinds = (request.Kinds is { Count: > 0 } asked ? asked : [ChordsKind.Sheet]).Distinct().ToList();
-        if (kinds.Contains(ChordsKind.Recording))
+        if (kinds.Any(x => !M.OfflineContentsRequest.KeptKinds.Contains(x)))
             throw ShelfException.BadRequest();
 
         var library = (await lists.LibraryChordsAsync(user.GetAccountId()!.Value, cancellationToken)).Select(x => x.SourceId).ToHashSet(StringComparer.Ordinal);

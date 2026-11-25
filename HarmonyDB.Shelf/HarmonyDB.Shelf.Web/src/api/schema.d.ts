@@ -452,6 +452,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/library/offline/chords": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The ids of the chords of the person's library, for a device that keeps it; with since, only whether anything changed. Media are not part of the offline library. */
+        get: operations["GetOfflineChords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library/offline/contents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The headers and content of up to 50 chords of the person's library. Media (recordings, separate instruments, files, pictures) are not part of the offline library. */
+        post: operations["GetOfflineContents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mcp": {
         parameters: {
             query?: never;
@@ -2294,6 +2328,16 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             providers: string[];
+            /** Format: int32 */
+            ownedPlaylists: number;
+            /** Format: int32 */
+            joinedPlaylists: number;
+            /** Format: int32 */
+            marks: number;
+            /** Format: int32 */
+            keys: number;
+            /** Format: int32 */
+            notes: number;
         };
         MusicAlbum: {
             service: components["schemas"]["MusicService"];
@@ -2539,6 +2583,27 @@ export interface components {
         };
         /** @enum {string} */
         NoteAlteration: "flat" | "sharp";
+        OfflineChordsList: {
+            /** Format: int64 */
+            watermark: number;
+            changed: boolean;
+            chords: string[];
+        };
+        OfflineContent: {
+            chords: string;
+            state: components["schemas"]["OfflineContentState"];
+            header?: components["schemas"]["ChordsHeader"];
+            content?: components["schemas"]["SourceV2Content"];
+        };
+        /** @enum {string} */
+        OfflineContentState: "open" | "notOpen" | "unavailable" | "notInLibrary";
+        OfflineContents: {
+            items: components["schemas"]["OfflineContent"][];
+        };
+        OfflineContentsRequest: {
+            chords: string[];
+            kinds?: components["schemas"]["ChordsKind"][] | null;
+        };
         OwnChordsDetails: {
             item: components["schemas"]["OwnChordsItem"];
             history: components["schemas"]["OwnChordsVersion"][];
@@ -4172,6 +4237,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IllustratedChordsList"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetOfflineChords: {
+        parameters: {
+            query?: {
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineChordsList"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetOfflineContents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfflineContentsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineContents"];
                 };
             };
             /** @description An error. */

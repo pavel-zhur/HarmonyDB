@@ -118,6 +118,8 @@ export const song = {
                 make: 'Make such a link',
                 remove: 'Remove the link',
                 removed: 'The link is removed',
+                notOpen: 'These chords are not open to all, so a page outside the app cannot show them.',
+                unavailable: 'Could not check now whether these chords can be shown outside the app; try again a little later.',
             },
             telegram: 'Send to me in Telegram',
         },

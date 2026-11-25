@@ -19,6 +19,7 @@ import { myMarksOn, useLocalView } from '../../local';
 import { serverParams, useListState, type ListSort } from './listParams';
 import { LinkBar, LinkPick } from '../song/linking';
 import { MusicSearch } from '../music/MusicSearch';
+import { notOnDevice } from '../../offline';
 
 export interface SongListProps {
     source: SongSource;
@@ -121,7 +122,8 @@ export function SongList(p: SongListProps) {
                                 <SongRow key={id} to={rowHref(row, p, href)} lit={lit === id} q={state.q} title={row.title} artists={row.artists}
                                     myMarks={myMarksOn(local, row.chordsIds) ?? row.myMarks} cover={row.cover} coverSlot={coverSlot} otherMarks={row.otherMarks} otherPeople={row.otherPeople}
                                     sources={row.sources} moreSources={Math.max(0, row.chordsCount - row.sources.length)}
-                                    extra={row.chords && row.chords.state !== 'open' ? <span className="na muted">{t(row.chords.state === 'notOpen' ? 'library.notOpen' : 'library.unavailable')}</span>
+                                    extra={notOnDevice(row) ? <span className="na muted">{t('offline.notKept')}</span>
+                                        : row.chords && row.chords.state !== 'open' ? <span className="na muted">{t(row.chords.state === 'notOpen' ? 'library.notOpen' : 'library.unavailable')}</span>
                                         : p.source.kind === 'playlist' ? <LinkPick playlistId={p.source.id} songId={row.songId} /> : undefined}
                                     onOpen={() => open(row)} />
                             );

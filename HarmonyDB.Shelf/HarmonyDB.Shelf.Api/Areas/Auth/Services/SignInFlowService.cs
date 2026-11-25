@@ -316,6 +316,11 @@ public sealed class SignInFlowService(
                 PictureUrl = x.PictureUrl,
                 CreatedAt = x.CreatedAt,
                 Providers = x.Logins.OrderBy(l => l.CreatedAt).Select(l => l.Provider).ToList(),
+                OwnedPlaylists = db.Playlists.Count(p => p.OwnerId == accountId && p.SystemKind == PlaylistSystemKind.None),
+                JoinedPlaylists = db.PlaylistMembers.Count(m => m.AccountId == accountId && m.Role != PlaylistRole.Owner),
+                Marks = db.Marks.Count(m => m.AccountId == accountId),
+                Keys = db.Transpositions.Count(k => k.AccountId == accountId),
+                Notes = db.Notes.Count(n => n.AccountId == accountId),
             })
             .SingleAsync(cancellationToken);
 

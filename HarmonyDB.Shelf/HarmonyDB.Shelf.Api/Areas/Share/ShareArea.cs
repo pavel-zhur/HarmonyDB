@@ -1,12 +1,15 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using HarmonyDB.Shelf.Api.Areas.Chords;
 using HarmonyDB.Shelf.Api.Areas.Media;
 using HarmonyDB.Shelf.Api.Areas.Media.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Areas.Share.Services;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
+using HarmonyDB.Shelf.Api.Foundation.Network;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Model.Share;
+using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Shelf.Api.Areas.Share;
 
@@ -17,7 +20,22 @@ namespace HarmonyDB.Shelf.Api.Areas.Share;
 /// </summary>
 public sealed class ShareArea : IShelfArea
 {
-    public void AddServices(IServiceCollection services, IConfiguration configuration) => LibraryServices.Add(services, configuration);
+    public const string OpenRateLimit = "share-open";
+
+    public void AddServices(IServiceCollection services, IConfiguration configuration)
+    {
+        LibraryServices.Add(services, configuration);
+        services.AddOptions<ShareOptions>().Bind(configuration.GetSection(ShareOptions.SectionName));
+
+        // per client address: a link and the chords it opens count together
+        services.AddShelfRateLimit(OpenRateLimit, context =>
+        {
+            var settings = context.RequestServices.GetRequiredService<IOptionsMonitor<ShareOptions>>().CurrentValue;
+            return RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.OpenRateLimitPermits, Window = settings.OpenRateLimitWindow, QueueLimit = 0 });
+        });
+    }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
@@ -31,7 +49,7 @@ public sealed class ShareArea : IShelfArea
             => share.MineAsync(user, chords, cancellationToken)).RequireSignIn().WithName("GetMyCarryingShareLink");
 
         group.MapGet("/{token}", (ClaimsPrincipal user, string token, ShareService share, CancellationToken cancellationToken)
-            => share.OpenAsync(user, token, cancellationToken)).WithName("OpenShareLink");
+            => share.OpenAsync(user, token, cancellationToken)).RequireRateLimiting(OpenRateLimit).WithName("OpenShareLink");
 
         group.MapDelete("/{token}", async (ClaimsPrincipal user, string token, ShareService share, CancellationToken cancellationToken) =>
         {
@@ -41,7 +59,7 @@ public sealed class ShareArea : IShelfArea
 
         // The kinds are given as "sheet,timeline"; the sheet when none is given.
         group.MapGet("/{token}/chords", (ClaimsPrincipal user, string token, string? kinds, ShareService share, CancellationToken cancellationToken)
-            => share.ContentAsync(user, token, ChordsArea.ParseKinds(kinds), cancellationToken)).WithName("GetSharedChords");
+            => share.ContentAsync(user, token, ChordsArea.ParseKinds(kinds), cancellationToken)).RequireRateLimiting(OpenRateLimit).WithName("GetSharedChords");
 
         group.MapPost("/{token}/media", async (ClaimsPrincipal user, string token, ShareService share, MediaService media, CancellationToken cancellationToken) =>
             {

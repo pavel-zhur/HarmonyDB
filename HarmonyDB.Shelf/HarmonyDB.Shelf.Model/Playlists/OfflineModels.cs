@@ -39,12 +39,19 @@ public record OfflineContentsRequest
     public const int MaxChords = 50;
 
     /// <summary>
+    /// The kinds kept offline: the text with chords and what the song page shows with it, tens of kilobytes an item. The
+    /// notes and the score (hundreds of kilobytes to megabytes an item) and the recording (media) are not.
+    /// </summary>
+    public static readonly IReadOnlySet<ChordsKind> KeptKinds = new HashSet<ChordsKind> { ChordsKind.Sheet, ChordsKind.Timeline, ChordsKind.Lyrics, ChordsKind.Chart };
+
+    /// <summary>
     /// Ids of chords of the person's library, each once; at most <see cref="MaxChords"/>.
     /// </summary>
     public required IReadOnlyList<string> Chords { get; init; }
 
     /// <summary>
-    /// The kinds wanted; the sheet when none is given. The recording (sound and video) is not kept offline.
+    /// The kinds wanted, of <see cref="KeptKinds"/> (sheet, timeline, lyrics, chart); the sheet when none is given.
+    /// Another kind (notes, score, recording) is refused: 400.
     /// </summary>
     public IReadOnlyList<ChordsKind>? Kinds { get; init; }
 }

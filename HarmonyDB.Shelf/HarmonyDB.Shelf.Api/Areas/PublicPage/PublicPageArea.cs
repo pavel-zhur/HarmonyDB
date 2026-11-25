@@ -1,5 +1,7 @@
+using System.Threading.RateLimiting;
 using HarmonyDB.Shelf.Api.Areas.PublicPage.Services;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
+using HarmonyDB.Shelf.Api.Foundation.Network;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
@@ -13,12 +15,23 @@ namespace HarmonyDB.Shelf.Api.Areas.PublicPage;
 /// </summary>
 public sealed class PublicPageArea : IShelfArea
 {
+    public const string PreviewRateLimit = "public-preview";
+
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<PublicPageOptions>().Bind(configuration.GetSection(PublicPageOptions.SectionName)).ValidateOnStart();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<PublicPageOptions>, PublicPageOptionsValidator>());
-        services.AddMemoryCache();
+        services.AddSingleton<PreviewCache>();
         services.AddScoped<PagePreviews>();
+
+        // per client address (the proxy's view of it, Shelf:Proxy:TrustedNetworks)
+        services.AddShelfRateLimit(PreviewRateLimit, context =>
+        {
+            var settings = context.RequestServices.GetRequiredService<IOptionsMonitor<PublicPageOptions>>().CurrentValue;
+            return RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.RateLimitPermits, Window = settings.RateLimitWindow, QueueLimit = 0 });
+        });
         services.AddScoped<Sitemap>();
     }
 
@@ -35,7 +48,7 @@ public sealed class PublicPageArea : IShelfArea
 
             context.Response.Headers.CacheControl = "public, max-age=60";
             return Results.Content(html, "text/html; charset=utf-8");
-        }).WithName("GetPublicPagePreview");
+        }).RequireRateLimiting(PreviewRateLimit).WithName("GetPublicPagePreview");
 
         group.MapGet("/sitemap", async (HttpContext context, Sitemap sitemap, CancellationToken cancellationToken) =>
         {

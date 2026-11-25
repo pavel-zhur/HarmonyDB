@@ -53,3 +53,12 @@ test('sorted by title here, paged', () => {
     assert.equal(page.offset, 1);
     assert.deepEqual(page.rows.map(x => x.title), ['Ёлка']);
 });
+
+test('rows as the device can open them: a kept song page, else kept chords alone, else not kept', async () => {
+    const { deviceRows } = await import('./lists.ts');
+    const { rows: out, notKept } = deviceRows(rows, key => key === keys.song('p1', 's1'), id => id === 'c3');
+    assert.equal(out[0]!.songId, 's1');
+    assert.equal(out[1]!.songId, null);
+    assert.equal(out[1]!.chords?.id, 'c3');
+    assert.deepEqual(notKept.map(x => x.title), ['Alone']);
+});
