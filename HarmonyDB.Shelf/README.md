@@ -51,6 +51,17 @@ before authorization. See
   (null for a guest).
 - **Marks**: the kinds are `MarkKinds` in `HarmonyDB.Shelf.Model/Marks` (the three hearts of the old shelf's levels of
   like are `MarkKinds.OldLikeLevels`); the database keeps the key as text.
+- **Rate limits**: the foundation has the one rate limiter of the app (a refusal is 429 `too_many_requests`). An area
+  adds a policy in `AddServices` and puts it on its endpoints:
+
+  ```csharp
+  services.AddShelfRateLimit("media", context => RateLimitPartition.GetFixedWindowLimiter(
+      context.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+      _ => new FixedWindowRateLimiterOptions { PermitLimit = …, Window = … }));   // limits from the area's settings
+  group.MapPost("/media", …).RequireRateLimiting("media");
+  ```
+
+  The client's address is the proxy's view of it only when `Shelf:Proxy:TrustedNetworks` names the proxy.
 - **Internal endpoints** (other services calling with `X-Internal-Key`): `.RequireInternalScope("shelf.admin")`. They,
   and everything outside `/api` (the MCP), are left out of the browser's `openapi.json`.
 - **JSON** is camel case with enums as camel-case strings. Name every endpoint (`.WithName(...)`): the name is the
@@ -95,9 +106,66 @@ before authorization. See
 | `Permissions:Custom:[{Key, Label}]` | Custom permissions |
 | `Permissions:Defaults:Guest`, `Permissions:Defaults:NewAccount` | The default permissions |
 | `InternalClients:[{Name, Key, Scopes[]}]` | Services that may call the internal API |
-| `SignIn:Telegram`, `SignIn:Google`, `SignIn:Yandex`, `SignIn:Dev` | Which sign-in providers are on (`Dev` only in the Development environment) |
+| `SignIn:Telegram`, `SignIn:Google`, `SignIn:Yandex`, `SignIn:Dev` | Which sign-in providers are on (`Dev` only in the Development environment), with their clients: `ClientId`, `ClientSecret` (Telegram's from BotFather, Login Widget), and `TokenEndpointAuthMethod` (`client_secret_basic` / `client_secret_post`; not set: the provider's default — basic for Telegram, post for Google) |
+| `SignIn:PublicOrigin` | The address the app is opened at (`https://…`, no path): the providers return to `<it>/api/auth/callback/<provider>`, and it decides the cookies' rules. Plain http only for a loopback host in Development (the local stack) |
+| `SignIn:Sessions:IdleTimeout`, `SignIn:Sessions:AbsoluteLifetime` | When a browser session ends: unused for (default 30 days), or after its sign-in (default 180 days) |
+| `SignIn:FlowLifetime`, `SignIn:FreshSignIn` | How long a sign-in at a provider may take; how recent a sign-in must be to add or remove a sign-in or to merge accounts (10 minutes each) |
+| `SignIn:RateLimitPermits`, `SignIn:RateLimitWindow` | How many sign-ins one client address may start or finish in a window (30 in 5 minutes) |
+| `Shelf:Proxy:TrustedNetworks` | The reverse proxies' networks (CIDR) whose `X-Forwarded-For` gives the client's address; none by default. **Set it whenever a proxy stands in front** (in the compose project: `SHELF_TRUSTED_PROXY_NETWORK`, its own network), or every client has the proxy's address and shares every rate limit |
+| `Clients:Audio:BaseUrl`, `Clients:Audio:Key` | The music service and the shelf's key there; not set: what needs it answers 503 `unavailable` |
 
 The settings are checked at start; a wrong one stops the app with the reason.
+
+## Signing in
+
+The areas `auth` and `me`. Providers (`Areas/Auth/Services/Providers`), one class each behind `ISignInProvider`:
+`telegram` and `google` (OpenID Connect on one shared class, `OidcSignInProvider`: code + PKCE, the id token
+validated; Google with a nonce and `openid email profile`; Telegram with `openid profile`, its subject the numeric
+Telegram user id), `yandex` (code + PKCE, the identity from its user info), `dev` (a named test account; Development
+only).
+
+The frontend's part:
+
+1. `POST /api/auth/flows {provider, purpose: signIn | link, returnPath}` → `{state, redirectUrl}`. With a
+   `redirectUrl`, go there; the browser comes back to `returnPath?auth=<outcome or error code>&auth_flow=<state>`.
+   Without one (dev), post `{name}` to `/api/auth/flows/{state}/complete`. Starting and finishing are rate-limited
+   per client address (429 `too_many_requests`).
+2. The outcome `mergeNeeded` (when adding a sign-in that has its own account): show `GET /api/auth/flows/{state}`
+   and on consent `POST /api/auth/flows/{state}/merge`. It needs both sign-ins made within `FreshSignIn`;
+   otherwise `fresh_sign_in_required`: sign in again, then add the other sign-in again. Adding a sign-in
+   (`purpose: link`) and removing one (`DELETE /api/me/logins/{id}`) need a recent sign-in too: on
+   `fresh_sign_in_required`, sign in again with the account's provider and repeat.
+3. `POST /api/auth/sign-out`. Who the browser is: `GET /api/auth/session`.
+
+**Sessions**: an opaque token in the cookie `__Host-shelf-session` (HttpOnly, Secure, SameSite=Lax), kept hashed,
+rotated at every sign-in; listed and revoked in `me/sessions`. On the local stack's http origin the cookies drop the
+`__Host-` prefix and Secure (browsers keep neither on http); nothing else changes.
+
+**CSRF** (signed double-submit cookie): send the value of the cookie `__Host-shelf-csrf` (`shelf-csrf` on the local
+stack's http) as the header `X-CSRF-Token` with every POST, PUT, PATCH and DELETE. Every answer of `/api` gives that cookie anew when it no longer fits (after signing
+in or out). A refusal is 403 `csrf_failed` with a fresh cookie: repeat the request once.
+
+**The identity, in another area.** The browser's session is the default authentication; an endpoint takes
+`ClaimsPrincipal user`:
+
+```csharp
+group.MapPost("/{id}/marks", (ClaimsPrincipal user, Guid id, MarksService marks) =>
+        marks.AddAsync(user.GetAccountId()!.Value, id))   // the account; null for a guest
+    .RequireSignIn();                                       // a guest gets 401 sign_in_required
+group.MapGet("/{id}/book", …).RequirePermission(BuiltInPermissions.Pdf);
+// elsewhere: permissions.Has(user, …), permissions.CustomKeys(user) → Caller.Keys
+```
+
+Every POST, PUT, PATCH and DELETE under `/api` says who may call it — `.RequireSignIn()`, `.RequirePermission(…)`, an
+internal scope, or `.AllowGuests()` when it is open to guests on purpose; a test fails one that says none.
+
+A guest's writing action answers 401 `sign_in_required`: the frontend offers sign-in and repeats the action. A person's
+own music account, to call the music service as them: `MusicLinkStore.GetActingAsync(accountId, service)`. The music
+service's client is `Clients/Audio/AudioClient` (add its calls there); removing a link purges its subject through the
+outbox (`AudioSubjectPurge`). What a person pastes as a music credential may be at most 48 KiB; more answers 400
+`music_credentials_too_large` (they copied more than the request's headers).
+
+**Internal**: `GET /internal/accounts/{accountId}/logins/{provider}` → `{subjects}` (scope `shelf.accounts`).
 
 ## Working beside each other
 
@@ -128,6 +196,17 @@ curl localhost:14101/api/app/health
 dotnet test HarmonyDB.Shelf/HarmonyDB.Shelf.Tests
 ```
 
-The tests need no database. After adding or changing endpoints `OpenApiDocumentTests` goes red: run the tests once with
+Most tests need no database. Those of sessions, sign-ins and merges need a PostgreSQL (each test class makes a
+database of its own and drops it): give a server in `SHELF_TEST_DATABASE`, or they are reported skipped. In Docker:
+
+```
+docker network create shelf-tests
+docker run -d --rm --name shelf-tests-pg --network shelf-tests -e POSTGRES_PASSWORD=test postgres:17
+# then the command of "Working beside each other" with
+#   --network shelf-tests -e "SHELF_TEST_DATABASE=Host=shelf-tests-pg;Username=postgres;Password=test"
+docker rm -f shelf-tests-pg
+```
+
+After adding or changing endpoints `OpenApiDocumentTests` goes red: run the tests once with
 `SHELF_WRITE_OPENAPI=1`, which writes `HarmonyDB.Shelf.Model/openapi.json` anew (in a copy of the tree, copy that file
 back), and look at its diff.

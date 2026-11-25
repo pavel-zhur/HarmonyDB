@@ -21,7 +21,7 @@ public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> si
         var providers = new List<SignInProviderInfo>();
 
         if (options.Telegram.Enabled)
-            providers.Add(new() { Name = SignInProviders.Telegram, TelegramBotUsername = options.Telegram.BotUsername });
+            providers.Add(new() { Name = SignInProviders.Telegram });
 
         if (options.Google.Enabled)
             providers.Add(new() { Name = SignInProviders.Google });

@@ -75,7 +75,6 @@ public sealed class FoundationTests(ShelfApiFactory factory) : IClassFixture<She
         var configuration = await response.Content.ReadFromJsonAsync<PublicConfiguration>(JsonOptions());
 
         Assert.Equal(["telegram"], configuration!.SignInProviders.Select(x => x.Name));
-        Assert.Equal("test_bot", configuration.SignInProviders[0].TelegramBotUsername);
         Assert.Equal(["en", "ru"], configuration.Locales);
         Assert.DoesNotContain("custom.one", text);
         Assert.DoesNotContain("Custom one", text);

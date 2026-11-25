@@ -1,4 +1,6 @@
 using HarmonyDB.Shelf.Api.Areas.App;
+using HarmonyDB.Shelf.Api.Areas.Auth;
+using HarmonyDB.Shelf.Api.Areas.Me;
 using HarmonyDB.Shelf.Api.Foundation;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Database;
@@ -8,6 +10,8 @@ builder.AddShelfFoundation();
 
 // The areas of the API: one line each (see README.md, "An area").
 builder.AddArea<AppArea>();
+builder.AddArea<AuthArea>();
+builder.AddArea<MeArea>();
 
 var app = builder.Build();
 app.UseShelfFoundation();

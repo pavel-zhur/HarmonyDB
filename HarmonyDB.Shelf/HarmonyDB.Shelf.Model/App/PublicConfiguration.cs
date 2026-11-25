@@ -27,9 +27,4 @@ public record SignInProviderInfo
     /// "telegram", "google", "yandex", "dev".
     /// </summary>
     public required string Name { get; init; }
-
-    /// <summary>
-    /// The user name of the bot of Telegram's login widget; for "telegram" only.
-    /// </summary>
-    public string? TelegramBotUsername { get; init; }
 }

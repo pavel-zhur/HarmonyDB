@@ -4,6 +4,7 @@ using HarmonyDB.Common.ServiceAuth;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Database;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
+using HarmonyDB.Shelf.Api.Foundation.Network;
 using HarmonyDB.Shelf.Api.Foundation.OpenApi;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Api.Foundation.Secrets;
@@ -34,6 +35,10 @@ public static class FoundationExtensions
         AddValidatedOptions<PermissionsOptions, PermissionsOptionsValidator>(services, configuration, PermissionsOptions.SectionName);
         AddValidatedOptions<SignInOptions, SignInOptionsValidator>(services, configuration, SignInOptions.SectionName);
         AddValidatedOptions<SecretsOptions, SecretsOptionsValidator>(services, configuration, SecretsOptions.SectionName);
+        AddValidatedOptions<ProxyOptions, ProxyOptionsValidator>(services, configuration, ProxyOptions.SectionName);
+
+        // The rate limiter, one for the app: areas add their policies (NetworkExtensions.AddShelfRateLimit).
+        services.AddShelfNetwork();
 
         // Internal clients by key; the sign-in of people adds its own schemes.
         services.AddInternalClients(configuration);
@@ -48,6 +53,7 @@ public static class FoundationExtensions
 
     public static WebApplication UseShelfFoundation(this WebApplication app)
     {
+        app.UseShelfForwardedHeaders();
         app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = ErrorResponses.HandleUnexpectedExceptionAsync });
         app.UseStatusCodePages(ErrorResponses.HandleStatusCodeAsync);
         app.Use(ErrorResponses.AnswerExpectedErrorsAsync);
@@ -58,6 +64,7 @@ public static class FoundationExtensions
             area.UseMiddleware(app);
         }
 
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         return app;

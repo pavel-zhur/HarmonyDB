@@ -61,8 +61,21 @@ public sealed class RequireSignInAttribute : Attribute, IAuthorizationRequiremen
     }
 }
 
+/// <summary>
+/// The endpoint changes state and is open to guests on purpose (signing in, signing out …). Every POST, PUT, PATCH
+/// and DELETE under <c>/api</c> says who may call it: <see cref="RequireSignInAttribute"/>,
+/// <see cref="RequirePermissionAttribute"/>, an internal scope, or this; a test fails an endpoint that says none.
+/// On a minimal API endpoint, <c>.AllowGuests()</c> is the same.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class AllowGuestsAttribute : Attribute;
+
 public static class PermissionEndpointExtensions
 {
+    public static TBuilder AllowGuests<TBuilder>(this TBuilder builder)
+        where TBuilder : IEndpointConventionBuilder
+        => builder.WithMetadata(new AllowGuestsAttribute());
+
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, string permission)
         where TBuilder : IEndpointConventionBuilder
         => builder.WithMetadata(new RequirePermissionAttribute(permission));

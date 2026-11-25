@@ -36,7 +36,9 @@ public sealed class ShelfApiFactory : WebApplicationFactory<Program>
         ["Permissions:Custom:0:Label"] = "Custom one",
         ["Permissions:Defaults:Guest:0"] = "pdf",
         ["SignIn:Telegram:Enabled"] = "true",
-        ["SignIn:Telegram:BotUsername"] = "test_bot",
+        ["SignIn:Telegram:ClientId"] = "123456",
+        ["SignIn:Telegram:ClientSecret"] = "test-secret",
+        ["SignIn:PublicOrigin"] = "https://shelf.example",
         ["SignIn:Dev:Enabled"] = "true",
     };
 
