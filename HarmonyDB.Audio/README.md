@@ -28,6 +28,9 @@ address, blobs. Only `/health` and `/openapi.json` need no key.
 YouTube's general navigation is asked anonymously in every mode (it is the same, and YouTube refuses part of it
 under an account). On YouTube the mode decides the person's own lists and playlists.
 
+Playlists (by id, by link, a playlist's recommendations) take `anonymous` or `person` only: asked as the service
+account, its own playlists, private ones too, would be given to whoever asks (`service_not_allowed`).
+
 Sound and video (`/tracks/{id}/audio`, `/video` and their `/info`) take `anonymous` or `service` only: they are never
 fetched with a person's credentials. In service mode YouTube's files are fetched anonymously, and with the service
 account's cookies only when YouTube refuses that.
@@ -41,7 +44,9 @@ comes in an envelope: `{ storedAt, fetchedNow, data }`.
   them.
 - **Personal**: the person's own lists (`/me/...`) — person mode only; kept under `X-Audio-Subject` and given to that
   subject only. Answers that may be private, or are shaped by who asks — a playlist, a playlist's recommendations,
-  a Yandex radio — are personal when asked in person mode and shared otherwise.
+  a Yandex radio — are personal when asked in person mode and shared otherwise, kept apart for each mode (what the
+  service account is given is never given to an anonymous caller, nor the other way round). A playlist not open to
+  the caller answers `not_found`, as one that is not there.
 - `DELETE /internal/subjects/{subject}` forgets every personal answer of a subject; an answer that was being asked
   while the purge happened is not kept.
 - **Files** are shared, in every mode. A Yandex track's sound fetched without a subscription is the 30-second preview
@@ -80,7 +85,8 @@ YouTube: videoId, channel id `UC…`, album browse id `MPRE…`, playlist id).
 | `GET /internal/{s}/tracks/{id}/audio/info`, `/internal/youtube/tracks/{id}/video/info` | the file fetched and kept (`fetch=false`: only told whether it is kept), described |
 | `GET\|HEAD /internal/files?url=` | a file the services name by address (a cover, a background video), kept, with Range; https on the services' image and video hosts only, every redirect checked, at most `AUDIO_MAX_URL_FILE_BYTES` |
 | `PUT /internal/blobs/{key}` | store the request body (at most `AUDIO_MAX_BLOB_BYTES`) under a key, its `Content-Type` kept; it replaces what was there once all of it is received |
-| `GET\|HEAD /internal/blobs/{key}` | a stored file, with Range |
+| `GET\|HEAD /internal/blobs/{key}` | a stored file, with Range; its SHA-256 in `Repr-Digest` (also in the PUT's answer) |
+| `DELETE /internal/blobs/{key}` | forget a stored file |
 
 A file is fetched from the service on the first request and kept; later requests are served from the store.
 
@@ -90,7 +96,7 @@ Every refusal is `{ code, message }`; the code is stable, the message is for dev
 
 | Status | Code |
 |---|---|
-| 400 | `bad_request`, `mode_invalid`, `subject_missing`, `credentials_missing`, `credentials_invalid`, `person_required`, `service_required`, `link_unknown`, `link_not_playlist`, `host_not_allowed` |
+| 400 | `bad_request`, `mode_invalid`, `subject_missing`, `credentials_missing`, `credentials_invalid`, `person_required`, `service_required`, `service_not_allowed`, `link_unknown`, `link_not_playlist`, `host_not_allowed` |
 | 401 | `key_missing`, `key_invalid` |
 | 403 | `scope_missing`, `credentials_rejected` (the service refused the person's credentials), `account_required` (the service gives this to an account only) |
 | 404 | `not_found`, `no_file` |

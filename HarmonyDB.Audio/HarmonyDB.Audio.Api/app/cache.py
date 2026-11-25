@@ -5,7 +5,8 @@
   * personal - a person's own lists (playlists, likes, history, library): kept under the call's
                subject and given back to that subject only; person mode only;
   * private  - answers that may be private to whoever asks (a playlist) or shaped by who asks (a
-               radio tuned to the account): personal when asked as a person, shared otherwise.
+               radio tuned to the account): personal when asked as a person, shared otherwise -
+               apart for each mode (anonymous, the service account).
 
 An answer, once kept, is given from the store; `fresh` asks the service anew and keeps the new one.
 """
@@ -55,6 +56,16 @@ async def personal(service: str, kind: str, key: str, acting: Acting, fresh: boo
     return await _kept(service, kind, key, require_person(acting), fresh, make)
 
 
+def private_place(key: str, acting: Acting) -> tuple[str, str]:
+    """Where a private answer is kept: (key, subject). Asked as a person, under the person's subject; otherwise shared,
+    but apart for each mode - what the service account is given is never served to an anonymous caller, nor the other
+    way round."""
+    if acting.mode == "person":
+        return key, acting.subject
+    # every mode is spelled out, so that no id can spell another mode's key
+    return f"{acting.mode}|{key}", store.SHARED
+
+
 async def private(service: str, kind: str, key: str, acting: Acting, fresh: bool, make: Make) -> Answer:
-    subject = acting.subject if acting.mode == "person" else store.SHARED
-    return await _kept(service, kind, key, subject, fresh, make)
+    kept_key, subject = private_place(key, acting)
+    return await _kept(service, kind, kept_key, subject, fresh, make)

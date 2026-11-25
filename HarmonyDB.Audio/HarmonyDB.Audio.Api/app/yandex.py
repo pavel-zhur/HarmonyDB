@@ -81,7 +81,8 @@ class _Session:
             if self.mode == "person":
                 return ApiError(403, CREDENTIALS_REJECTED, "Yandex refused the person's token")
             return ApiError(503, SERVICE_ACCOUNT_REJECTED, "Yandex refused the service account")
-        if r.status_code == 404:
+        # 410: what was there is deleted (a playlist)
+        if r.status_code in (404, 410):
             return ApiError(404, NOT_FOUND, "Yandex has no such thing")
         if r.status_code == 400:
             return ApiError(400, BAD_REQUEST, f"Yandex: {r.text[:200]}")
@@ -498,9 +499,16 @@ def _playlist_path(pid: str) -> str:
 
 
 async def playlist(pid: str, acting: Acting, fresh: bool) -> Answer:
+    """A playlist that is not open to the caller is not told from one that is not there: Yandex refuses both (400, 404,
+    or an account only), and both are not found."""
     async def make():
         async with _session(acting) as y:
-            res = await y.get(_playlist_path(pid), {"rich-tracks": "true", "withSimilarPlaylists": "true"}) or {}
+            try:
+                res = await y.get(_playlist_path(pid), {"rich-tracks": "true", "withSimilarPlaylists": "true"}) or {}
+            except ApiError as e:
+                if e.status in (400, 404) or e.code == ACCOUNT_REQUIRED:
+                    raise ApiError(404, NOT_FOUND, "the playlist did not open: there is no such, or it is private") from None
+                raise
         return _playlist_doc(res)
     return await cache.private(S, "playlist", pid, acting, fresh, make)
 

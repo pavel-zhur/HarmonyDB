@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, Depends, Path, Query, Request
+from fastapi import APIRouter, Depends, Path, Query, Request, Response
 
 import config
 import media
 import store
 import yandex as Y
 import youtube as T
-from acting import Acting, acting
+from acting import Acting, acting, playlist_acting
 from auth import MEDIA, READ, require
 from errors import BAD_REQUEST, LINK_NOT_PLAYLIST, TOO_LARGE, ApiError
 from models import Answer, BlobInfo, LinkedPlaylist, Purged, Resolved, Status
@@ -48,7 +48,7 @@ async def resolve_link(url: str = Query(min_length=1, max_length=2000)):
 @read.get("/playlists/by-link", response_model=Answer[LinkedPlaylist],
           summary="A playlist of either service by its link; personal when asked as a person")
 async def playlist_by_link(url: str = Query(min_length=1, max_length=2000), fresh: Fresh = False,
-                           a: Acting = Depends(acting)):
+                           a: Acting = Depends(playlist_acting)):
     r = resolve(url)
     if r["type"] != "playlist":
         raise ApiError(400, LINK_NOT_PLAYLIST, f"the link is not a playlist's: it names: {r['type']}")
@@ -89,10 +89,21 @@ async def put_blob(request: Request, key: str):
         raise ApiError(413, TOO_LARGE, f"the file is larger than {limit} bytes")
     mime = (request.headers.get("content-type") or "application/octet-stream").split(";")[0].strip()
     row = await media.put_blob(_key(key), mime, request.stream())
-    return {"key": key, "mime": row["mime"], "bytes": row["size"], "storedAt": row["stored"], "etag": media.etag(row)}
+    return {"key": key, "mime": row["mime"], "bytes": row["size"], "storedAt": row["stored"], "etag": media.etag(row),
+            "sha256": row["info"]["sha256"]}
 
 
 @file_route(files, "/blobs/{key:path}", responses=problems(400, 401, 403, 404, 416),
-            summary="A stored file, with Range")
+            summary="A stored file, with Range; its SHA-256 in the header Repr-Digest")
 async def get_blob(request: Request, key: str):
-    return media.serve(request, await media.get_blob(_key(key)))
+    row = await media.get_blob(_key(key))
+    response = media.serve(request, row)
+    response.headers.update(media.digest_header(row))
+    return response
+
+
+@files.delete("/blobs/{key:path}", status_code=204, responses=problems(400, 401, 403, 404),
+              summary="Forget a stored file")
+async def delete_blob(key: str):
+    await media.delete_blob(_key(key))
+    return Response(status_code=204)

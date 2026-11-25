@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Query, Request
 
 import media
 import youtube as T
-from acting import Acting, acting, media_acting
+from acting import Acting, acting, media_acting, playlist_acting
 from auth import MEDIA, READ, require
 from models import (Answer, FileInfo, TAlbumPage, TAlbums, TArtistPage, TCategories, TCategory, TChart, TLikes,
                     TLyrics, TPlaylistPage, TPlaylists, TSearch, TSimilar, TSuggest, TTrackPage, TTracks, Who)
@@ -77,7 +77,7 @@ async def lyrics(id: str, fresh: Fresh = False):
 
 @nav.get("/playlists/{id}", response_model=Answer[TPlaylistPage],
          summary="A playlist by id (PL..., RD..., OLAK...); personal when asked as a person")
-async def playlist(id: str, fresh: Fresh = False, a: Acting = Depends(acting)):
+async def playlist(id: str, fresh: Fresh = False, a: Acting = Depends(playlist_acting)):
     return envelope(await T.playlist(id, a, fresh))
 
 

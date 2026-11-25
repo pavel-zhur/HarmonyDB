@@ -26,6 +26,7 @@ CREDENTIALS_INVALID = "credentials_invalid"         # 400: credentials that cann
 CREDENTIALS_REJECTED = "credentials_rejected"       # 403: the service did not accept the person's credentials
 PERSON_REQUIRED = "person_required"                 # 400: a person's own list asked in another mode
 SERVICE_REQUIRED = "service_required"               # 400: an operation only the service account may do
+SERVICE_NOT_ALLOWED = "service_not_allowed"         # 400: a playlist asked as the service account (it is asked anonymously or as a person)
 ACCOUNT_REQUIRED = "account_required"               # 403: the service gives this to an account only (asked without one)
 SERVICE_ACCOUNT_MISSING = "service_account_missing"     # 503: the service account is not configured
 SERVICE_ACCOUNT_REJECTED = "service_account_rejected"   # 503: the service did not accept the service account

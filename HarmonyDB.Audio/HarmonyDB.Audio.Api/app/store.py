@@ -8,10 +8,12 @@
               version, kept in chunks of 1 MiB, so that a part of a file (an HTTP Range) is read
               without reading the whole of it. A new content is written as a new version and takes
               the old one's place only when it is whole; the version is the file's validator (ETag).
+              A version notes the SHA-256 of its content in its info.
 """
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import uuid
 from datetime import datetime
@@ -133,12 +135,13 @@ async def write_blob(blob_id: str, mime: str, info: dict, pieces: AsyncIterator[
     await pool.execute("insert into blob_versions(version, mime, info) values ($1, $2, $3)", version, mime, info)
     try:
         async with pool.acquire() as conn:
-            n, size, buf = 0, 0, bytearray()
+            n, size, buf, digest = 0, 0, bytearray(), hashlib.sha256()
 
             async def put(data: bytes):
                 await conn.execute("insert into blob_chunks(version, n, data) values ($1, $2, $3)", version, n, data)
             async for piece in pieces:
                 buf += piece
+                digest.update(piece)
                 if limit is not None and size + len(buf) > limit:
                     raise ApiError(413, TOO_LARGE, f"the file is larger than {limit} bytes")
                 while len(buf) >= CHUNK:
@@ -149,7 +152,9 @@ async def write_blob(blob_id: str, mime: str, info: dict, pieces: AsyncIterator[
                 await put(bytes(buf))
                 size += len(buf)
             async with conn.transaction():
-                await conn.execute("update blob_versions set size=$2, stored=now() where version=$1", version, size)
+                await conn.execute(
+                    """update blob_versions set size=$2, stored=now(), info = info || jsonb_build_object('sha256', $3::text)
+                       where version=$1""", version, size, digest.hexdigest())
                 old = await conn.fetchval(
                     """insert into blobs(id, version) values ($1, $2)
                        on conflict (id) do update set version = excluded.version
@@ -160,6 +165,22 @@ async def write_blob(blob_id: str, mime: str, info: dict, pieces: AsyncIterator[
         await pool.execute("delete from blob_versions where version=$1", version)
         raise
     return await blob(blob_id)
+
+
+async def delete_blob(blob_id: str) -> bool:
+    """Forgets a kept file. Answers whether there was one."""
+    async with pool.acquire() as conn, conn.transaction():
+        version = await conn.fetchval("delete from blobs where id=$1 returning version", blob_id)
+        if version is None:
+            return False
+        await conn.execute("delete from blob_versions where version=$1", version)
+    return True
+
+
+async def set_sha256(version: uuid.UUID, sha256: str) -> None:
+    """Notes the SHA-256 of a version kept before versions noted theirs."""
+    await pool.execute("update blob_versions set info = info || jsonb_build_object('sha256', $2::text) where version=$1",
+                       version, sha256)
 
 
 async def read_blob(version: uuid.UUID, start: int, end: int) -> AsyncIterator[bytes]:

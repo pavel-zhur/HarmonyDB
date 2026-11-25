@@ -89,3 +89,20 @@ def test_an_upload_over_the_limit_is_refused():
     with TestClient(app) as c:
         r = c.put(f"/internal/blobs/tests/{uuid.uuid4().hex}", content=b"z" * ((4 << 20) + 1), headers=MEDIA)
         assert r.status_code == 413 and r.json()["code"] == "too_large"
+
+
+def test_a_file_tells_its_sha256_and_is_forgotten_when_deleted():
+    import base64
+    import hashlib
+
+    data = os.urandom(3000)
+    url = f"/internal/blobs/tests/{uuid.uuid4().hex}/gone.bin"
+    with TestClient(app) as c:
+        put = c.put(url, content=data, headers={**MEDIA, "Content-Type": "audio/flac"})
+        assert put.json()["sha256"] == hashlib.sha256(data).hexdigest()
+        digest = base64.b64encode(hashlib.sha256(data).digest()).decode()
+        assert c.head(url, headers=MEDIA).headers["repr-digest"] == f"sha-256=:{digest}:"
+
+        assert c.delete(url, headers=MEDIA).status_code == 204
+        assert c.get(url, headers=MEDIA).status_code == 404
+        assert c.delete(url, headers=MEDIA).json()["code"] == "not_found"

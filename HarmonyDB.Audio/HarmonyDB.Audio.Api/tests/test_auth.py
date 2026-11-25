@@ -50,3 +50,11 @@ def test_sound_is_never_fetched_as_a_person(client):
     person = {**MEDIA, "X-Audio-Mode": "person", "X-Audio-Subject": "s",
               "X-Audio-Credentials": base64.b64encode(b"token").decode()}
     assert code(client.get("/internal/yandex/tracks/1/audio", headers=person)) == (400, "mode_invalid")
+
+
+def test_playlists_are_not_asked_as_the_service_account(client):
+    # the service account's own playlists, private ones too, would be given to anyone and kept as shared
+    service = {**READER, "X-Audio-Mode": "service"}
+    for url in ["/internal/yandex/playlists/1:3", "/internal/yandex/playlists/1:3/recommendations",
+                "/internal/youtube/playlists/PLabc", "/internal/playlists/by-link?url=https://music.yandex.ru/users/a/playlists/3"]:
+        assert code(client.get(url, headers=service)) == (400, "service_not_allowed")

@@ -72,3 +72,36 @@ def test_an_answer_asked_before_a_purge_is_not_kept_after_it():
         assert first.body == {"of": "ann"} and first.fetched_now
         assert await store.get_answer("yandex", "likes", "", ann.subject) is None
     run(body)
+
+
+def test_a_private_answer_is_kept_apart_for_each_mode():
+    # what the service account is given is never served to an anonymous caller, nor the other way round
+    async def body():
+        key = uuid.uuid4().hex
+
+        async def as_service():
+            return {"for": "service"}
+
+        async def anonymously():
+            return {"for": "anyone"}
+        assert (await cache.private("yandex", "radio", key, Acting("service"), False, as_service)).body == {"for": "service"}
+        anonymous = await cache.private("yandex", "radio", key, Acting("anonymous"), False, anonymously)
+        assert anonymous.body == {"for": "anyone"} and anonymous.fetched_now
+        again = await cache.private("yandex", "radio", key, Acting("service"), False, anonymously)
+        assert again.body == {"for": "service"} and not again.fetched_now
+    run(body)
+
+
+def test_no_id_spells_another_modes_key():
+    async def body():
+        key = uuid.uuid4().hex
+
+        async def as_service():
+            return {"for": "service"}
+
+        async def anonymously():
+            return {"for": "anyone"}
+        await cache.private("yandex", "playlist", key, Acting("service"), False, as_service)
+        imitated = await cache.private("yandex", "playlist", f"service|{key}", Acting("anonymous"), False, anonymously)
+        assert imitated.body == {"for": "anyone"} and imitated.fetched_now
+    run(body)

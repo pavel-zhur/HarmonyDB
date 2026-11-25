@@ -17,7 +17,7 @@ from typing import Literal
 
 from fastapi import Header
 
-from errors import CREDENTIALS_INVALID, CREDENTIALS_MISSING, SUBJECT_MISSING, ApiError
+from errors import CREDENTIALS_INVALID, CREDENTIALS_MISSING, SERVICE_NOT_ALLOWED, SUBJECT_MISSING, ApiError
 
 Mode = Literal["anonymous", "person", "service"]
 
@@ -50,6 +50,20 @@ def acting(
     if not credentials:
         raise ApiError(400, CREDENTIALS_MISSING, "X-Audio-Credentials is empty")
     return Acting("person", subject, credentials)
+
+
+def playlist_acting(
+    x_audio_mode: Mode = Header(alias="X-Audio-Mode", description="How to act: anonymous or person (not service)."),
+    x_audio_subject: str | None = Header(None, alias="X-Audio-Subject",
+                                         description="Person mode: the subject personal answers are kept under."),
+    x_audio_credentials: str | None = Header(None, alias="X-Audio-Credentials",
+                                             description="Person mode: base64 of the person's credentials."),
+) -> Acting:
+    """A playlist is asked anonymously or as a person, never as the service account: asked as it, a playlist (of the
+    account's own, private ones too) would be given to whoever asks, and kept as shared."""
+    if x_audio_mode == "service":
+        raise ApiError(400, SERVICE_NOT_ALLOWED, "a playlist is asked anonymously or as a person, not as the service account")
+    return acting(x_audio_mode, x_audio_subject, x_audio_credentials)
 
 
 def media_acting(

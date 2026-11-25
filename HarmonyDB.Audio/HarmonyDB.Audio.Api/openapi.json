@@ -8316,7 +8316,7 @@
         "tags": [
           "files"
         ],
-        "summary": "A stored file, with Range",
+        "summary": "A stored file, with Range; its SHA-256 in the header Repr-Digest",
         "operationId": "GetBlob",
         "security": [
           {
@@ -8391,6 +8391,84 @@
             }
           },
           "416": {
+            "description": "A refusal: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected error: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Forget a stored file",
+        "operationId": "DeleteBlob",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "A refusal: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal: { code, message }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "A refusal: { code, message }",
             "content": {
               "application/json": {
@@ -9230,6 +9308,10 @@
           "etag": {
             "type": "string",
             "title": "Etag"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
           }
         },
         "additionalProperties": false,
@@ -9239,7 +9321,8 @@
           "mime",
           "bytes",
           "storedAt",
-          "etag"
+          "etag",
+          "sha256"
         ],
         "title": "BlobInfo"
       },

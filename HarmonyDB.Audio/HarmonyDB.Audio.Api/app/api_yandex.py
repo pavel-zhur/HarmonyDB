@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends, Query, Request
 
 import media
 import yandex as Y
-from acting import Acting, acting, media_acting
+from acting import Acting, acting, media_acting, playlist_acting
 from auth import MEDIA, READ, require
 from errors import NOT_FOUND, ApiError
 from models import (Answer, FileInfo, Who, YAlbumPage, YAlbums, YArtistPage, YArtists, YCategories, YCategory,
@@ -87,12 +87,12 @@ async def lyrics(id: str, fresh: Fresh = False, a: Acting = Depends(acting)):
 
 @nav.get("/playlists/{id}", response_model=Answer[YPlaylistPage],
          summary="A playlist by its id: \"uid:kind\" or its uuid (personal when asked as a person)")
-async def playlist(id: str, fresh: Fresh = False, a: Acting = Depends(acting)):
+async def playlist(id: str, fresh: Fresh = False, a: Acting = Depends(playlist_acting)):
     return envelope(await Y.playlist(id, a, fresh))
 
 
 @nav.get("/playlists/{id}/recommendations", response_model=Answer[YTracks])
-async def playlist_recommendations(id: str, fresh: Fresh = False, a: Acting = Depends(acting)):
+async def playlist_recommendations(id: str, fresh: Fresh = False, a: Acting = Depends(playlist_acting)):
     return envelope(await Y.playlist_recommendations(id, a, fresh))
 
 

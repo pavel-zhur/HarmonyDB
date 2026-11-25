@@ -521,6 +521,7 @@ class BlobInfo(Shape):
     bytes: int
     storedAt: datetime
     etag: str                         # the validator the file is served with (ETag, If-Range)
+    sha256: str                       # the SHA-256 of the content, hex
 
 
 class Purged(Shape):

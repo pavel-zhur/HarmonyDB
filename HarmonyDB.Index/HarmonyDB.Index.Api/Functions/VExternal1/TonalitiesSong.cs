@@ -59,7 +59,7 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
         var structures = await _structuresCache.Get();
         var headers = await _indexHeadersCache.Get();
 
-        var song = _ids.Songs.GetNumber(request.ExternalId);
+        var song = FindSong(_ids, request.ExternalId, structures.Songs, tonalities.Songs.Positions, headers.Songs);
         var structureSong = structures.GetSong(song);
         var songTonality = tonalities.Songs.Positions.TryGetPosition(song, out var value) ? value : throw new CacheItemNotFoundException();
         var header = headers.Get(headers.Songs.GetPosition(song));
@@ -101,4 +101,14 @@ public class TonalitiesSong : ServiceFunctionBase<SongRequest, SongResponse>
                 .ToList(),
         };
     }
+
+    /// <summary>
+    /// The song's number in the caches. A song the index has not analysed — an id it does not know, or one missing from
+    /// any of the collections the answer reads — is answered as not found, not as a failure.
+    /// </summary>
+    /// <exception cref="CacheItemNotFoundException">The index has not analysed the song.</exception>
+    public static int FindSong(IndexIds ids, string externalId, params IdPositions[] analysedIn)
+        => ids.Songs.TryGetNumber(externalId, out var song) && analysedIn.All(x => x.Contains(song))
+            ? song
+            : throw new CacheItemNotFoundException();
 }
