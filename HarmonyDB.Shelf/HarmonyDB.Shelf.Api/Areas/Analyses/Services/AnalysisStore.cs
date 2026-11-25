@@ -25,7 +25,7 @@ public sealed partial class AnalysisStore(ShelfDbContext db, AudioBlobsClient bl
     /// <summary>
     /// The prefix of the analyses' ids as a source's items.
     /// </summary>
-    public const string IdPrefix = "analysis-";
+    public const string IdPrefix = "ha-";
 
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{0,99}$")]
     private static partial Regex FileName();
