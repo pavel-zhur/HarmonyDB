@@ -129,7 +129,7 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
             .Where(x => (x.PlaylistId != null && playlists.Contains(x.PlaylistId.Value)) || (x.SongId != null && playlists.Contains(x.Song!.PlaylistId)))
             .ExecuteDeleteAsync(cancellationToken);
         await db.Jobs.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
-        await db.Analyses.Where(x => x.OwnerId == accountId).ExecuteDeleteAsync(cancellationToken);
+        await HarmonyDB.Shelf.Api.Areas.Analyses.Services.AnalysisStore.RemoveOwnedAsync(db, accountId, time.GetUtcNow(), cancellationToken);
     }
 
     /// <summary>
