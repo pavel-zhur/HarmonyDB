@@ -470,6 +470,9 @@ public static partial class ChordParser
         var degrees = new List<(byte degree, DegreeKind kind, ChordTypeAmbiguousAddition? alteration, bool separated)>();
         var pendingAdd = false;
         var afterSeparator = false;
+
+        // An altered ninth written with "add" ("addb9", "add#9"): added to a chord of the ninth or higher, it keeps the ninth.
+        var addedAlteredNinth = false;
         for (var i = 0; i < tokens.Count; i++)
         {
             var (token, fromParentheses, matchAmbiguity) = tokens[i];
@@ -563,6 +566,7 @@ public static partial class ChordParser
 
                 case { Addition: { } addition }:
                     additions |= addition;
+                    addedAlteredNinth |= addition is ChordTypeAdditions.Flat9 or ChordTypeAdditions.Sharp9 or ChordTypeAdditions.Flat2;
                     break;
 
                 default:
@@ -834,6 +838,15 @@ public static partial class ChordParser
             thirdWritten = false;
         }
 
+        if (sus && aug && !(minor || majorWord || dim || dim7 || halfDiminished))
+        {
+            // The suspension replaces the third, the augmented fifth stays: "Caugsus4" is C, F, G#.
+            logic |= ChordTypeParseLogic.AugmentedSuspension;
+            aug = false;
+            thirdWritten = false;
+            additions |= ChordTypeAdditions.Sharp5;
+        }
+
         if (sus && thirdWritten)
             return Fail(ChordParseError.IncompatibleQualities, 9);
 
@@ -937,6 +950,20 @@ public static partial class ChordParser
 
             foreach (var degree in extensionDegrees.Where(x => x > lowest))
                 additions |= AddedUpperDegree(degree);
+
+            if (lowest >= 9 && addedAlteredNinth)
+            {
+                logic |= ChordTypeParseLogic.AlteredNinthAddedToNinth;
+                additions |= ChordTypeAdditions.Add9;
+            }
+
+            if (lowest == 13)
+            {
+                logic |= ChordTypeParseLogic.Thirteenth;
+                if (options.ThirteenthMeaning == ThirteenthMeaning.WithEleventh
+                    && (additions & (ChordTypeAdditions.Flat11 | ChordTypeAdditions.Sharp11 | ChordTypeAdditions.Sharp4 | ChordTypeAdditions.No11)) == 0)
+                    additions |= ChordTypeAdditions.Add11;
+            }
         }
 
         #endregion

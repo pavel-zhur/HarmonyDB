@@ -70,7 +70,12 @@ public abstract class NodeCollectionBase : NodeBase
             if (child.AsNode() is NodeText nodeText)
             {
                 var split = nodeText.Text.Split('\n');
-                newChildren.AddRange(split.SelectMany((x, i) => i == 0 ? new NodeText(x).Once() : new NodeLine().Once().Cast<NodeBase>().Append(new NodeText(x))).Select(x => x.AsChild()));
+
+                // The text's time goes with its first words.
+                var timed = nodeText.Time.HasValue ? Array.FindIndex(split, x => !string.IsNullOrWhiteSpace(x)) : -1;
+                NodeText Part(string text, int i) => new(text) { Time = i == timed ? nodeText.Time : null };
+
+                newChildren.AddRange(split.SelectMany((x, i) => i == 0 ? Part(x, i).Once() : new NodeLine().Once().Cast<NodeBase>().Append(Part(x, i))).Select(x => x.AsChild()));
             }
             else
             {
@@ -145,7 +150,7 @@ public abstract class NodeCollectionBase : NodeBase
                     break;
                 }
             }
-            else if (child.AsNode() is NodeNote or NodeText)
+            else if (child.AsNode() is NodeNote or NodeText or NodeMark)
             {
                 myClone.Children.Add(child.AsNode().ShallowClone().AsChild());
                 completedCount++;

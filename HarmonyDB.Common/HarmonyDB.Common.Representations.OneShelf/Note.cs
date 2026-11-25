@@ -155,6 +155,12 @@ public record Note
         }
     }
 
+    /// <summary>
+    /// The note of this value written on the letter it has without these sharps (positive) or flats (negative): (8, 1) is E#, (5, -2) is Ebb.
+    /// </summary>
+    internal static string Written(byte value, int accidentals)
+        => $"{NotesToCharacters[Normalize(value - accidentals)]}{new string(accidentals > 0 ? SignsConstants.SignSharp : SignsConstants.SignFlat, Math.Abs(accidentals))}";
+
     public byte Tone(RepresentationSettings representationSettings)
     {
         var value = Value;

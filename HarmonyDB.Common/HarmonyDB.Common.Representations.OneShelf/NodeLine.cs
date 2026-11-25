@@ -18,7 +18,16 @@ public class NodeLine : NodeCollectionBase
             builder.Append("<div class='chords-double-line'>");
         }
 
-        builder.Append($"<span class='chords-line {(_isDouble ? "chords-double-line" : null)}'>");
+        // The line's time is the time of the first thing in it that has one.
+        var time = TraverseAll().Select(x => x.element switch
+        {
+            NodeText text => text.Time,
+            NodeChord chord => chord.Time,
+            NodeMark mark => mark.Time,
+            _ => null,
+        }).FirstOrDefault(x => x.HasValue);
+
+        builder.Append($"<span class='chords-line {(_isDouble ? "chords-double-line" : null)}'{(time.HasValue ? $" {TimeAttribute.Format(time.Value)}" : null)}>");
 
         traversalContext.SiblingChords = TraverseAll().Select(x => x.element).OfType<NodeChord>().ToList();
         base.AppendHtmlTo(builder, representationSettings, traversalContext);
@@ -66,6 +75,9 @@ public class NodeLine : NodeCollectionBase
 
         if (currentLineHasTextOutsideChords) return;
 
+        // A mark (a key, a tempo, a time signature) stands on a line of its own.
+        if (TraverseAll().Concat(next.TraverseAll()).Any(x => x.element is NodeMark)) return;
+
         var currentLineHasChords = TraverseAll().Any(x => x.element is NodeChord);
 
         if (!currentLineHasChords) return;
@@ -107,7 +119,7 @@ public class NodeLine : NodeCollectionBase
                         if (trimmedIndex == -1) throw new("Could not have happened.");
                         
                         position += (int)(trimmedIndex * fix);
-                        flies.Add((position, new NodeText(trimmed), trimmed.Length));
+                        flies.Add((position, new NodeText(trimmed) { Time = nodeText.Time }, trimmed.Length));
                         position += (int)((nodeText.Text.Length - trimmedIndex) * fix);
                     }
                     else
@@ -120,15 +132,15 @@ public class NodeLine : NodeCollectionBase
                     var length = nodeChord.TraverseAll().Sum(x => x.element switch
                     {
                         NodeText text => text.Text.Length,
-                        NodeNote note => note.Note.Length(),
+                        NodeNote note => note.Length(),
                         _ => 0
                     });
                     var estimatedLength = nodeChord.TraverseAll().Sum(x => x.element switch
                     {
                         NodeText text => text.Text.Length,
-                        NodeNote note => (int)(note.Note.EstimatedLength(representationSettings) / fix) + (representationSettings.IsVariableWidth ? 2 : 0),
+                        NodeNote note => (int)(note.EstimatedLength(representationSettings) / fix) + (representationSettings.IsVariableWidth ? 2 : 0),
                         _ => 0
-                    });
+                    }) + (nodeChord.DegreeRepresentation(representationSettings)?.Length ?? 0);
                     flies.Add((position, nodeChord, estimatedLength));
                     position += length;
                     break;
@@ -190,8 +202,9 @@ public class NodeLine : NodeCollectionBase
                 var currentTextIndex = parent.Children.IndexOf(currentText.AsChild());
                 var part1 = currentText.Text.Substring(0, position2Relative);
                 var part2 = currentText.Text.Substring(position2Relative);
-                parent.Children[currentTextIndex] = new NodeText(part1).AsChild();
-                currentText = new(part2);
+                // The text's time stays with its beginning.
+                parent.Children[currentTextIndex] = new NodeText(part1) { Time = part1.Length > 0 ? currentText.Time : null }.AsChild();
+                currentText = new(part2) { Time = part1.Length > 0 ? null : currentText.Time };
                 currentPosition += part1.Length;
                 parent.Children.InsertRange(currentTextIndex + 1,
                     new NodeHtml

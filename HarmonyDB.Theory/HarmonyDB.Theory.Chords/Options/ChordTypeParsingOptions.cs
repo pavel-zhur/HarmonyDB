@@ -69,5 +69,7 @@ public class ChordTypeParsingOptions
 
     public DimWithoutSeventhMeaning DimWithoutSeventhMeaning { get; set; } = DimWithoutSeventhMeaning.Triad;
 
+    public ThirteenthMeaning ThirteenthMeaning { get; set; } = ThirteenthMeaning.WithoutEleventh;
+
     internal ChordTypeParsingOptions Clone() => (ChordTypeParsingOptions)MemberwiseClone();
 }

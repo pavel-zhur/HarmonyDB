@@ -193,6 +193,55 @@ public class ChordInterpretationTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(expected, string.Join(" ", result.Chord!.ChordType.GetIntervals()));
     }
 
+    /// <summary>
+    /// Suspensions with the augmented fifth, the ninth beside an altered ninth, double sharps and flats; read with the default options.
+    /// </summary>
+    public static readonly TheoryData<string, string, string> MoreChordsData = new()
+    {
+        { "Caugsus4", "0 5 8", "Csus4(#5)" },
+        { "Caugsus2", "0 2 8", "Csus2(#5)" },
+        { "Caugsus2add13", "0 2 8 9", "C6sus2(#5)" },
+        { "C7b9add9", "0 1 2 4 7 10", "C7add9b9" },
+        { "C7#9add2", "0 2 3 4 7 10", "C7add9#9" },
+        { "C9addb9", "0 1 2 4 7 10", "C7add9b9" },
+        { "Cmaj9sus4addb9", "0 1 2 5 7 11", "Cmaj7sus4add9b9" },
+        { "C13add#9", "0 2 3 4 7 9 10", "C13add9#9" },
+        { "C7b9sus2add11", "0 1 2 5 7 10", "C7sus4add9b9" },
+        { "C7b9", "0 1 4 7 10", "C7b9" },
+        { "E#m", "0 3 7", "Fm" },
+        { "Fbmaj7", "0 4 7 11", "Emaj7" },
+        { "C##dim", "0 3 6", "Ddim" },
+        { "D#/F##", "0 4 7", "Eb/G" },
+        { "Bbb7", "0 4 7 10", "A7" },
+    };
+
+    [Theory]
+    [MemberData(nameof(MoreChordsData))]
+    public void MoreChords(string input, string intervals, string canonical)
+    {
+        var result = ChordParser.Parse(input);
+        Assert.Equal(ChordParseResultType.Success, result.Type);
+        Assert.Equal(intervals, string.Join(" ", result.Chord!.ChordType.GetIntervals()));
+        Assert.Equal(canonical, result.Chord.ToCanonical());
+        Assert.Equal(result.Chord.ChordType, ChordParser.Parse(canonical).Chord!.ChordType);
+    }
+
+    [Theory]
+    [InlineData("C13", ThirteenthMeaning.WithoutEleventh, "0 2 4 7 9 10", "C13")]
+    [InlineData("C13", ThirteenthMeaning.WithEleventh, "0 2 4 5 7 9 10", "C13add11")]
+    [InlineData("Cm13", ThirteenthMeaning.WithEleventh, "0 2 3 5 7 9 10", "Cm13add11")]
+    [InlineData("Cmaj13", ThirteenthMeaning.WithEleventh, "0 2 4 5 7 9 11", "Cmaj13add11")]
+    [InlineData("C13#11", ThirteenthMeaning.WithEleventh, "0 2 4 6 7 9 10", "C13#11")]
+    [InlineData("C13sus4", ThirteenthMeaning.WithEleventh, "0 2 5 7 9 10", "C13sus4")]
+    [InlineData("C7/13", ThirteenthMeaning.WithEleventh, "0 4 7 9 10", "C7add13")]
+    public void Thirteenths(string input, ThirteenthMeaning meaning, string intervals, string canonical)
+    {
+        var result = ChordParser.Parse(input, new() { ChordTypeParsingOptions = new() { ThirteenthMeaning = meaning } });
+        Assert.Equal(intervals, string.Join(" ", result.Chord!.ChordType.GetIntervals()));
+        Assert.Equal(canonical, result.Chord.ToCanonical());
+        Assert.Equal(input != "C7/13", result.Trace.ChordTypeParseLogic!.Value.HasFlag(ChordTypeParseLogic.Thirteenth));
+    }
+
     [Fact]
     public void Notes()
     {

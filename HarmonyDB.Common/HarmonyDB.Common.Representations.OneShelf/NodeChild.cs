@@ -27,6 +27,9 @@ public record NodeChild
             case NodeText nodeText:
                 NodeText = nodeText;
                 break;
+            case NodeMark nodeMark:
+                NodeMark = nodeMark;
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(node));
         }
@@ -47,5 +50,8 @@ public record NodeChild
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public NodeLine? NodeLine { get; init; }
 
-    public NodeBase AsNode() => NodeChord ?? NodeText ?? NodeNote ?? NodeHtml ?? (NodeBase)NodeLine!;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NodeMark? NodeMark { get; init; }
+
+    public NodeBase AsNode() => NodeChord ?? NodeText ?? NodeNote ?? NodeHtml ?? NodeLine ?? (NodeBase)NodeMark!;
 }

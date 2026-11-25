@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -12,11 +13,31 @@ public class NodeText : NodeBase
     }
 
     public string Text { get; }
-    
+
+    /// <summary>
+    /// When the text (a word, the beginning of a line) is heard, in seconds from the start, when known.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? Time { get; init; }
+
     internal override void AppendHtmlTo(StringBuilder builder, RepresentationSettings representationSettings,
         TraversalContext traversalContext)
     {
-        builder.Append(traversalContext.IsInsideChord ? Beautify(Text) : HttpUtility.HtmlEncode(Text));
+        if (traversalContext.IsInsideChord)
+        {
+            builder.Append(representationSettings.ChordSuperscripts ? Beautify(Text) : HttpUtility.HtmlEncode(Text));
+            return;
+        }
+
+        if (Time.HasValue)
+        {
+            builder.Append($"<span {TimeAttribute.Format(Time.Value)}>");
+            builder.Append(HttpUtility.HtmlEncode(Text));
+            builder.Append("</span>");
+            return;
+        }
+
+        builder.Append(HttpUtility.HtmlEncode(Text));
     }
 
     private string Beautify(string text) =>
@@ -66,5 +87,5 @@ public class NodeText : NodeBase
         }
     }
 
-    public override NodeBase ShallowClone() => new NodeText(Text);
+    public override NodeBase ShallowClone() => new NodeText(Text) { Time = Time };
 }

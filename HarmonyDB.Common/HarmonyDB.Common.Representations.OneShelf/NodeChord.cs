@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Web;
 using OneShelf.Common;
@@ -7,6 +8,35 @@ namespace HarmonyDB.Common.Representations.OneShelf;
 
 public class NodeChord : NodeCollectionBase
 {
+    /// <summary>
+    /// The chord's degree in the key where it stands, when the key is known: a Roman numeral (I to VII) after its sharps or flats, as the root's letter
+    /// stands against the key's scale: "V", "bVII", "#IV". It does not change when the sheet is transposed.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Degree { get; init; }
+
+    /// <summary>
+    /// The degree of the chord's bass, written the same way, when the chord has a bass other than its root and the key is known.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BassDegree { get; init; }
+
+    /// <summary>
+    /// When the chord begins, in seconds from the start, when known.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? Time { get; init; }
+
+    /// <summary>
+    /// The degree as it is shown, when it is: "VI", "I/V"; the bass's degree goes away with the bass (<see cref="SimplificationMode.RemoveBass"/>).
+    /// </summary>
+    internal string? DegreeRepresentation(RepresentationSettings representationSettings)
+        => !representationSettings.ShowDegrees || Degree == null
+            ? null
+            : BassDegree != null && !representationSettings.Simplification.HasFlag(SimplificationMode.RemoveBass)
+                ? $"{Degree}/{BassDegree}"
+                : Degree;
+
     internal override void AppendHtmlTo(StringBuilder builder, RepresentationSettings representationSettings,
         TraversalContext traversalContext)
     {
@@ -26,11 +56,26 @@ public class NodeChord : NodeCollectionBase
 
         AppendHtmlAttributeTo(builder, representationSettings);
 
-        builder.Append("'>");
+        builder.Append('\'');
+
+        if (Time.HasValue)
+        {
+            builder.Append(' ');
+            builder.Append(TimeAttribute.Format(Time.Value));
+        }
+
+        builder.Append('>');
 
         traversalContext.IsInsideChord = true;
         base.AppendHtmlTo(builder, representationSettings, traversalContext);
         traversalContext.IsInsideChord = false;
+
+        if (DegreeRepresentation(representationSettings) is { } degree)
+        {
+            builder.Append("<sup class='chord-degree'>");
+            builder.Append(HttpUtility.HtmlEncode(degree));
+            builder.Append("</sup>");
+        }
 
         builder.Append("</b>");
     }
@@ -164,30 +209,33 @@ public class NodeChord : NodeCollectionBase
 
             if (part == string.Empty) continue;
 
-            if (!Note.CharactersToNotes.TryGetValue(part[0], out var start))
+            if (!Note.CharactersToNotes.TryGetValue(part[0], out var natural))
             {
                 newChildren.Add(new NodeText(part).AsChild());
                 continue;
             }
 
-            var modified = false;
-            if (part.Length > 1 && part[1] == '#')
-            {
-                start = start.Sharp();
-                modified = true;
-            }
+            // The letter, then its sharps or its flats: C#, Bb, E#; written double, both (F##m, Bbb7), unless the last sign alters
+            // the degree after it (Bbb5 is Bb with b5, F##9 is F# with #9). The double is read from the text as written, the
+            // simplification does not touch it; one sign is taken from the simplified text, as it always was
+            // ("A#7#5" without the seventh is "A##5": A# and #5).
+            var writtenLength = WrittenNoteLength(partOriginal);
+            var length = writtenLength > 2 && part.StartsWith(partOriginal[..writtenLength])
+                ? writtenLength
+                : part.Length > 1 && part[1] is '#' or 'b' ? 2 : 1;
 
-            if (part.Length > 1 && part[1] == 'b')
+            var accidentals = part.Length > 1 && part[1] == '#' ? length - 1 : 1 - length;
+            newChildren.Add(new NodeNote(natural.Add(accidentals) with
             {
-                start = start.Flat();
-                modified = true;
-            }
-
-            newChildren.Add(new NodeNote(start).AsChild());
-
-            if (part.Length > (modified ? 2 : 1))
+                Alteration = accidentals > 0 ? NoteAlteration.Sharp : accidentals < 0 ? NoteAlteration.Flat : null,
+            })
             {
-                newChildren.Add(new NodeText(part.Substring(modified ? 2 : 1)).AsChild());
+                Accidentals = accidentals,
+            }.AsChild());
+
+            if (part.Length > length)
+            {
+                newChildren.Add(new NodeText(part.Substring(length)).AsChild());
             }
         }
 
@@ -199,6 +247,26 @@ public class NodeChord : NodeCollectionBase
             parent.Children.Insert(myIndex + 1, new NodeText(postfix).AsChild());
         }
     }
+
+    /// <summary>
+    /// The length of the note at the beginning of the text: its letter and the sharps or the flats after it,
+    /// but for the last of two or more signs when it alters the degree after it (5, 9, 11, 13): "Bbb5" is Bb and b5.
+    /// </summary>
+    private static int WrittenNoteLength(string text)
+    {
+        var length = 1;
+        if (text.Length > 1 && text[1] is '#' or 'b')
+        {
+            while (length < text.Length && text[length] == text[1]) length++;
+        }
+
+        if (length > 2 && AlteredDegree.IsMatch(text[length..]))
+            length--;
+
+        return length;
+    }
+
+    private static readonly Regex AlteredDegree = new("^(5|9|11|13)", RegexOptions.Compiled);
 
     private static string Simplify(string part, SimplificationMode simplificationMode)
     {
@@ -321,5 +389,10 @@ public class NodeChord : NodeCollectionBase
         return part;
     }
 
-    public override NodeBase ShallowClone() => new NodeChord();
+    public override NodeBase ShallowClone() => new NodeChord
+    {
+        Degree = Degree,
+        BassDegree = BassDegree,
+        Time = Time,
+    };
 }

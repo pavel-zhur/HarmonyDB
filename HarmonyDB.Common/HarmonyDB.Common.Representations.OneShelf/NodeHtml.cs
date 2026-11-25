@@ -12,6 +12,13 @@ public class NodeHtml : NodeCollectionBase
 
     public string? Classes { get; init; }
 
+    /// <summary>
+    /// On the sheet's root: the song's keys, when known, in the order they come (the first is the key the song begins in).
+    /// The places where the key changes are marks in the text (<see cref="NodeMark"/>).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<SheetKey>? Keys { get; init; }
+
     [JsonIgnore]
     public bool IsBlock { get; set; }
 
@@ -61,6 +68,11 @@ public class NodeHtml : NodeCollectionBase
 
         foreach (var line in final.Children.Select(c => c.NodeLine!))
         {
+            // A line of marks alone is not in the text form.
+            if (line.TraverseAll().Any(x => x.element is NodeMark)
+                && line.TraverseAll().Skip(1).All(x => x.element is NodeMark || x.element is NodeText text && string.IsNullOrWhiteSpace(text.Text)))
+                continue;
+
             var owesWhitespace = false;
             if (line.TraverseAll().Skip(1).All(x =>
                     x.element is NodeText text && (string.IsNullOrWhiteSpace(text.Text) || x.parentsReverse.Any(x => x is NodeChord))
@@ -167,7 +179,14 @@ public class NodeHtml : NodeCollectionBase
     {
         Name = Name,
         Classes = Classes,
+        Keys = Keys,
     };
+
+    /// <summary>
+    /// The song's keys as the sheet is shown: transposed with it, named as its chords are (<see cref="SheetKey.Shown"/>).
+    /// </summary>
+    public IReadOnlyList<SheetKey>? GetKeys(RepresentationSettings representationSettings)
+        => Keys?.Select(x => x.Shown(representationSettings)).ToList();
 
     public int? GetChordsCount()
     {
@@ -183,13 +202,19 @@ public class NodeHtml : NodeCollectionBase
     {
         foreach (var nodeCollectionBase in TraverseAll().Select(x => x.element).OfType<NodeCollectionBase>().ToList())
         {
-            var newChildren = nodeCollectionBase.Children.ToChunks(x => x.NodeText != null)
-                .SelectMany(c =>
-                    !c.criterium
-                        ? c.chunk
-                        : new NodeText(string.Join(string.Empty, c.chunk.Select(x => x.NodeText!.Text))).AsChild()
-                            .Once())
-                .ToList();
+            // The neighbouring texts are joined, unless the later one has its own time (a word heard at its time).
+            var newChildren = new List<NodeChild>();
+            foreach (var child in nodeCollectionBase.Children)
+            {
+                if (child.NodeText is { Time: null } text && newChildren.Count > 0 && newChildren[^1].NodeText is { } previous)
+                {
+                    newChildren[^1] = new NodeText(previous.Text + text.Text) { Time = previous.Time }.AsChild();
+                }
+                else
+                {
+                    newChildren.Add(child);
+                }
+            }
 
             if (newChildren.Count != nodeCollectionBase.Children.Count)
             {

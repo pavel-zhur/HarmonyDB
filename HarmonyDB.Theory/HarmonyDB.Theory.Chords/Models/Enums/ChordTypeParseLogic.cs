@@ -127,4 +127,19 @@ public enum ChordTypeParseLogic
     /// An altered fifth beside the power chord was added to it: "A5#5" is A, E, F.
     /// </summary>
     AlteredFifthAddedToPower = 1 << 23,
+
+    /// <summary>
+    /// A thirteenth chord was read according to <see cref="Options.ThirteenthMeaning"/>: "C13".
+    /// </summary>
+    Thirteenth = 1 << 24,
+
+    /// <summary>
+    /// An altered ninth added to a chord of the ninth or higher kept the ninth: "C9addb9" is C, E, G, Bb, D, Db.
+    /// </summary>
+    AlteredNinthAddedToNinth = 1 << 25,
+
+    /// <summary>
+    /// The augmented fifth beside a suspension was read as the suspended chord with the raised fifth: "Caugsus4" is C, F, G#.
+    /// </summary>
+    AugmentedSuspension = 1 << 26,
 }

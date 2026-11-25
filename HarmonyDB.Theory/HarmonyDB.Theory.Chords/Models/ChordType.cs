@@ -174,7 +174,10 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
             Replace(ChordTypeAdditions.Add6, ChordTypeAdditions.Add13);
             Replace(ChordTypeAdditions.Flat6, ChordTypeAdditions.Flat13);
 
-            if (degree == 7 && Take(ChordTypeAdditions.Add9))
+            // The ninth beside an altered ninth is added, not merged into the extension: C7(b9,9) keeps both.
+            var alteredNinth = (additions & (ChordTypeAdditions.Flat9 | ChordTypeAdditions.Sharp9)) != 0;
+
+            if (degree == 7 && !alteredNinth && Take(ChordTypeAdditions.Add9))
                 degree = 9;
 
             if (degree == 9 && additions.HasFlag(ChordTypeAdditions.Add13))
@@ -202,7 +205,7 @@ public record ChordType(ChordMainType Type, ChordTypeExtension? Extension, Chord
             if (degree == 9 && (additions & (ChordTypeAdditions.Flat9 | ChordTypeAdditions.Sharp9)) != 0)
                 degree = 7;
 
-            if (degree >= 9)
+            if (degree >= 9 && !alteredNinth)
                 Take(ChordTypeAdditions.Add9);
 
             if (degree == 11)
