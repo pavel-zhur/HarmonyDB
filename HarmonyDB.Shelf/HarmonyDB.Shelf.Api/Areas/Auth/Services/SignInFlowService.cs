@@ -176,10 +176,18 @@ public sealed class SignInFlowService(
         var returnPath = flow.ReturnPath ?? "/";
         context.Response.Cookies.Delete(cookies.FlowName, cookies.Expired(true));
 
+        if (identity.ExistingAccountId is { } existing)
+            return await SignInAsExistingAsync(context, flow, existing, cancellationToken);
+
         var login = await db.AccountLogins.Include(x => x.Account)
             .SingleOrDefaultAsync(x => x.Provider == flow.Provider && x.Subject == identity.Subject, cancellationToken);
         if (login != null)
-            Refresh(login, identity, now);
+        {
+            // The account takes its name and picture only from the sign-in it was made with.
+            var original = await db.AccountLogins.Where(x => x.AccountId == login.AccountId)
+                .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Select(x => x.Id).FirstAsync(cancellationToken);
+            Refresh(login, identity, now, renamesAccount: login.Id == original);
+        }
 
         if (flow.Purpose == SignInFlowPurpose.SignIn)
         {
@@ -269,15 +277,35 @@ public sealed class SignInFlowService(
     /// <summary>
     /// What the provider tells now; the account's name and picture follow the provider signed in with last.
     /// </summary>
-    private static void Refresh(AccountLogin login, SignInIdentity identity, DateTimeOffset now)
+    private static void Refresh(AccountLogin login, SignInIdentity identity, DateTimeOffset now, bool renamesAccount)
     {
         login.DisplayName = identity.DisplayName;
         login.Username = identity.Username;
         login.Email = identity.Email;
         login.PictureUrl = identity.PictureUrl;
         login.LastSignInAt = now;
-        login.Account.DisplayName = identity.DisplayName;
-        login.Account.PictureUrl = identity.PictureUrl;
+        if (renamesAccount)
+        {
+            login.Account.DisplayName = identity.DisplayName;
+            login.Account.PictureUrl = identity.PictureUrl;
+        }
+    }
+
+    /// <summary>
+    /// The dev provider's sign-in as an existing account: the session only; nothing in the account changes and no
+    /// sign-in is added to it.
+    /// </summary>
+    private async Task<SignInResult> SignInAsExistingAsync(HttpContext context, SignInFlow flow, Guid accountId, CancellationToken cancellationToken)
+    {
+        if (flow.Purpose != SignInFlowPurpose.SignIn)
+            throw SignInProviderException.Invalid("An existing account is signed in as, not linked.");
+        if (!await db.Accounts.AnyAsync(x => x.Id == accountId && x.DeletedAt == null, cancellationToken))
+            throw SignInProviderException.Invalid("No such account.");
+
+        db.SignInFlows.Remove(flow);
+        await db.SaveChangesAsync(cancellationToken);
+        await sessions.SignInAsync(context, accountId, cancellationToken);
+        return new() { Outcome = SignInOutcome.SignedIn, Provider = flow.Provider, ReturnPath = flow.ReturnPath ?? "/" };
     }
 
     private async Task<MergeCandidate> DescribeAsync(Guid accountId, CancellationToken cancellationToken)

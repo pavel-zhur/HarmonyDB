@@ -1,5 +1,6 @@
 using System.Net;
 using HarmonyDB.Common.ServiceAuth;
+using HarmonyDB.Shelf.Api.Areas.Auth.Services.Providers;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Model.App;
 using HarmonyDB.Shelf.Model.Auth;
@@ -27,6 +28,11 @@ public sealed class GateTests
             await browser.SendAsync(HttpMethod.Post, "/api/auth/flows", new StartSignInRequest { Provider = "dev" }),
             HttpStatusCode.NotFound,
             AuthErrorCodes.UnknownProvider);
+
+        // No dev flow can start, so neither a test account's name nor an existing account's id signs anyone in; the
+        // provider itself is off there, switch or not.
+        var provider = production.Services.CreateScope().ServiceProvider.GetServices<ISignInProvider>().Single(x => x.Name == "dev");
+        Assert.False(provider.IsEnabled);
     }
 
     /// <summary>

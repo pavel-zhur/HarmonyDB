@@ -35,10 +35,10 @@ public record SignInStart
     public required string State { get; init; }
 
     /// <summary>
-    /// For the providers that sign in on their own site (google, yandex): the address to send the browser to. It comes
+    /// For the providers that sign in on their own site (telegram, google, yandex): the address to send the browser to. It comes
     /// back to the app at the return path with <c>auth</c> (a <see cref="SignInOutcome"/> or an error code) and
-    /// <c>auth_flow</c> (the state) in the query. Null for the providers answered in the app (telegram's widget, dev):
-    /// their answer is posted to <c>/api/auth/flows/{state}/complete</c>.
+    /// <c>auth_flow</c> (the state) in the query. Null for the provider answered in the app (dev):
+    /// its answer is posted to <c>/api/auth/flows/{state}/complete</c>.
     /// </summary>
     public string? RedirectUrl { get; init; }
 }
@@ -49,8 +49,7 @@ public record SignInStart
 public record CompleteSignInRequest
 {
     /// <summary>
-    /// telegram: every field the widget gave (id, first_name, last_name, username, photo_url, auth_date, hash), as
-    /// text; dev: <c>name</c>, the test account's name.
+    /// dev: <c>name</c>, a test account's name, or <c>accountId</c>, an existing account to sign in as.
     /// </summary>
     public required IReadOnlyDictionary<string, string> Answer { get; init; }
 }

@@ -60,7 +60,16 @@ public sealed class Browser(HttpClient client)
     /// <summary>
     /// Signs in (or links, when <paramref name="purpose"/> says) with the dev provider as the named test account.
     /// </summary>
-    public async Task<SignInResult> DevAsync(string name, SignInPurpose purpose = SignInPurpose.SignIn)
+    public Task<SignInResult> DevAsync(string name, SignInPurpose purpose = SignInPurpose.SignIn)
+        => DevAnswerAsync(new Dictionary<string, string> { ["name"] = name }, purpose);
+
+    /// <summary>
+    /// Signs in with the dev provider as an existing account.
+    /// </summary>
+    public Task<SignInResult> DevAsAccountAsync(Guid accountId)
+        => DevAnswerAsync(new Dictionary<string, string> { ["accountId"] = accountId.ToString() }, SignInPurpose.SignIn);
+
+    private async Task<SignInResult> DevAnswerAsync(Dictionary<string, string> answer, SignInPurpose purpose)
     {
         if (CsrfToken == null)
             await SendAsync(HttpMethod.Get, "/api/app/configuration");
@@ -69,7 +78,7 @@ public sealed class Browser(HttpClient client)
         Assert.Equal(HttpStatusCode.OK, start.StatusCode);
         var state = (await start.Content.ReadFromJsonAsync<SignInStart>(Json))!.State;
 
-        var complete = await SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/complete", new CompleteSignInRequest { Answer = new Dictionary<string, string> { ["name"] = name } });
+        var complete = await SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/complete", new CompleteSignInRequest { Answer = answer });
         Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
         return (await complete.Content.ReadFromJsonAsync<SignInResult>(Json))!;
     }

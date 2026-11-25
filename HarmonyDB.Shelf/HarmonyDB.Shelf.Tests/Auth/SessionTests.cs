@@ -151,6 +151,40 @@ public sealed class SessionTests(ShelfDatabaseFixture database) : IClassFixture<
     }
 
     [DatabaseFact]
+    public async Task OnlyTheSignInTheAccountWasMadeWithRenamesIt()
+    {
+        var browser = database.Api.NewBrowser();
+        await browser.DevAsync("rename-original");
+        await browser.DevAsync("rename-second", SignInPurpose.Link);
+
+        await using var db = database.CreateContext();
+        var accountId = (await db.AccountLogins.SingleAsync(x => x.Subject == "rename-original")).AccountId;
+        await db.Accounts.Where(x => x.Id == accountId).ExecuteUpdateAsync(x => x.SetProperty(a => a.DisplayName, "A Person"));
+
+        await database.Api.NewBrowser().DevAsync("rename-second");
+        Assert.Equal("A Person", (await db.Accounts.SingleAsync(x => x.Id == accountId)).DisplayName);
+
+        await database.Api.NewBrowser().DevAsync("rename-original");
+        Assert.Equal("rename-original", (await db.Accounts.AsNoTracking().SingleAsync(x => x.Id == accountId)).DisplayName);
+    }
+
+    [DatabaseFact]
+    public async Task TheDevSignInAsAnExistingAccountChangesNothing()
+    {
+        await database.Api.NewBrowser().DevAsync("existing-person");
+        await using var db = database.CreateContext();
+        var accountId = (await db.AccountLogins.SingleAsync(x => x.Subject == "existing-person")).AccountId;
+        await db.Accounts.Where(x => x.Id == accountId).ExecuteUpdateAsync(x => x.SetProperty(a => a.DisplayName, "Imported Person"));
+
+        var browser = database.Api.NewBrowser();
+        Assert.Equal(SignInOutcome.SignedIn, (await browser.DevAsAccountAsync(accountId)).Outcome);
+        var profile = await browser.GetAsync<Profile>("/api/me");
+        Assert.Equal(accountId, profile.Id);
+        Assert.Equal("Imported Person", profile.DisplayName);
+        Assert.Equal(1, await db.AccountLogins.CountAsync(x => x.AccountId == accountId));
+    }
+
+    [DatabaseFact]
     public async Task ChangingSignInsNeedsARecentSignIn()
     {
         var browser = database.Api.NewBrowser();

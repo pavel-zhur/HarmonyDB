@@ -47,6 +47,14 @@ public sealed record SignInIdentity(string Subject, string DisplayName)
     public string? Email { get; init; }
 
     public string? PictureUrl { get; init; }
+
+    /// <summary>
+    /// Set by the dev provider alone: sign in as this existing account, with no identity of a provider (the session
+    /// only; nothing in the account changes, no sign-in is added).
+    /// </summary>
+    public Guid? ExistingAccountId { get; private init; }
+
+    public static SignInIdentity ExistingAccount(Guid accountId) => new(string.Empty, string.Empty) { ExistingAccountId = accountId };
 }
 
 /// <summary>
