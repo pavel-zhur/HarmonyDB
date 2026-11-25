@@ -16,16 +16,16 @@ import { player, useClock, type PlayerSource } from './controller';
 
 type SongPath = { playlistId: string; songId: string; share?: string | null };
 
-export function SongPlayerBody({ song, analysisId }: { song: SongPath | null; analysisId: string | null }) {
-    return analysisId ? <AnalysisPlayer chordsId={analysisId} /> : song ? <RecordingPlayer song={song} /> : null;
+export function SongPlayerBody({ song, analysisId, analysisShare }: { song: SongPath | null; analysisId: string | null; analysisShare?: string | null }) {
+    return analysisId ? <AnalysisPlayer chordsId={analysisId} share={analysisShare ?? null} /> : song ? <RecordingPlayer song={song} /> : null;
 }
 
-function AnalysisPlayer({ chordsId }: { chordsId: string }) {
+function AnalysisPlayer({ chordsId, share }: { chordsId: string; share: string | null }) {
     const { t } = useTranslation();
-    const { analysis, piece } = useAnalysisPiece(chordsId);
+    const { analysis, piece } = useAnalysisPiece(chordsId, share);
     const header = analysis.data?.header;
     const source: PlayerSource | null = header && analysis.data?.content?.recording
-        ? { kind: 'analysis', chordsId, title: header.title ?? '', subtitle: [header.artists.join(', '), t('player.analysisRecording')].filter(Boolean).join(' · ') }
+        ? { kind: 'analysis', chordsId, share, title: header.title ?? '', subtitle: [header.artists.join(', '), t('player.analysisRecording')].filter(Boolean).join(' · ') }
         : null;
 
     const shown = useRef(-2);

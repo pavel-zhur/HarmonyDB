@@ -91,7 +91,8 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     const chords = useMemo(() => (sheet ? sheet.asChords(base) : []), [sheet, base]);
     const progression = useMemo(() => (sheet && (tool === 'loops' || tool === 'similar') ? progressionOf(chords) : null), [sheet, tool, chords]);
     const loops = useMemo(() => (progression && tool === 'loops' ? loopsOf(progression) : []), [progression, tool]);
-    const hasDegrees = useMemo(() => !!sheet?.traverseAllChords().some(x => x.degree !== null), [sheet]);
+    // without a text with chords (a piece without words) an analysis's views still show the degrees
+    const hasDegrees = useMemo(() => (sheet ? sheet.traverseAllChords().some(x => x.degree !== null) : timed), [sheet, timed]);
 
     const attributes = tool === 'loops' && loop && progression ? loopAttributes(progression, loop)
         : tool === 'similar' ? (found?.attributes ?? (from !== null ? firstAttribute(from) : null)) : null;
@@ -168,6 +169,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
             </div>
             <AddPop anchor={addAnchor} onClose={() => setAddAnchor(null)} chordsId={chordsId} />
             <SharePop anchor={shareAnchor} onClose={() => setShareAnchor(null)} title={place.page?.song.title ?? header?.title ?? ''}
+                chords={{ id: chordsId, sourceUri: header?.source.uri ?? null }}
                 target={place.page ? { kind: 'song', playlistId: place.page.song.playlistId, songId: place.page.song.id, share: place.share ?? null } : { kind: 'chords', chords: chordsId }} />
 
             {state === 'notOpen' && <p className="vstate">{t('song.chords.notOpen')}</p>}
@@ -187,9 +189,14 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                                 <ToolButton on={alteration === NoteAlteration.Flat} label={t('song.tools.flat')} onClick={() => setAlteration(alteration === NoteAlteration.Flat ? null : NoteAlteration.Flat)}><Icon name="flat" /></ToolButton>
                                 <ToolButton on={alteration === NoteAlteration.Sharp} label={t('song.tools.sharp')} onClick={() => setAlteration(alteration === NoteAlteration.Sharp ? null : NoteAlteration.Sharp)}><Icon name="sharp" /></ToolButton>
                                 <Simpler value={simplification} onChange={setSimplification} />
-                                <ToolButton on={tool === 'circle'} label={t('song.tools.circle')} onClick={() => toggleTool('circle')}><Icon name="circ" /></ToolButton>
-                                <ToolButton on={tool === 'loops'} label={t('song.tools.loops')} onClick={() => toggleTool('loops')}><Icon name="loop" /></ToolButton>
-                                <ToolButton on={tool === 'similar'} label={t('song.tools.similar')} onClick={() => toggleTool('similar')}><Icon name="simil" /></ToolButton>
+                                {/* these act on the text with chords: a piece without one has nothing for them */}
+                                {sheet && (
+                                    <>
+                                        <ToolButton on={tool === 'circle'} label={t('song.tools.circle')} onClick={() => toggleTool('circle')}><Icon name="circ" /></ToolButton>
+                                        <ToolButton on={tool === 'loops'} label={t('song.tools.loops')} onClick={() => toggleTool('loops')}><Icon name="loop" /></ToolButton>
+                                        <ToolButton on={tool === 'similar'} label={t('song.tools.similar')} onClick={() => toggleTool('similar')}><Icon name="simil" /></ToolButton>
+                                    </>
+                                )}
                                 {hasDegrees && <ToolButton on={degrees} label={t('song.tools.degrees')} onClick={() => setDegrees(!degrees)}><Glyph kind="degrees" /></ToolButton>}
                                 <ToolButton on={superscripts} label={t('song.tools.superscripts')} onClick={() => setSuperscripts(!superscripts)}><Glyph kind="superscripts" /></ToolButton>
                             </div>
@@ -232,15 +239,16 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 </div>
             )}
 
-            {state === 'open' && sheet && (
-                // the other views of an analysis name the chords as the sheet does (chords/view.tsx)
+            {state === 'open' && answer && (timed || sheet) && (
+                // the other views of an analysis name the chords as the sheet does (chords/view.tsx); an analysis
+                // shows its views whether or not it has a text with chords (a piece without words has none)
                 <ChordsViewProvider value={representation}>
                     {timed
-                        ? <AnalysisViews chordsId={chordsId} sheet={<div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>} />
-                        : <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
+                        ? <AnalysisViews chordsId={chordsId} sheet={sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>} />
+                        : sheet && <div className="sheetbox"><ChordSheet sheet={sheet} settings={representation} onChord={pickChord} /></div>}
                 </ChordsViewProvider>
             )}
-            {state === 'open' && answer && !sheet && <p className="vstate muted">{t('song.chords.noSheet')}</p>}
+            {state === 'open' && answer && !timed && !sheet && <p className="vstate muted">{t('song.chords.noSheet')}</p>}
             <FingeringWindow />
         </section>
     );

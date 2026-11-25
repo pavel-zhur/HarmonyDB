@@ -2,7 +2,7 @@
 // action of its own. Callable from anywhere, also outside React:
 //
 //   toast(t('playlist.saved'), { undo: () => … })
-//   toast(t('pwa.updated'), { action: { label: t('pwa.reload'), run: () => location.reload() }, stays: true })
+//   toast(text, { action: { label, run }, stays: true })
 
 import { useSyncExternalStore } from 'react';
 

@@ -4,11 +4,13 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
 import { playlistTitle } from '../../data/playlists';
-import { useSession } from '../../data/session';
-import { addToPlaylist, removeVariant, useChordsPlaces, setMainVariant, shareLink, unlinkVariant, useOwnChords, type ChordsVariant, type SongPage } from '../../data/song';
+import { useConfiguration, useSession } from '../../data/session';
+import { toast } from '../../app/toasts';
+import { addToPlaylist, makeStaticLink, removeStaticLink, removeVariant, useChordsPlaces, useStaticLink, setMainVariant, shareLink, unlinkVariant, useOwnChords, type ChordsVariant, type SongPage } from '../../data/song';
 import { offerSignIn } from '../../data/signInOffer';
 import { Soon } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
@@ -21,7 +23,11 @@ import { useWide } from '../../app/layout';
 export type ShareTarget = { kind: 'song'; playlistId: string; songId: string; share: string | null } | { kind: 'chords'; chords: string };
 
 /** The link to the song (from a song) or to the chords (chords alone), with its QR code; Telegram is "soon". */
-export function SharePop({ anchor, onClose, target, title }: { anchor: HTMLElement | null; onClose: () => void; target: ShareTarget; title: string }) {
+export function SharePop({ anchor, onClose, target, title, chords }: {
+    anchor: HTMLElement | null; onClose: () => void; target: ShareTarget; title: string;
+    /** the chords open (from a song: its open variant's), their id and their source's own address */
+    chords: { id: string; sourceUri: string | null };
+}) {
     const { t } = useTranslation();
     const [link, setLink] = useState<string | null>(null);
     const [failed, setFailed] = useState<unknown>(null);
@@ -29,8 +35,8 @@ export function SharePop({ anchor, onClose, target, title }: { anchor: HTMLEleme
         if (!anchor) return;
         let gone = false;
         shareLink(target.kind === 'song'
-            ? { kind: 'song', playlistId: target.playlistId, songId: target.songId, share: target.share }
-            : { kind: 'chords', chords: target.chords })
+            ? { kind: 'song', playlistId: target.playlistId, songId: target.songId, share: target.share, carriesAccess: false }
+            : { kind: 'chords', chords: target.chords, carriesAccess: false })
             .then(x => !gone && setLink(x))
             .catch(error => !gone && setFailed(error));
         return () => {
@@ -47,8 +53,49 @@ export function SharePop({ anchor, onClose, target, title }: { anchor: HTMLEleme
                 {link && <LinkBox link={link} note={t(target.kind === 'song' ? 'song.share.qrSong' : 'song.share.qr')} />}
                 {!link && !failed && <p className="loading">{t('common.loading')}</p>}
                 {failed !== null && <p className="failed">{errorText(failed)}</p>}
+                {anchor && <StaticLink chords={chords} />}
             </div>
         </Popover>
+    );
+}
+
+/**
+ * A link to these chords on the public page, which opens in any browser without the app and shows the chords as the
+ * person sees them: the one there is (copy, remove), or the offer to make it. Not for chords of our own sources: their
+ * source's address is the public page already. A guest has none.
+ */
+function StaticLink({ chords }: { chords: { id: string; sourceUri: string | null } }) {
+    const { t } = useTranslation();
+    const { signedIn } = useSession();
+    const { data: configuration } = useConfiguration();
+    const origin = configuration?.publicPageOrigin ?? null;
+    const ours = origin !== null && chords.sourceUri !== null && chords.sourceUri.startsWith(origin + '/');
+    const offered = signedIn && origin !== null && !ours;
+    const mine = useStaticLink(offered ? chords.id : null);
+    const make = useMutation({ mutationFn: makeStaticLink });
+    const remove = useMutation({ mutationFn: removeStaticLink });
+    if (!offered) return null;
+    const link = mine.data?.link ?? null;
+    const copy = async (address: string) => {
+        await navigator.clipboard.writeText(address);
+        toast(t('common.copied'));
+    };
+    return (
+        <div className="staticlink">
+            <b>{t('song.share.static.title')}</b>
+            <div className="muted small">{t('song.share.static.note')}</div>
+            {mine.isPending && <p className="loading">{t('common.loading')}</p>}
+            {mine.isError && <p className="failed">{errorText(mine.error)}</p>}
+            {mine.isSuccess && link?.publicAddress && (
+                <>
+                    <div className="linkbox"><code>{link.publicAddress}</code><button type="button" className="btn" onClick={() => void copy(link.publicAddress!)}>{t('common.copy')}</button></div>
+                    <p><button type="button" className="btn dan sm" disabled={remove.isPending} onClick={() => remove.mutate({ token: link.token, chords: chords.id })}>{t('song.share.static.remove')}</button></p>
+                </>
+            )}
+            {mine.isSuccess && !link && (
+                <p><button type="button" className="btn sm" disabled={make.isPending} onClick={() => make.mutate(chords.id)}>{t('song.share.static.make')}</button></p>
+            )}
+        </div>
     );
 }
 

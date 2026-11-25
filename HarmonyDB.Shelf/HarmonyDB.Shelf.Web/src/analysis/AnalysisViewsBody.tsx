@@ -2,6 +2,8 @@
 // the time line with the waveform, the grid of bars, the lead sheet, iReal Pro, the score, the notes. Each lights the
 // chord and the bar that sound and plays from where it is tapped; each shows where the key, the meter or the tempo
 // changes; the lit bar is kept in sight as the music goes (follow.ts). The player goes on as the tabs change. The tab chosen is kept in this browser.
+// A piece without words has no text with chords (`sheet` null): its Text tab says so, and it opens on a view that has
+// something to show.
 //
 // (Loaded when an analysis is opened, by AnalysisViews.tsx.)
 
@@ -38,18 +40,19 @@ export type ViewName = 'text' | 'time' | 'grid' | 'lead' | 'ireal' | 'score' | '
 
 const tabKey = 'shelf.analysis.view';
 
-function storedTab(): ViewName {
+function storedTab(): ViewName | null {
     try {
-        return (localStorage.getItem(tabKey) as ViewName | null) ?? 'text';
+        return localStorage.getItem(tabKey) as ViewName | null;
     } catch {
-        return 'text';
+        return null;
     }
 }
 
-export function AnalysisViewsBody({ chordsId, sheet }: { chordsId: string; sheet: ReactNode }) {
+export function AnalysisViewsBody({ chordsId, sheet, share }: { chordsId: string; sheet: ReactNode | null; share?: string | null }) {
     const { t } = useTranslation();
-    const { analysis, piece } = useAnalysisPiece(chordsId);
-    const [tab, setTab] = useState<ViewName>(storedTab);
+    const { analysis, piece } = useAnalysisPiece(chordsId, share);
+    // the tab chosen on this page; until then the one kept in this browser, when it has something to show
+    const [tab, setTab] = useState<ViewName | null>(null);
     const body = useRef<HTMLDivElement>(null);
     useFollowLit(body);
     const content = analysis.data?.content;
@@ -62,7 +65,11 @@ export function AnalysisViewsBody({ chordsId, sheet }: { chordsId: string; sheet
         score: !!content?.score,
         notes: !!content?.notes?.parts.length,
     };
-    const shown = has[tab] ? tab : 'text';
+    const showing = (name: ViewName | null): name is ViewName => name !== null && has[name] && (name !== 'text' || sheet !== null);
+    const kept = storedTab();
+    const shown: ViewName = tab !== null && has[tab] ? tab
+        : showing(kept) ? kept
+        : (Object.keys(has) as ViewName[]).find(showing) ?? 'text';
     const choose = (name: ViewName) => {
         setTab(name);
         try {
@@ -85,13 +92,13 @@ export function AnalysisViewsBody({ chordsId, sheet }: { chordsId: string; sheet
                 {analysis.isError && <p className="failed">{errorText(analysis.error)}</p>}
                 <ViewBoundary key={shown} failed={<p className="failed">{t('analysis.viewFailed')}</p>}>
                 <Suspense fallback={<p className="loading">{t('common.loading')}</p>}>
-                {shown === 'text' && sheet}
+                {shown === 'text' && (sheet ?? (analysis.isPending ? <p className="loading">{t('common.loading')}</p> : <p className="muted">{t('song.chords.noSheet')}</p>))}
                 {piece && shown === 'time' && <TimeView piece={piece} />}
                 {piece && shown === 'grid' && <GridView piece={piece} />}
                 {piece && shown === 'lead' && <LeadView piece={piece} lyrics={content?.lyrics ?? null} />}
                 {piece && shown === 'ireal' && <IRealView piece={piece} link={content?.chart?.iReal ?? null} title={analysis.data?.header?.title ?? ''} artists={analysis.data?.header?.artists ?? []} />}
                 {content?.score && shown === 'score' && <ScoreView score={content.score} />}
-                {content?.notes && shown === 'notes' && piece && <NotesView notes={content.notes} piece={piece} chordsId={chordsId} />}
+                {content?.notes && shown === 'notes' && piece && <NotesView notes={content.notes} piece={piece} chordsId={chordsId} share={share} />}
                 </Suspense>
                 </ViewBoundary>
             </div>

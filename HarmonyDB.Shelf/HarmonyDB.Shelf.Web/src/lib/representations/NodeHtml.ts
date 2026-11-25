@@ -6,12 +6,14 @@ import { TraversalContext } from './TraversalContext';
 import type { NodeBase, Ref } from './NodeBase';
 import { NodeCollectionBase } from './NodeCollectionBase';
 import { SheetKey } from './SheetKey';
+import { SheetTimes } from './SheetTimes';
 import { NodeChild, NodeChord, NodeLine, NodeMark, NodeNote, NodeText } from './internal';
 
 export interface NodeHtmlInit {
     name: string;
     classes?: string | null;
     keys?: readonly SheetKey[] | null;
+    times?: SheetTimes | null;
     children?: NodeChild[];
 }
 
@@ -28,6 +30,12 @@ export class NodeHtml extends NodeCollectionBase {
      */
     readonly keys: readonly SheetKey[] | null;
 
+    /**
+     * On the sheet's root: the sheet's own bars, when it has them. Its chords and marks may then stand at places in them
+     * (NodeChord.place, NodeMark.place) instead of at seconds.
+     */
+    readonly times: SheetTimes | null;
+
     /** [JsonIgnore] */
     isBlock = false;
 
@@ -37,6 +45,7 @@ export class NodeHtml extends NodeCollectionBase {
         this.name = init.name;
         this.classes = init.classes ?? null;
         this.keys = init.keys ?? null;
+        this.times = init.times ?? null;
     }
 
     /** [JsonIgnore] */
@@ -62,7 +71,9 @@ export class NodeHtml extends NodeCollectionBase {
     asHtml(representationSettings: RepresentationSettings): string {
         const final = this.createFinal(representationSettings);
         const builder = new StringBuilder();
-        final.appendHtmlTo(builder, representationSettings, new TraversalContext());
+        const traversalContext = new TraversalContext();
+        traversalContext.times = this.times;
+        final.appendHtmlTo(builder, representationSettings, traversalContext);
         return builder.toString();
     }
 
@@ -176,6 +187,7 @@ export class NodeHtml extends NodeCollectionBase {
             name: this.name,
             classes: this.classes,
             keys: this.keys,
+            times: this.times,
         });
     }
 
@@ -217,11 +229,13 @@ export class NodeHtml extends NodeCollectionBase {
         name: init.name as string,
         classes: init.classes !== undefined ? init.classes as string | null : null,
         keys: init.keys as SheetKey[] | null | undefined,
+        times: init.times as SheetTimes | null | undefined,
         children: init.children as NodeChild[] | undefined,
     }), () => [
         jsonProperty('Name', jsonString, { required: true }),
         jsonProperty('Classes', jsonString),
         jsonProperty('Keys', () => jsonList(SheetKey.json), { ignoreWhenWritingNull: true }),
+        jsonProperty('Times', () => SheetTimes.json, { ignoreWhenWritingNull: true }),
         jsonProperty('Children', () => jsonList(NodeChild.json)),
     ]);
 }

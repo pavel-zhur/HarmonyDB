@@ -9,6 +9,7 @@ import { finishSignInFromAddress } from './data/session';
 import { installTriggers } from './local';
 import { installZoom } from './app/zoom';
 import { router } from './app/routes';
+import { sendCsrf } from './api/client';
 import { installWorker } from './app/pwa';
 import './styles/fonts.css';
 import './styles/tokens.css';
@@ -16,6 +17,7 @@ import './styles/base.css';
 import './styles/frame.css';
 import './styles/lists.css';
 
+sendCsrf();
 installZoom();
 installTriggers();
 void finishSignInFromAddress();

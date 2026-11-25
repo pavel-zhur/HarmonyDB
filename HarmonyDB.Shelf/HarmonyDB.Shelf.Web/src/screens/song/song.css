@@ -129,6 +129,8 @@ button.plb:hover, .plb.on { color: var(--accent); }
 .sharepop .linkbox code { min-width: 0; }
 .sharepop .qr { flex-wrap: wrap; }
 .pop:has(> .sharepop) { overflow-x: hidden; }
+.sharepop .staticlink { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.sharepop .staticlink p { margin: 0; }
 .sharepop .tgrow { margin: 6px 0 0; display: flex; align-items: center; gap: 8px; }
 .it2 { display: flex; align-items: center; }
 .it2 .it { flex: 1; min-width: 0; }

@@ -3,6 +3,7 @@ import { jsonClass, jsonDouble, jsonNullable, jsonProperty, jsonString, type Jso
 import type { StringBuilder } from '../common/dotnet/StringBuilder';
 import { substring } from '../common/dotnet/text';
 import type { RepresentationSettings } from './RepresentationSettings';
+import type { SheetTimes } from './SheetTimes';
 import { TimeAttribute } from './TimeAttribute';
 import type { TraversalContext } from './TraversalContext';
 import { NodeBase, type Ref } from './NodeBase';
@@ -32,8 +33,9 @@ export class NodeText extends NodeBase {
             return;
         }
 
-        if (this.time !== null) {
-            builder.append(`<span ${TimeAttribute.format(this.time)}>`);
+        const moment = this.moment(traversalContext.times);
+        if (moment !== null) {
+            builder.append(`<span ${TimeAttribute.format(moment)}>`);
             builder.append(htmlEncode(this.text));
             builder.append('</span>');
             return;
@@ -70,8 +72,12 @@ export class NodeText extends NodeBase {
     }
 
     override appendOneShelfTo(builder: StringBuilder, _representationSettings: RepresentationSettings,
-        _isBold: boolean, owesWhitespace: Ref<boolean>): void {
-        if (owesWhitespace.value && this.text.startsWith(' ') && this.text.length > 1) {
+        _isBold: boolean, owesWhitespace: Ref<boolean>, alreadyChordLine: boolean): void {
+        // The ">" of a line of chords stands in its first column, and "<" and ">" of a chord in the line in the spaces
+        // around it: a space owed to them is taken from the text. A single space between two chords stays (they would
+        // run together); at the start of a line of chords nothing stands before it.
+        const lineStart = alreadyChordLine && builder.length > 0 && builder.charAt(builder.length - 1) === '>';
+        if (owesWhitespace.value && this.text.startsWith(' ') && (this.text.length > 1 || lineStart)) {
             builder.append(substring(this.text, 1));
             owesWhitespace.value = false;
         } else {
@@ -81,6 +87,10 @@ export class NodeText extends NodeBase {
 
     override shallowClone(): NodeBase {
         return new NodeText(this.text, this.time);
+    }
+
+    override moment(_times: SheetTimes | null): number | null {
+        return this.time;
     }
 
     static readonly json: JsonContract<NodeText> = jsonClass<NodeText>('HarmonyDB.Common.Representations.OneShelf.NodeText', init => new NodeText(init.text as string, (init.time ?? null) as number | null), () => [

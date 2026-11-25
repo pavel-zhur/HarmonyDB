@@ -36,7 +36,8 @@ import { Peaks } from './peaks';
 import { playClick } from './sounds';
 
 export type PlayerSource =
-    | { kind: 'analysis'; chordsId: string; title: string; subtitle: string }
+    // share: opened by a share link that carries its sharer's access — the media are asked through it
+    | { kind: 'analysis'; chordsId: string; share?: string | null; title: string; subtitle: string }
     | { kind: 'track'; track: MusicTrack };
 
 export interface MixRow { on: boolean; volume: number }
@@ -87,7 +88,7 @@ const initial: PlayerState = {
     solo: null, hasBeats: false, countIn: false, counting: false, hasVideo: false, clip: false, wave: false,
 };
 
-const sourceKey = (source: PlayerSource) => (source.kind === 'analysis' ? `a:${source.chordsId}` : `t:${source.track.service}:${source.track.id}`);
+const sourceKey = (source: PlayerSource) => (source.kind === 'analysis' ? `a:${source.chordsId}:${source.share ?? ''}` : `t:${source.track.service}:${source.track.id}`);
 
 /** An address is asked for anew this long before it expires. */
 const EXPIRY_MARGIN_MS = 60_000;
@@ -182,7 +183,7 @@ class PlayerController {
         this.streamRetried = false;
         this.clipRetried = false;
         this.set({ ...initial, mix: this.state.mix, tempo: this.state.tempo, countIn: this.state.countIn, source, status: 'loading', hasVideo });
-        const opened = source.kind === 'analysis' ? this.openAnalysis(source.chordsId, generation) : this.openTrack(source.track, generation);
+        const opened = source.kind === 'analysis' ? this.openAnalysis(source.chordsId, source.share ?? null, generation) : this.openTrack(source.track, generation);
         opened.catch(error => {
             if (generation !== this.generation) return;
             this.set({ status: 'failed', error: errorText(error) });
@@ -262,8 +263,8 @@ class PlayerController {
     }
 
     /** The analysis: its recording streams at once; decoded, it is handed over to the sound. */
-    private async openAnalysis(chordsId: string, generation: number): Promise<void> {
-        const media = await chordsMedia(chordsId);
+    private async openAnalysis(chordsId: string, share: string | null, generation: number): Promise<void> {
+        const media = await chordsMedia(chordsId, share);
         if (generation !== this.generation) return;
         if (!media.recordingUrl) throw new ApiError(404, 'no_media');
         this.expiresAt = Date.parse(media.expiresAt);
@@ -352,7 +353,7 @@ class PlayerController {
             return address.url;
         }
         if (source?.kind === 'analysis') {
-            const media = await chordsMedia(source.chordsId);
+            const media = await chordsMedia(source.chordsId, source.share);
             this.expiresAt = Date.parse(media.expiresAt);
             this.stemUrls = stemOrder.flatMap(stem => media.stems.filter(s => s.stem === stem).map(s => ({ stem, url: s.url })));
             return media.recordingUrl ?? null;

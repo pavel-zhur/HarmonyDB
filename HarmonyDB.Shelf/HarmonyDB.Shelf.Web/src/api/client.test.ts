@@ -4,8 +4,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { answers, calls, reset } from '../testing/browser.ts';
-import { api, call } from './client.ts';
+import { api, call, sendCsrf } from './client.ts';
 import { registerPending, rememberPending, runPending } from '../data/signInOffer.ts';
+
+// as the app's entry does (main.tsx)
+sendCsrf();
 
 test('csrf_failed: repeated once with the fresh token the answer gave', async () => {
     reset();
@@ -21,6 +24,16 @@ test('csrf_failed: repeated once with the fresh token the answer gave', async ()
     await call(api.POST('/api/auth/sign-out'));
     const sent = calls.filter(c => c.path === '/api/auth/sign-out').map(c => c.headers.get('X-CSRF-Token'));
     assert.deepEqual(sent, ['old', 'new']);
+});
+
+test('no token yet: the app asks for one first, then sends it', async () => {
+    reset();
+    document.cookie = '';
+    answers.set('GET /api/auth/session', () => ({ body: { accountId: null, permissions: [] }, cookie: 'shelf-csrf=fresh' }));
+    answers.set('POST /api/auth/sign-out', () => ({ status: 204 }));
+    await call(api.POST('/api/auth/sign-out'));
+    assert.deepEqual(calls.map(c => `${c.method} ${c.path}`), ['GET /api/auth/session', 'POST /api/auth/sign-out']);
+    assert.equal(calls[1]!.headers.get('X-CSRF-Token'), 'fresh');
 });
 
 test('a remembered action is done after signing in, once; an old one is not', async () => {

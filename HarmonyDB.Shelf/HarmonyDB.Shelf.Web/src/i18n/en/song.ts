@@ -112,6 +112,13 @@ export const song = {
             openSong: 'The song opens by the link for everyone, with all its variants; no sign-in needed.',
             qr: 'The QR code leads to these chords too.',
             qrSong: 'The QR code leads to this song too.',
+            static: {
+                title: 'A link that opens in any browser, without the app',
+                note: 'Whoever has this link sees these chords as you see them, even if they could not open them themselves.',
+                make: 'Make such a link',
+                remove: 'Remove the link',
+                removed: 'The link is removed',
+            },
             telegram: 'Send to me in Telegram',
         },
         add: {

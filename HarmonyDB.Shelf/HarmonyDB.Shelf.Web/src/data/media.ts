@@ -15,7 +15,12 @@ export function trackMedia(service: MusicService, id: string, kind: Schemas['Med
     return call(api.POST('/api/media/tracks', { body: { service, id, kind } }));
 }
 
-/** The material of an analysis: the recording it was made from, its separate instruments, its notes file. */
-export function chordsMedia(chordsId: string): Promise<ChordsMedia> {
-    return call(api.POST('/api/media/chords', { body: { id: chordsId } }));
+/**
+ * The material of an analysis: the recording it was made from, its separate instruments, its notes file. Opened by a
+ * share link that carries its sharer's access (`share`: its token): through the link.
+ */
+export function chordsMedia(chordsId: string, share?: string | null): Promise<ChordsMedia> {
+    return share
+        ? call(api.POST('/api/share/{token}/media', { params: { path: { token: share } } }))
+        : call(api.POST('/api/media/chords', { body: { id: chordsId } }));
 }

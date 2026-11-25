@@ -1,0 +1,20 @@
+/* Import of chords: the ways to bring chords, as quiet blocks; the queue as lines. */
+.im-pl { padding: 0; }
+.im-grid { display: grid; gap: 22px 28px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); max-width: 940px; margin-top: 6px; }
+.im-card { display: grid; gap: 8px; align-content: start; padding-top: 12px; border-top: 1px solid var(--line); }
+.im-card > b { display: flex; align-items: center; gap: 8px; }
+.im-card > b svg.ic { color: var(--muted); }
+.im-card p { margin: 0; }
+.im-soon { opacity: .65; }
+textarea.im-links { min-height: 110px; font: 13px var(--mono); }
+.im-queue { max-width: 720px; }
+.im-job { padding: 6px 0; }
+.im-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.im-link { padding-left: 30px; }
+.im-i { width: 22px; height: 22px; display: grid; place-items: center; flex: none; color: var(--muted); }
+.im-i svg.ic { width: 18px; height: 18px; }
+.im-i.succeeded, .im-i.imported { color: var(--ok); }
+.im-i.failed, .im-i.cancelled, .im-i.notFound, .im-i.notALink { color: var(--danger); }
+.im-t { flex: 1; min-width: 0; display: grid; }
+.im-url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.im-i.partly { color: var(--here); }

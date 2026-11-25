@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api, call, type Schemas } from '../api/client';
+import { keys, readThrough } from '../offline';
 import { i18n } from '../i18n';
 import { action } from './actions';
 import { queryClient } from './queryClient';
@@ -21,7 +22,7 @@ async function goTo(path: string): Promise<void> {
 
 export function useMyPlaylists() {
     const { signedIn } = useSession();
-    return useQuery({ queryKey: ['playlists', 'mine'], queryFn: () => call(api.GET('/api/playlists')), enabled: signedIn });
+    return useQuery({ queryKey: ['playlists', 'mine'], queryFn: () => readThrough(keys.myPlaylists, () => call(api.GET('/api/playlists'))), enabled: signedIn, networkMode: 'always' });
 }
 
 export function usePublicPlaylists(q: string, limit = 100) {
@@ -35,7 +36,8 @@ export function usePublicPlaylists(q: string, limit = 100) {
 export function usePlaylist(id: string, share?: string | null) {
     return useQuery({
         queryKey: ['playlist', id, share ?? null],
-        queryFn: () => call(api.GET('/api/playlists/{id}', { params: { path: { id }, query: { share: share ?? undefined } } })),
+        queryFn: () => readThrough(keys.playlist(id), () => call(api.GET('/api/playlists/{id}', { params: { path: { id }, query: { share: share ?? undefined } } }))),
+        networkMode: 'always',
     });
 }
 
@@ -147,6 +149,6 @@ export function useJob(id: string | null | undefined) {
 
 /** The address of a playlist's link (for a playlist of `link` access): the same link every time it is asked. */
 export async function playlistLink(id: string): Promise<string> {
-    const link = await call(api.POST('/api/share', { body: { kind: 'playlist', playlistId: id } }));
+    const link = await call(api.POST('/api/share', { body: { kind: 'playlist', playlistId: id, carriesAccess: false } }));
     return `${location.origin}/s/${link.token}`;
 }

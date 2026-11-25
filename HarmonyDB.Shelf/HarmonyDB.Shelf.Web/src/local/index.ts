@@ -14,11 +14,12 @@
 //   const note = useMyNote({ chords: chordsId })
 //   const { busy, queued } = useSyncStatus()         // the header's sync button spins while busy
 //   await local.exchange()                           // send now and take what changed (the sync button)
+//   local.forgetUnsent()                             // the changes not sent yet given up (signing out, by choice)
 //
 // Each change but "opened" shows a toast with "Undo". A guest's change offers signing in and is made after it.
 
 import { useMemo, useSyncExternalStore } from 'react';
-import { enqueue, exchange, getStatus, getView, subscribe, toastFor } from './store';
+import { enqueue, exchange, forgetUnsent, getStatus, getView, subscribe, toastFor } from './store';
 import { keyKey, markKey, noteKey } from './state';
 
 function change(c: Parameters<typeof enqueue>[0]): void {
@@ -39,6 +40,10 @@ export const local = {
         enqueue({ type: 'opened', chords: target.chords ?? null, songId: target.songId ?? null });
     },
     exchange,
+    /** the person's changes not sent yet, given up (they chose so, signing out) */
+    forgetUnsent,
+    /** how many changes wait to be sent now */
+    pendingCount: () => getStatus().queued,
 };
 
 export function useLocalView() {

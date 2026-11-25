@@ -150,6 +150,13 @@ describe('Sheet', () => {
         assert.ok(moved.includes('data-key=\'Db\''));
     });
 
+    // the text form: the ">" of a line of chords takes the space owed to it, even a lone one; a single space between
+    // two chords stays (as HarmonyDB.Common.Representations.OneShelf/NodeText.cs writes it)
+    it('a line of chords starting with a space is not indented', () => {
+        assert.equal(sheet(new NodeText(' '), chord('Am'), new NodeText('\nla')).asOneShelf(settings()), '>Am\nla\n');
+        assert.equal(sheet(chord('Am'), new NodeText(' '), chord('C'), new NodeText('\nla')).asOneShelf(settings()), '>Am C\nla\n');
+    });
+
     it('marks leave no trace in the text', () => {
         const value = sheet(
             new NodeMark({ key: new SheetKey('A', true) }),

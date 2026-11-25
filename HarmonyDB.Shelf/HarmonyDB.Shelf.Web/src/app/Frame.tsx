@@ -9,6 +9,7 @@ import { Icon } from '../kit/Icon';
 import { Avatar, Soon } from '../kit/controls';
 import { Toaster } from '../kit/Toaster';
 import { SignInDialog } from '../screens/signin/SignInDialog';
+import { ConnectionNote } from '../screens/offline/ConnectionNote';
 import { offerSignIn } from '../data/signInOffer';
 import { useProfile, useSession } from '../data/session';
 import { updateSettings, useSettings } from '../data/settings';
@@ -32,6 +33,7 @@ export function Frame() {
     return (
         <div className="app">
             {wide && <Header />}
+            <ConnectionNote />
             <div className="mid">
                 {!wide && <Header />}
                 {wide && <Side />}

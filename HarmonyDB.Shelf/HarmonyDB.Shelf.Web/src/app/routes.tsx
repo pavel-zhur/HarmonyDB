@@ -24,7 +24,18 @@ import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { ShareScreen } from '../screens/share/ShareScreen';
 import { ChordsScreen } from '../screens/song/ChordsScreen';
 import { musicRoutes } from '../screens/music/routes';
-import { Pending } from '../screens/Pending';
+import { DeletedScreen } from '../screens/profile/DeletedScreen';
+import { AiScreen } from '../screens/ai/AiScreen';
+import { ConsentScreen } from '../screens/ai/ConsentScreen';
+import { EditorScreen } from '../screens/editor/EditorScreen';
+import { ImportScreen } from '../screens/importing/ImportScreen';
+import { BookScreen } from '../screens/book/BookScreen';
+import { AboutScreen } from '../screens/about/AboutScreen';
+import { VersionsScreen } from '../screens/about/VersionsScreen';
+import { TunerScreen } from '../screens/tuner/TunerScreen';
+import { FingeringsScreen } from '../screens/fingerings/FingeringsScreen';
+import { OfflineScreen } from '../screens/offline/OfflineScreen';
+import { IllustrationsScreen } from '../screens/illustrations/IllustrationsScreen';
 
 function SignedIn({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
@@ -73,23 +84,24 @@ export const router = createBrowserRouter([
 
             { path: '/more', element: <MoreScreen /> },
             { path: '/profile', element: <SignedIn><ProfileScreen /></SignedIn> },
+            { path: '/profile/deleted', element: <DeletedScreen /> },
 
-            // the screens of the next units: their places
-            { path: '/import', element: <Pending title="tools.import" /> },
-            { path: '/editor', element: <Pending title="tools.editor" /> },
-            { path: '/illustrations', element: <Pending title="tools.illustrations" /> },
-            { path: '/fingerings', element: <Pending title="tools.fingerings" /> },
-            { path: '/tuner', element: <Pending title="tools.tuner" /> },
-            { path: '/ai', element: <Pending title="tools.mcp" /> },
-            { path: '/offline', element: <Pending title="tools.offline" /> },
-            { path: '/about', element: <Pending title="tools.about" /> },
-            { path: '/versions', element: <Pending title="tools.versions" /> },
-            { path: '/book', element: <Pending title="playlist.book" /> },
+            // the tools and the rest
+            { path: '/import', element: <SignedIn><ImportScreen /></SignedIn> },
+            { path: '/editor', element: <SignedIn><EditorScreen /></SignedIn> },
+            { path: '/illustrations', element: <SignedIn><IllustrationsScreen /></SignedIn> },
+            { path: '/fingerings', element: <FingeringsScreen /> },
+            { path: '/tuner', element: <TunerScreen /> },
+            { path: '/ai', element: <SignedIn><AiScreen /></SignedIn> },
+            { path: '/offline', element: <SignedIn><OfflineScreen /></SignedIn> },
+            { path: '/about', element: <AboutScreen /> },
+            { path: '/versions', element: <VersionsScreen /> },
+            { path: '/book', element: <SignedIn><BookScreen /></SignedIn> },
             // the consent page of the MCP's sign-in (/oauth/authorize sends the person here): what a client may do.
             // It shows, beside the client's name, the host of its redirect address and of its client id, and warns of a
             // client that is local only — a client may call itself by a well-known assistant's name; only the host
             // tells them apart.
-            { path: '/connect', element: <Pending title="tools.mcp" /> },
+            { path: '/connect', element: <ConsentScreen /> },
 
             { path: '*', element: <Navigate to="/" replace /> },
         ],

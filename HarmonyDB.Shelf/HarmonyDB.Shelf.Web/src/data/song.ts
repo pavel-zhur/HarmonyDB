@@ -4,6 +4,7 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { api, call, type Schemas } from '../api/client';
+import { keys, readThrough } from '../offline';
 import { i18n } from '../i18n';
 import { action } from './actions';
 import { useSession } from './session';
@@ -23,10 +24,11 @@ const t = i18n.t.bind(i18n);
 export function useSongPage(playlistId: string, songId: string, share?: string | null) {
     return useQuery({
         queryKey: ['song', playlistId, songId, share ?? null],
-        queryFn: () => call(api.GET('/api/playlists/{id}/songs/{songId}', {
+        queryFn: () => readThrough(keys.song(playlistId, songId), () => call(api.GET('/api/playlists/{id}/songs/{songId}', {
             params: { path: { id: playlistId, songId }, query: { share: share ?? undefined } },
-        })),
+        }))),
         placeholderData: keepPreviousData,
+        networkMode: 'always',
     });
 }
 
@@ -34,9 +36,10 @@ export function useSongPage(playlistId: string, songId: string, share?: string |
 export function useChordsContent(chordsId: string | null) {
     return useQuery({
         queryKey: ['chords', chordsId],
-        queryFn: () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet' } } })),
+        queryFn: () => readThrough(keys.chords(chordsId!), () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet' } } }))),
         enabled: !!chordsId,
         staleTime: 5 * 60_000,
+        networkMode: 'always',
     });
 }
 
@@ -127,3 +130,24 @@ export async function shareLink(body: Schemas['CreateShareRequest']): Promise<st
     const link = await call(api.POST('/api/share', { body }));
     return `${location.origin}/s/${link.token}`;
 }
+
+/**
+ * The person's link to chords that opens on the public page and carries the person's access (whoever holds it sees
+ * the chords as the person does): the one there is, made by nothing here (a guest has none).
+ */
+export function useStaticLink(chordsId: string | null) {
+    const { signedIn } = useSession();
+    return useQuery({
+        queryKey: ['static-link', chordsId],
+        queryFn: () => call(api.GET('/api/share/mine', { params: { query: { chords: chordsId! } } })),
+        enabled: signedIn && !!chordsId,
+    });
+}
+
+export const makeStaticLink = action('makeStaticLink', 'change',
+    (chords: string) => call(api.POST('/api/share', { body: { kind: 'chords', chords, carriesAccess: true } })),
+    { invalidate: (_, chords) => [['static-link', chords]] });
+
+export const removeStaticLink = action('removeStaticLink', 'change',
+    ({ token }: { token: string; chords: string }) => call(api.DELETE('/api/share/{token}', { params: { path: { token } } })),
+    { done: () => t('song.share.static.removed'), invalidate: (_, { chords }) => [['static-link', chords]] });

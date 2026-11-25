@@ -3,12 +3,16 @@
 
 import type { Schemas } from '../api/client';
 import { NoteAlteration } from '../lib/common/HarmonyDB.Common/NoteAlteration';
-import { NodeChild, NodeChord, NodeHtml, NodeLine, NodeMark, NodeNote, NodeText, Note, SheetKey, SheetTempo, SheetTimeSignature } from '../lib/representations';
+import { NodeChild, NodeChord, NodeHtml, NodeLine, NodeMark, NodeNote, NodeText, Note, SheetBar, SheetKey, SheetPlace, SheetTempo, SheetTimes, SheetTimeSignature } from '../lib/representations';
 
 type ApiNodeHtml = Schemas['NodeHtml'];
 type ApiNodeChild = Schemas['NodeChild'];
 
 const key = (value: Schemas['SheetKey']) => new SheetKey(value.tonic, value.isMinor);
+const place = (value: Schemas['SheetPlace'] | undefined) => (value ? new SheetPlace(value.bar, value.beat, value.at ?? null) : null);
+const times = (value: Schemas['SheetTimes'] | undefined) => (value
+    ? new SheetTimes({ end: value.end, bars: value.bars.map(x => new SheetBar({ beats: x.beats, timeSignature: x.time_sig ?? null })) })
+    : null);
 
 function child(value: ApiNodeChild): NodeChild {
     if (value.nodeChord) {
@@ -17,6 +21,7 @@ function child(value: ApiNodeChild): NodeChild {
             degree: value.nodeChord.degree ?? null,
             bassDegree: value.nodeChord.bassDegree ?? null,
             time: value.nodeChord.time ?? null,
+            place: place(value.nodeChord.place),
         }).asChild();
     }
 
@@ -39,6 +44,9 @@ function child(value: ApiNodeChild): NodeChild {
             tempo: mark.tempo ? new SheetTempo(mark.tempo.beatsPerMinute, mark.tempo.unit, mark.tempo.dotted) : null,
             timeSignature: mark.timeSignature ? new SheetTimeSignature(mark.timeSignature.beats, mark.timeSignature.unit) : null,
             time: mark.time ?? null,
+            place: place(mark.place),
+            // left out by the server when false
+            meter: mark.meter ?? false,
         }).asChild();
     }
 
@@ -50,6 +58,7 @@ export function sheetFromApi(value: ApiNodeHtml): NodeHtml {
         name: value.name,
         classes: value.classes ?? null,
         keys: value.keys?.map(key) ?? null,
+        times: times(value.times),
         children: value.children.map(child),
     });
 }

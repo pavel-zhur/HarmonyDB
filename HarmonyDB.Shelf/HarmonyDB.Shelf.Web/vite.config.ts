@@ -22,9 +22,12 @@ export default defineConfig({
         // every file a file of its own (no data: addresses: the page's content policy allows the app's own files only)
         assetsInlineLimit: 0,
         rollupOptions: {
-            // The entries of the build: the app; the public page (architecture, section 15) is added here as
-            // `public: 'public.html'` — it shares src/ but not the app's frame, worker or manifest.
-            input: { app: fileURLToPath(new URL('index.html', import.meta.url)) },
+            // The entries of the build: the app, and the public page (src/public) — it shares src/ but not the app's
+            // frame, worker or manifest.
+            input: {
+                app: fileURLToPath(new URL('index.html', import.meta.url)),
+                public: fileURLToPath(new URL('public.html', import.meta.url)),
+            },
         },
     },
     server: {

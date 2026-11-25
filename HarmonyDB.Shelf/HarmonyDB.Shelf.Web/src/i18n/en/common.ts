@@ -1,8 +1,4 @@
 export const common = {
-    pwa: {
-        updated: 'A new version is here',
-        reload: 'Reload',
-    },
     app: {
         name: 'One Shelf',
     },
@@ -112,6 +108,18 @@ export const common = {
         own_chords_contents_required: 'The text is needed',
         own_chords_invalid: 'A field is too long',
         song_needs_playlist: 'A song needs its playlist',
+        not_downloaded: 'Not on this device: it opens when there is a connection',
+        offline_unanswerable: 'Without a connection this filter cannot be shown',
+        no_such_mcp_client: 'This assistant is not connected',
+        no_such_personal_key: 'No such key',
+        permission_not_grantable: 'Your profile does not have this permission',
+        nothing_chosen: 'Choose at least one thing to allow',
+        personal_key_name_required: 'The key needs a name',
+        personal_key_expiry_invalid: 'A key lasts from 1 to 365 days',
+        authorization_request_invalid: 'This request to connect is not valid any more: it expired, or it is not yours',
+        authorization_request_decided: 'This request to connect was already answered',
+        unknown_mcp_client: 'The shelf does not know this assistant, or could not read its description',
+        redirect_uri_mismatch: 'The assistant asked to go back to an address it did not register',
     },
     time: {
         justNow: 'just now',

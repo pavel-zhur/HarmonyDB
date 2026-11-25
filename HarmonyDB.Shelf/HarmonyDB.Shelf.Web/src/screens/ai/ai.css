@@ -1,0 +1,41 @@
+/* "Your AI" and the consent of an assistant's sign-in. */
+.ai-note { margin: 8px 0 0; }
+.ai-note0 { margin: 0 0 8px; }
+.ai-perms { max-width: 620px; }
+.ai-perm { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; text-align: left; width: 100%; }
+.ai-perm > svg.ic { color: var(--muted); margin-top: 1px; }
+.ai-perm .sub { display: block; color: var(--muted); font-size: 13px; }
+.ai-perm b { font-weight: 600; }
+.ai-tick:hover b { color: var(--accent); }
+.ai-ck { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line); display: grid; place-items: center; flex: none; margin-top: 1px; }
+.ai-tick.on .ai-ck { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.ai-ck svg.ic { width: 14px; height: 14px; stroke-width: 3; }
+.ai-perm > span:nth-child(2) { flex: 1; min-width: 0; }
+.ai-asked { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; margin-top: 2px; }
+.ai-off { opacity: .55; }
+
+.ai-item { padding: 12px 0; }
+.ai-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.ai-head > svg.ic { color: var(--muted); margin-top: 2px; }
+.ai-who { flex: 1 1 200px; min-width: 0; display: grid; gap: 1px; overflow-wrap: anywhere; }
+.ai-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.ai-may { margin: 6px 0 0 32px; font-size: 13.5px; }
+.ai-item > .muted.small { margin: 4px 0 0 32px; }
+.ai-item .confirm { margin-top: 10px; }
+.ai-edit { display: grid; gap: 10px; margin-top: 8px; max-width: 620px; }
+.ai-made { display: grid; gap: 8px; max-width: 620px; margin-bottom: 10px; justify-items: start; }
+.ai-made p { margin: 0; }
+.ai-host { font: 600 14px var(--mono); color: var(--ink); overflow-wrap: anywhere; background: none; padding: 0; }
+.ai-ident { display: grid; gap: 2px; min-width: 0; }
+.ai-hl { display: block; overflow-wrap: anywhere; }
+.ai-hk { color: var(--muted); font-size: 13px; }
+.ai-calls { display: block; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+.ai-consent { max-width: 620px; }
+.ai-client { display: flex; gap: 12px; align-items: flex-start; }
+.ai-client > svg.ic { width: 28px; height: 28px; color: var(--accent); margin-top: 2px; }
+.ai-consent > p { margin: 0; }
+.ai-warn { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 12px; }
+.ai-warn svg.ic { color: var(--danger); margin-top: 1px; }
+.ai-decide { gap: 8px; }
+.ai-inl { padding: 0; font-size: 13px; }

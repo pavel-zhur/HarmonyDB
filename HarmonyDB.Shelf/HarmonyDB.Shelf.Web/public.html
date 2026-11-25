@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>One Shelf</title>
+    <meta name="description" content="Chords of songs, with the recording: play it and watch the chords follow.">
+    <!-- the preview a messenger shows: the server's for each address, put in place of these tags when the container
+         starts (docker/public-site.sh: keep them one to a line); these are the page's own, where the server writes none.
+         The __…__ are the site's origin and the app's, put in then too -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="One Shelf">
+    <meta property="og:title" content="One Shelf">
+    <meta property="og:description" content="Chords of songs, with the recording: play it and watch the chords follow.">
+    <meta property="og:image" content="__SITE_ORIGIN__/icon-512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta name="twitter:card" content="summary">
+    <meta name="shelf-app" content="__APP_ORIGIN__">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/public/main.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+/* The fingerings: the roots, then every chord as the sheet draws it; a tap opens the fingerings' window. */
+.fi-search { max-width: 420px; margin-bottom: 10px; }
+.fi-roots { display: flex; flex-wrap: wrap; gap: 2px; max-width: 620px; }
+.fi-roots .chip { min-width: 40px; justify-content: center; font: 600 14px var(--mono); }
+.fi-sheet { font-family: var(--sans); user-select: auto; }
+.fi-sheet h2 { font-family: var(--sans); }
+.fi-grid { display: flex; flex-wrap: wrap; gap: 8px; max-width: 720px; }
+.fi-chord { padding: 2px; font: 600 16px var(--mono); }
+.fi-chord .chord { display: inline-block; padding: 4px 8px; }

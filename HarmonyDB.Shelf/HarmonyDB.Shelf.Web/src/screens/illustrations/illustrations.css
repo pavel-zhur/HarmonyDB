@@ -1,0 +1,8 @@
+/* Illustrations: a grid of the library's chords with pictures. */
+.ip-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); max-width: 940px; }
+.ip-card { display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); }
+.ip-card:hover { border-color: var(--accent); }
+.ip-card img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.ip-t { display: grid; padding: 8px 10px 10px; min-width: 0; }
+.ip-t b, .ip-t span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-more { margin-top: 16px; }

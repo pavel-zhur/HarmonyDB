@@ -1,0 +1,31 @@
+/* The PDF book: the options, the songs as lines, the map of spreads. */
+.bk-form { max-width: 820px; }
+.bk-cap { flex: 1 1 220px; padding: 8px 12px; }
+.bk-chips { margin-bottom: 8px; }
+.bk-list { border-top: 1px solid var(--line); }
+.bk-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.bk-row.off .bk-t { opacity: .5; }
+.bk-ck { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line); display: grid; place-items: center; }
+.bk-ck.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.bk-ck svg.ic { width: 14px; height: 14px; stroke-width: 3; }
+.bk-t { min-width: 0; display: grid; }
+.bk-t b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-pg { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.bk-ord { display: inline-flex; }
+.bk-ord button { width: 30px; height: 30px; display: grid; place-items: center; color: var(--muted); border-radius: 8px; }
+.bk-ord button:hover:not(:disabled) { background: var(--surface2); color: var(--ink); }
+.bk-ord button:disabled { opacity: .3; }
+.bk-ord svg.ic { width: 16px; height: 16px; }
+.bk-opts { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.bk-opts .seg button { min-height: 28px; padding: 2px 10px; font-size: 13px; }
+.bk-opts .step button { width: 30px; height: 30px; }
+.bk-opts .step .v { min-width: 40px; }
+.bk-spreads { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+.bk-spr { display: inline-flex; gap: 1px; padding: 2px; border-radius: 5px; background: var(--line); }
+.bk-p { font-style: normal; width: 26px; height: 34px; display: grid; place-items: center; background: var(--surface); font: 600 11px var(--mono); color: var(--ink); border-radius: 3px; }
+.bk-p.cover, .bk-p.toc { font: 500 9.5px var(--sans); color: var(--muted); }
+.bk-p.blank { background: repeating-linear-gradient(135deg, var(--surface) 0 4px, var(--line) 4px 5px); }
+.bk-p.none { background: transparent; }
+.bk-sum { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.bk-sum p { margin: 0; }
+.bk-busy { display: flex; gap: 8px; align-items: center; }

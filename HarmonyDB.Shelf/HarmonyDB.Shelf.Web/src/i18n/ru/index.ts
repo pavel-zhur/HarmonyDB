@@ -10,6 +10,10 @@ import { playlists } from './playlists.ts';
 import { profile } from './profile.ts';
 import { song } from './song.ts';
 import { music } from './music.ts';
+import { publicPage } from './public.ts';
+import { account } from './account.ts';
+import { ai } from './ai.ts';
+import { toolScreens } from './tools.ts';
 
 export const ru = {
     ...common,
@@ -21,4 +25,8 @@ export const ru = {
     ...profile,
     ...song,
     ...music,
+    ...publicPage,
+    ...account,
+    ...ai,
+    ...toolScreens,
 };

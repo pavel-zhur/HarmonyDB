@@ -70,8 +70,7 @@ Look at every screen at a phone's width (390) and wide (1440), light and dark, b
 ## A new screen
 
 1. A component in `screens/<area>/`, wrapped in `<Page>` (one column) or `<ListWithSong>` (a list with its song).
-2. Its address in `app/routes.tsx` (wrap it in `<SignedIn>` if it needs a profile). The places of the next units'
-   screens are there already (`<Pending>`): replace the element.
+2. Its address in `app/routes.tsx` (wrap it in `<SignedIn>` if it needs a profile).
 3. If it belongs in a menu: a line in `app/nav.ts`.
 4. Its texts in its area's files `i18n/en/<area>.ts` and `i18n/ru/<area>.ts` (a new area: a file in each, and a line in
    each `index.ts`); the test fails if one language has a key the other has not.
@@ -207,5 +206,22 @@ tells them apart.
 
 ## The public page
 
-A second entry of this build (architecture, section 15): add `public: 'public.html'` to the inputs in
-`vite.config.ts`; it shares `src/` but not the app's frame, worker or manifest (the worker leaves `public.html` out).
+A second entry of this build (`public.html`, `src/public/`), served by its own container (`public-web`, the image's
+target `public`, **http://localhost:14109** on the stand): the showcase — the open playlist of analyses, each viewed
+there with the app's views and player — and whatever a link leads to, for one who has never seen the app. It shares
+`src/` (the views, the player, the chord sheet, the kit, the client, the i18n) but not the app's frame, worker,
+manifest, sign-in or local store; it reads the API always as a guest through its own nginx (`docker/public.nginx.conf`:
+only the calls it makes go on to shelf-api, by exact address and method, without the browser's cookies; tested when
+the image is built, `docker/public-web.test.sh`; the same content policy).
+
+- Addresses: `/` the showcase, `/songs/:songId` a song of it, `/chords/:chordsId` chords by id, `/s/:token` a share
+  link (chords, a song, a playlist), `/s/:token/:songId` a song of a shared playlist.
+- Search engines see the showcase only: `robots.txt` (`docker/public-robots.txt`) and `X-Robots-Tag: noindex` on every
+  other address.
+- What it is told comes from its container (`docker/public-site.sh` writes it into the page when it starts):
+  `SHELF_SITE_ORIGIN` (its own address: the messengers' preview picture), `SHELF_APP_ORIGIN` (the app, where it
+  invites). Read in `src/public/site.ts`.
+
+```
+docker compose -f docker/wave2/docker-compose.yml up -d --build --no-deps public-web
+```

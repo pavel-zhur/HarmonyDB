@@ -1,6 +1,7 @@
 import { InvalidOperationException } from '../common/dotnet/exceptions';
 import { htmlAttributeEncode, htmlEncode } from '../common/dotnet/html';
-import { jsonClass, jsonDouble, jsonNullable, jsonProperty, type JsonContract } from '../common/dotnet/json/JsonSerializer';
+import { jsonBoolean, jsonClass, jsonDouble, jsonNullable, jsonProperty, type JsonContract } from '../common/dotnet/json/JsonSerializer';
+import { SheetPlace, type SheetTimes } from './SheetTimes';
 import { StringBuilder } from '../common/dotnet/StringBuilder';
 import type { RepresentationSettings } from './RepresentationSettings';
 import { SheetKey } from './SheetKey';
@@ -47,31 +48,49 @@ export class NodeMark extends NodeBase {
     timeSignature: SheetTimeSignature | null = null;
     /** When the change happens, in seconds from the start, when known. */
     time: number | null = null;
+    /** Where the change happens in the sheet's bars (NodeHtml.times), in place of `time`. */
+    place: SheetPlace | null = null;
+    /**
+     * In a sheet with bars (NodeHtml.times): show here the time signature that the bar of the mark's `place` has there,
+     * in place of a `timeSignature` of the mark's own. Without bars, or with a place that does not resolve (SheetTimes.moment), it shows nothing.
+     * [JsonIgnore(WhenWritingDefault)]
+     */
+    meter = false;
 
-    /** `new NodeMark { Key = ..., Tempo = ..., TimeSignature = ..., Time = ... }` */
-    constructor(init: { key?: SheetKey | null; tempo?: SheetTempo | null; timeSignature?: SheetTimeSignature | null; time?: number | null } = {}) {
+    /** `new NodeMark { Key = ..., Tempo = ..., TimeSignature = ..., Time = ..., Place = ..., Meter = ... }` */
+    constructor(init: { key?: SheetKey | null; tempo?: SheetTempo | null; timeSignature?: SheetTimeSignature | null; time?: number | null; place?: SheetPlace | null; meter?: boolean } = {}) {
         super();
         this.key = init.key ?? null;
         this.tempo = init.tempo ?? null;
         this.timeSignature = init.timeSignature ?? null;
         this.time = init.time ?? null;
+        this.place = init.place ?? null;
+        this.meter = init.meter ?? false;
     }
 
-    override appendHtmlTo(builder: StringBuilder, representationSettings: RepresentationSettings, _traversalContext: TraversalContext): void {
-        if (this.key === null && this.tempo === null && this.timeSignature === null)
-            throw new InvalidOperationException('A mark carries a key, a tempo or a time signature.');
+    override moment(times: SheetTimes | null): number | null {
+        return NodeBase.momentOf(this.time, this.place, times);
+    }
+
+    override appendHtmlTo(builder: StringBuilder, representationSettings: RepresentationSettings, traversalContext: TraversalContext): void {
+        if (this.key === null && this.tempo === null && this.timeSignature === null && !this.meter)
+            throw new InvalidOperationException('A mark carries a key, a tempo, a time signature or the meter.');
 
         builder.append('<span class=\'sheet-mark\'');
-        if (this.time !== null) {
+        const moment = this.moment(traversalContext.times);
+        if (moment !== null) {
             builder.append(' ');
-            builder.append(TimeAttribute.format(this.time));
+            builder.append(TimeAttribute.format(moment));
         }
 
         builder.append('>');
 
         const parts: string[] = [];
         if (this.key !== null) parts.push(NodeMark.keyHtml(this.key.shown(representationSettings)));
-        if (this.timeSignature !== null) parts.push(NodeMark.timeSignatureHtml(this.timeSignature));
+        if (this.timeSignature !== null) parts.push(NodeMark.timeSignatureHtml(String(this.timeSignature.beats), String(this.timeSignature.unit)));
+        // The meter of the bar of the mark's place, when the place resolves.
+        const meter = this.meter && this.place !== null && moment !== null ? traversalContext.times!.timeSignatureOf(this.place.bar) : null;
+        if (meter !== null) parts.push(NodeMark.meterHtml(meter));
         if (this.tempo !== null) parts.push(NodeMark.tempoHtml(this.tempo));
         builder.append(parts.join(' '));
 
@@ -116,12 +135,26 @@ export class NodeMark extends NodeBase {
             + `<path fill='none' stroke-width='1.8' d='M ${N(x - 3)} ${N(y + 5)} C ${N(x + 1)} ${N(y + 2)} ${N(x + 6)} ${N(y - 2)} ${N(x + 3)} ${N(y - 4)} C ${N(x + 1)} ${N(y - 5.5)} ${N(x - 1)} ${N(y - 3)} ${N(x - 3)} ${N(y - 1)}'/>`;
     }
 
-    private static timeSignatureHtml(timeSignature: SheetTimeSignature): string {
-        const digits = Math.max(String(timeSignature.beats).length, String(timeSignature.unit).length);
-        const width = 13 * digits + 2;
-        const content = `<text stroke='none' x='${N(width / 2.0)}' y='18' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>${timeSignature.beats}</text>`
-            + `<text stroke='none' x='${N(width / 2.0)}' y='39' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>${timeSignature.unit}</text>`;
-        return `<span class='sheet-mark-time-signature' role='img' aria-label='${timeSignature.toString()}'>${svg(0, 0, width, 40, 1.4, content)}</span>`;
+    /** A time signature as a score writes it: the beats over the note, "3" over "4", "2+2+3" over "8". */
+    private static timeSignatureHtml(beats: string, unit: string): string {
+        const characters = Math.max(beats.length, unit.length);
+        const width = 13 * characters + 2;
+        const content = `<text stroke='none' x='${N(width / 2.0)}' y='18' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>${htmlEncode(beats)}</text>`
+            + `<text stroke='none' x='${N(width / 2.0)}' y='39' text-anchor='middle' font-size='22' font-weight='bold' font-family='serif'>${htmlEncode(unit)}</text>`;
+        return `<span class='sheet-mark-time-signature' role='img' aria-label='${htmlAttributeEncode(`${beats}/${unit}`)}'>${svg(0, 0, width, 40, 1.4, content)}</span>`;
+    }
+
+    /**
+     * The time signature of a bar of the sheet's bars: a plain one ("3/4") and an additive one ("2+2+3/8") drawn as a time signature is;
+     * a bar of no metre ("free") as a score says it, "senza misura"; anything else written as it is.
+     */
+    private static meterHtml(meter: string): string {
+        const parts = meter.split('/');
+        if (parts.length === 2 && /^\d+(\+\d+)*$/.test(parts[0]!) && /^\d+$/.test(parts[1]!))
+            return NodeMark.timeSignatureHtml(parts[0]!, parts[1]!);
+
+        const text = meter === 'free' ? 'senza misura' : meter;
+        return `<span class='sheet-mark-time-signature' data-time-signature='${htmlAttributeEncode(meter)}'><i>${htmlEncode(text)}</i></span>`;
     }
 
     private static tempoHtml(tempo: SheetTempo): string {
@@ -162,7 +195,7 @@ export class NodeMark extends NodeBase {
     }
 
     override shallowClone(): NodeBase {
-        return new NodeMark({ key: this.key, tempo: this.tempo, timeSignature: this.timeSignature, time: this.time });
+        return new NodeMark({ key: this.key, tempo: this.tempo, timeSignature: this.timeSignature, time: this.time, place: this.place, meter: this.meter });
     }
 
     static readonly json: JsonContract<NodeMark> = jsonClass<NodeMark>('HarmonyDB.Common.Representations.OneShelf.NodeMark', init => new NodeMark({
@@ -170,10 +203,14 @@ export class NodeMark extends NodeBase {
         tempo: init.tempo as SheetTempo | null | undefined,
         timeSignature: init.timeSignature as SheetTimeSignature | null | undefined,
         time: init.time as number | null | undefined,
+        place: init.place as SheetPlace | null | undefined,
+        meter: (init.meter ?? false) as boolean,
     }), () => [
         jsonProperty('Key', () => SheetKey.json, { ignoreWhenWritingNull: true }),
         jsonProperty('Tempo', () => SheetTempo.json, { ignoreWhenWritingNull: true }),
         jsonProperty('TimeSignature', () => SheetTimeSignature.json, { ignoreWhenWritingNull: true }),
         jsonProperty('Time', jsonNullable(jsonDouble), { ignoreWhenWritingNull: true }),
+        jsonProperty('Place', () => SheetPlace.json, { ignoreWhenWritingNull: true }),
+        jsonProperty('Meter', jsonBoolean, { ignoreWhenWritingDefault: true }),
     ]);
 }

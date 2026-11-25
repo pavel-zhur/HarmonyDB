@@ -228,6 +228,8 @@ export interface JsonPropertyDefinition {
     readonly required?: boolean;
     /** [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] */
     readonly ignoreWhenWritingNull?: boolean;
+    /** [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]: the type's default (null, false, 0) left out */
+    readonly ignoreWhenWritingDefault?: boolean;
 }
 
 export function jsonProperty(name: string, contract: JsonContract<any> | (() => JsonContract<any>), settings?: Omit<JsonPropertyDefinition, 'name' | 'contract'>): JsonPropertyDefinition {
@@ -268,6 +270,7 @@ export function jsonClass<T>(typeName: string, create: (init: Record<string, unk
         for (const property of all()) {
             const value = (v as Record<string, unknown>)[property.field];
             if (property.ignoreWhenWritingNull && value == null) continue;
+            if (property.ignoreWhenWritingDefault && (value == null || value === false || value === 0)) continue;
             parts.push(writeJsonString(jsonName(property, options)) + ':' + property.contract().write(value, options));
         }
         return '{' + parts.join(',') + '}';

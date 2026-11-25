@@ -20,6 +20,8 @@ import { toast } from '../app/toasts';
 import { queryClient } from '../data/queryClient';
 import { offerSignIn, registerPending, rememberPending, type SignInWhat } from '../data/signInOffer';
 import { effective, emptyState, mergeStates, settle, signedOut, type Base, type Change, type LocalState, type Queued } from './state';
+import { attachOffline } from '../offline';
+import { trimDrafts } from '../screens/editor/draft';
 
 const maxBatch = 500;
 const sendDelay = 800;
@@ -96,6 +98,10 @@ export function attach(accountId: string | null): void {
     // did not send is kept, not their marks, keys, notes or recent
     trimOthers(accountId);
     account = accountId;
+    // the library's copy on the device follows the same person (offline/index.ts)
+    void attachOffline(accountId);
+    // and the editor's drafts (screens/editor/draft.ts)
+    trimDrafts(accountId);
     state = accountId === null ? emptyState : load(accountId);
     undoWanted.clear();
     undoTokens.clear();
@@ -119,6 +125,18 @@ function trimOthers(keep: string | null) {
     } catch {
         // no storage: nothing kept anyway
     }
+}
+
+/**
+ * The person chose to leave their changes not sent yet (signing out on a shared device): they go from this browser,
+ * and nothing of them is kept for later.
+ */
+export function forgetUnsent(): void {
+    if (account === null) return;
+    clearTimeout(sendTimer);
+    state = { ...state, queue: [], sent: [] };
+    write(account, state);
+    emit();
 }
 
 /** Signing out here: the person's state keeps only what was not sent. */

@@ -5,6 +5,7 @@
 
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api, call, type Schemas } from '../api/client';
+import { keys, readList } from '../offline';
 
 export type SongRow = Schemas['SongRow'];
 export type SongList = Schemas['SongList'];
@@ -32,11 +33,15 @@ export function useSongList(source: SongSource, params: SongListParams, enabled 
     };
     return useInfiniteQuery({
         queryKey: ['songs', source, query],
+        // with no connection, a list of the library's copy on the device is answered from it (offline/index.ts)
         queryFn: ({ pageParam }) => source.kind === 'library'
-            ? call(api.GET('/api/library', { params: { query: { ...query, offset: pageParam, limit: pageSize } } }))
-            : call(api.GET('/api/playlists/{id}/songs', {
+            ? readList(keys.library, { ...query, offset: pageParam, limit: pageSize },
+                () => call(api.GET('/api/library', { params: { query: { ...query, offset: pageParam, limit: pageSize } } })))
+            : readList(keys.playlistRows(source.id), { ...query, offset: pageParam, limit: pageSize }, () => call(api.GET('/api/playlists/{id}/songs', {
                 params: { path: { id: source.id }, query: { ...query, share: source.share ?? undefined, offset: pageParam, limit: pageSize } },
-            })),
+            }))),
+        // asked also with no connection: then the device's copy answers
+        networkMode: 'always',
         initialPageParam: 0,
         getNextPageParam: (last: SongList) => (last.offset + last.rows.length < last.total ? last.offset + last.rows.length : undefined),
         placeholderData: keepPreviousData,

@@ -436,6 +436,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/library/illustrated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetIllustratedLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mcp": {
         parameters: {
             query?: never;
@@ -1588,6 +1604,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/share/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetMyCarryingShareLink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/share/{token}": {
         parameters: {
             query?: never;
@@ -1598,6 +1630,38 @@ export interface paths {
         get: operations["OpenShareLink"];
         put?: never;
         post?: never;
+        delete: operations["RemoveShareLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/share/{token}/chords": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetSharedChords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/share/{token}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GetSharedChordsMedia"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1700,18 +1764,64 @@ export interface components {
             /** Format: int32 */
             number?: number | null;
         };
+        BookItemPages: {
+            chordsId: string;
+            state: components["schemas"]["BookItemState"];
+            /** Format: int32 */
+            transpose: number;
+            /** Format: int32 */
+            pagesOneColumn?: number | null;
+            /** Format: int32 */
+            pagesTwoColumns?: number | null;
+        };
+        BookItemResult: {
+            chordsId: string;
+            state: components["schemas"]["BookItemState"];
+            /** Format: int32 */
+            number?: number | null;
+            /** Format: int32 */
+            transpose: number;
+        };
+        /** @enum {string} */
+        BookItemState: "printed" | "notOpen" | "unavailable";
         BookOptions: {
             caption?: string | null;
             contents: boolean;
             renumber: boolean;
             accidentals?: components["schemas"]["BookAccidentals"];
         };
+        BookPagesResult: {
+            items: components["schemas"]["BookItemPages"][];
+            /** Format: int32 */
+            contentsPages?: number | null;
+            /** @enum {string} */
+            kind: "book_pages";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "book_pages";
+        });
         BookRequest: {
             items: components["schemas"]["BookItem"][];
             /** Format: uuid */
             playlistId?: string | null;
             options: components["schemas"]["BookOptions"];
         };
+        BookResult: {
+            /** Format: int32 */
+            pages: number;
+            items: components["schemas"]["BookItemResult"][];
+            /** @enum {string} */
+            kind: "book";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "book";
+        });
         Change: {
             type: components["schemas"]["ChangeType"];
             chords?: string | null;
@@ -1932,6 +2042,7 @@ export interface components {
             songId?: string | null;
             chords?: string | null;
             share?: string | null;
+            carriesAccess: boolean;
         };
         CreatedPersonalKey: {
             key: string;
@@ -1961,6 +2072,19 @@ export interface components {
         };
         /** @enum {string} */
         HealthStatus: "healthy" | "degraded" | "unhealthy";
+        IllustratedChords: {
+            chords: string;
+            title?: string | null;
+            artists: string[];
+            pictureUrl: string;
+        };
+        IllustratedChordsList: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            offset: number;
+            items: components["schemas"]["IllustratedChords"][];
+        };
         IllustrationDrawing: {
             preset: string;
             /** Format: uuid */
@@ -1979,6 +2103,27 @@ export interface components {
         IllustrationPresetList: {
             presets: string[];
         };
+        IllustrationsJobResult: {
+            /** Format: int32 */
+            made: number;
+            /** @enum {string} */
+            kind: "illustrations";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "illustrations";
+        });
+        ImportLinkResult: {
+            link: string;
+            state: components["schemas"]["ImportLinkState"];
+            chordsId?: string | null;
+            /** Format: uuid */
+            songId?: string | null;
+        };
+        /** @enum {string} */
+        ImportLinkState: "imported" | "notFound" | "unavailable" | "notALink";
         ImportLinksRequest: {
             links: string[];
         };
@@ -1987,6 +2132,19 @@ export interface components {
             service?: components["schemas"]["MusicService"];
             playlistId?: string | null;
         };
+        ImportResult: {
+            /** Format: uuid */
+            playlistId: string;
+            links: components["schemas"]["ImportLinkResult"][];
+            /** @enum {string} */
+            kind: "import";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "import";
+        });
         InvitationItem: {
             token: string;
             role: components["schemas"]["PlaylistRole"];
@@ -2043,8 +2201,11 @@ export interface components {
             startedAt?: string | null;
             /** Format: date-time */
             finishedAt?: string | null;
-            result?: unknown;
+            result?: (components["schemas"]["PlaylistSyncResult"] | components["schemas"]["OwnChordsPlacingResult"] | components["schemas"]["IllustrationsJobResult"] | components["schemas"]["BookPagesResult"] | components["schemas"]["BookResult"] | components["schemas"]["ImportResult"]) | null;
             file?: components["schemas"]["JobFileInfo"];
+        };
+        JobResult: {
+            kind: string;
         };
         /** @enum {string} */
         JobStatus: "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -2287,6 +2448,9 @@ export interface components {
             track: components["schemas"]["MusicTrack"];
             lyricsAvailable: boolean;
         };
+        MyCarryingLink: {
+            link?: components["schemas"]["ShareLinkItem"];
+        };
         MyKey: {
             chords: string;
             /** Format: uuid */
@@ -2397,8 +2561,19 @@ export interface components {
         OwnChordsList: {
             items: components["schemas"]["OwnChordsItem"][];
         };
+        OwnChordsPlacingResult: {
+            chordsId: string;
+            /** @enum {string} */
+            kind: "own_chords_placing";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "own_chords_placing";
+        });
         OwnChordsPreview: {
-            content: unknown;
+            content: components["schemas"]["SourceV2Content"];
         };
         OwnChordsPreviewRequest: {
             contents: string;
@@ -2506,6 +2681,18 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        PlaylistSyncResult: {
+            /** Format: int32 */
+            added: number;
+            /** @enum {string} */
+            kind: "playlist_sync";
+        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "playlist_sync";
+        });
         /** @enum {string} */
         PlaylistSystemKind: "none" | "importedChords" | "ownChords" | "ownAnalyses";
         Profile: {
@@ -2522,6 +2709,9 @@ export interface components {
             locales: string[];
             defaultLocale: string;
             markKinds: components["schemas"]["MarkKind"][];
+            /** Format: uuid */
+            showcasePlaylistId?: string | null;
+            publicPageOrigin?: string | null;
         };
         PutMusicLinkRequest: {
             credentials: string;
@@ -2622,12 +2812,15 @@ export interface components {
         ShareLinkItem: {
             token: string;
             kind: components["schemas"]["ShareKind"];
+            carriesAccess: boolean;
+            publicAddress?: string | null;
         };
         ShareView: {
             kind: components["schemas"]["ShareKind"];
             playlist?: components["schemas"]["PlaylistSummary"];
             song?: components["schemas"]["SongPage"];
             chords?: components["schemas"]["ChordsAnswer"];
+            carriesAccess: boolean;
         };
         SheetBar: {
             beats: number[];
@@ -3947,6 +4140,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChordsPlaces"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetIllustratedLibrary: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IllustratedChordsList"];
                 };
             };
             /** @description An error. */
@@ -6858,6 +7083,37 @@ export interface operations {
             };
         };
     };
+    GetMyCarryingShareLink: {
+        parameters: {
+            query?: {
+                chords?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyCarryingLink"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     OpenShareLink: {
         parameters: {
             query?: never;
@@ -6876,6 +7132,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShareView"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RemoveShareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetSharedChords: {
+        parameters: {
+            query?: {
+                kinds?: string;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChordsContentResponse"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetSharedChordsMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChordsMedia"];
                 };
             };
             /** @description An error. */
@@ -6954,3 +7303,6 @@ export interface operations {
         };
     };
 }
+type WithRequired<T, K extends keyof T> = T & {
+    [P in K]-?: T[P];
+};

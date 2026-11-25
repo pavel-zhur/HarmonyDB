@@ -1,0 +1,12 @@
+/* The song's illustrations, each variant's: its head with the order, the batch being drawn, the moods. */
+.il-var { margin-bottom: 14px; }
+.il-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px var(--gr) 6px var(--gl); }
+.il-head b { flex: 1; min-width: 0; }
+.il-pad { margin: 0 var(--gr) 4px var(--gl); }
+.il-mood { font-size: 11px; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin: 6px var(--gr) 4px var(--gl); }
+.il-drawing { display: flex; gap: 10px; align-items: flex-start; margin: 0 var(--gr) 8px var(--gl); padding: 10px 12px; border-radius: 12px; background: var(--surface2); }
+.il-drawing > span { display: grid; }
+.il-links { display: flex; flex-wrap: wrap; gap: 0 16px; margin: -2px 0 6px; }
+.il-ask { padding: 10px 12px; display: grid; gap: 10px; }
+.il-ask p { margin: 0; }
+.il-ask .chips { gap: 8px; }

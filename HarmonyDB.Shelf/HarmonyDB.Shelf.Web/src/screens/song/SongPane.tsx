@@ -11,6 +11,7 @@ import { playlistTitle } from '../../data/playlists';
 import { useProfile, useSession } from '../../data/session';
 import { useSearch } from '../../data/songs';
 import { useChordsContent, useIllustrations, useSongPage, type ChordsVariant, type SongPage } from '../../data/song';
+import { useDrawnIllustrations } from '../../data/illustrations';
 import { useMarkSign } from '../../data/marks';
 import { local, useLocalView } from '../../local';
 import { Avatar } from '../../kit/controls';
@@ -22,6 +23,7 @@ import { SongRecordings } from '../recordings/SongRecordings';
 import { SongPlayer } from '../../player/SongPlayer';
 import { VariantMenu } from './Actions';
 import { Illustrations } from './Illustrations';
+import { SongLinks } from './SongLinks';
 import { keyText, letter } from './keys';
 import './song.css';
 
@@ -88,7 +90,7 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
         : null;
     const chordsId = variant?.chords.id ?? null;
     useOpened(chordsId, songId);
-    const illustrations = useIllustrations(chordsId ?? (page ? firstOpen(page)?.chords.id ?? null : null));
+    const illustrations = useDrawnIllustrations(chordsId ?? (page ? firstOpen(page)?.chords.id ?? null : null));
     const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
 
     if (song.isError) return <div className="songpage"><div className="hero"><p className="failed">{errorText(song.error)}</p></div></div>;
@@ -124,14 +126,18 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
                             onKey={semitones => setShown({ chords: v.chords.id, semitones })} />
                     ))}
                     {cut && <button type="button" className="lnk more" onClick={() => setAll(true)}><Icon name="down" />{t('song.showAll', { count: variants.length })}</button>}
-                    {!!illustrations.data?.images.length && (
+                    {(!!illustrations.data?.images.length || !!illustrations.data?.drawing) && (
                         <button type="button" className={open === 'illustrations' ? 'vrow on' : 'vrow'} onClick={() => setOpen(open === 'illustrations' ? null : 'illustrations')}>
                             <Icon name="img" /><span>{t('song.illustrations', { count: illustrations.data.images.length })}</span>
                         </button>
                     )}
+                    <SongLinks page={page} from={(variant ?? firstOpen(page))?.chords.state === 'open' ? (variant ?? firstOpen(page))!.chords.id : null} illustrated={!!illustrations.data?.images.length || !!illustrations.data?.drawing} onIllustrations={() => setOpen('illustrations')} />
                 </div>
             </div>
-            {open === 'illustrations' && illustrations.data && <Illustrations images={illustrations.data.images} onClose={() => setOpen(null)} />}
+            {open === 'illustrations' && (
+                <Illustrations onClose={() => setOpen(null)}
+                    variants={variants.map((v, i) => ({ chordsId: v.chords.id, label: variants.length > 1 ? `${letter(i)}. ${v.chords.header?.source.title ?? ''}` : null }))} />
+            )}
             {variant && (
                 <ChordsView key={variant.chords.id} chordsId={variant.chords.id}
                     place={{ page, variant, share, letter: variants.length > 1 ? letter(index) : null }}

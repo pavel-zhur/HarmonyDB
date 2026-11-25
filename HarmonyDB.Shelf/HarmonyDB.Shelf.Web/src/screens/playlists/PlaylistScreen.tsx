@@ -54,7 +54,7 @@ export function PlaylistScreen() {
 
 function Head({ details, share }: { details: PlaylistDetails; share: string | null }) {
     const { t } = useTranslation();
-    const { signedIn } = useSession();
+    const { signedIn, session } = useSession();
     const p = details.playlist;
     const member = !!p.myRole;
     const settings = `/playlists/${p.id}/settings`;
@@ -66,7 +66,10 @@ function Head({ details, share }: { details: PlaylistDetails; share: string | nu
                     <div className="t" title={playlistTitle(p)}>{playlistTitle(p)}</div>
                     <div className="muted small"><PlaylistMeta playlist={p} /></div>
                 </div>
-                <Link className="xbtn" to={`/book?playlist=${p.id}${share ? `&share=${share}` : ''}`} aria-label={t('playlist.book')} title={t('playlist.book')}><Icon name="file" /></Link>
+                {/* the book is for a profile that has PDF books (a guest is offered signing in there) */}
+                {(!signedIn || session?.permissions.includes('pdf')) && (
+                    <Link className="xbtn" to={`/book?playlist=${p.id}${share ? `&share=${share}` : ''}`} aria-label={t('playlist.book')} title={t('playlist.book')}><Icon name="file" /></Link>
+                )}
                 {signedIn && member && <Link className="xbtn" to={settings} aria-label={t('playlist.settings')} title={t('playlist.settings')}><Icon name="share" /></Link>}
             </div>
             {member && (

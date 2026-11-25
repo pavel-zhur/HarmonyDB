@@ -1,0 +1,15 @@
+/* The own chords' editor: the text and its preview side by side when wide, one under the other on a phone. */
+.ed-form { max-width: 1100px; }
+.ed-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .ed-grid { grid-template-columns: 1fr 1fr; } }
+.ed-grid label { display: block; }
+textarea.ed-text { min-height: 360px; font: 13.5px / 1.5 var(--mono); }
+textarea.ed-desc { min-height: 70px; margin: 0 0 10px; }
+.ed-prev { min-height: 360px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+.ed-prev .loading { padding: 0; }
+.ed-small { width: 110px; padding: 8px 12px; }
+.ed-wide { flex: 1 1 240px; padding: 8px 12px; }
+.ed-ver { margin: -14px 0 0; }
+.ed-form section > .ed-ver { margin: 8px 0 0; }
+.ed-draft { margin: -10px 0 0; }
+.ed-draft .lnk { padding: 0; font-size: 13px; }

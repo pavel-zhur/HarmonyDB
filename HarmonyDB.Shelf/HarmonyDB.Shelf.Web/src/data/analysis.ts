@@ -24,10 +24,13 @@ export function isAnalysis(kinds: readonly ChordsKind[] | null | undefined): boo
     return !!kinds?.includes('timeline');
 }
 
-export function useAnalysis(chordsId: string | null) {
+/** The analysis, read by its id — or, opened by a share link (`share`: its token), through the link. */
+export function useAnalysis(chordsId: string | null, share?: string | null) {
     return useQuery({
-        queryKey: ['analysis', chordsId],
-        queryFn: () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: analysisKinds.join(',') } } })),
+        queryKey: ['analysis', chordsId, share ?? null],
+        queryFn: () => (share
+            ? call(api.GET('/api/share/{token}/chords', { params: { path: { token: share }, query: { kinds: analysisKinds.join(',') } } }))
+            : call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: analysisKinds.join(',') } } }))),
         enabled: !!chordsId,
         // an analysis does not change while it is open
         staleTime: Infinity,

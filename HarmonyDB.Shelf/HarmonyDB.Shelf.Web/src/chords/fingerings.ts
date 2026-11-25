@@ -36,6 +36,11 @@ function load<T>(url: string): Promise<T> {
     return promise as Promise<T>;
 }
 
+/** The chords' types the model has fingerings of, as their texts on C ("C", "C7", … "Cm", "Cm7" …), in its order. */
+export async function fingeringTypes(): Promise<string[]> {
+    return Object.keys(await load<Record<string, Record<string, string>>>(indexUrl));
+}
+
 /** The pictures (data: addresses of GIFs) of a chord's fingerings; none when the model does not know the chord. */
 export async function fingerings(note: number, fingering: string | null): Promise<string[]> {
     if (fingering === null) return [];

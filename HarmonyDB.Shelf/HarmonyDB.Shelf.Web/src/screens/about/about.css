@@ -1,0 +1,10 @@
+/* "What the shelf can do" and the versions. */
+.ab-first { margin-top: 6px; }
+.ab-go { color: var(--ink); }
+.ab-go:hover { border-color: var(--accent); }
+.ab-emo { font-size: 20px; letter-spacing: 2px; }
+.ab-versions { margin-top: 22px; }
+.ab-releases { max-width: 620px; }
+.ab-release { padding: 14px 0; }
+.ab-release ul { margin: 8px 0 0; padding-left: 20px; line-height: 1.6; }
+.ab-latest { margin-left: 8px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }

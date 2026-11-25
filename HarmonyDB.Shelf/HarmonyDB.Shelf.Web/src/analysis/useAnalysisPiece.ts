@@ -14,8 +14,8 @@ function pieceFor(timeline: Timeline): Piece {
     return piece;
 }
 
-export function useAnalysisPiece(chordsId: string | null) {
-    const analysis = useAnalysis(chordsId);
+export function useAnalysisPiece(chordsId: string | null, share?: string | null) {
+    const analysis = useAnalysis(chordsId, share);
     const timeline = analysis.data?.content?.timeline ?? null;
     return { analysis, piece: timeline ? pieceFor(timeline) : null };
 }

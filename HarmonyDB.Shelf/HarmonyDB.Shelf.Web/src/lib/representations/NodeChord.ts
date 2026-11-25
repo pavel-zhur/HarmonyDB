@@ -10,7 +10,8 @@ import type { RepresentationSettings } from './RepresentationSettings';
 import { hasFlag, SimplificationMode } from './SimplificationMode';
 import { TimeAttribute } from './TimeAttribute';
 import type { TraversalContext } from './TraversalContext';
-import type { NodeBase, Ref } from './NodeBase';
+import { NodeBase, type Ref } from './NodeBase';
+import { SheetPlace, type SheetTimes } from './SheetTimes';
 import { NodeCollectionBase } from './NodeCollectionBase';
 import { NodeChild, NodeNote, NodeText } from './internal';
 
@@ -31,6 +32,7 @@ export interface NodeChordInit {
     degree?: string | null;
     bassDegree?: string | null;
     time?: number | null;
+    place?: SheetPlace | null;
 }
 
 export class NodeChord extends NodeCollectionBase {
@@ -46,12 +48,16 @@ export class NodeChord extends NodeCollectionBase {
     /** When the chord begins, in seconds from the start, when known. */
     readonly time: number | null;
 
+    /** Where the chord begins in the sheet's bars (NodeHtml.times), in place of `time`. */
+    readonly place: SheetPlace | null;
+
     /** `new NodeChord()` or `new NodeChord { Children = ..., Degree = ..., BassDegree = ..., Time = ... }` */
     constructor(init: NodeChordInit = {}) {
         super(init.children);
         this.degree = init.degree ?? null;
         this.bassDegree = init.bassDegree ?? null;
         this.time = init.time ?? null;
+        this.place = init.place ?? null;
     }
 
     /** internal: the degree as it is shown, when it is: "VI", "I/V"; the bass's degree goes away with the bass (SimplificationMode.RemoveBass). */
@@ -82,9 +88,10 @@ export class NodeChord extends NodeCollectionBase {
 
         builder.append('\'');
 
-        if (this.time !== null) {
+        const moment = this.moment(traversalContext.times);
+        if (moment !== null) {
             builder.append(' ');
-            builder.append(TimeAttribute.format(this.time));
+            builder.append(TimeAttribute.format(moment));
         }
 
         builder.append('>');
@@ -358,7 +365,11 @@ export class NodeChord extends NodeCollectionBase {
     }
 
     override shallowClone(): NodeBase {
-        return new NodeChord({ degree: this.degree, bassDegree: this.bassDegree, time: this.time });
+        return new NodeChord({ degree: this.degree, bassDegree: this.bassDegree, time: this.time, place: this.place });
+    }
+
+    override moment(times: SheetTimes | null): number | null {
+        return NodeBase.momentOf(this.time, this.place, times);
     }
 
     static readonly json: JsonContract<NodeChord> = jsonClass<NodeChord>('HarmonyDB.Common.Representations.OneShelf.NodeChord', init => new NodeChord({
@@ -366,10 +377,12 @@ export class NodeChord extends NodeCollectionBase {
         degree: init.degree as string | null | undefined,
         bassDegree: init.bassDegree as string | null | undefined,
         time: init.time as number | null | undefined,
+        place: init.place as SheetPlace | null | undefined,
     }), () => [
         jsonProperty('Degree', jsonString, { ignoreWhenWritingNull: true }),
         jsonProperty('BassDegree', jsonString, { ignoreWhenWritingNull: true }),
         jsonProperty('Time', jsonNullable(jsonDouble), { ignoreWhenWritingNull: true }),
+        jsonProperty('Place', () => SheetPlace.json, { ignoreWhenWritingNull: true }),
         jsonProperty('Children', () => jsonList(NodeChild.json)),
     ]);
 }

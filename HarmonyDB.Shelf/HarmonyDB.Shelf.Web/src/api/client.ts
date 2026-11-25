@@ -1,6 +1,7 @@
 // The browser API's client, generated: schema.d.ts comes from HarmonyDB.Shelf.Model/openapi.json (`npm run api`).
 // One fetch for every call: same origin, the session cookie, the CSRF header on every writing request, and one
-// repeat when the server answers csrf_failed (it hands a fresh token cookie with that answer).
+// repeat when the server answers csrf_failed (it hands a fresh token cookie with that answer). The CSRF step is the
+// app's (its entry turns it on: sendCsrf()); the public page, always a guest, asks for no session and sends none.
 //
 //   const songs = await call(api.GET('/api/library', { params: { query: { q, sort } } }));
 //
@@ -12,6 +13,13 @@ import type { components, paths } from './schema';
 export type Schemas = components['schemas'];
 
 const writing = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+let csrf = false;
+
+/** The app's entry: every writing request carries the CSRF token (fetched first when there is none). */
+export function sendCsrf(): void {
+    csrf = true;
+}
 
 function csrfToken(): string | null {
     // __Host-shelf-csrf on https; shelf-csrf on the local stand's plain http
@@ -36,7 +44,7 @@ function withCsrf(request: Request): Request {
 }
 
 async function shelfFetch(input: Request): Promise<Response> {
-    if (!writing.has(input.method)) return fetch(input);
+    if (!csrf || !writing.has(input.method)) return fetch(input);
     await ensureCsrf();
     // a copy is kept for the one repeat: a request's body is read once
     const request = withCsrf(input);

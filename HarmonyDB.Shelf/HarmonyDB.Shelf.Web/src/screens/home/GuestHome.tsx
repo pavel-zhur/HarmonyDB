@@ -14,7 +14,7 @@ import { PlaylistLine } from '../playlists/PlaylistsScreen';
 import type { en } from '../../i18n/en';
 import './home.css';
 
-type Card = keyof typeof en.guest.cards;
+export type Card = keyof typeof en.guest.cards;
 
 const cards: { key: Card; soon?: boolean; wide?: boolean }[] = [
     { key: 'analysis', soon: true },
@@ -90,7 +90,7 @@ const icons = (names: IconName[]) => <span className="ficons">{names.map(n => <I
 const pills = (names: string[], current: number) => <span className="ftl">{names.map((n, i) => <i key={n + i} className={i === current ? 'cur' : ''}>{n}</i>)}</span>;
 
 /** Each card's small picture, drawn of the design's own pieces. */
-function Visual({ card }: { card: Card }) {
+export function Visual({ card }: { card: Card }) {
     const { t } = useTranslation();
     switch (card) {
         case 'analysis': return <><Icon name="ai" />{pills(['Am', 'F', 'C', 'G', 'Am'], 2)}</>;

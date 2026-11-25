@@ -52,7 +52,7 @@ function storedRow(): number | null {
     return value !== null && value >= MIN_ROW && value <= MAX_ROW ? value : null;
 }
 
-export function NotesView({ notes, piece, chordsId }: { notes: Notes; piece: Piece; chordsId: string }) {
+export function NotesView({ notes, piece, chordsId, share }: { notes: Notes; piece: Piece; chordsId: string; share?: string | null }) {
     const { t } = useTranslation();
     const state = usePlayer();
     const chordName = useChordText();
@@ -179,7 +179,7 @@ export function NotesView({ notes, piece, chordsId }: { notes: Notes; piece: Pie
 
     const downloadMidi = async () => {
         try {
-            const media = await chordsMedia(chordsId);
+            const media = await chordsMedia(chordsId, share);
             if (!media.midiUrl) return;
             const a = document.createElement('a');
             a.href = media.midiUrl;

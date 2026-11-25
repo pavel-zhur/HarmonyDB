@@ -1,0 +1,9 @@
+/* "Chords offline". */
+.of-lines { max-width: 620px; }
+.of-bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; border-top: 0 !important; }
+.of-bar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.of-note { margin: 0; padding: 10px 0; }
+.of-remove { margin-top: 18px; max-width: 620px; }
+/* the frame's line with no connection */
+.of-conn { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px var(--gr) 6px var(--gl); background: var(--surface2); color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--line); }
+.of-conn svg.ic { width: 16px; height: 16px; }

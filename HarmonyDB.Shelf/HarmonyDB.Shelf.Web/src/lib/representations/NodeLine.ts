@@ -27,10 +27,7 @@ export class NodeLine extends NodeCollectionBase {
         }
 
         // The line's time is the time of the first thing in it that has one.
-        const time = this.traverseAll().map(x => x.element instanceof NodeText ? x.element.time
-            : x.element instanceof NodeChord ? x.element.time
-                : x.element instanceof NodeMark ? x.element.time
-                    : null).find(x => x !== null) ?? null;
+        const time = this.traverseAll().map(x => x.element.moment(traversalContext.times)).find(x => x !== null) ?? null;
 
         builder.append(`<span class='chords-line ${this._isDouble ? 'chords-double-line' : ''}'${time !== null ? ` ${TimeAttribute.format(time)}` : ''}>`);
 

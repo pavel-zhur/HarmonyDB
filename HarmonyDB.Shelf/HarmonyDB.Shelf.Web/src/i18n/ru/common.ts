@@ -1,8 +1,4 @@
 export const common = {
-    pwa: {
-        updated: 'Вышла новая версия',
-        reload: 'Обновить',
-    },
     app: {
         name: 'Один Шкаф',
     },
@@ -112,6 +108,18 @@ export const common = {
         own_chords_contents_required: 'Нужен текст',
         own_chords_invalid: 'Слишком длинное поле',
         song_needs_playlist: 'Песне нужен её плейлист',
+        not_downloaded: 'Этого нет на устройстве: откроется, когда будет связь',
+        offline_unanswerable: 'Без связи этот фильтр не показать',
+        no_such_mcp_client: 'Этот помощник не подключён',
+        no_such_personal_key: 'Такого ключа нет',
+        permission_not_grantable: 'У вашего профиля нет такого разрешения',
+        nothing_chosen: 'Выберите хотя бы одно разрешение',
+        personal_key_name_required: 'Ключу нужно название',
+        personal_key_expiry_invalid: 'Ключ живёт от 1 до 365 дней',
+        authorization_request_invalid: 'Этот запрос на подключение больше не действует: он устарел или не ваш',
+        authorization_request_decided: 'На этот запрос на подключение уже ответили',
+        unknown_mcp_client: 'Шкаф не знает этого помощника или не смог прочитать его описание',
+        redirect_uri_mismatch: 'Помощник попросил вернуться на адрес, который он не регистрировал',
     },
     time: {
         justNow: 'только что',
