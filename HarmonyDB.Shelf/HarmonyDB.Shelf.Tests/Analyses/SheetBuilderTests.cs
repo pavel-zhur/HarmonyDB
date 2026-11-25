@@ -67,15 +67,19 @@ public sealed class SheetBuilderTests
             Text(sheet));
     }
 
-    [Fact]
-    public void ChordsAloneAreLinesOfFourBarsCutWhereASectionBegins()
+    [Theory]
+    // the sections on the bar lines
+    [InlineData(0, 16, 32)]
+    // the sections a little after them, as a section's boundaries are heard: put on the bar lines, nothing moves
+    [InlineData(0.4, 17.3, 32.9)]
+    public void ChordsAloneAreLinesOfFourBarsCutWhereASectionBegins(double intro, double verse, double end)
     {
         // an intro of four bars and two more before the line, a chord a bar; the verse begins at bar 5 (16 s), its
         // first line at bar 7 (24 s)
         var sheet = Build(
             Chords((0, "Am"), (4, "F"), (8, "C"), (12, "G"), (16, "Am"), (20, "E"), (24, "Am")),
             Lines(Line((24, 26, "Sing"))),
-            sections: [Section(SectionLabel.Intro, null, 0, 16), Section(SectionLabel.Verse, 1, 16, 32)]);
+            sections: [Section(SectionLabel.Intro, null, intro, verse), Section(SectionLabel.Verse, 1, verse, end)]);
 
         Assert.Equal(
             """

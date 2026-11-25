@@ -21,6 +21,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Analyses.Services.Sheets;
 ///   and where the key, the tempo or the meter changes. A section that begins while a line's last word is held begins
 ///   there: what is played from then on is not the line's.
 /// - A chord written again (struck again) stands again; no chord and a stop are "N.C.", once for a run of them.
+/// - The sections are put on the bar lines first: each start and end on the nearest one.
 /// - A line lasts until the next line of the sheet begins, and is in the section, the key, the meter and the tempo
 ///   where its middle is: a line sung from before a bar line (a pickup) is in what it leads into. Every section has its
 ///   header (named in the language of the words; English when there are none, or another), before its first line; a
@@ -67,11 +68,33 @@ public static class SheetBuilder
     /// <exception cref="UnreadableChordException">A chord's name is not readable.</exception>
     public static NodeHtml Build(Timeline timeline, Lyrics? lyrics)
     {
-        var song = new Song(timeline);
+        var song = new Song(OnBarLines(timeline));
         var chords = song.ChordEvents();
         var lines = LyricLines(lyrics);
         var rows = Rows(song, chords, lines);
         return Write(song, rows, lyrics?.Language);
+    }
+
+    /// <summary>
+    /// The sections put on the bar lines, as the other views of the material put them: each start and end on the bar
+    /// line nearest to it (a bar's start, or where the last bar ends; of two as near, the earlier). A section left with no
+    /// bar of its own is no section of the sheet.
+    /// </summary>
+    private static Timeline OnBarLines(Timeline timeline)
+    {
+        if (timeline.Bars.Count == 0)
+            return timeline;
+
+        var lines = timeline.Bars.Select(x => x.Start).Append(timeline.Bars[^1].End).ToList();
+        double Nearest(double time) => lines.MinBy(x => Math.Abs(x - time));
+
+        return timeline with
+        {
+            Sections = timeline.Sections
+                .Select(x => x with { Start = Nearest(x.Start), End = Nearest(x.End) })
+                .Where(x => x.End > x.Start)
+                .ToList(),
+        };
     }
 
     // ------------------------------------------------------------------ the chords
