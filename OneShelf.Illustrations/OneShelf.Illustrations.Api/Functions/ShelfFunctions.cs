@@ -62,6 +62,22 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
         });
     }
 
+    /// <summary>
+    /// The covers of many keys at once: for each that has illustrations, the first of them, in one query.
+    /// </summary>
+    [Function(IllustrationsApiUrls.ShelfCovers, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
+    public async Task<IActionResult> Covers(HttpRequest req, [FromBody] ShelfCoversRequest request)
+    {
+        if (request?.Keys == null! || request.Keys.Count > ShelfCoversRequest.MaxKeys || request.Keys.Any(string.IsNullOrWhiteSpace))
+            return new BadRequestResult();
+
+        var covers = await illustrationsDatabase.GetShelfCovers(request.Keys);
+        return new OkObjectResult(new ShelfCoversResponse
+        {
+            Covers = covers.Select(x => new ShelfCover { Key = x.Key, Id = x.Id }).ToList(),
+        });
+    }
+
     [Function(IllustrationsApiUrls.ShelfGenerate, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
     public async Task<IActionResult> Generate(HttpRequest req, [FromBody] ShelfGenerateRequest request)
     {

@@ -60,6 +60,7 @@ public sealed class UndoTokens(ShelfDbContext db, IOptionsMonitor<SecretsOptions
         {
             [nameof(Playlist)] = async (db, k) => await db.Playlists.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
             [nameof(PlaylistMember)] = async (db, k) => await db.PlaylistMembers.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
+            [nameof(PlaylistFollow)] = async (db, k) => await db.PlaylistFollows.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
             [nameof(PlaylistSong)] = async (db, k) => await db.PlaylistSongs.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
             [nameof(PlaylistSongItem)] = async (db, k) => await db.PlaylistSongItems.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
             [nameof(Mark)] = async (db, k) => await db.Marks.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == Id(k)),
@@ -176,6 +177,14 @@ public sealed class UndoTokens(ShelfDbContext db, IOptionsMonitor<SecretsOptions
             {
                 await ApplyAsync(accountId, step, now, cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
+            }
+
+            // a follow brought back counts only where the person is no member (they joined meanwhile): nothing to undo
+            var follows = db.ChangeTracker.Entries<PlaylistFollow>().Select(x => x.Entity).Where(x => x.DeletedAt == null).ToList();
+            foreach (var follow in follows)
+            {
+                if (await db.PlaylistMembers.AnyAsync(m => m.PlaylistId == follow.PlaylistId && m.AccountId == follow.AccountId, cancellationToken))
+                    throw ShelfException.Conflict(PlaylistErrorCodes.NothingToUndo);
             }
 
             await transaction.CommitAsync(cancellationToken);

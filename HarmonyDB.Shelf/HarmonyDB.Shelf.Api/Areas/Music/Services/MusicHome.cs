@@ -75,9 +75,7 @@ public sealed class MusicHome(ShelfDbContext db, MusicCatalog catalog, IMemoryCa
             return new() { Tracks = [] };
 
         var databaseService = MusicShapes.ToDatabase(service);
-        var playlists = db.PlaylistMembers.AsNoTracking()
-            .Where(x => x.AccountId == accountId && x.ShowInLibrary)
-            .Select(x => x.Playlist);
+        var playlists = ShownPlaylists(accountId);
         if (playlistId != null)
         {
             playlists = playlists.Where(x => x.Id == playlistId);
@@ -134,10 +132,18 @@ public sealed class MusicHome(ShelfDbContext db, MusicCatalog catalog, IMemoryCa
         return new() { Tracks = [] };
     }
 
+    /// <summary>
+    /// The playlists the person shows in their library: those they are in, and those they follow (while not private;
+    /// a follow counts only where the person is no member).
+    /// </summary>
+    private IQueryable<Database.Model.Playlist> ShownPlaylists(Guid accountId)
+        => db.Playlists.AsNoTracking()
+            .Where(p => p.Members.Any(m => m.AccountId == accountId && m.ShowInLibrary)
+                        || (p.Access != Database.Model.PlaylistAccess.Private && !p.Members.Any(m => m.AccountId == accountId)
+                            && db.PlaylistFollows.Any(f => f.PlaylistId == p.Id && f.AccountId == accountId && f.ShowInLibrary)));
+
     private IQueryable<Database.Model.PlaylistSong> MySongs(Guid accountId)
-        => db.PlaylistMembers.AsNoTracking()
-            .Where(x => x.AccountId == accountId && x.ShowInLibrary)
-            .SelectMany(x => x.Playlist.Songs);
+        => ShownPlaylists(accountId).SelectMany(x => x.Songs);
 
     private async Task<MusicArtist?> FindArtistAsync(MusicService service, string name, CancellationToken cancellationToken)
         => await cache.GetOrCreateAsync(("music-artist-by-name", service, Normalize(name)), async entry =>

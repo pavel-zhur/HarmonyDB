@@ -30,6 +30,8 @@ builder.AddArea<HarmonyDB.Shelf.Api.Areas.OwnChords.OwnChordsArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Illustrations.IllustrationsArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Book.BookArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Import.ImportArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.OAuth.OAuthArea>();
+builder.AddArea<HarmonyDB.Shelf.Api.Areas.Mcp.McpArea>();
 
 var app = builder.Build();
 app.UseShelfFoundation();

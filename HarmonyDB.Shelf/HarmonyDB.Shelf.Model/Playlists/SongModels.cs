@@ -80,6 +80,16 @@ public record SongRow
 
     public required int ChordsCount { get; init; }
 
+    /// <summary>
+    /// The ids of the chords of its variants, in their order (to show a mark made a moment ago).
+    /// </summary>
+    public required IReadOnlyList<string> ChordsIds { get; init; }
+
+    /// <summary>
+    /// Its cover, an address the browser loads; none when it has none.
+    /// </summary>
+    public string? Cover { get; init; }
+
     public required int RecordingsCount { get; init; }
 
     public required DateTimeOffset AddedAt { get; init; }

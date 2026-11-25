@@ -13,7 +13,7 @@ namespace HarmonyDB.Shelf.Api.Clients.Illustrations;
 /// a key (the chords' id), drawing a preset for a key, and the images' copies. Not configured, or not answering: 503
 /// <c>unavailable</c>.
 /// </summary>
-public sealed class IllustrationsClient(HttpClient http, IOptions<IllustrationsClientOptions> options)
+public sealed partial class IllustrationsClient(HttpClient http, IOptions<IllustrationsClientOptions> options)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 

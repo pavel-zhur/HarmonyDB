@@ -93,6 +93,32 @@ public class IllustrationsDatabase(DbContextOptions<IllustrationsDatabase> optio
         return new(added, unchanged, notIllustrated, ownAlready, illustratedWithoutAlias);
     }
 
+    /// <summary>
+    /// For each of the new shelf's keys that has illustrations (under its alias, when it has one), the first of them
+    /// (the earliest, as <c>ShelfRead</c> orders them): one query.
+    /// </summary>
+    public async Task<List<ShelfCoverRow>> GetShelfCovers(IReadOnlyCollection<string> keys)
+    {
+        var distinct = keys.Distinct().ToArray();
+        return await Database.SqlQuery<ShelfCoverRow>($"""
+            SELECT k.key AS "Key", c."Id" AS "Id"
+            FROM unnest({distinct}) AS k(key)
+            LEFT JOIN "ShelfAliases" a ON a."Key" = k.key
+            CROSS JOIN LATERAL (
+                SELECT i."Id" FROM "Illustrations" i
+                WHERE i."Url" = coalesce(a."Url", k.key)
+                ORDER BY i."CreatedOn", i."AttemptIndex", i."PhotoIndex"
+                LIMIT 1) c
+            """).ToListAsync();
+    }
+
+    public sealed class ShelfCoverRow
+    {
+        public required string Key { get; init; }
+
+        public Guid Id { get; init; }
+    }
+
     public async Task<List<IllustrationsPrompts>> GetPrompts(string? url = null)
     {
         var prompts = Prompts.AsNoTracking();

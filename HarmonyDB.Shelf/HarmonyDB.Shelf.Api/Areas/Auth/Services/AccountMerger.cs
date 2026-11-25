@@ -175,6 +175,17 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
 
         moved["memberships"] = await db.PlaylistMembers.Where(x => x.AccountId == second && x.Playlist.DeletedAt == null)
             .ExecuteUpdateAsync(x => x.SetProperty(m => m.AccountId, first), cancellationToken);
+        // Follows: none where the first is now a member (memberships of the second have just come); the second's go to the
+        // first, but where the first is a member or follows already.
+        await db.PlaylistFollows
+            .Where(f => f.AccountId == first && db.PlaylistMembers.Any(m => m.PlaylistId == f.PlaylistId && m.AccountId == first))
+            .ExecuteUpdateAsync(x => x.SetProperty(f => f.DeletedAt, now), cancellationToken);
+        await db.PlaylistFollows
+            .Where(s => s.AccountId == second && (db.PlaylistMembers.Any(m => m.PlaylistId == s.PlaylistId && m.AccountId == first)
+                                                  || db.PlaylistFollows.Any(f => f.PlaylistId == s.PlaylistId && f.AccountId == first)))
+            .ExecuteUpdateAsync(x => x.SetProperty(f => f.DeletedAt, now), cancellationToken);
+        moved["follows"] = await db.PlaylistFollows.Where(x => x.AccountId == second)
+            .ExecuteUpdateAsync(x => x.SetProperty(f => f.AccountId, first), cancellationToken);
         moved["playlists"] = await db.Playlists.Where(x => x.OwnerId == second)
             .ExecuteUpdateAsync(x => x.SetProperty(p => p.OwnerId, first).SetProperty(p => p.UpdatedAt, now), cancellationToken);
 

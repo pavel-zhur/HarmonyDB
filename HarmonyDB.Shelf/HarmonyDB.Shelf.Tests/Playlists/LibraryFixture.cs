@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.Illustrations;
 using HarmonyDB.Shelf.Api.Clients.Index;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Model.Me;
@@ -32,6 +33,11 @@ public sealed class LibraryFixture : IAsyncLifetime
     public FakeAudio Audio { get; } = new();
 
     /// <summary>
+    /// The illustrations' covers: by chords id, the picture.
+    /// </summary>
+    public FakeIllustrations Illustrations { get; } = new();
+
+    /// <summary>
     /// The sources, through the index: an id "test-…" is open (titled "Title of …"), "closed-…" is not open to
     /// anyone, "away-…" does not answer.
     /// </summary>
@@ -55,7 +61,7 @@ public sealed class LibraryFixture : IAsyncLifetime
         await using (var db = CreateContext())
             await db.Database.MigrateAsync();
 
-        Api = new(ConnectionString, Audio, Index);
+        Api = new(ConnectionString, Audio, Index, Illustrations);
     }
 
     private static (HttpStatusCode, object?) Sources(string operation, JsonElement body)
@@ -101,7 +107,7 @@ public sealed class LibraryFixture : IAsyncLifetime
     }
 }
 
-public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, FakeIndex index) : WebApplicationFactory<Program>
+public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, FakeIndex index, FakeIllustrations illustrations) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -117,6 +123,8 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
             ["Clients:Audio:Key"] = "an-internal-key-of-the-tests-0123456789",
             ["Clients:Index:Endpoint"] = FakeIndex.Endpoint,
             ["Clients:Index:Key"] = FakeIndex.Key,
+            ["Clients:Illustrations:Endpoint"] = "http://illustrations.test/api/",
+            ["Clients:Illustrations:Key"] = "an-internal-key-of-the-tests-0123456789",
             ["Jobs:Poll"] = "00:00:00.200",
             // a few songs make a playlist large here
             ["Playlists:LibraryShowLimit"] = "5",
@@ -125,6 +133,7 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
         {
             services.AddHttpClient<AudioClient>().ConfigurePrimaryHttpMessageHandler(() => audio);
             services.AddHttpClient<IndexClient>().ConfigurePrimaryHttpMessageHandler(() => index);
+            services.AddHttpClient<IllustrationsClient>().ConfigurePrimaryHttpMessageHandler(() => illustrations);
         });
     }
 
@@ -167,5 +176,28 @@ public sealed class FakeAudio : HttpMessageHandler
         return Task.FromResult(answer == null
             ? new HttpResponseMessage(HttpStatusCode.NotFound) { Content = JsonContent.Create(new { code = "not_found", message = "" }) }
             : new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(answer, options: new JsonSerializerOptions(JsonSerializerDefaults.Web)) });
+    }
+}
+
+/// <summary>
+/// The illustrations' service as the tests set it: the covers of the chords in <see cref="Covers"/>.
+/// </summary>
+public sealed class FakeIllustrations : HttpMessageHandler
+{
+    public Dictionary<string, Guid> Covers { get; } = new();
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.RequestUri!.AbsolutePath != "/api/ShelfCovers")
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+        var keys = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.GetProperty("keys").EnumerateArray().Select(x => x.GetString()!);
+        Dictionary<string, Guid> covers;
+        lock (Covers)
+            covers = keys.Where(Covers.ContainsKey).ToDictionary(x => x, x => Covers[x]);
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = JsonContent.Create(new { covers = covers.Select(x => new { key = x.Key, id = x.Value }) }),
+        };
     }
 }

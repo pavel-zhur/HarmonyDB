@@ -32,13 +32,24 @@ public sealed class RecentService(ShelfDbContext db, Views views)
             .AsNoTracking().ToDictionaryAsync(x => x.Id, cancellationToken);
         var chords = await views.ChordsAsync(user, rows.Where(x => x.Chords != null).Select(x => x.Chords!.SourceId), cancellationToken);
         var people = await views.PeopleAsync(songs.Values.Where(x => x.AddedById != null).Select(x => x.AddedById!.Value), cancellationToken);
+        var covers = await views.SongCoversAsync(me, songs.Keys, cancellationToken);
 
         return rows
-            .Select(x => new RecentEntry
+            .Select(x =>
             {
-                Chords = x.Chords == null ? null : chords[x.Chords.SourceId],
-                Song = x.SongId is { } id && songs.TryGetValue(id, out var song) ? Views.Song(song, people) : null,
-                OpenedAt = x.OpenedAt,
+                var answer = x.Chords == null ? null : chords[x.Chords.SourceId];
+                var song = x.SongId is { } id && songs.TryGetValue(id, out var found) ? Views.Song(found, people) : null;
+                // seen under the chords' title as their source gives it; not open: the title the song has in its playlist
+                var named = answer?.Header != null;
+                return new RecentEntry
+                {
+                    Chords = answer,
+                    Song = song,
+                    Title = named ? answer!.Header!.Title : song?.Title,
+                    Artists = named ? answer!.Header!.Artists : song?.Artists ?? [],
+                    Cover = song == null ? null : covers.GetValueOrDefault(song.Id),
+                    OpenedAt = x.OpenedAt,
+                };
             })
             .Where(x => x.Chords != null || x.Song != null)
             .ToList();

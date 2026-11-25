@@ -11,9 +11,15 @@ namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 /// remove others' things; adding is for all members or for admins, by the playlist's setting; everyone removes their
 /// own; marking, keys and notes are for all members).
 /// </summary>
-public sealed record PlaylistView(Playlist Playlist, PlaylistMember? Membership)
+public sealed record PlaylistView(Playlist Playlist, PlaylistMember? Membership, PlaylistFollow? Follow = null)
 {
     public bool IsMember => Membership != null;
+
+    /// <summary>
+    /// Whether the caller follows it (keeps it without being a member): a follow counts while the playlist is not
+    /// private.
+    /// </summary>
+    public bool IsFollower => Follow != null && Playlist.Access != PlaylistAccess.Private;
 
     public bool IsOwner => Membership?.Role == PlaylistRole.Owner;
 
@@ -158,7 +164,7 @@ public sealed class PlaylistGate(ShelfDbContext db)
     /// </summary>
     public async Task<bool> CanReadAsync(PlaylistView view, string? share, CancellationToken cancellationToken)
     {
-        if (view.IsMember || view.Playlist.Access == PlaylistAccess.Public)
+        if (view.IsMember || view.IsFollower || view.Playlist.Access == PlaylistAccess.Public)
             return true;
 
         if (view.Playlist.Access != PlaylistAccess.Link || share == null)
@@ -205,6 +211,9 @@ public sealed class PlaylistGate(ShelfDbContext db)
         var membership = viewer == null
             ? null
             : await db.PlaylistMembers.SingleOrDefaultAsync(x => x.PlaylistId == playlistId && x.AccountId == viewer, cancellationToken);
-        return new(playlist, membership);
+        var follow = viewer == null || membership != null
+            ? null
+            : await db.PlaylistFollows.SingleOrDefaultAsync(x => x.PlaylistId == playlistId && x.AccountId == viewer, cancellationToken);
+        return new(playlist, membership, follow);
     }
 }

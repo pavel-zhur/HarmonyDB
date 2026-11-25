@@ -50,6 +50,9 @@ public static class PlaylistErrorCodes
     /// <summary>409: the owner leaves only after passing the playlist on (or deletes it).</summary>
     public const string OwnerCannotLeave = "owner_cannot_leave";
 
+    /// <summary>409: the batch is of another account than the session's.</summary>
+    public const string WrongAccount = "wrong_account";
+
     /// <summary>409: the caller is a member already.</summary>
     public const string AlreadyMember = "already_member";
 

@@ -143,7 +143,10 @@ The frontend's part:
 
 1. `POST /api/auth/flows {provider, purpose: signIn | link, returnPath}` → `{state, redirectUrl}`. With a
    `redirectUrl`, go there; the browser comes back to `returnPath?auth=<outcome or error code>&auth_flow=<state>`.
-   Without one (dev), post `{name}` to `/api/auth/flows/{state}/complete`. Starting and finishing are rate-limited
+   Without one (dev), post `{name}` to `/api/auth/flows/{state}/complete`. To walk the stand as an imported person,
+   post `{accountId}` instead: the dev sign-in signs in as that account and changes nothing in it (no sign-in row is
+   added). An account takes its name and picture only from the sign-in it was made with; other sign-ins never rename
+   it. Starting and finishing are rate-limited
    per client address (429 `too_many_requests`).
 2. The outcome `mergeNeeded` (when adding a sign-in that has its own account): show `GET /api/auth/flows/{state}`
    and on consent `POST /api/auth/flows/{state}/merge`. It needs both sign-ins made within `FreshSignIn`;

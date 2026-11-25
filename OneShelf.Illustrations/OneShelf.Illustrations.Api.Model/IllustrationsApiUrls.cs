@@ -24,4 +24,5 @@ public static class IllustrationsApiUrls
     public const string ShelfRead = nameof(ShelfRead);
     public const string ShelfGenerate = nameof(ShelfGenerate);
     public const string ShelfAliases = nameof(ShelfAliases);
+    public const string ShelfCovers = nameof(ShelfCovers);
 }

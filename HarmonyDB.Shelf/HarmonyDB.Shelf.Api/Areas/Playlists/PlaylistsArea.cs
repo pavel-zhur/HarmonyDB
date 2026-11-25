@@ -45,6 +45,13 @@ public sealed class PlaylistsArea : IShelfArea
         group.MapPut("/{id:guid}/library", (ClaimsPrincipal user, Guid id, ShowInLibraryRequest request, PlaylistService playlists, CancellationToken cancellationToken)
             => playlists.ShowInLibraryAsync(Me(user), id, request.Show, cancellationToken)).RequireSignIn().WithName("ShowPlaylistInLibrary");
 
+        // keeping a playlist one may look at without being its member
+        group.MapPost("/{id:guid}/follow", (ClaimsPrincipal user, Guid id, string? share, PlaylistService playlists, CancellationToken cancellationToken)
+            => playlists.FollowAsync(Me(user), id, share, cancellationToken)).RequireSignIn().WithName("FollowPlaylist");
+
+        group.MapDelete("/{id:guid}/follow", (ClaimsPrincipal user, Guid id, PlaylistService playlists, CancellationToken cancellationToken)
+            => playlists.UnfollowAsync(Me(user), id, cancellationToken)).RequireSignIn().WithName("UnfollowPlaylist");
+
         group.MapPost("/{id:guid}/leave", (ClaimsPrincipal user, Guid id, PlaylistService playlists, CancellationToken cancellationToken)
             => playlists.LeaveAsync(Me(user), id, cancellationToken)).RequireSignIn().WithName("LeavePlaylist");
 

@@ -35,6 +35,10 @@ public sealed class SyncService(ShelfDbContext db, ChordsLookup chordsRows, Undo
             throw ShelfException.BadRequest();
 
         var me = user.GetAccountId()!.Value;
+        // a queue of another account (a tab left open under someone else) is never sent as this one
+        if (request.AccountId != me)
+            throw ShelfException.Conflict(PlaylistErrorCodes.WrongAccount);
+
         var results = new List<ChangeResult>();
         foreach (var change in request.Changes)
         {
@@ -244,20 +248,36 @@ public sealed class SyncService(ShelfDbContext db, ChordsLookup chordsRows, Undo
         };
     }
 
+    /// <summary>
+    /// The playlists whose content the person sees changed:
+    /// <list type="bullet">
+    /// <item>of those the person is (or was) a member of: the playlist, its members, songs, variants, others' "here"
+    /// keys and notes in it, and others' marks on its chords while both are members;</item>
+    /// <item>of those the person follows: the same but the marks, while the playlist is not private; once private, only a
+    /// change of the playlist itself (the one that made it private);</item>
+    /// <item>and the person's own follow or unfollow.</item>
+    /// </list>
+    /// </summary>
     private async Task<List<Guid>> ChangedPlaylistsAsync(Guid me, long from, CancellationToken cancellationToken)
     {
-        var mine = db.PlaylistMembers.IgnoreQueryFilters().Where(x => x.AccountId == me).Select(x => x.PlaylistId);
+        var memberOf = db.PlaylistMembers.IgnoreQueryFilters().Where(x => x.AccountId == me).Select(x => x.PlaylistId);
+        var following = db.PlaylistFollows.Where(x => x.AccountId == me).Select(x => x.PlaylistId);
+        var followChanged = db.PlaylistFollows.IgnoreQueryFilters().Where(x => x.AccountId == me && x.Version >= from).Select(x => x.PlaylistId);
         var changed = await db.Playlists.IgnoreQueryFilters()
-            .Where(p => mine.Contains(p.Id))
-            .Where(p => p.Version >= from
-                        || db.PlaylistMembers.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.Version >= from)
-                        || db.PlaylistSongs.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.Version >= from)
-                        || db.PlaylistSongItems.IgnoreQueryFilters().Any(x => x.Song.PlaylistId == p.Id && x.Version >= from)
-                        || db.Transpositions.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.AccountId != me && x.Version >= from)
-                        || db.Notes.IgnoreQueryFilters().Any(x => x.Song!.PlaylistId == p.Id && x.AccountId != me && x.Version >= from)
-                        || db.Marks.IgnoreQueryFilters().Any(m => m.AccountId != me && m.Version >= from
-                                                                   && p.Members.Any(x => x.AccountId == m.AccountId && x.DeletedAt == null)
-                                                                   && db.PlaylistSongItems.Any(i => i.ChordsId == m.ChordsId && i.Song.PlaylistId == p.Id)))
+            .Where(p => memberOf.Contains(p.Id) || following.Contains(p.Id) || followChanged.Contains(p.Id))
+            .Where(p => followChanged.Contains(p.Id)
+                        || p.Version >= from
+                        || ((memberOf.Contains(p.Id) || p.Access != PlaylistAccess.Private)
+                            && (db.PlaylistMembers.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.Version >= from)
+                                || db.PlaylistSongs.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.Version >= from)
+                                || db.PlaylistSongItems.IgnoreQueryFilters().Any(x => x.Song.PlaylistId == p.Id && x.Version >= from)
+                                || db.Transpositions.IgnoreQueryFilters().Any(x => x.PlaylistId == p.Id && x.AccountId != me && x.Version >= from)
+                                || db.Notes.IgnoreQueryFilters().Any(x => x.Song!.PlaylistId == p.Id && x.AccountId != me && x.Version >= from)))
+                        // others' marks: seen in a playlist where both are members
+                        || (p.Members.Any(x => x.AccountId == me && x.DeletedAt == null)
+                            && db.Marks.IgnoreQueryFilters().Any(m => m.AccountId != me && m.Version >= from
+                                                                      && p.Members.Any(x => x.AccountId == m.AccountId && x.DeletedAt == null)
+                                                                      && db.PlaylistSongItems.Any(i => i.ChordsId == m.ChordsId && i.Song.PlaylistId == p.Id))))
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
         return changed;

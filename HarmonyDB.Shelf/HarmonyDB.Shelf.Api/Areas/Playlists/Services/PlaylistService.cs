@@ -29,7 +29,7 @@ public sealed class PlaylistService(ShelfDbContext db, PlaylistGate gate, Views 
 
     /// <summary>
     /// The person's playlists (created by them and shared with them), their system playlists first, then by when the
-    /// person joined.
+    /// person joined; then those they follow.
     /// </summary>
     public async Task<List<M.PlaylistSummary>> ListMineAsync(Guid me, CancellationToken cancellationToken)
     {
@@ -38,6 +38,10 @@ public sealed class PlaylistService(ShelfDbContext db, PlaylistGate gate, Views 
             .OrderBy(x => x.Playlist.SystemKind == PlaylistSystemKind.None ? 1 : 0).ThenBy(x => x.Playlist.SystemKind).ThenBy(x => x.JoinedAt)
             .Select(x => x.Playlist)
             .ToListAsync(cancellationToken);
+        // then those followed (not while private)
+        playlists.AddRange(await db.PlaylistFollows.Where(x => x.AccountId == me && x.Playlist.DeletedAt == null && x.Playlist.Access != PlaylistAccess.Private
+                                                               && !x.Playlist.Members.Any(m => m.AccountId == me))
+            .OrderBy(x => x.FollowedAt).Select(x => x.Playlist).ToListAsync(cancellationToken));
         return await views.SummariesAsync(me, playlists, cancellationToken);
     }
 
@@ -126,11 +130,71 @@ public sealed class PlaylistService(ShelfDbContext db, PlaylistGate gate, Views 
         return new() { Undo = await undo.SaveAsync(me, cancellationToken) };
     }
 
+    /// <summary>
+    /// "Show in my library", for a member or a follower.
+    /// </summary>
     public async Task<M.Changed<M.PlaylistDetails>> ShowInLibraryAsync(Guid me, Guid playlistId, bool show, CancellationToken cancellationToken)
     {
-        var view = await gate.ForChangeAsync(me, playlistId, cancellationToken);
-        view.Membership!.ShowInLibrary = show;
-        return await SaveDetailsAsync(me, view, cancellationToken);
+        var view = await gate.ReadAsync(me, playlistId, null, cancellationToken);
+        if (view.Membership != null)
+            view.Membership.ShowInLibrary = show;
+        else if (view.IsFollower)
+            view.Follow!.ShowInLibrary = show;
+        else
+            throw ShelfException.Forbidden(M.PlaylistErrorCodes.MembersOnly);
+
+        var token = await undo.SaveAsync(me, cancellationToken);
+        return new() { Value = await DetailsAsync(me, view, cancellationToken), Undo = token };
+    }
+
+    /// <summary>
+    /// Follows a playlist the person may look at (public, or of link access by its link), to keep it: without being a
+    /// member. A very large one starts out of the library (the answer says so). Following again changes nothing.
+    /// </summary>
+    public async Task<M.Changed<M.JoinedPlaylist>> FollowAsync(Guid me, Guid playlistId, string? share, CancellationToken cancellationToken)
+    {
+        var view = await gate.ReadAsync(me, playlistId, share, cancellationToken);
+        view.RequireNotSystem();
+        if (view.IsMember)
+            throw ShelfException.Conflict(M.PlaylistErrorCodes.AlreadyMember);
+
+        string? token = null;
+        var large = false;
+        if (view.Follow == null)
+        {
+            large = await db.PlaylistSongs.CountAsync(x => x.PlaylistId == playlistId, cancellationToken) > options.CurrentValue.LibraryShowLimit;
+            db.PlaylistFollows.Add(new()
+            {
+                Id = Guid.NewGuid(),
+                PlaylistId = playlistId,
+                AccountId = me,
+                // a very large playlist does not flood the library: it starts out of it, and the person is told
+                ShowInLibrary = !large,
+                FollowedAt = time.GetUtcNow(),
+            });
+            try
+            {
+                token = await undo.SaveAsync(me, cancellationToken);
+            }
+            catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                // followed at the same moment from elsewhere: it is followed
+                db.ChangeTracker.Clear();
+            }
+
+            view = await gate.ReadAsync(me, playlistId, share, cancellationToken);
+        }
+
+        var details = await DetailsAsync(me, view, cancellationToken);
+        return new() { Value = new M.JoinedPlaylist(details) { KeptOutOfLibrary = large }, Undo = token };
+    }
+
+    public async Task<M.UndoOnly> UnfollowAsync(Guid me, Guid playlistId, CancellationToken cancellationToken)
+    {
+        var follow = await db.PlaylistFollows.SingleOrDefaultAsync(x => x.PlaylistId == playlistId && x.AccountId == me, cancellationToken)
+                     ?? throw ShelfException.NotFound(M.PlaylistErrorCodes.NoSuchPlaylist);
+        follow.DeletedAt = time.GetUtcNow();
+        return new() { Undo = await undo.SaveAsync(me, cancellationToken) };
     }
 
     /// <summary>
@@ -327,6 +391,9 @@ public sealed class PlaylistService(ShelfDbContext db, PlaylistGate gate, Views 
             ShowInLibrary = !large,
         };
         db.PlaylistMembers.Add(membership);
+        // a member follows no more
+        foreach (var follow in await db.PlaylistFollows.Where(x => x.PlaylistId == invitation.PlaylistId && x.AccountId == me).ToListAsync(cancellationToken))
+            follow.DeletedAt = now;
         string? undoToken;
         try
         {

@@ -96,9 +96,19 @@ public record PlaylistSummary
     public PlaylistRole? MyRole { get; init; }
 
     /// <summary>
-    /// The caller's "show in my library"; null when the caller is not a member.
+    /// Whether the caller follows it: keeps it without being a member (not while it is private).
+    /// </summary>
+    public bool Following { get; init; }
+
+    /// <summary>
+    /// The caller's "show in my library", as a member or a follower; null when neither.
     /// </summary>
     public bool? ShowInLibrary { get; init; }
+
+    /// <summary>
+    /// The covers of its first songs that have one, at most four (addresses the browser loads).
+    /// </summary>
+    public required IReadOnlyList<string> Covers { get; init; }
 
     public required int SongCount { get; init; }
 

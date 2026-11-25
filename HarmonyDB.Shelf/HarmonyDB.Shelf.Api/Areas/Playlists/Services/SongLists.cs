@@ -138,9 +138,17 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
     public async Task<M.SongList> LibraryAsync(ClaimsPrincipal user, SongListQuery query, CancellationToken cancellationToken)
     {
         var me = user.GetAccountId()!.Value;
-        var shown = await db.PlaylistMembers.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null)
+        var memberOf = await db.PlaylistMembers.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null)
             .OrderBy(x => x.JoinedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
-        var members = (await db.PlaylistMembers.Where(x => shown.Contains(x.PlaylistId)).Select(x => new { x.PlaylistId, x.AccountId }).ToListAsync(cancellationToken))
+        var followed = await db.PlaylistFollows.Where(x => x.AccountId == me && x.ShowInLibrary && x.Playlist.DeletedAt == null && x.Playlist.Access != PlaylistAccess.Private)
+            .OrderBy(x => x.FollowedAt).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
+        // a follow counts only where the person is no member at all (a member shows a playlist or not by their membership)
+        var anyMembership = await db.PlaylistMembers.Where(x => x.AccountId == me).Select(x => x.PlaylistId).ToListAsync(cancellationToken);
+        followed = followed.Except(anyMembership).ToList();
+        var shown = memberOf.Concat(followed).ToList();
+        // whose marks are seen in each: its members', in a playlist one is a member of; one's own, in one followed
+        var members = (await db.PlaylistMembers.Where(x => memberOf.Contains(x.PlaylistId)).Select(x => new { x.PlaylistId, x.AccountId }).ToListAsync(cancellationToken))
+            .Concat(followed.Select(x => new { PlaylistId = x, AccountId = me }))
             .ToLookup(x => x.PlaylistId, x => x.AccountId);
 
         // a song held by several shown playlists (by the same chords) is one row: the first playlist's song stands for
@@ -266,7 +274,8 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
     private async Task<List<M.SongRow>> RowsAsync(ClaimsPrincipal user, List<Entry> page, CancellationToken cancellationToken)
     {
         var chords = await views.ChordsAsync(user, page.SelectMany(x => x.Chords.Select(c => c.SourceId)), cancellationToken);
-        return page.Select(x => x.Row(user.GetAccountId(), chords)).ToList();
+        var covers = await views.SongCoversAsync(user.GetAccountId(), page.Where(x => x.SongId != null).Select(x => x.SongId!.Value).ToList(), cancellationToken);
+        return page.Select(x => x.Row(user.GetAccountId(), chords, covers)).ToList();
     }
 
     private async Task<List<M.PersonRef>> PeopleAsync(Guid? viewer, IReadOnlyList<Guid> people, CancellationToken cancellationToken)
@@ -367,7 +376,8 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
         }
 
         /// <param name="chords">The chords as their sources give them to the caller.</param>
-        public M.SongRow Row(Guid? viewer, IReadOnlyDictionary<string, ChordsAnswer> chords)
+        /// <param name="covers">The songs' covers.</param>
+        public M.SongRow Row(Guid? viewer, IReadOnlyDictionary<string, ChordsAnswer> chords, IReadOnlyDictionary<Guid, string> covers)
         {
             var others = Marks.Where(x => x.AccountId != viewer).ToList();
             var bare = BareChords == null ? null : chords[BareChords.SourceId];
@@ -386,6 +396,8 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
                 OtherPeople = others.Select(x => x.AccountId).Distinct().Count(),
                 Sources = Chords.Select(x => chords[x.SourceId].Header?.Source).Where(x => x != null).DistinctBy(x => x!.Key).Take(SourcesShown).Select(x => x!).ToList(),
                 ChordsCount = Chords.Count,
+                ChordsIds = Chords.Select(x => x.SourceId).ToList(),
+                Cover = SongId is { } song ? covers.GetValueOrDefault(song) : null,
                 RecordingsCount = Recordings,
                 AddedAt = AddedAt,
             };

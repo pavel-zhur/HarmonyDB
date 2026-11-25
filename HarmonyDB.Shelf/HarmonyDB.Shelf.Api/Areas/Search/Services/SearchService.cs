@@ -86,14 +86,16 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
     }
 
     /// <summary>
-    /// The playlists whose songs the search shows the person: those they are in and show in their library, and the
-    /// public ones they are not in. A guest sees the public ones.
+    /// The playlists whose songs the search shows the person: those they are in, or follow, and show in their library,
+    /// and the public ones they neither are in nor follow. A guest sees the public ones.
     /// </summary>
     public static IQueryable<Guid> SearchedPlaylists(ShelfDbContext db, Guid? accountId)
         => db.Playlists
             .Where(p => accountId != null && p.Members.Any(m => m.AccountId == accountId)
                 ? p.Members.Any(m => m.AccountId == accountId && m.ShowInLibrary)
-                : p.Access == PlaylistAccess.Public)
+                : accountId != null && p.Access != PlaylistAccess.Private && db.PlaylistFollows.Any(f => f.PlaylistId == p.Id && f.AccountId == accountId)
+                    ? db.PlaylistFollows.Any(f => f.PlaylistId == p.Id && f.AccountId == accountId && f.ShowInLibrary)
+                    : p.Access == PlaylistAccess.Public)
             .Select(p => p.Id);
 
     private async Task<ChordsFound> SearchChordsAsync(ClaimsPrincipal user, string text, CancellationToken cancellationToken)

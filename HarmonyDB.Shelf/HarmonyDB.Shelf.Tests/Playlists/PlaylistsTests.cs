@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using HarmonyDB.Shelf.Model;
+using HarmonyDB.Shelf.Model.Auth;
 using HarmonyDB.Shelf.Model.Jobs;
+using HarmonyDB.Shelf.Model.Me;
 using HarmonyDB.Shelf.Model.Playlists;
 using HarmonyDB.Shelf.Model.Share;
 using HarmonyDB.Shelf.Model.Sync;
@@ -140,7 +142,7 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         // a private playlist is not there for others; a guest's change asks to sign in
         await Browser.AssertError(await carol.SendAsync(HttpMethod.Get, $"/api/playlists/{playlist}"), HttpStatusCode.NotFound, PlaylistErrorCodes.NoSuchPlaylist);
         await Browser.AssertError(await guest.SendAsync(HttpMethod.Get, $"/api/playlists/{playlist}/songs"), HttpStatusCode.NotFound, PlaylistErrorCodes.NoSuchPlaylist);
-        await Browser.AssertError(await guest.SendAsync(HttpMethod.Post, "/api/sync", new SyncRequest()), HttpStatusCode.Unauthorized, ErrorCodes.SignInRequired);
+        await Browser.AssertError(await guest.SendAsync(HttpMethod.Post, "/api/sync", new SyncRequest { AccountId = Guid.NewGuid() }), HttpStatusCode.Unauthorized, ErrorCodes.SignInRequired);
 
         // a song's link from a private playlist: the song and its chords, not the playlist
         var link = await Ok<ShareLinkItem>(bob, HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Song, SongId = anns });
@@ -578,6 +580,221 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         Assert.DoesNotContain((await Ok<SongList>(bob, HttpMethod.Get, "/api/library")).Rows, x => x.PlaylistId == playlist);
     }
 
+    [DatabaseFact]
+    public async Task FollowingKeepsAPlaylistWithoutJoiningIt()
+    {
+        var (ann, annId) = await fixture.PersonAsync("ann");
+        var (carol, carolId) = await fixture.PersonAsync("carol");
+        var playlist = await CreateAsync(ann, PlaylistAccess.Public);
+        var chords = Id();
+        var song = await AddAsync(ann, playlist, chords, "Common song");
+        await SyncAsync(ann, null,
+            new Change { Type = ChangeType.Mark, Chords = chords, Kind = "heart_red", On = true },
+            new Change { Type = ChangeType.Key, Chords = chords, PlaylistId = playlist, Semitones = 2 });
+
+        var followed = await Ok<Changed<JoinedPlaylist>>(carol, HttpMethod.Post, $"/api/playlists/{playlist}/follow");
+        Assert.True(followed.Value.Playlist.Following);
+        Assert.Equal((null, true, false), (followed.Value.Playlist.MyRole, followed.Value.Playlist.ShowInLibrary, followed.Value.KeptOutOfLibrary));
+        Assert.DoesNotContain(followed.Value.Members, x => x.Person.Id == carolId);
+        Assert.Contains((await Ok<List<PlaylistSummary>>(carol, HttpMethod.Get, "/api/playlists")), x => x.Id == playlist && x.Following);
+        Assert.Contains((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+
+        // not a member: adds nothing; their marks and the members' are not seen by each other; the "here" key is
+        await Browser.AssertError(await carol.SendAsync(HttpMethod.Post, $"/api/playlists/{playlist}/songs", new AddSongRequest { Chords = Id(), Title = "x" }), HttpStatusCode.Forbidden, PlaylistErrorCodes.MembersOnly);
+        await SyncAsync(carol, null, new Change { Type = ChangeType.Mark, Chords = chords, Kind = "star", On = true });
+        var carols = await PageAsync(carol, playlist, song);
+        Assert.Equal([carolId], carols.Marks.Select(x => x.AccountId));
+        Assert.Equal([(annId, 2, true)], carols.Keys.Select(x => (x.AccountId, x.Semitones, x.Here)));
+        Assert.DoesNotContain((await PageAsync(ann, playlist, song)).Marks, x => x.AccountId == carolId);
+        var row = (await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows.Single(x => x.SongId == song);
+        Assert.Equal(0, row.OtherPeople);
+        Assert.Equal([chords], row.ChordsIds);
+
+        // its own "show in my library"; following again changes nothing
+        await Ok<Changed<PlaylistDetails>>(carol, HttpMethod.Put, $"/api/playlists/{playlist}/library", new ShowInLibraryRequest { Show = false });
+        Assert.DoesNotContain((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+        Assert.Null((await Ok<Changed<JoinedPlaylist>>(carol, HttpMethod.Post, $"/api/playlists/{playlist}/follow")).Undo);
+        await Ok<Changed<PlaylistDetails>>(carol, HttpMethod.Put, $"/api/playlists/{playlist}/library", new ShowInLibraryRequest { Show = true });
+
+        // made private, it drops out for its followers; public again, it is back
+        await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Patch, $"/api/playlists/{playlist}", new UpdatePlaylistRequest { Access = PlaylistAccess.Private });
+        Assert.DoesNotContain((await Ok<List<PlaylistSummary>>(carol, HttpMethod.Get, "/api/playlists")), x => x.Id == playlist);
+        Assert.DoesNotContain((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+        await Browser.AssertError(await carol.SendAsync(HttpMethod.Get, $"/api/playlists/{playlist}"), HttpStatusCode.NotFound, PlaylistErrorCodes.NoSuchPlaylist);
+
+        // a link playlist: followed by its link, then kept without it
+        await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Patch, $"/api/playlists/{playlist}", new UpdatePlaylistRequest { Access = PlaylistAccess.Link });
+        Assert.True((await Ok<PlaylistDetails>(carol, HttpMethod.Get, $"/api/playlists/{playlist}")).Playlist.Following);
+        Assert.Contains((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+
+        // unfollowed, gone; undone, back
+        var unfollowed = await Ok<UndoOnly>(carol, HttpMethod.Delete, $"/api/playlists/{playlist}/follow");
+        Assert.DoesNotContain((await Ok<List<PlaylistSummary>>(carol, HttpMethod.Get, "/api/playlists")), x => x.Id == playlist);
+        await Browser.AssertError(await carol.SendAsync(HttpMethod.Get, $"/api/playlists/{playlist}"), HttpStatusCode.NotFound, PlaylistErrorCodes.NoSuchPlaylist);
+        await UndoAsync(carol, unfollowed.Undo);
+        Assert.Contains((await Ok<List<PlaylistSummary>>(carol, HttpMethod.Get, "/api/playlists")), x => x.Id == playlist);
+
+        // a large one starts out of the library, and the answer says so; a member does not follow
+        var (dan, _) = await fixture.PersonAsync("dan");
+        for (var i = 0; i < 5; i++)
+            await AddAsync(ann, playlist, Id(), $"More {i}");
+        var link = await Ok<ShareLinkItem>(ann, HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Playlist, PlaylistId = playlist });
+        var large = (await Ok<Changed<JoinedPlaylist>>(dan, HttpMethod.Post, $"/api/playlists/{playlist}/follow?share={link.Token}")).Value;
+        Assert.Equal((true, false), (large.KeptOutOfLibrary, large.Playlist.ShowInLibrary));
+        await Browser.AssertError(await ann.SendAsync(HttpMethod.Post, $"/api/playlists/{playlist}/follow"), HttpStatusCode.Conflict, PlaylistErrorCodes.AlreadyMember);
+    }
+
+    [DatabaseFact]
+    public async Task TheSyncRefusesAnotherAccountsQueue()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var (_, bobId) = await fixture.PersonAsync("bob");
+        await Browser.AssertError(
+            await ann.SendAsync(HttpMethod.Post, "/api/sync", new SyncRequest { AccountId = bobId, Changes = [new() { Type = ChangeType.Mark, Chords = Id(), Kind = "star", On = true }] }),
+            HttpStatusCode.Conflict, PlaylistErrorCodes.WrongAccount);
+        Assert.Empty((await SyncAsync(ann, null)).Marks);
+    }
+
+    [DatabaseFact]
+    public async Task ASongsCoverIsAnIllustrationFirstThenARecording()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var (bob, _) = await fixture.PersonAsync("bob");
+        var playlist = await CreateAsync(ann, PlaylistAccess.Private);
+        await JoinAsync(ann, bob, playlist, PlaylistRole.Member);
+        string a = Id(), b = Id(), plain = Id(), bare = Id();
+        var song = await AddAsync(ann, playlist, a, "Illustrated");
+        await Ok<Changed<SongRef>>(ann, HttpMethod.Post, $"/api/playlists/{playlist}/songs/{song}/variants", new AddVariantRequest { Chords = b });
+        var recorded = await AddAsync(ann, playlist, plain, "Recorded");
+        var none = await AddAsync(ann, playlist, bare, "Nothing");
+        Guid pictureA = Guid.NewGuid(), pictureB = Guid.NewGuid();
+        lock (fixture.Illustrations.Covers)
+        {
+            fixture.Illustrations.Covers[a] = pictureA;
+            fixture.Illustrations.Covers[b] = pictureB;
+        }
+
+        await using (var db = fixture.CreateContext())
+        {
+            var recording = new HarmonyDB.Shelf.Database.Model.Recording { Id = Guid.NewGuid(), Service = HarmonyDB.Shelf.Database.Model.MusicService.Youtube, ServiceId = Guid.NewGuid().ToString("N"), CoverUrl = "https://covers.test/r.jpg", UpdatedAt = DateTimeOffset.UtcNow };
+            db.Recordings.Add(recording);
+            foreach (var target in new[] { song, recorded })
+                db.PlaylistSongItems.Add(new() { Id = Guid.NewGuid(), SongId = target, RecordingId = recording.Id, Position = 9, AddedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+        }
+
+        // the main variant's illustration, for each person: Bob's is the first variant's, Ann chose the second
+        var variants = (await PageAsync(ann, playlist, song)).Variants;
+        await Ok<UndoOnly>(ann, HttpMethod.Put, $"/api/playlists/{playlist}/songs/{song}/main", new SetMainVariantRequest { ItemId = variants[1].ItemId });
+        var anns = (await Ok<SongList>(ann, HttpMethod.Get, $"/api/playlists/{playlist}/songs")).Rows.ToDictionary(x => x.SongId!.Value);
+        var bobs = (await Ok<SongList>(bob, HttpMethod.Get, $"/api/playlists/{playlist}/songs")).Rows.ToDictionary(x => x.SongId!.Value);
+        Assert.Equal($"/api/illustrations/images/{pictureB}/256", anns[song].Cover);
+        Assert.Equal($"/api/illustrations/images/{pictureA}/256", bobs[song].Cover);
+
+        // no illustration: the recording's cover; neither: none
+        Assert.Equal("https://covers.test/r.jpg", anns[recorded].Cover);
+        Assert.Null(anns[none].Cover);
+
+        // the playlist: its first songs' covers, in order
+        var summary = (await Ok<PlaylistDetails>(bob, HttpMethod.Get, $"/api/playlists/{playlist}")).Playlist;
+        Assert.Equal([$"/api/illustrations/images/{pictureA}/256", "https://covers.test/r.jpg"], summary.Covers);
+    }
+
+    [DatabaseFact]
+    public async Task FollowsEndWithTheProfileAndMoveInAMerge()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var first = $"follow-first-{Guid.NewGuid():N}";
+        var second = $"follow-second-{Guid.NewGuid():N}";
+        var firstBrowser = fixture.Api.NewBrowser();
+        await firstBrowser.DevAsync(first);
+        var firstId = (await firstBrowser.GetAsync<Profile>("/api/me")).Id;
+        var secondBrowser = fixture.Api.NewBrowser();
+        await secondBrowser.DevAsync(second);
+        var secondId = (await secondBrowser.GetAsync<Profile>("/api/me")).Id;
+
+        // the first is a member of one playlist, the second follows it and another
+        var joint = await CreateAsync(ann, PlaylistAccess.Public);
+        await JoinAsync(ann, firstBrowser, joint, PlaylistRole.Member);
+        var other = await CreateAsync(ann, PlaylistAccess.Public);
+        await Ok<Changed<JoinedPlaylist>>(secondBrowser, HttpMethod.Post, $"/api/playlists/{joint}/follow");
+        await Ok<Changed<JoinedPlaylist>>(secondBrowser, HttpMethod.Post, $"/api/playlists/{other}/follow");
+
+        // merged: the follow of the one the first is in goes; the other moves
+        await firstBrowser.DevAsync(second, SignInPurpose.Link);
+        await using (var db = fixture.CreateContext())
+        {
+            var state = await db.SignInFlows.Where(x => x.Session!.AccountId == firstId && x.CompletedLoginId != null).Select(x => x.State).SingleAsync();
+            Assert.Equal(HttpStatusCode.OK, (await firstBrowser.SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/merge")).StatusCode);
+            Assert.Equal([other], await db.PlaylistFollows.Where(x => x.AccountId == firstId).Select(x => x.PlaylistId).ToListAsync());
+            Assert.False(await db.PlaylistFollows.AnyAsync(x => x.AccountId == secondId));
+        }
+
+        var mine = await Ok<List<PlaylistSummary>>(firstBrowser, HttpMethod.Get, "/api/playlists");
+        Assert.Contains(mine, x => x.Id == other && x.Following);
+        Assert.Contains(mine, x => x.Id == joint && x.MyRole == PlaylistRole.Member);
+
+        // the profile deleted: its follows end
+        Assert.Equal(HttpStatusCode.NoContent, (await firstBrowser.SendAsync(HttpMethod.Delete, "/api/me")).StatusCode);
+        await using (var db = fixture.CreateContext())
+            Assert.False(await db.PlaylistFollows.AnyAsync(x => x.AccountId == firstId));
+    }
+
+    [DatabaseFact]
+    public async Task AFollowCountsOnlyWhereThePersonIsNoMember()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var (carol, _) = await fixture.PersonAsync("carol");
+        var playlist = await CreateAsync(ann, PlaylistAccess.Public);
+        var song = await AddAsync(ann, playlist, Id(), "Song");
+
+        // followed, unfollowed, joined, kept out of the library: bringing the follow back is nothing to undo
+        await Ok<Changed<JoinedPlaylist>>(carol, HttpMethod.Post, $"/api/playlists/{playlist}/follow");
+        var unfollowed = await Ok<UndoOnly>(carol, HttpMethod.Delete, $"/api/playlists/{playlist}/follow");
+        await JoinAsync(ann, carol, playlist, PlaylistRole.Member);
+        await Ok<Changed<PlaylistDetails>>(carol, HttpMethod.Put, $"/api/playlists/{playlist}/library", new ShowInLibraryRequest { Show = false });
+        await Browser.AssertError(await carol.SendAsync(HttpMethod.Post, "/api/sync/undo", new UndoRequest { Token = unfollowed.Undo! }), HttpStatusCode.Conflict, PlaylistErrorCodes.NothingToUndo);
+        Assert.DoesNotContain((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+
+        // a follow left from before (as a merge may leave one) changes nothing for a member
+        await using (var db = fixture.CreateContext())
+        {
+            var carolId = (await carol.GetAsync<Profile>("/api/me")).Id;
+            db.PlaylistFollows.Add(new() { Id = Guid.NewGuid(), PlaylistId = playlist, AccountId = carolId, ShowInLibrary = true, FollowedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.DoesNotContain((await Ok<SongList>(carol, HttpMethod.Get, "/api/library")).Rows, x => x.SongId == song);
+        Assert.Single((await Ok<List<PlaylistSummary>>(carol, HttpMethod.Get, "/api/playlists")), x => x.Id == playlist);
+    }
+
+    [DatabaseFact]
+    public async Task AnExFollowerHearsNoMoreOfAPrivatePlaylist()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var (dan, _) = await fixture.PersonAsync("dan");
+        var closing = await CreateAsync(ann, PlaylistAccess.Public);
+        var open = await CreateAsync(ann, PlaylistAccess.Public);
+        await Ok<Changed<JoinedPlaylist>>(dan, HttpMethod.Post, $"/api/playlists/{closing}/follow");
+        await Ok<Changed<JoinedPlaylist>>(dan, HttpMethod.Post, $"/api/playlists/{open}/follow");
+        var start = await SyncAsync(dan, null);
+
+        // made private: that change is told
+        await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Patch, $"/api/playlists/{closing}", new UpdatePlaylistRequest { Access = PlaylistAccess.Private });
+        var told = await SyncAsync(dan, start.Watermark);
+        Assert.Contains(closing, told.Playlists);
+
+        // what happens inside it then is not; inside a playlist still open, it is. The sync may give a change again (the
+        // watermark is the oldest transaction still open anywhere on the server), so the private one is asked the same
+        // before and after the song is added: the song changes nothing of the answer
+        var before = (await SyncAsync(dan, told.Watermark)).Playlists.Contains(closing);
+        await AddAsync(ann, closing, Id(), "Inside");
+        await AddAsync(ann, open, Id(), "Inside too");
+        var after = await SyncAsync(dan, told.Watermark);
+        Assert.Equal(before, after.Playlists.Contains(closing));
+        Assert.Contains(open, after.Playlists);
+    }
+
     private async Task WaitForSyncAsync(Browser browser, Guid playlist)
     {
         for (var i = 0; i < 100; i++)
@@ -612,8 +829,8 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
     private static Task<SongPage> PageAsync(Browser browser, Guid playlist, Guid song)
         => Ok<SongPage>(browser, HttpMethod.Get, $"/api/playlists/{playlist}/songs/{song}");
 
-    private static Task<SyncResponse> SyncAsync(Browser browser, long? since, params Change[] changes)
-        => Ok<SyncResponse>(browser, HttpMethod.Post, "/api/sync", new SyncRequest { Since = since, Changes = changes });
+    private static async Task<SyncResponse> SyncAsync(Browser browser, long? since, params Change[] changes)
+        => await Ok<SyncResponse>(browser, HttpMethod.Post, "/api/sync", new SyncRequest { AccountId = (await browser.GetAsync<Profile>("/api/me")).Id, Since = since, Changes = changes });
 
     private static async Task UndoAsync(Browser browser, string? token)
     {

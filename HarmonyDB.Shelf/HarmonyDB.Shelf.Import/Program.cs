@@ -33,7 +33,7 @@ var options = configuration.GetSection(ImportOptions.SectionName).Get<ImportOpti
 options.Validate();
 var relayOptions = configuration.GetSection(RelayOptions.SectionName).Get<RelayOptions>() ?? new();
 var shelfConnection = Required("ConnectionStrings:Shelf");
-var reader = new OldShelfReader(Required("ConnectionStrings:OldShelf"), Required("ConnectionStrings:OldOwnChords"));
+var reader = new OldShelfReader(Required("ConnectionStrings:OldShelf"), Required("ConnectionStrings:OldOwnChords"), Required("ConnectionStrings:OldIllustrations"));
 
 using var loggerFactory = LoggerFactory.Create(x => x.AddSimpleConsole(o => o.SingleLine = true).SetMinimumLevel(LogLevel.Warning));
 using var stopping = new CancellationTokenSource();
@@ -108,24 +108,40 @@ else
     await transaction.CommitAsync(cancellationToken);
 await transaction.DisposeAsync();
 
-// the old illustrations are kept under the old addresses: their ids become the addresses' aliases there
-var aliasPairs = resolution.Addresses.Where(x => x.Value.SourceId != null).Select(x => (x.Value.SourceId!, x.Key)).ToList();
-IllustrationAliasesResult? aliases = null;
-if (!dryRun)
-{
-    using var illustrationsHttp = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-    aliases = await new IllustrationAliases(illustrationsHttp, configuration.GetSection(IllustrationAliasesOptions.SectionName).Get<IllustrationAliasesOptions>() ?? new())
-        .PutAsync(aliasPairs, cancellationToken);
-}
-
 Console.WriteLine();
 report.Write(Console.Out, plan, dryRun);
 Console.WriteLine();
-Console.WriteLine(aliases == null
-    ? $"Illustrations: {aliasPairs.Count} pairs of an id and its old address would be given as aliases."
-    : $"Illustrations: of {aliasPairs.Select(x => x.Item1).Distinct().Count()} ids, {aliases.Added + aliases.Unchanged} have an alias to their old illustrations "
-      + $"({aliases.Added} new, {aliases.Unchanged} as before; {aliases.OwnAlready} have illustrations of their own); "
-      + $"{aliases.IllustratedWithoutAlias} illustrated old addresses have no id yet (waiting for their address to resolve).");
+
+// the old illustrations are kept under the old addresses: their ids become the addresses' aliases there; a step of its
+// own, after the import is kept: when it fails, it is said, and the next run gives them
+var aliasPairs = resolution.Addresses.Where(x => x.Value.SourceId != null).Select(x => (x.Value.SourceId!, x.Key)).ToList();
+if (dryRun)
+{
+    Console.WriteLine($"Illustrations: {aliasPairs.Count} pairs of an id and its old address would be given as aliases.");
+    return 0;
+}
+
+try
+{
+    using var illustrationsHttp = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+    var aliases = await new IllustrationAliases(illustrationsHttp, configuration.GetSection(IllustrationAliasesOptions.SectionName).Get<IllustrationAliasesOptions>() ?? new())
+        .PutAsync(aliasPairs, cancellationToken);
+    Console.WriteLine($"Illustrations: of {aliasPairs.Select(x => x.Item1).Distinct().Count()} ids, {aliases.Added + aliases.Unchanged} have an alias to their old illustrations "
+                      + $"({aliases.Added} new, {aliases.Unchanged} as before; {aliases.OwnAlready} have illustrations of their own).");
+
+    // the illustrated old addresses no id stands for (the keys the shelf itself draws under are not old addresses)
+    var (illustrated, aliased) = await reader.ReadIllustratedAsync(cancellationToken);
+    var shelfIds = (await db.Chords.Select(x => x.SourceId).ToListAsync(cancellationToken)).ToHashSet(StringComparer.Ordinal);
+    var orphans = illustrated.Where(x => !aliased.Contains(x) && !shelfIds.Contains(x)).ToList();
+    var waiting = orphans.Count(x => resolution.Addresses.ContainsKey(x));
+    Console.WriteLine($"Illustrations: {orphans.Count} illustrated old addresses have no id: {waiting} wait for their address to resolve, "
+                      + $"{orphans.Count - waiting} are referred to by nothing the old shelf still has.");
+}
+catch (Exception e) when (e is HttpRequestException or OperationCanceledException or InvalidOperationException or Npgsql.NpgsqlException)
+{
+    Console.WriteLine($"Illustrations: the aliases were not given ({e.Message}); the import itself is kept, and the next run gives them.");
+}
+
 return 0;
 
 async Task<Resolution> ResolveAsync()

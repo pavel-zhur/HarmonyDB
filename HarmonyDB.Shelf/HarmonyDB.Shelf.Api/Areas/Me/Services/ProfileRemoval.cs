@@ -109,6 +109,8 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
             playlist.UpdatedAt = now;
         }
 
+        // the playlists followed are followed no more
+        await db.PlaylistFollows.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(f => f.DeletedAt, now), cancellationToken);
         await db.Marks.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(m => m.DeletedAt, now), cancellationToken);
         await db.Transpositions.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(t => t.DeletedAt, now), cancellationToken);
         await db.Notes.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(n => n.DeletedAt, now), cancellationToken);

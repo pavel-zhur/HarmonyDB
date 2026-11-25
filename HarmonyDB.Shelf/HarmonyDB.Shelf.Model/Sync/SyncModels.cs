@@ -51,6 +51,12 @@ public record Change
 public record SyncRequest
 {
     /// <summary>
+    /// The account the browser's queue belongs to: a batch of another account than the session's is refused (409
+    /// <c>wrong_account</c>), so a tab left open under one person never sends its queue as another.
+    /// </summary>
+    public required Guid AccountId { get; init; }
+
+    /// <summary>
     /// The watermark of the last answer the browser holds; null: everything.
     /// </summary>
     public long? Since { get; init; }
@@ -166,6 +172,20 @@ public record RecentEntry
     /// The song they were opened in, when it is still there and the person still sees it.
     /// </summary>
     public SongRef? Song { get; init; }
+
+    /// <summary>
+    /// What it was seen under: the chords' title as their source gives them to the person; for chords not open to
+    /// them, the title the playlist keeps for the song they were opened in; null when there is none (the app says it
+    /// is not available).
+    /// </summary>
+    public string? Title { get; init; }
+
+    public required IReadOnlyList<string> Artists { get; init; }
+
+    /// <summary>
+    /// The song's cover, an address the browser loads.
+    /// </summary>
+    public string? Cover { get; init; }
 
     public required DateTimeOffset OpenedAt { get; init; }
 }

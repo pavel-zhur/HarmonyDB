@@ -11,7 +11,6 @@ On the local stack, as the compose service `shelf-import` (profile `import`, nev
 docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --build --no-deps shelf-import dry-run
 docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --no-deps shelf-import run
 docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --no-deps shelf-import audit
-docker compose -f docker/wave2/docker-compose.yml --profile import run -d --no-deps --name shelf-import-second-pass shelf-import second-pass
 ```
 
 - `dry-run` (the default): does everything in a transaction and rolls it back; the report says what would be done.
@@ -19,7 +18,10 @@ docker compose -f docker/wave2/docker-compose.yml --profile import run -d --no-d
   has since removed (or changes what they have changed) in the shelf. Nothing is removed.
 - `audit`: compares, person by person, what each had in the old shelf with what they have now; writes nothing; exits
   with 1 when something differs.
-- `second-pass`: for the addresses the relay did not resolve from what is stored, asks again one address at a time,
+- `second-pass`: **it reaches outside the stand. Run it
+  only on the owner's word, at the pace he sets; never as a part of testing or "once more".** It is started by hand:
+  `docker compose -f docker/wave2/docker-compose.yml --profile import run -d --no-deps --name shelf-import-second-pass shelf-import second-pass`.
+  For the addresses the relay did not resolve from what is stored, it asks again one address at a time,
   with a pause between (`Relay:SecondPassPause`), with the keys under which a source may go out for an address it
   does not have (`Relay:SecondPassCallerKeys`). Every answer is kept at once: it stops cleanly (Ctrl+C, `docker stop`)
   and the next start goes on where it stopped; a site that fails `Relay:SecondPassSiteFailures` times in a row is left
@@ -36,7 +38,7 @@ not resolve it) are taken by a later run.
 
 | Key | What |
 |---|---|
-| `ConnectionStrings:OldShelf`, `ConnectionStrings:OldOwnChords` | The old database's songs and own chords (read only, in read-only transactions) |
+| `ConnectionStrings:OldShelf`, `ConnectionStrings:OldOwnChords`, `ConnectionStrings:OldIllustrations` | The old database's songs, own chords and illustrations (read only, in read-only transactions) |
 | `ConnectionStrings:Shelf` | The shelf's database |
 | `Relay:Endpoint`, `Relay:Key` | The index's relay of the source contract V2, and the import's internal key there (scope `index`) |
 | `Relay:CallerKeys` | The keys the import calls with: those under which every stored item is open and nothing is fetched from outside |

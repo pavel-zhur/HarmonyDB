@@ -3,6 +3,7 @@ using HarmonyDB.Shelf.Api.Areas.Library.Services;
 using HarmonyDB.Shelf.Api.Areas.Share.Services;
 using HarmonyDB.Shelf.Api.Areas.Sync.Services;
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.Illustrations;
 using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Common.Items;
 using HarmonyDB.Shelf.Api.Common.Jobs;
@@ -24,6 +25,7 @@ public static class LibraryServices
 
         services.AddItemRows();
         services.AddChordsReading(configuration);
+        services.AddIllustrationsClient(configuration);
         services.AddShelfCommon();
         services.AddAudioClient(configuration);
         services.AddJobHandler<OriginSyncHandler>(configuration, PlaylistService.SyncJobKind);

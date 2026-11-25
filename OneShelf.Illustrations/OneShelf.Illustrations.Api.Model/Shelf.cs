@@ -126,3 +126,30 @@ public class ShelfAliasesResponse
     /// </summary>
     public required int IllustratedWithoutAlias { get; init; }
 }
+/// <summary>
+/// The covers of many keys at once (a page of a list): at most <see cref="MaxKeys"/>.
+/// </summary>
+public class ShelfCoversRequest
+{
+    public const int MaxKeys = 1000;
+
+    public required List<string> Keys { get; init; }
+}
+
+public class ShelfCoversResponse
+{
+    /// <summary>
+    /// For each key asked that has illustrations, the one to show as its cover (the first of them); the others have none.
+    /// </summary>
+    public required List<ShelfCover> Covers { get; init; }
+}
+
+public class ShelfCover
+{
+    public required string Key { get; init; }
+
+    /// <summary>
+    /// The image, at <see cref="IllustrationsApiUrls.Images"/>.
+    /// </summary>
+    public required Guid Id { get; init; }
+}

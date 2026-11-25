@@ -8,7 +8,7 @@ namespace HarmonyDB.Shelf.Import.Old;
 /// Reads the old shelf's database, never writing: every read is in a read-only transaction, so the server itself refuses
 /// a write. The songs and the own chords are in two schemas read by two roles; each is read as one snapshot.
 /// </summary>
-public sealed class OldShelfReader(string songsConnectionString, string ownChordsConnectionString)
+public sealed class OldShelfReader(string songsConnectionString, string ownChordsConnectionString, string illustrationsConnectionString)
 {
     public async Task<OldShelf> ReadAsync(CancellationToken cancellationToken)
     {
@@ -78,6 +78,21 @@ public sealed class OldShelfReader(string songsConnectionString, string ownChord
             Visits = visits,
             OwnChords = ownChords,
         };
+    }
+
+    /// <summary>
+    /// The keys illustrations are kept under (the old shelf's addresses, and the new shelf's own ids), and the addresses
+    /// the new shelf's ids are aliased to.
+    /// </summary>
+    public async Task<(IReadOnlyList<string> illustrated, IReadOnlySet<string> aliased)> ReadIllustratedAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenReadOnlyAsync(illustrationsConnectionString, cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+        await ReadOnlyAsync(connection, transaction, cancellationToken);
+        var illustrated = await ListAsync(connection, transaction, """select distinct "Url" from illustrations."IllustrationsPrompts" order by 1""", r => r.GetString(0), cancellationToken);
+        var aliased = await ListAsync(connection, transaction, """select distinct "Url" from illustrations."ShelfAliases" """, r => r.GetString(0), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return (illustrated, aliased.ToHashSet(StringComparer.Ordinal));
     }
 
     /// <summary>

@@ -26,7 +26,8 @@ public sealed class BigPlaylistTests(LibraryFixture fixture, ITestOutputHelper o
         await using (var db = fixture.CreateContext())
         {
             await db.Database.ExecuteSqlInterpolatedAsync($"""
-                CREATE TEMP TABLE big AS SELECT n, gen_random_uuid() AS song, gen_random_uuid() AS chords, gen_random_uuid() AS item
+                CREATE TEMP TABLE big AS SELECT n, gen_random_uuid() AS song, gen_random_uuid() AS chords, gen_random_uuid() AS item,
+                    gen_random_uuid() AS recording, gen_random_uuid() AS recording_item
                 FROM generate_series(1, {Songs}) AS n;
                 INSERT INTO chords (id, source_id, title, artists, kinds, created_at)
                 SELECT chords, 'test-big-' || n, 'Chords ' || n, ARRAY['Artist ' || (n % 100)], ARRAY['sheet'], now() FROM big;
@@ -34,6 +35,10 @@ public sealed class BigPlaylistTests(LibraryFixture fixture, ITestOutputHelper o
                 SELECT song, {playlist}, 'Song ' || n, ARRAY['Artist ' || (n % 100)], n, {annId}, now() - n * interval '1 minute' FROM big;
                 INSERT INTO playlist_song_items (id, song_id, chords_id, position, added_by_id, added_at)
                 SELECT item, song, chords, 0, {annId}, now() - n * interval '1 minute' FROM big;
+                INSERT INTO recordings (id, service, service_id, title, artists, cover_url, updated_at)
+                SELECT recording, 'youtube', 'big-' || n, 'Song ' || n, ARRAY['Artist ' || (n % 100)], 'https://covers.test/' || n || '.jpg', now() FROM big;
+                INSERT INTO playlist_song_items (id, song_id, recording_id, position, added_at)
+                SELECT recording_item, song, recording, 1, now() FROM big;
                 INSERT INTO marks (id, account_id, chords_id, kind, created_at)
                 SELECT gen_random_uuid(), {annId}, chords, 'heart_red', now() FROM big WHERE n % 20 = 0;
                 """);
@@ -66,6 +71,14 @@ public sealed class BigPlaylistTests(LibraryFixture fixture, ITestOutputHelper o
             output.WriteLine($"{name}: {watch.ElapsedMilliseconds} ms, {list.Total} songs, {list.Rows.Count} rows");
             Assert.Equal(total, list.Total);
             Assert.True(watch.ElapsedMilliseconds < 3000, $"{name} took {watch.ElapsedMilliseconds} ms");
+            Assert.All(list.Rows, x => Assert.StartsWith("https://covers.test/", x.Cover));
         }
+
+        // the playlists, with their covers
+        var timed = Stopwatch.StartNew();
+        var mine = await ann.GetAsync<List<PlaylistSummary>>("/api/playlists");
+        timed.Stop();
+        output.WriteLine($"my playlists, with covers: {timed.ElapsedMilliseconds} ms");
+        Assert.Equal(["https://covers.test/1.jpg", "https://covers.test/2.jpg", "https://covers.test/3.jpg", "https://covers.test/4.jpg"], mine.Single(x => x.Id == playlist).Covers);
     }
 }

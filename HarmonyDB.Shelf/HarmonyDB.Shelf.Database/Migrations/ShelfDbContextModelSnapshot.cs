@@ -824,6 +824,67 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.ToTable("oauth_authorization_codes", (string)null);
                 });
 
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.OAuthAuthorizationRequest", b =>
+                {
+                    b.Property<byte[]>("IdHash")
+                        .HasColumnType("bytea")
+                        .HasColumnName("id_hash");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CodeChallenge")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code_challenge");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("RedirectUri")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("redirect_uri");
+
+                    b.Property<List<string>>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("scopes");
+
+                    b.Property<string>("State")
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.HasKey("IdHash")
+                        .HasName("pk_oauth_authorization_requests");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_oauth_authorization_requests_account_id");
+
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_oauth_authorization_requests_client_id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_oauth_authorization_requests_expires_at");
+
+                    b.ToTable("oauth_authorization_requests", (string)null);
+                });
+
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.OAuthClient", b =>
                 {
                     b.Property<string>("ClientId")
@@ -831,7 +892,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnName("client_id");
 
                     b.Property<string>("ClientName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("client_name");
 
@@ -1186,6 +1246,55 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         {
                             t.HasCheckConstraint("ck_playlists_origin", "(origin_service IS NULL) = (origin_playlist_id IS NULL)");
                         });
+                });
+
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.PlaylistFollow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateTimeOffset>("FollowedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("followed_at");
+
+                    b.Property<Guid>("PlaylistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("playlist_id");
+
+                    b.Property<bool>("ShowInLibrary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_in_library");
+
+                    b.Property<long>("Version")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_playlist_follows");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_playlist_follows_account_id");
+
+                    b.HasIndex("Version")
+                        .HasDatabaseName("ix_playlist_follows_version");
+
+                    b.HasIndex("PlaylistId", "AccountId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_playlist_follows_playlist_id_account_id")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("playlist_follows", (string)null);
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.PlaylistImportTombstone", b =>
@@ -2047,6 +2156,26 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("Grant");
                 });
 
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.OAuthAuthorizationRequest", b =>
+                {
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_oauth_authorization_requests_accounts_account_id");
+
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.OAuthClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_authorization_requests_oauth_clients_client_id");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Client");
+                });
+
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.OAuthGrant", b =>
                 {
                     b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
@@ -2110,6 +2239,27 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("ImportedBy");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.PlaylistFollow", b =>
+                {
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_playlist_follows_accounts_account_id");
+
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Playlist", "Playlist")
+                        .WithMany()
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_playlist_follows_playlists_playlist_id");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Playlist");
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.PlaylistImportTombstone", b =>

@@ -30,6 +30,7 @@ public class ShelfDbContext(DbContextOptions<ShelfDbContext> options) : DbContex
     public DbSet<PlaylistSongPreference> PlaylistSongPreferences => Set<PlaylistSongPreference>();
     public DbSet<PlaylistImportTombstone> PlaylistImportTombstones => Set<PlaylistImportTombstone>();
     public DbSet<PlaylistInvitation> PlaylistInvitations => Set<PlaylistInvitation>();
+    public DbSet<PlaylistFollow> PlaylistFollows => Set<PlaylistFollow>();
 
     public DbSet<Mark> Marks => Set<Mark>();
     public DbSet<Transposition> Transpositions => Set<Transposition>();
@@ -50,6 +51,7 @@ public class ShelfDbContext(DbContextOptions<ShelfDbContext> options) : DbContex
     public DbSet<OAuthClient> OAuthClients => Set<OAuthClient>();
     public DbSet<OAuthGrant> OAuthGrants => Set<OAuthGrant>();
     public DbSet<OAuthAuthorizationCode> OAuthAuthorizationCodes => Set<OAuthAuthorizationCode>();
+    public DbSet<OAuthAuthorizationRequest> OAuthAuthorizationRequests => Set<OAuthAuthorizationRequest>();
     public DbSet<OAuthToken> OAuthTokens => Set<OAuthToken>();
     public DbSet<PersonalKey> PersonalKeys => Set<PersonalKey>();
 

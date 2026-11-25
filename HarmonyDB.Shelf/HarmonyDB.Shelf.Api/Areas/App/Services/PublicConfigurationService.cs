@@ -37,6 +37,7 @@ public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> si
             SignInProviders = providers,
             Locales = Locales,
             DefaultLocale = Locales[0],
+            MarkKinds = Model.Marks.MarkKinds.All,
         };
     }
 }

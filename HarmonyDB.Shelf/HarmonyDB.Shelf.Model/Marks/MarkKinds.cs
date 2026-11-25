@@ -4,20 +4,21 @@ namespace HarmonyDB.Shelf.Model.Marks;
 /// A kind of mark a person puts on chords: its key (what is stored and sent) and its sign (what is drawn).
 /// What a mark means, people agree among themselves.
 /// </summary>
-public sealed record MarkKind(string Key, string Sign);
+/// <param name="Heart">Whether it is one of the hearts (of colours).</param>
+public sealed record MarkKind(string Key, string Sign, bool Heart = false);
 
 /// <summary>
 /// The built-in kinds of marks, in the order they are offered.
 /// </summary>
 public static class MarkKinds
 {
-    public static readonly MarkKind RedHeart = new("heart_red", "❤️");
-    public static readonly MarkKind OrangeHeart = new("heart_orange", "🧡");
-    public static readonly MarkKind YellowHeart = new("heart_yellow", "💛");
-    public static readonly MarkKind GreenHeart = new("heart_green", "💚");
-    public static readonly MarkKind BlueHeart = new("heart_blue", "💙");
-    public static readonly MarkKind PurpleHeart = new("heart_purple", "💜");
-    public static readonly MarkKind WhiteHeart = new("heart_white", "🤍");
+    public static readonly MarkKind RedHeart = new("heart_red", "❤️", true);
+    public static readonly MarkKind OrangeHeart = new("heart_orange", "🧡", true);
+    public static readonly MarkKind YellowHeart = new("heart_yellow", "💛", true);
+    public static readonly MarkKind GreenHeart = new("heart_green", "💚", true);
+    public static readonly MarkKind BlueHeart = new("heart_blue", "💙", true);
+    public static readonly MarkKind PurpleHeart = new("heart_purple", "💜", true);
+    public static readonly MarkKind WhiteHeart = new("heart_white", "🤍", true);
     public static readonly MarkKind Fire = new("fire", "🔥");
     public static readonly MarkKind Star = new("star", "⭐");
     public static readonly MarkKind Guitar = new("guitar", "🎸");

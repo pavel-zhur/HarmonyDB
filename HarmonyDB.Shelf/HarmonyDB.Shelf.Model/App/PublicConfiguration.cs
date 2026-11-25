@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Model.Marks;
+
 namespace HarmonyDB.Shelf.Model.App;
 
 /// <summary>
@@ -19,6 +21,12 @@ public record PublicConfiguration
     /// The language when neither the person nor the browser names one of <see cref="Locales"/>.
     /// </summary>
     public required string DefaultLocale { get; init; }
+
+    /// <summary>
+    /// The kinds of marks, in the order they are offered: key (what is stored and sent), sign (what is drawn), whether
+    /// it is one of the hearts.
+    /// </summary>
+    public required IReadOnlyList<MarkKind> MarkKinds { get; init; }
 }
 
 public record SignInProviderInfo

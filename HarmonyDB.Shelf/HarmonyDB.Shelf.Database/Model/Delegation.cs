@@ -10,7 +10,10 @@ public class OAuthClient
 {
     public required string ClientId { get; set; }
 
-    public required string ClientName { get; set; }
+    /// <summary>
+    /// The name the client gave; null when it gave none (registration does not require one).
+    /// </summary>
+    public string? ClientName { get; set; }
 
     public List<string> RedirectUris { get; set; } = [];
 
@@ -97,6 +100,44 @@ public class OAuthAuthorizationCode
     public DateTimeOffset ExpiresAt { get; set; }
 
     public DateTimeOffset? ConsumedAt { get; set; }
+}
+
+/// <summary>
+/// A client's request for an authorization, waiting for the person's decision on the consent page. Its id is given to
+/// the browser and kept hashed. It is bound to the first person who opens it (another one finds nothing), and decided
+/// once: approved or denied, a second decision is refused. Expired ones are purged.
+/// </summary>
+public class OAuthAuthorizationRequest
+{
+    public required byte[] IdHash { get; set; }
+
+    public required string ClientId { get; set; }
+
+    public OAuthClient Client { get; set; } = null!;
+
+    public required string RedirectUri { get; set; }
+
+    public string? State { get; set; }
+
+    public required string CodeChallenge { get; set; }
+
+    /// <summary>
+    /// The permissions the client asked for (its scopes, the known ones).
+    /// </summary>
+    public List<string> Scopes { get; set; } = [];
+
+    /// <summary>
+    /// The person it is bound to: the first one who opened it.
+    /// </summary>
+    public Guid? AccountId { get; set; }
+
+    public Account? Account { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public DateTimeOffset ExpiresAt { get; set; }
+
+    public DateTimeOffset? DecidedAt { get; set; }
 }
 
 public enum OAuthTokenKind
@@ -196,6 +237,20 @@ internal sealed class OAuthAuthorizationCodeConfiguration : IEntityTypeConfigura
         builder.HasIndex(x => x.FamilyId).IsUnique();
         builder.HasIndex(x => x.ExpiresAt);
         builder.HasOne(x => x.Grant).WithMany().HasForeignKey(x => x.GrantId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class OAuthAuthorizationRequestConfiguration : IEntityTypeConfiguration<OAuthAuthorizationRequest>
+{
+    public void Configure(EntityTypeBuilder<OAuthAuthorizationRequest> builder)
+    {
+        builder.ToTable("oauth_authorization_requests");
+        builder.HasKey(x => x.IdHash);
+        builder.HasIndex(x => x.ExpiresAt);
+        builder.HasIndex(x => x.ClientId);
+        builder.HasIndex(x => x.AccountId);
+        builder.HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Account).WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 
