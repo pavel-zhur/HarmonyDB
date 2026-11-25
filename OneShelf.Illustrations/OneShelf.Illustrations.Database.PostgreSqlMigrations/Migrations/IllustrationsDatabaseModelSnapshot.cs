@@ -120,6 +120,22 @@ namespace OneShelf.Illustrations.Database.PostgreSqlMigrations.Migrations
                     b.ToTable("IllustrationsPrompts", (string)null);
                 });
 
+            modelBuilder.Entity("OneShelf.Illustrations.Database.Models.ShelfAlias", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("Url");
+
+                    b.ToTable("ShelfAliases");
+                });
+
             modelBuilder.Entity("OneShelf.Illustrations.Database.Models.IllustrationCopy", b =>
                 {
                     b.HasOne("OneShelf.Illustrations.Database.Models.Illustration", null)

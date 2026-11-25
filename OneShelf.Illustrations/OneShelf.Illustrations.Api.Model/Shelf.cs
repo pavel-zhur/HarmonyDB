@@ -82,3 +82,47 @@ public class ShelfGenerateResponse
     /// </summary>
     public required int Made { get; init; }
 }
+
+/// <summary>
+/// The other names of the new shelf's keys while both shelves run: each key with an old address of the same item (a key
+/// may come with several). Putting the same again changes nothing.
+/// </summary>
+public class ShelfAliasesRequest
+{
+    public required List<ShelfAliasPair> Aliases { get; init; }
+}
+
+public class ShelfAliasPair
+{
+    public required string Key { get; init; }
+
+    public required string Url { get; init; }
+}
+
+public class ShelfAliasesResponse
+{
+    /// <summary>
+    /// The keys aliased now to an address with illustrations.
+    /// </summary>
+    public required int Added { get; init; }
+
+    /// <summary>
+    /// The keys aliased so already.
+    /// </summary>
+    public required int Unchanged { get; init; }
+
+    /// <summary>
+    /// The keys none of whose addresses has illustrations.
+    /// </summary>
+    public required int NotIllustrated { get; init; }
+
+    /// <summary>
+    /// The keys with illustrations of their own already: not aliased.
+    /// </summary>
+    public required int OwnAlready { get; init; }
+
+    /// <summary>
+    /// The addresses with illustrations that no key stands for yet.
+    /// </summary>
+    public required int IllustratedWithoutAlias { get; init; }
+}

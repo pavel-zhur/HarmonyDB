@@ -41,6 +41,7 @@ not resolve it) are taken by a later run.
 | `Relay:Endpoint`, `Relay:Key` | The index's relay of the source contract V2, and the import's internal key there (scope `index`) |
 | `Relay:CallerKeys` | The keys the import calls with: those under which every stored item is open and nothing is fetched from outside |
 | `Relay:SecondPassCallerKeys`, `Relay:SecondPassPause`, `Relay:SecondPassSiteFailures` | The second pass: its keys, the pause between two addresses (`00:00:20`), and after how many failures in a row a site is left alone |
+| `Illustrations:Endpoint`, `Illustrations:Key` | The illustrations service and the import's internal key there (scope `illustrations.aliases`) |
 | `Import:*` | Who is who in the old data — see `ImportOptions` and `docker/wave2/import.example.json` |
 
 On the local stack the `Import` and `Relay:CallerKeys` settings are in the git-ignored `docker/wave2/import.json`.
@@ -60,6 +61,8 @@ See `Planning/Planner.cs` for the whole mapping. In short:
   time; keys → "mine" (what the person saw everywhere) and "here" (a list's); comments → notes (on a song of several
   variants each comment begins with its variant's letter); visits → recent; own chords → the author's own chords
   playlist; the main variant where it is not the first.
+- the old illustrations, kept under the old addresses, are found by the chords' ids: after a run the import gives the
+  illustrations service each resolved address with its id, as an alias (while both shelves run an item has two names);
 - what a person already had in the shelf (a key, a note, a mark …) is theirs: the import never changes it; an account
   merged into another is followed there.
 

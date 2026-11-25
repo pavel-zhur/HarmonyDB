@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Illustrations.Api.Model;
+namespace OneShelf.Illustrations.Api.Model;
 
 public static class IllustrationsApiUrls
 {
@@ -23,4 +23,5 @@ public static class IllustrationsApiUrls
     public const string ShelfPresets = nameof(ShelfPresets);
     public const string ShelfRead = nameof(ShelfRead);
     public const string ShelfGenerate = nameof(ShelfGenerate);
+    public const string ShelfAliases = nameof(ShelfAliases);
 }

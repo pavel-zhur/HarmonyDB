@@ -25,6 +25,74 @@ public class IllustrationsDatabase(DbContextOptions<IllustrationsDatabase> optio
 
     public required DbSet<IllustrationCopy> IllustrationCopies { get; set; }
 
+    /// <summary>
+    /// The new shelf's ids of items whose illustrations are kept under their old address (see <see cref="ShelfAlias"/>).
+    /// </summary>
+    public required DbSet<ShelfAlias> ShelfAliases { get; set; }
+
+    /// <summary>
+    /// What the new shelf's key stands for here: the old address its illustrations are kept under, when it has an alias;
+    /// else the key itself.
+    /// </summary>
+    public async Task<string> GetShelfUrl(string key)
+        => await ShelfAliases.Where(x => x.Key == key).Select(x => x.Url).SingleOrDefaultAsync() ?? key;
+
+    /// <summary>
+    /// Puts the aliases of the new shelf's keys: for each key, among its old addresses, the one with illustrations (the
+    /// most, if several have them); a key with none is left without one, and so is a key that has illustrations of its
+    /// own already. Putting the same again changes nothing.
+    /// </summary>
+    public async Task<ShelfAliasesResult> PutShelfAliases(IReadOnlyCollection<(string key, string url)> pairs)
+    {
+        var urls = pairs.Select(x => x.url).Distinct().ToList();
+        var keys = pairs.Select(x => x.key).Distinct().ToList();
+        var counts = await Illustrations.Where(x => urls.Contains(x.Url)).GroupBy(x => x.Url).Select(x => new { Url = x.Key, Count = x.Count() }).ToDictionaryAsync(x => x.Url, x => x.Count);
+        var prompted = (await Prompts.Where(x => urls.Contains(x.Url) || keys.Contains(x.Url)).Select(x => x.Url).Distinct().ToListAsync()).ToHashSet();
+        var existing = await ShelfAliases.Where(x => keys.Contains(x.Key)).ToDictionaryAsync(x => x.Key);
+
+        int added = 0, unchanged = 0, notIllustrated = 0, ownAlready = 0;
+        foreach (var group in pairs.GroupBy(x => x.key))
+        {
+            var url = group.Select(x => x.url).Where(prompted.Contains)
+                .OrderByDescending(x => counts.GetValueOrDefault(x)).ThenBy(x => x, StringComparer.Ordinal)
+                .FirstOrDefault();
+            if (url == null)
+            {
+                notIllustrated++;
+                continue;
+            }
+
+            if (prompted.Contains(group.Key))
+            {
+                ownAlready++;
+                continue;
+            }
+
+            if (existing.TryGetValue(group.Key, out var alias))
+            {
+                if (alias.Url == url)
+                    unchanged++;
+                else
+                {
+                    alias.Url = url;
+                    added++;
+                }
+
+                continue;
+            }
+
+            ShelfAliases.Add(new() { Key = group.Key, Url = url });
+            added++;
+        }
+
+        await SaveChangesAsync();
+        ChangeTracker.Clear();
+
+        var aliased = await ShelfAliases.Select(x => x.Url).Distinct().ToListAsync();
+        var illustratedWithoutAlias = await Prompts.Select(x => x.Url).Distinct().Where(x => !aliased.Contains(x)).CountAsync();
+        return new(added, unchanged, notIllustrated, ownAlready, illustratedWithoutAlias);
+    }
+
     public async Task<List<IllustrationsPrompts>> GetPrompts(string? url = null)
     {
         var prompts = Prompts.AsNoTracking();
@@ -139,6 +207,13 @@ public class IllustrationsDatabase(DbContextOptions<IllustrationsDatabase> optio
             x.HasIndex(x => x.Url);
         });
 
+        modelBuilder.Entity<ShelfAlias>(x =>
+        {
+            // while both shelves run, an item has two names; this goes when the old shelf is retired (rows re-keyed)
+            x.HasKey(x => x.Key);
+            x.HasIndex(x => x.Url);
+        });
+
         modelBuilder.Entity<IllustrationCopy>(x =>
         {
             x.HasKey(x => new { x.IllustrationId, x.Size });
@@ -148,3 +223,9 @@ public class IllustrationsDatabase(DbContextOptions<IllustrationsDatabase> optio
         modelBuilder.ApplyPostgreSqlStoreTypes();
     }
 }
+
+/// <summary>
+/// What putting the aliases did: keys aliased now, aliased so already, without an illustrated address, with illustrations
+/// of their own; and how many illustrated addresses are left that no key stands for.
+/// </summary>
+public sealed record ShelfAliasesResult(int Added, int Unchanged, int NotIllustrated, int OwnAlready, int IllustratedWithoutAlias);

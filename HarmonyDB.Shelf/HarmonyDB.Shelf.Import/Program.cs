@@ -108,8 +108,24 @@ else
     await transaction.CommitAsync(cancellationToken);
 await transaction.DisposeAsync();
 
+// the old illustrations are kept under the old addresses: their ids become the addresses' aliases there
+var aliasPairs = resolution.Addresses.Where(x => x.Value.SourceId != null).Select(x => (x.Value.SourceId!, x.Key)).ToList();
+IllustrationAliasesResult? aliases = null;
+if (!dryRun)
+{
+    using var illustrationsHttp = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+    aliases = await new IllustrationAliases(illustrationsHttp, configuration.GetSection(IllustrationAliasesOptions.SectionName).Get<IllustrationAliasesOptions>() ?? new())
+        .PutAsync(aliasPairs, cancellationToken);
+}
+
 Console.WriteLine();
 report.Write(Console.Out, plan, dryRun);
+Console.WriteLine();
+Console.WriteLine(aliases == null
+    ? $"Illustrations: {aliasPairs.Count} pairs of an id and its old address would be given as aliases."
+    : $"Illustrations: of {aliasPairs.Select(x => x.Item1).Distinct().Count()} ids, {aliases.Added + aliases.Unchanged} have an alias to their old illustrations "
+      + $"({aliases.Added} new, {aliases.Unchanged} as before; {aliases.OwnAlready} have illustrations of their own); "
+      + $"{aliases.IllustratedWithoutAlias} illustrated old addresses have no id yet (waiting for their address to resolve).");
 return 0;
 
 async Task<Resolution> ResolveAsync()

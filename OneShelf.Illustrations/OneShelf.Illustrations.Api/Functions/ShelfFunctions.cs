@@ -15,7 +15,9 @@ namespace OneShelf.Illustrations.Api.Functions;
 /// <see cref="SystemMessage"/>, the one the old shelf recommends, plain or with one of its alterations (a mood). A preset
 /// is drawn for a key once, as the old shelf draws it when one looks: the attempt of the prompts that suits best, all its
 /// images, each kept as soon as it is drawn; ordered again, only what is missing of it is drawn; while it is drawn, an
-/// order of it waits for that drawing (<see cref="ShelfDrawings"/>). A request that cannot be read is answered 400.
+/// order of it waits for that drawing (<see cref="ShelfDrawings"/>). A key with an alias (<see cref="ShelfAlias"/>: an item
+/// the old shelf illustrated under its address) is read and drawn under that address, so the old illustrations show and
+/// new ones join them. A request that cannot be read is answered 400.
 /// </summary>
 public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, IllustrationsGenerator illustrationsGenerator, ShelfDrawings drawings)
 {
@@ -40,8 +42,9 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
     {
         if (string.IsNullOrWhiteSpace(request?.Key)) return new BadRequestResult();
 
-        var prompts = (await illustrationsDatabase.GetPrompts(request.Key)).ToDictionary(x => x.Id);
-        var images = await illustrationsDatabase.GetIllustrationHeaders(request.Key);
+        var url = await illustrationsDatabase.GetShelfUrl(request.Key);
+        var prompts = (await illustrationsDatabase.GetPrompts(url)).ToDictionary(x => x.Id);
+        var images = await illustrationsDatabase.GetIllustrationHeaders(url);
 
         return new OkObjectResult(new ShelfReadResponse
         {
@@ -75,14 +78,15 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
     /// </summary>
     private async Task<ShelfGenerateResponse> DrawAsync(ShelfGenerateRequest request)
     {
+        var url = await illustrationsDatabase.GetShelfUrl(request.Key);
         var alterationKey = request.Preset == PlainPreset ? null : request.Preset;
         var prompts = await illustrationsGenerator.GetOrCreatePrompts(
-            request.Key, () => Task.FromResult<string?>(request.Lyrics), SystemMessage, null, alterationKey, null, request.AdditionalBillingInfo);
+            url, () => Task.FromResult<string?>(request.Lyrics), SystemMessage, null, alterationKey, null, request.AdditionalBillingInfo);
 
         if (prompts == null)
             return Answer(ShelfGenerateOutcome.NoLyrics, 0);
 
-        var drawn = (await illustrationsDatabase.GetIllustrationHeaders(request.Key)).Where(x => x.PromptsId == prompts.Id).ToList();
+        var drawn = (await illustrationsDatabase.GetIllustrationHeaders(url)).Where(x => x.PromptsId == prompts.Id).ToList();
 
         // the attempt drawn before; else the one the old shelf draws: up to 7 images, the closer to 5 the better; else the
         // fewer the better; then the longer descriptions
@@ -109,8 +113,28 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
         if (missing.Count == 0)
             return Answer(ShelfGenerateOutcome.AlreadyMade, 0);
 
-        var made = await illustrationsGenerator.GenerateImages(request.Key, prompts, missing, null, request.AdditionalBillingInfo);
+        var made = await illustrationsGenerator.GenerateImages(url, prompts, missing, null, request.AdditionalBillingInfo);
         return Answer(ShelfGenerateOutcome.Made, made);
+    }
+
+    /// <summary>
+    /// Puts the new shelf's aliases in bulk (<see cref="IllustrationsDatabase.PutShelfAliases"/>): idempotent.
+    /// </summary>
+    [Function(IllustrationsApiUrls.ShelfAliases, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.AliasesScope)]
+    public async Task<IActionResult> PutAliases(HttpRequest req, [FromBody] ShelfAliasesRequest request)
+    {
+        if (request?.Aliases == null! || request.Aliases.Any(x => string.IsNullOrWhiteSpace(x?.Key) || string.IsNullOrWhiteSpace(x.Url)))
+            return new BadRequestResult();
+
+        var result = await illustrationsDatabase.PutShelfAliases(request.Aliases.Select(x => (x.Key, x.Url)).ToList());
+        return new OkObjectResult(new ShelfAliasesResponse
+        {
+            Added = result.Added,
+            Unchanged = result.Unchanged,
+            NotIllustrated = result.NotIllustrated,
+            OwnAlready = result.OwnAlready,
+            IllustratedWithoutAlias = result.IllustratedWithoutAlias,
+        });
     }
 
     private static ShelfGenerateResponse Answer(ShelfGenerateOutcome outcome, int made) => new() { Outcome = outcome, Made = made };

@@ -18,6 +18,11 @@ public class IllustrationsModule() : ApiModule("Illustrations")
     /// </summary>
     public const string InternalScope = "illustrations";
 
+    /// <summary>
+    /// The scope of the internal clients that put the new shelf's aliases (<see cref="Functions.ShelfFunctions.PutAliases"/>).
+    /// </summary>
+    public const string AliasesScope = "illustrations.aliases";
+
     public override void Configure(WebApplicationBuilder builder)
     {
         builder.Services.AddIndexApiClient(builder.Configuration);
