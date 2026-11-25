@@ -22,6 +22,30 @@ namespace OneShelf.Collectives.Database.PostgreSqlMigrations.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("OneShelf.Collectives.Database.Models.AccountCollective", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("LatestVisibility")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Versions")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("LatestVisibility");
+
+                    b.ToTable("AccountCollectives");
+                });
+
             modelBuilder.Entity("OneShelf.Collectives.Database.Models.Collective", b =>
                 {
                     b.Property<Guid>("Id")

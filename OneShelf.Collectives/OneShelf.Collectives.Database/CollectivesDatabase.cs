@@ -14,6 +14,32 @@ public class CollectivesDatabase(DbContextOptions<CollectivesDatabase> options) 
 
     public required DbSet<Collective> Collectives { get; set; }
 
+    /// <summary>
+    /// The own chords of the new shelf's accounts.
+    /// </summary>
+    public required DbSet<AccountCollective> AccountCollectives { get; set; }
+
+    public async Task<List<AccountCollective>> GetAccountCollectives(Guid accountId)
+        => await AccountCollectives.AsNoTracking().Where(x => x.AccountId == accountId).ToListAsync();
+
+    /// <param name="ids">The ids to read; null for all.</param>
+    public async Task<List<AccountCollective>> GetAccountCollectives(IReadOnlyCollection<Guid>? ids)
+        => await (ids == null ? AccountCollectives.AsNoTracking() : AccountCollectives.AsNoTracking().Where(x => ids.Contains(x.Id))).ToListAsync();
+
+    public async Task<AccountCollective?> GetAccountCollective(Guid id)
+        => await AccountCollectives.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
+
+    /// <returns>How many were moved.</returns>
+    public async Task<int> MoveAccountCollectives(Guid fromAccountId, Guid toAccountId)
+        => await AccountCollectives.Where(x => x.AccountId == fromAccountId)
+            .ExecuteUpdateAsync(x => x.SetProperty(c => c.AccountId, toAccountId));
+
+    public async Task UpsertAccountCollective(AccountCollective collective)
+    {
+        Validator.ValidateObject(collective, new(collective));
+        await this.UpsertAsync(collective);
+    }
+
     public async Task<List<Collective>> GetCollectives(long? createdByUserId = null, CollectiveVisibility? visibility = null)
     {
         var collectives = Collectives.AsNoTracking();
@@ -43,6 +69,14 @@ public class CollectivesDatabase(DbContextOptions<CollectivesDatabase> options) 
             x.Property(x => x.Id).ValueGeneratedNever();
             x.Property(x => x.Versions).HasJsonbConversion();
             x.HasIndex(x => x.CreatedByUserId);
+            x.HasIndex(x => x.LatestVisibility);
+        });
+
+        modelBuilder.Entity<AccountCollective>(x =>
+        {
+            x.Property(x => x.Id).ValueGeneratedNever();
+            x.Property(x => x.Versions).HasJsonbConversion();
+            x.HasIndex(x => x.AccountId);
             x.HasIndex(x => x.LatestVisibility);
         });
 

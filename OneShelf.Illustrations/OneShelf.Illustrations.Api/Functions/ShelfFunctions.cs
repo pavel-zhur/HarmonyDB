@@ -1,0 +1,154 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OneShelf.Common;
+using OneShelf.Common.Api;
+using OneShelf.Illustrations.Api.Constants;
+using OneShelf.Illustrations.Api.Model;
+using OneShelf.Illustrations.Api.Services;
+using OneShelf.Illustrations.Database;
+
+namespace OneShelf.Illustrations.Api.Functions;
+
+/// <summary>
+/// The illustrations of the new shelf, for internal clients with the scope <see cref="IllustrationsModule.InternalScope"/>.
+/// They belong to a key (the chords' id there) and are drawn by a preset: the system message
+/// <see cref="SystemMessage"/>, the one the old shelf recommends, plain or with one of its alterations (a mood). A preset
+/// is drawn for a key once, as the old shelf draws it when one looks: the attempt of the prompts that suits best, all its
+/// images, each kept as soon as it is drawn; ordered again, only what is missing of it is drawn; while it is drawn, an
+/// order of it waits for that drawing (<see cref="ShelfDrawings"/>). A request that cannot be read is answered 400.
+/// </summary>
+public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, IllustrationsGenerator illustrationsGenerator, ShelfDrawings drawings)
+{
+    public const int SystemMessage = 5;
+
+    /// <summary>
+    /// The preset with no alteration.
+    /// </summary>
+    public const string PlainPreset = "plain";
+
+    public static IReadOnlyList<string> Presets { get; } = SystemMessages.Alterations.Keys.Prepend(PlainPreset).ToList();
+
+    [Function(IllustrationsApiUrls.ShelfPresets, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
+    public IActionResult GetPresets(HttpRequest req) => new OkObjectResult(new ShelfPresetsResponse
+    {
+        Presets = Presets.ToList(),
+        Sizes = IllustrationsDatabase.CopySizes.ToList(),
+    });
+
+    [Function(IllustrationsApiUrls.ShelfRead, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
+    public async Task<IActionResult> Read(HttpRequest req, [FromBody] ShelfReadRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Key)) return new BadRequestResult();
+
+        var prompts = (await illustrationsDatabase.GetPrompts(request.Key)).ToDictionary(x => x.Id);
+        var images = await illustrationsDatabase.GetIllustrationHeaders(request.Key);
+
+        return new OkObjectResult(new ShelfReadResponse
+        {
+            Images = images
+                .OrderBy(x => x.CreatedOn)
+                .ThenBy(x => x.AttemptIndex)
+                .ThenBy(x => x.PhotoIndex)
+                .Select(x => new ShelfImage
+                {
+                    Id = x.Id,
+                    CreatedOn = x.CreatedOn,
+                    Preset = prompts.GetValueOrDefault(x.PromptsId) is { SpecialSystemMessage: SystemMessage } p ? p.AlterationKey ?? PlainPreset : null,
+                })
+                .ToList(),
+        });
+    }
+
+    [Function(IllustrationsApiUrls.ShelfGenerate, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
+    public async Task<IActionResult> Generate(HttpRequest req, [FromBody] ShelfGenerateRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Key) || request.Lyrics == null! || !Presets.Contains(request.Preset))
+            return new BadRequestResult();
+
+        // one drawing of a preset for a key at a time: an order while one is drawn waits for it and gets its answer
+        return new OkObjectResult(await drawings.RunOnceAsync((request.Key, request.Preset), () => DrawAsync(request)));
+    }
+
+    /// <summary>
+    /// Draws what is missing of the preset's batch for the key: the prompts, when there are none yet; then every image of
+    /// the chosen attempt that has none (all of them the first time; the rest after a batch cut short or partly failed).
+    /// </summary>
+    private async Task<ShelfGenerateResponse> DrawAsync(ShelfGenerateRequest request)
+    {
+        var alterationKey = request.Preset == PlainPreset ? null : request.Preset;
+        var prompts = await illustrationsGenerator.GetOrCreatePrompts(
+            request.Key, () => Task.FromResult<string?>(request.Lyrics), SystemMessage, null, alterationKey, null, request.AdditionalBillingInfo);
+
+        if (prompts == null)
+            return Answer(ShelfGenerateOutcome.NoLyrics, 0);
+
+        var drawn = (await illustrationsDatabase.GetIllustrationHeaders(request.Key)).Where(x => x.PromptsId == prompts.Id).ToList();
+
+        // the attempt drawn before; else the one the old shelf draws: up to 7 images, the closer to 5 the better; else the
+        // fewer the better; then the longer descriptions
+        var attempt = drawn.Count > 0
+            ? drawn[0].AttemptIndex
+            : prompts.Prompts
+                .WithIndices()
+                .Select(x => (x.i, x.x.Count, length: x.x.Sum(p => p.Length)))
+                .Where(x => x.Count > 0)
+                .OrderBy(x => x.Count > 7 ? 2 : 1)
+                .ThenBy(x => x.Count > 7 ? x.Count : Math.Abs(5 - x.Count))
+                .ThenBy(x => x.Count)
+                .ThenByDescending(x => x.length)
+                .Select(x => (int?)x.i)
+                .FirstOrDefault();
+
+        if (attempt is not { } i)
+            return Answer(ShelfGenerateOutcome.NoPrompts, 0);
+
+        var missing = prompts.Prompts[i]
+            .Select((_, j) => new GenerationIndex(i, j))
+            .Where(x => drawn.All(d => d.AttemptIndex != x.AttemptIndex || d.PhotoIndex != x.PhotoIndex))
+            .ToList();
+        if (missing.Count == 0)
+            return Answer(ShelfGenerateOutcome.AlreadyMade, 0);
+
+        var made = await illustrationsGenerator.GenerateImages(request.Key, prompts, missing, null, request.AdditionalBillingInfo);
+        return Answer(ShelfGenerateOutcome.Made, made);
+    }
+
+    private static ShelfGenerateResponse Answer(ShelfGenerateOutcome outcome, int made) => new() { Outcome = outcome, Made = made };
+}
+
+/// <summary>
+/// The drawings going on in this service, by key and preset: what is being drawn is not ordered again (the service runs
+/// as one copy).
+/// </summary>
+public sealed class ShelfDrawings
+{
+    private readonly Dictionary<(string Key, string Preset), Task<ShelfGenerateResponse>> _running = new();
+
+    public Task<ShelfGenerateResponse> RunOnceAsync((string Key, string Preset) what, Func<Task<ShelfGenerateResponse>> draw)
+    {
+        lock (_running)
+        {
+            if (_running.TryGetValue(what, out var running))
+                return running;
+
+            var task = RunAsync(what, draw);
+            _running[what] = task;
+            return task;
+        }
+    }
+
+    private async Task<ShelfGenerateResponse> RunAsync((string Key, string Preset) what, Func<Task<ShelfGenerateResponse>> draw)
+    {
+        try
+        {
+            // never inline: the entry is in place before the drawing can end
+            await Task.Yield();
+            return await draw();
+        }
+        finally
+        {
+            lock (_running)
+                _running.Remove(what);
+        }
+    }
+}

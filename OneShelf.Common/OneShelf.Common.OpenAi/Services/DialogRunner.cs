@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -24,12 +24,16 @@ public class DialogRunner
     private readonly VeoVideoGenerator _veoVideoGenerator;
     private readonly MusicGenerator _musicGenerator;
 
-    public DialogRunner(IOptions<OpenAiOptions> options, ILogger<DialogRunner> logger, BillingApiClient billingApiClient, SoraVideoGenerator soraVideoGenerator, VeoVideoGenerator veoVideoGenerator, MusicGenerator musicGenerator)
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public DialogRunner(IOptions<OpenAiOptions> options, ILogger<DialogRunner> logger, BillingApiClient billingApiClient, SoraVideoGenerator soraVideoGenerator, VeoVideoGenerator veoVideoGenerator, MusicGenerator musicGenerator, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _billingApiClient = billingApiClient;
         _options = options.Value;
-        _client = new(new(options.Value.OpenAiApiKey));
+        _httpClientFactory = httpClientFactory;
+        // the client writes a failed request with its headers to the console: the key is taken off them first
+        _client = new(new(options.Value.OpenAiApiKey), null, new HttpClient(new CredentialsOffFailedRequests(new HttpClientHandler())));
         _soraVideoGenerator = soraVideoGenerator;
         _veoVideoGenerator = veoVideoGenerator;
         _musicGenerator = musicGenerator;
@@ -276,53 +280,120 @@ public class DialogRunner
             newMessagePoint);
     }
 
+    /// <summary>
+    /// How many sets of prompts are asked for a song: the old flow's three attempts, each a request of its own.
+    /// </summary>
+    private const int SongImagesAttempts = 3;
+
+    /// <summary>
+    /// The prompts of a song's illustrations: <see cref="SongImagesAttempts"/> attempts, each the image prompts that
+    /// <see cref="OpenAiOptions.SongImagesPromptsModel"/> gives by calling the images function, through the Responses API
+    /// (the API its tool calling is made for), with no reasoning (the task needs none).
+    /// </summary>
     public async Task<(List<List<string>> prompts, SongImagesMemoryPoint memoryPoint)> GenerateSongImages(string chords,
         string? systemMessage,
         long? userId,
         string? additionalBillingInfo,
         CancellationToken cancellationToken = default)
     {
-        var messages = new List<Message>
+        var model = Required(_options.SongImagesPromptsModel, nameof(OpenAiOptions.SongImagesPromptsModel));
+        var function = DialogConstants.IncludeImageFunction;
+        var request = new JsonObject
         {
-            new(Role.System, DialogConstants.SystemImageOpportunityMessage),
-            new(Role.System, systemMessage),
-            new(Role.User, chords)
+            ["model"] = model,
+            ["input"] = new JsonArray
+            {
+                new JsonObject { ["role"] = "system", ["content"] = DialogConstants.SystemImageOpportunityMessage },
+                new JsonObject { ["role"] = "system", ["content"] = systemMessage },
+                new JsonObject { ["role"] = "user", ["content"] = chords },
+            },
+            ["tools"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "function",
+                    ["name"] = function.Name,
+                    ["description"] = function.Description,
+                    ["parameters"] = function.Parameters?.DeepClone(),
+                },
+            },
+            ["tool_choice"] = "auto",
+            ["reasoning"] = new JsonObject { ["effort"] = "none" },
         };
 
-        var dialogConfiguration = new DialogConfiguration
+        var started = DateTime.Now;
+        var answers = await Task.WhenAll(Enumerable.Range(0, SongImagesAttempts).Select(_ => PostAsync("responses", request.ToJsonString(), cancellationToken)));
+        _logger.LogInformation("The model {model} wrote the song's images prompts in {time} ms.", model, (DateTime.Now - started).TotalMilliseconds);
+
+        await BillAsync(new()
         {
-            Version = "gpt-4-1106-preview",
-            ImagesVersion = 3,
-            SystemMessage = null!,
+            Count = 1,
             UserId = userId,
+            Model = model,
             UseCase = "song images",
-            AdditionalBillingInfo = additionalBillingInfo,
+            InputTokens = answers.Sum(x => x["usage"]?["input_tokens"]?.GetValue<int>() ?? 0),
+            OutputTokens = answers.Sum(x => x["usage"]?["output_tokens"]?.GetValue<int>() ?? 0),
+            AdditionalInfo = $"responses count = {SongImagesAttempts}; {additionalBillingInfo}; for images",
             DomainId = null,
             ChatId = null,
-        };
+        });
 
-        var (responses, trace) = await RequestMany(messages, dialogConfiguration, cancellationToken, "for images", number: 3);
-
-        var prompts = responses.Select(r =>
-        {
-            var (images, _) = LookForImages(r, null);
-            if (!images.Any())
-            {
-                return new();
-            }
-
-            return DeserializeImages(images);
-        }).ToList();
+        var prompts = answers
+            .Select(answer => DeserializeImages((answer["output"]?.AsArray() ?? [])
+                .Where(x => x?["type"]?.GetValue<string>() == "function_call" && x["name"]?.GetValue<string>() == function.Name)
+                .Select(x => JsonNode.Parse(x!["arguments"]!.GetValue<string>())!)
+                .ToList()))
+            .ToList();
 
         var memoryPoint = new SongImagesMemoryPoint
         {
-            Trace = trace,
+            Trace = new JsonObject
+            {
+                ["request"] = request.DeepClone(),
+                ["responses"] = new JsonArray(answers.Select(x => x.DeepClone()).ToArray()),
+            },
             ImageTraces = prompts,
         };
 
         return (prompts, memoryPoint);
     }
 
+    /// <summary>
+    /// A call to the OpenAI API directly, with a client that writes no headers to the logs.
+    /// </summary>
+    /// <returns>The answer.</returns>
+    /// <exception cref="HttpRequestException">The API refused or failed; the message has its answer, never the key.</exception>
+    private async Task<JsonNode> PostAsync(string path, string body, CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient(ServiceCollectionExtensions.DirectClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.openai.com/v1/{path}");
+        request.Headers.Authorization = new("Bearer", _options.OpenAiApiKey);
+        request.Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+        using var response = await client.SendAsync(request, cancellationToken);
+        var answer = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"The OpenAI API answered {(int)response.StatusCode} to {path}: {answer}");
+
+        return JsonNode.Parse(answer) ?? throw new HttpRequestException($"The OpenAI API answered nothing to {path}.");
+    }
+
+    /// <summary>
+    /// Records a use in the billing; a failure there is logged and does not undo what was made and paid for.
+    /// </summary>
+    private async Task BillAsync(OneShelf.Billing.Api.Model.Usage usage)
+    {
+        try
+        {
+            await _billingApiClient.Add(usage);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "The use was made but not recorded in the billing: {model}, {useCase}, {count}.", usage.Model, usage.UseCase, usage.Count);
+        }
+    }
+
+    private static string Required(string? setting, string name)
+        => string.IsNullOrWhiteSpace(setting) ? throw new InvalidOperationException($"{nameof(OpenAiOptions)}:{name} is not set.") : setting;
     private static string ExtractContent(Message? message)
     {
         return Regex.Replace(message?.Content?.ToString(), "\\!\\[(?<name>[^\\r\\n]+)\\]\\([^\\r\\n]+\\)",
@@ -380,6 +451,50 @@ public class DialogRunner
         return messages;
     }
 
+    /// <summary>
+    /// Draws one of a song's illustrations by its prompt with <see cref="OpenAiOptions.SongImagesModel"/>, square, through
+    /// the Images API (its answer is the image itself, base64). A picture drawn is given back even when recording it in
+    /// the billing fails.
+    /// </summary>
+    /// <returns>The image, or null when it was not drawn.</returns>
+    public async Task<byte[]?> GenerateSongImageFile(string prompt, DialogConfiguration configuration, CancellationToken cancellationToken = default)
+    {
+        var model = Required(_options.SongImagesModel, nameof(OpenAiOptions.SongImagesModel));
+        byte[] image;
+        try
+        {
+            var started = DateTime.Now;
+            var answer = await PostAsync("images/generations", new JsonObject { ["model"] = model, ["prompt"] = prompt, ["size"] = "1024x1024", ["n"] = 1 }.ToJsonString(), cancellationToken);
+            var data = answer["data"]?[0]?["b64_json"]?.GetValue<string>();
+            if (string.IsNullOrEmpty(data))
+            {
+                _logger.LogError("The image's answer has no image. Prompt: {prompt}", prompt);
+                return null;
+            }
+
+            image = Convert.FromBase64String(data);
+            _logger.LogInformation("Image drawn. Took {ms} ms. Prompt: {prompt}.", DateTime.Now - started, prompt);
+        }
+        catch (Exception e) when (e is HttpRequestException or JsonException or FormatException or InvalidOperationException
+                                  || (e is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            _logger.LogError(e, "Error drawing the image. {prompt}", prompt);
+            return null;
+        }
+
+        await BillAsync(new()
+        {
+            Count = 1,
+            UserId = configuration.UserId,
+            Model = model,
+            UseCase = configuration.UseCase,
+            AdditionalInfo = configuration.AdditionalBillingInfo,
+            DomainId = configuration.DomainId,
+            ChatId = configuration.ChatId,
+        });
+
+        return image;
+    }
     public async Task<List<string?>> GenerateImages(IReadOnlyList<string> prompts, DialogConfiguration configuration, CancellationToken cancellationToken = default)
     {
         try

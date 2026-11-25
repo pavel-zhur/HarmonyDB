@@ -13,6 +13,12 @@ public class SelfV2Options
     public const string InternalScope = "source";
 
     /// <summary>
+    /// The scope of the internal clients (configuration <c>SourcesSelf:InternalClients</c>) that may see how the text of
+    /// own chords is shown before it is saved (the new shelf's editor).
+    /// </summary>
+    public const string PreviewScope = "preview";
+
+    /// <summary>
     /// The opaque name of the source's picture, given in the source label, and the file of the picture. Both or neither.
     /// The name begins with the prefix of this source's ids, so that the index routes it here.
     /// </summary>

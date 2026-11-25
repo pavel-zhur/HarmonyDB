@@ -18,4 +18,9 @@ public static class IllustrationsApiUrls
     public const string Images = "images";
 
     public const string PublishCustomSystemMessagedPrompts = nameof(PublishCustomSystemMessagedPrompts);
+
+    // the new shelf's, to internal clients
+    public const string ShelfPresets = nameof(ShelfPresets);
+    public const string ShelfRead = nameof(ShelfRead);
+    public const string ShelfGenerate = nameof(ShelfGenerate);
 }

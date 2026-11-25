@@ -21,6 +21,11 @@ public static class ServiceCollectionExtensions
             .AddBillingApiClient(configuration)
             .AddHttpClient();
 
+        // the client of the direct calls to the OpenAI API: it carries the key, so it logs nothing of its requests
+        services.AddHttpClient(DirectClientName, x => x.Timeout = TimeSpan.FromMinutes(5)).RemoveAllLoggers();
+
         return services;
     }
+
+    public const string DirectClientName = "openai-direct";
 }

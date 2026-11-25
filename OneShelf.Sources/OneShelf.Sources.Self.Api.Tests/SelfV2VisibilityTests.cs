@@ -29,6 +29,9 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
     private static readonly Guid Public = Guid.Parse("10000000-0000-0000-0000-000000000001");
     private static readonly Guid Club = Guid.Parse("10000000-0000-0000-0000-000000000002");
     private static readonly Guid Private = Guid.Parse("10000000-0000-0000-0000-000000000003");
+
+    /// <summary>Private, written in the shelf by the author's account (the others, in the old shelf by the author's Telegram user).</summary>
+    private static readonly Guid AccountPrivate = Guid.Parse("10000000-0000-0000-0000-000000000004");
     private static readonly Guid Missing = Guid.Parse("10000000-0000-0000-0000-000000000009");
 
     private static readonly Guid Author = Guid.Parse("20000000-0000-0000-0000-000000000001");
@@ -86,7 +89,7 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
 
     public static TheoryData<string, bool, bool, bool> Callers => new()
     {
-        // caller, opens public, club, private
+        // caller, opens public, club, private (either written in the old shelf or in the shelf)
         { "guest", true, true, false },
         { "author", true, true, true },
         { "other", true, true, false },
@@ -97,19 +100,19 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
     public async Task WhoOpensWhatByItsIdOrAddress(string who, bool opensPublic, bool opensClub, bool opensPrivate)
     {
         var caller = CallerOf(who);
-        var expected = new[] { opensPublic, opensClub, opensPrivate }.Select(x => x ? ItemState.Open : ItemState.NotOpen).ToList();
+        var expected = new[] { opensPublic, opensClub, opensPrivate, opensPrivate }.Select(x => x ? ItemState.Open : ItemState.NotOpen).ToList();
 
-        var headers = await _source.GetHeaders(caller, [Id(Public), Id(Club), Id(Private)]);
+        var headers = await _source.GetHeaders(caller, [Id(Public), Id(Club), Id(Private), Id(AccountPrivate)]);
         Assert.Equal(expected, headers.Headers.Select(x => x.State));
 
-        foreach (var (collective, state) in new[] { Public, Club, Private }.Zip(expected))
+        foreach (var (collective, state) in new[] { Public, Club, Private, AccountPrivate }.Zip(expected))
         {
             var content = await _source.GetContent(caller, Id(collective), [ContentKind.Sheet]);
             Assert.Equal(state, content.State);
             Assert.Equal(state == ItemState.Open, content.Content?.Sheet != null);
         }
 
-        var resolved = await _source.Resolve(caller, [Address(Public), Address(Club), Address(Private)]);
+        var resolved = await _source.Resolve(caller, [Address(Public), Address(Club), Address(Private), Address(AccountPrivate)]);
         Assert.Equal(
             expected.Select(x => x == ItemState.Open ? ResolveState.Resolved : ResolveState.NotResolved),
             resolved.Items.Select(x => x.State));
@@ -117,7 +120,7 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
 
     [Theory]
     [InlineData("guest", new[] { "Alpha public" })]
-    [InlineData("author", new[] { "Alpha club", "Alpha private", "Alpha public" })]
+    [InlineData("author", new[] { "Alpha club", "Alpha private", "Alpha private in the shelf", "Alpha public" })]
     [InlineData("other", new[] { "Alpha public" })]
     public async Task WhoFindsWhat(string who, string[] titles)
     {
@@ -143,9 +146,9 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
         Assert.Equal(found.Failures, nothing.Failures);
 
         // by id: what is open to all is open; a private one and one that does not exist are alike
-        var headers = await _source.GetHeaders(caller, [Id(Public), Id(Club), Id(Private), Id(Missing), "mj-not-an-id"]);
+        var headers = await _source.GetHeaders(caller, [Id(Public), Id(Club), Id(Private), Id(AccountPrivate), Id(Missing), "mj-not-an-id"]);
         Assert.Equal(
-            [ItemState.Open, ItemState.Open, ItemState.Unavailable, ItemState.Unavailable, ItemState.Unavailable],
+            [ItemState.Open, ItemState.Open, ItemState.Unavailable, ItemState.Unavailable, ItemState.Unavailable, ItemState.Unavailable],
             headers.Headers.Select(x => x.State));
         Assert.Equal(ItemState.Unavailable, (await _source.GetContent(caller, Id(Missing), [ContentKind.Sheet])).State);
 
@@ -166,7 +169,7 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
 
     private static Uri Address(Guid collective) => new($"https://{Host}/?id={collective:D}&tag=123456&version=1");
 
-    private static CollectiveVersion Version(Guid id, string title, CollectiveVisibility visibility) => new()
+    private static OwnCollective Version(Guid id, string title, CollectiveVisibility visibility, bool inTheShelf = false) => new()
     {
         CollectiveId = id,
         Collective = new()
@@ -180,12 +183,13 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
         CreatedOn = DateTime.UnixEpoch,
         UpdatedOn = DateTime.UnixEpoch,
         SearchTag = 123456,
-        CreatedByUserId = AuthorTelegramId,
+        AuthorTelegramUserId = inTheShelf ? null : AuthorTelegramId,
+        AuthorAccountId = inTheShelf ? Author : null,
         Uri = Address(id),
     };
 
     /// <summary>
-    /// The store of the collectives (its two internal operations) and the shelf's accounts, on a real port.
+    /// The store of the collectives (its read of own chords) and the shelf's accounts, on a real port.
     /// </summary>
     private static async Task<WebApplication> StartFakes()
     {
@@ -194,6 +198,7 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
             Version(Public, "Alpha public", CollectiveVisibility.Public),
             Version(Club, "Alpha club", CollectiveVisibility.Club),
             Version(Private, "Alpha private", CollectiveVisibility.Private),
+            Version(AccountPrivate, "Alpha private in the shelf", CollectiveVisibility.Private, true),
         };
         var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
@@ -202,11 +207,10 @@ public sealed class SelfV2VisibilityTests : IAsyncLifetime
         builder.Logging.ClearProviders();
         var app = builder.Build();
 
-        app.MapPost("/api/ListAll", () => Results.Json(new ListAllResponse { Versions = all.ToList() }, json));
-        app.MapPost("/api/GetMany", async (HttpContext context) =>
+        app.MapPost("/api/Items", async (HttpContext context) =>
         {
-            var request = await JsonSerializer.DeserializeAsync<GetManyRequest>(context.Request.Body, json);
-            await Results.Json(new GetManyResponse { Versions = all.Where(x => request!.CollectiveIds.Contains(x.CollectiveId)).ToList() }, json)
+            var request = await JsonSerializer.DeserializeAsync<ItemsRequest>(context.Request.Body, json);
+            await Results.Json(new ItemsResponse { Items = all.Where(x => request!.CollectiveIds?.Contains(x.CollectiveId) ?? true).ToList() }, json)
                 .ExecuteAsync(context);
         });
         app.MapGet("/shelf/accounts/{accountId:guid}/logins/telegram", (HttpContext context, Guid accountId) =>

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneShelf.Common.Api.Hosting;
 using OneShelf.Common.OpenAi;
+using OneShelf.Common.OpenAi.Models;
 using OneShelf.Illustrations.Api.Options;
 using OneShelf.Illustrations.Api.Services;
 using OneShelf.Illustrations.Database;
@@ -21,9 +22,18 @@ public class IllustrationsModule() : ApiModule("Illustrations")
     {
         builder.Services.AddIndexApiClient(builder.Configuration);
         builder.Services.AddOpenAi(builder.Configuration);
+        // with an OpenAI account the illustrations are drawn: the models that do it must be named; without one, nothing is
+        // asked of the settings
+        builder.Services.AddOptions<OpenAiOptions>()
+            .Validate(
+                x => string.IsNullOrWhiteSpace(x.OpenAiApiKey) || (!string.IsNullOrWhiteSpace(x.SongImagesPromptsModel) && !string.IsNullOrWhiteSpace(x.SongImagesModel)),
+                $"{nameof(OpenAiOptions)}: with {nameof(OpenAiOptions.OpenAiApiKey)} set, {nameof(OpenAiOptions.SongImagesPromptsModel)} and {nameof(OpenAiOptions.SongImagesModel)} must be set too.")
+            .ValidateOnStart();
         builder.Services.AddIllustrationsDatabase(builder.Configuration);
 
         builder.Services.AddScoped<AllReader>();
+        builder.Services.AddScoped<IllustrationsGenerator>();
+        builder.Services.AddSingleton<Functions.ShelfDrawings>();
         builder.Services
             .AddOptions<IllustrationsApiOptions>()
             .Bind(builder.Configuration.GetSection(nameof(IllustrationsApiOptions)))

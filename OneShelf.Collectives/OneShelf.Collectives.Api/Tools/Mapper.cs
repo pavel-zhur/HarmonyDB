@@ -1,4 +1,5 @@
 ﻿using OneShelf.Collectives.Api.Model.V2.Sub;
+using OneShelf.Collectives.Api.Model.VInternal;
 using Version = OneShelf.Collectives.Database.Models.Version;
 
 namespace OneShelf.Collectives.Api.Tools;
@@ -38,6 +39,49 @@ internal static class Mapper
             SearchTag = searchTag,
             VersionComment = collective.VersionComment,
         };
+
+    public static OwnCollective ToOwn(this Database.Models.Collective collective, Uri uri, bool withHistory)
+        => ToOwn(collective.Id, collective.Versions, uri, withHistory, collective.CreatedByUserId, null);
+
+    public static OwnCollective ToOwn(this Database.Models.AccountCollective collective, Uri uri, bool withHistory)
+        => ToOwn(collective.Id, collective.Versions, uri, withHistory, null, collective.AccountId);
+
+    private static OwnCollective ToOwn(Guid id, List<Version> versions, Uri uri, bool withHistory, long? telegramUserId, Guid? accountId)
+    {
+        var version = versions.Last();
+        return new()
+        {
+            CollectiveId = id,
+            Collective = version.ToModel(),
+            VersionNumber = versions.Count,
+            CreatedOn = versions.First().CreatedOn,
+            UpdatedOn = version.CreatedOn,
+            SearchTag = version.SearchTag,
+            Uri = uri,
+            AuthorTelegramUserId = telegramUserId,
+            AuthorAccountId = accountId,
+            History = withHistory
+                ? versions.Select((x, i) => new OwnCollectiveVersion
+                {
+                    VersionNumber = i + 1,
+                    CreatedOn = x.CreatedOn,
+                    Collective = x.ToModel(),
+                }).ToList()
+                : null,
+        };
+    }
+
+    private static Collective ToModel(this Version version) => new()
+    {
+        Title = version.Title,
+        Authors = version.Authors,
+        Bpm = version.Bpm,
+        Contents = version.Contents,
+        Description = version.Description,
+        Tonality = version.Tonality,
+        VersionComment = version.VersionComment,
+        Visibility = version.Visibility.ToModelVisibility() ?? throw new("The version is deleted."),
+    };
 
     public static CollectiveVersion ToModelVersion(this Database.Models.Collective collective, Uri uri)
     {

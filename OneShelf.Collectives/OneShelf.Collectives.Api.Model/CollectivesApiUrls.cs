@@ -10,5 +10,13 @@ public static class CollectivesApiUrls
 
     public const string Get = nameof(Get);
     public const string ListAll = nameof(ListAll);
-    public const string GetMany = nameof(GetMany);
+
+    // the own chords for the new shelf and its source, to internal clients
+    public const string Items = nameof(Items);
+    public const string OwnList = nameof(OwnList);
+    public const string OwnGet = nameof(OwnGet);
+    public const string OwnInsert = nameof(OwnInsert);
+    public const string OwnUpdate = nameof(OwnUpdate);
+    public const string OwnDelete = nameof(OwnDelete);
+    public const string OwnMove = nameof(OwnMove);
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
@@ -20,6 +21,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// <item>permissions are united;</item>
 /// <item>a music link of the second is taken only where the first has none for that service; otherwise it is deleted
 /// and what the music service keeps under it is purged;</item>
+/// <item>the own chords the second wrote become the first's in their store, after the commit (the outbox);</item>
 /// <item>the second's sessions, MCP grants and personal keys are revoked;</item>
 /// <item>the second account is left deleted (step one of <see cref="Account.DeletedAt"/>), empty; the purge removes it.</item>
 /// </list>
@@ -97,6 +99,9 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
                 moved[$"music_link_{link.Service.ToString().ToLowerInvariant()}"] = 1;
             }
         }
+
+        // The own chords the second wrote, kept by their store: moved there after this commits.
+        OwnChordsAuthorMove.Enqueue(db, second, first, now);
 
         // Revoked.
         await db.Sessions.Where(x => x.AccountId == second).ExecuteDeleteAsync(cancellationToken);

@@ -56,6 +56,9 @@ services:
       OpenAiOptions__AzureOpenAiEndpoint: ${AZURE_OPENAI_ENDPOINT}
       OpenAiOptions__AzureOpenAiApiKey: ${AZURE_OPENAI_API_KEY}
       OpenAiOptions__AzureOpenAiApiVersion: ${AZURE_OPENAI_API_VERSION}
+      # the models of the illustrations: the chat model that writes their prompts, the image model that draws them
+      OpenAiOptions__SongImagesPromptsModel: ${OPENAI_SONG_IMAGES_PROMPTS_MODEL}
+      OpenAiOptions__SongImagesModel: ${OPENAI_SONG_IMAGES_MODEL}
 
       # ---------- Authorization ----------
       # The local way in without Telegram, off unless ALLOW_BAD_HASH is true: a login of any user is accepted

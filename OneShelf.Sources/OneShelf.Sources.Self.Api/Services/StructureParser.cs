@@ -8,7 +8,12 @@ namespace OneShelf.Sources.Self.Api.Services;
 
 public class StructureParser
 {
-    public NodeHtml ContentToHtml(Collective collective) => ContentToHtml(collective.Contents.Replace("&", "&amp;"));
+    public NodeHtml ContentToHtml(Collective collective) => ContentsToHtml(collective.Contents);
+
+    /// <summary>
+    /// The contents of own chords, as they are kept, in the sheet they are shown as.
+    /// </summary>
+    public NodeHtml ContentsToHtml(string contents) => ContentToHtml(contents.Replace("&", "&amp;"));
 
     public NodeHtml ContentToHtml(string content)
     {

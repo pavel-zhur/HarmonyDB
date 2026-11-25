@@ -136,6 +136,11 @@ internal static class DialogConstants
             ["required"] = new JsonArray { "prompt", "title" }
         }));
 
+    /// <summary>
+    /// The function that shows images, alone.
+    /// </summary>
+    public static Function IncludeImageFunction => IncludeImageTool.Function;
+
     public static IReadOnlyList<Tool> First { get; } = new List<Tool>
     {
         IncludeImageTool,

@@ -110,6 +110,12 @@ public class Convert
         SyncfusionLicenseProvider.RegisterLicense(_configuration.GetValue<string>(SyncFusionLicenseKey));
     }
 
+    /// <summary>
+    /// The first conversions after a start, coming at once, set the Chrome up one at a time: copying it while another
+    /// copies it fails.
+    /// </summary>
+    private static readonly object SetupLock = new();
+
     private string SetupBlinkBinaries()
     {
         var path = _configuration.GetValue<string>(BlinkBinariesPath);
@@ -120,11 +126,14 @@ public class Convert
         var tempBlinkDir = Path.GetTempPath();
         var chromePath = Path.Combine(tempBlinkDir, "chrome");
 
-        if (!File.Exists(chromePath))
+        lock (SetupLock)
         {
-            CopyFilesRecursively(blinkAppDir, tempBlinkDir);
+            if (!File.Exists(chromePath))
+            {
+                CopyFilesRecursively(blinkAppDir, tempBlinkDir);
 
-            SetExecutablePermission(tempBlinkDir);
+                SetExecutablePermission(tempBlinkDir);
+            }
         }
 
         return tempBlinkDir;

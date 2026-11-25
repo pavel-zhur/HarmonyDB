@@ -1,4 +1,4 @@
-﻿using OneShelf.Pdfs.Generation.Resources;
+using OneShelf.Pdfs.Generation.Resources;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
@@ -8,7 +8,8 @@ namespace OneShelf.Pdfs.Generation.Volumes.Services;
 
 public class VolumesGeneration
 {
-    public async Task<(byte[] bytes, int total, int emptyAdded)> CreateDocument(IReadOnlyList<(byte[] doc, int? i)> volumeDocuments, string caption, string year)
+    /// <param name="qr">The QR code on the title page, a PNG; null: the one this library carries.</param>
+    public async Task<(byte[] bytes, int total, int emptyAdded)> CreateDocument(IReadOnlyList<(byte[] doc, int? i)> volumeDocuments, string caption, string year, byte[]? qr = null)
     {
         GlobalFontSettings.FontResolver = MyFontResolver.Instance;
 
@@ -70,7 +71,7 @@ public class VolumesGeneration
 
         var title = result.InsertPage(0, new());
 
-        await AddAnnotation(title, caption, year);
+        await AddAnnotation(title, caption, year, qr);
 
         using var stream = new MemoryStream();
         result.Save(stream);
@@ -95,7 +96,7 @@ public class VolumesGeneration
             XStringFormats.Center);
     }
 
-    private async Task AddAnnotation(PdfPage page, string caption, string year)
+    private async Task AddAnnotation(PdfPage page, string caption, string year, byte[]? qr)
     {
         XFont font = new XFont(MyFontResolver.Consolas, 30);
         XFont font2 = new XFont(MyFontResolver.Consolas, 15);
@@ -114,7 +115,7 @@ public class VolumesGeneration
             brush,
             layoutRectangle,
             XStringFormats.Center);
-        var bytes = await PdfsGenerationResources.ReadQr();
+        var bytes = qr ?? await PdfsGenerationResources.ReadQr();
         using var stream = new MemoryStream(bytes, 0, bytes.Length, false, true);
         gfx.DrawImage(XImage.FromStream(stream), imageRectangle);
         gfx.DrawString(

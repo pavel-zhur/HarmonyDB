@@ -27,11 +27,13 @@ public class CollectivesApiClient : ApiClientBase<CollectivesApiClient>
             Identity = identity,
         });
 
-    /// <returns>The collectives of these ids that exist and are not deleted.</returns>
-    public async Task<GetManyResponse> GetMany(IReadOnlyCollection<Guid> collectiveIds)
-        => await PostWithCode<GetManyRequest, GetManyResponse>(CollectivesApiUrls.GetMany, new()
+    /// <param name="collectiveIds">The ids to read; null for all.</param>
+    /// <returns>The own chords of these ids (of all, when none are given) that exist and are not deleted, whoever wrote
+    /// them: a Telegram user in the old shelf or an account of the new one.</returns>
+    public async Task<ItemsResponse> Items(IReadOnlyCollection<Guid>? collectiveIds)
+        => await PostWithCode<ItemsRequest, ItemsResponse>(CollectivesApiUrls.Items, new()
         {
-            CollectiveIds = collectiveIds.ToList(),
+            CollectiveIds = collectiveIds?.ToList(),
         });
 
     public async Task<GetResponse> Get(Guid collectiveId)

@@ -13,6 +13,12 @@ namespace OneShelf.Collectives.Api;
 
 public class CollectivesModule() : ApiModule("Collectives")
 {
+    /// <summary>
+    /// The scope of the internal clients (configuration <c>Collectives:InternalClients</c>) that may call the functions of
+    /// the own chords for the new shelf (<see cref="Functions.VInternal.OwnFunctions"/>).
+    /// </summary>
+    public const string InternalScope = "collectives";
+
     public override void Configure(WebApplicationBuilder builder) => builder.Services
         .AddSongsDatabase()
         .AddCollectivesDatabase(builder.Configuration)

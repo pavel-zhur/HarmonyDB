@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Options;
 using OneShelf.Collectives.Api.Client;
 using OneShelf.Collectives.Api.Model.V2.Sub;
+using OneShelf.Collectives.Api.Model.VInternal;
 using OneShelf.Sources.Self.Api.Models;
 
 namespace OneShelf.Sources.Self.Api.Services.V2;
@@ -18,7 +19,8 @@ namespace OneShelf.Sources.Self.Api.Services.V2;
 /// <item>A public collective is open to every caller and found by every search. A club one (there are no clubs in the
 /// shelf; the club's people keep its collectives in shared playlists) is open to every caller who holds its id, and
 /// found by the searches of its author only. A private one is open to, and found by, its author only. The author is
-/// the caller whose account the shelf links to the Telegram user who made it (<see cref="ShelfAccountsClient"/>).
+/// the caller whose account wrote it in the shelf, or, for one written in the old shelf, whose account the shelf links
+/// to the Telegram user who made it (<see cref="ShelfAccountsClient"/>).
 /// A deleted collective is not open. The caller's keys open nothing here.</item>
 /// <item>For a caller who is a person, the shelf is asked who it is before anything else, so what is answered does not
 /// depend on what exists. When the shelf does not answer, a search gives what is open to all and reports this source
@@ -62,7 +64,7 @@ public partial class SelfV2Source
         var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var words = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
 
-        var headers = (await _collectivesApiClient.ListAll()).Versions
+        var headers = (await _collectivesApiClient.Items(null)).Items
             .Where(viewer.Finds)
             .Where(version =>
             {
@@ -149,7 +151,7 @@ public partial class SelfV2Source
         // the shelf is asked only when an address is of this source at all: an address of another source says nothing
         // of what exists here
         var viewer = ours ? await Viewer.Create(caller, _shelfAccountsClient, cancellationToken) : null;
-        var found = ours ? await Get(collectiveIds) : new Dictionary<Guid, CollectiveVersion>();
+        var found = ours ? await Get(collectiveIds) : new Dictionary<Guid, OwnCollective>();
 
         return new()
         {
@@ -185,15 +187,15 @@ public partial class SelfV2Source
     /// <summary>
     /// The collectives of these ids that exist and are not deleted.
     /// </summary>
-    private async Task<IReadOnlyDictionary<Guid, CollectiveVersion>> Get(IEnumerable<Guid?> collectiveIds)
+    private async Task<IReadOnlyDictionary<Guid, OwnCollective>> Get(IEnumerable<Guid?> collectiveIds)
     {
         var ids = collectiveIds.OfType<Guid>().Distinct().ToList();
-        if (ids.Count == 0) return new Dictionary<Guid, CollectiveVersion>();
+        if (ids.Count == 0) return new Dictionary<Guid, OwnCollective>();
 
-        return (await _collectivesApiClient.GetMany(ids)).Versions.ToDictionary(x => x.CollectiveId);
+        return (await _collectivesApiClient.Items(ids)).Items.ToDictionary(x => x.CollectiveId);
     }
 
-    private Header ToHeader(CollectiveVersion version) => new()
+    private Header ToHeader(OwnCollective version) => new()
     {
         Id = ToId(version.CollectiveId),
         Source = new()
@@ -225,48 +227,52 @@ public partial class SelfV2Source
     /// </summary>
     private sealed class Viewer
     {
-        private readonly bool _isPerson;
+        private readonly Guid? _accountId;
         private readonly IReadOnlySet<long>? _telegramUserIds;
 
-        private Viewer(bool isPerson, IReadOnlySet<long>? telegramUserIds)
+        private Viewer(Guid? accountId, IReadOnlySet<long>? telegramUserIds)
         {
-            _isPerson = isPerson;
+            _accountId = accountId;
             _telegramUserIds = telegramUserIds;
         }
+
+        private bool IsPerson => _accountId != null;
 
         /// <summary>
         /// The caller is a person whom the shelf could not tell.
         /// </summary>
-        public bool IsUnknownPerson => _isPerson && _telegramUserIds == null;
+        public bool IsUnknownPerson => IsPerson && _telegramUserIds == null;
 
         /// <summary>
         /// For a person, asks the shelf who it is, always and first.
         /// </summary>
         public static async Task<Viewer> Create(Caller caller, ShelfAccountsClient shelfAccountsClient, CancellationToken cancellationToken)
         {
-            if (caller.AccountId is not { } accountId) return new(false, null);
+            if (caller.AccountId is not { } accountId) return new(null, null);
 
             try
             {
-                return new(true, await shelfAccountsClient.GetTelegramUserIds(accountId, cancellationToken));
+                return new(accountId, await shelfAccountsClient.GetTelegramUserIds(accountId, cancellationToken));
             }
             catch (ShelfUnavailableException)
             {
-                return new(true, null);
+                return new(accountId, null);
             }
         }
 
         /// <param name="version">The collective, or null when there is none of that id.</param>
-        public ItemState StateOf(CollectiveVersion? version)
+        public ItemState StateOf(OwnCollective? version)
         {
             if (version?.Collective.Visibility is CollectiveVisibility.Public or CollectiveVisibility.Club) return ItemState.Open;
-            if (!_isPerson) return ItemState.NotOpen;
+            if (!IsPerson) return ItemState.NotOpen;
+            if (version != null && version.AuthorAccountId == _accountId) return ItemState.Open;
             if (_telegramUserIds == null) return ItemState.Unavailable;
-            return version != null && _telegramUserIds.Contains(version.CreatedByUserId) ? ItemState.Open : ItemState.NotOpen;
+            return version?.AuthorTelegramUserId is { } author && _telegramUserIds.Contains(author) ? ItemState.Open : ItemState.NotOpen;
         }
 
-        public bool Finds(CollectiveVersion version)
+        public bool Finds(OwnCollective version)
             => version.Collective.Visibility == CollectiveVisibility.Public
-               || (_telegramUserIds?.Contains(version.CreatedByUserId) ?? false);
+               || (IsPerson && version.AuthorAccountId == _accountId)
+               || (version.AuthorTelegramUserId is { } author && (_telegramUserIds?.Contains(author) ?? false));
     }
 }

@@ -19,7 +19,8 @@ public class Transcriber
         _logger = logger;
         _billingApiClient = billingApiClient;
         _options = options.Value;
-        _client = new(new(options.Value.OpenAiApiKey));
+        // the client writes a failed request with its headers to the console: the key is taken off them first
+        _client = new(new(options.Value.OpenAiApiKey), null, new HttpClient(new CredentialsOffFailedRequests(new HttpClientHandler())));
     }
 
     public async Task<string> TranscribeAudio(byte[] audio, DialogConfiguration configuration)
