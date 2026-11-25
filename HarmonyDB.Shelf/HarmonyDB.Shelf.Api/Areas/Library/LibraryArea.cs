@@ -4,6 +4,7 @@ using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Model.Playlists;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HarmonyDB.Shelf.Api.Areas.Library;
 
@@ -24,5 +25,9 @@ public sealed class LibraryArea : IShelfArea
 
         group.MapGet("/recent", (ClaimsPrincipal user, int? limit, RecentService recent, CancellationToken cancellationToken)
             => recent.ListAsync(user, limit ?? 50, cancellationToken)).WithName("GetRecent");
+
+        // where chords are among the person's own playlists, with their "here" keys: ?chords=<id>&chords=<id> (at most 200)
+        group.MapGet("/places", (ClaimsPrincipal user, [FromQuery] string[] chords, PlacesService places, CancellationToken cancellationToken)
+            => places.GetAsync(user.GetAccountId()!.Value, chords, cancellationToken)).WithName("GetChordsPlaces");
     }
 }

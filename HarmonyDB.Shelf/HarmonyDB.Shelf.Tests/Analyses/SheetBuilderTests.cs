@@ -157,6 +157,30 @@ public sealed class SheetBuilderTests
     }
 
     [Fact]
+    public void TheTimelinesSectionsCarryTheNamesOfTheSheetsHeaders()
+    {
+        // the intro is gone from the sheet (the verse begins on its bar line); the rest named as the headers are, a name
+        // given as it is; the times and the rest of each section as they were
+        var sections = new[]
+        {
+            Section(SectionLabel.Intro, null, 0, 0.9), Section(SectionLabel.Verse, null, 0.9, 4.1), Section(SectionLabel.Verse, null, 4.1, 8),
+            new() { Label = SectionLabel.Chorus, Name = "Припев", Start = 8, End = 12 }, Section(SectionLabel.Verse, null, 12, 16),
+        };
+        var song = Song(Chords((0, "C"), (4, "D"), (8, "E"), (12, "F")), sections);
+
+        var named = SheetBuilder.WithSectionNames(song);
+        Assert.Equal([null, "Verse 1", "Verse 1b", "Припев", "Verse 2"], named.Sections.Select(x => x.Name));
+        Assert.Equal(sections.Select(x => x with { Name = null }), named.Sections.Select(x => x with { Name = null }));
+        Assert.Equal(["Verse 1", "Verse 1b", "Припев", "Verse 2"], Headers(SheetBuilder.Build(song, null)));
+
+        // without bars the sheet has no sections: the names stay as they are
+        Assert.Equal([null, null, null, "Припев", null], SheetBuilder.WithSectionNames(song with { Bars = [] }).Sections.Select(x => x.Name));
+    }
+
+    private static IEnumerable<string> Headers(NodeHtml sheet)
+        => sheet.Children.Where(x => x.NodeHtml is { Name: "b" }).Select(x => string.Concat(x.NodeHtml!.Children.Select(c => c.NodeText!.Text)));
+
+    [Fact]
     public void ALineSungFromBeforeTheBarLineIsInWhatItLeadsInto()
     {
         // "I believe" is sung before the chorus begins (16 s), "fly" on its first beat; the next line comes at 24 s
@@ -373,9 +397,12 @@ public sealed class SheetBuilderTests
     // ------------------------------------------------------------------ made-up songs
 
     private static NodeHtml Build(IReadOnlyList<TimelineChord> chords, Lyrics? lyrics, IReadOnlyList<Section>? sections = null, IReadOnlyList<KeySpan>? keys = null, IReadOnlyList<Bar>? bars = null)
+        => SheetBuilder.Build(Song(chords, sections, keys, bars), lyrics);
+
+    private static Timeline Song(IReadOnlyList<TimelineChord> chords, IReadOnlyList<Section>? sections = null, IReadOnlyList<KeySpan>? keys = null, IReadOnlyList<Bar>? bars = null)
     {
         const int barCount = 16;
-        var timeline = new Timeline
+        return new Timeline
         {
             Duration = barCount * 4,
             Keys = keys ?? [],
@@ -390,8 +417,6 @@ public sealed class SheetBuilderTests
             Chords = chords,
             Sections = sections ?? [],
         };
-
-        return SheetBuilder.Build(timeline, lyrics);
     }
 
     private static IReadOnlyList<TimelineChord> Chords(params (double time, string name)[] chords)

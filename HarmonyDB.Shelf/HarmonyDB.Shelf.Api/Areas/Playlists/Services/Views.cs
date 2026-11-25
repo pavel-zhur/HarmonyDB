@@ -118,7 +118,8 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
                     ? new M.PlaylistOrigin
                     {
                         Service = Map<Model.Me.MusicService>(service),
-                        Url = p.OriginUrl!,
+                        PlaylistId = p.OriginPlaylistId!,
+                        Url = p.OriginUrl,
                         CanSync = mine != null,
                         LastSyncedAt = p.LastSyncedAt,
                     }

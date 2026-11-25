@@ -795,6 +795,39 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         Assert.Contains(open, after.Playlists);
     }
 
+    [DatabaseFact]
+    public async Task ThePlacesOfChordsAmongMyPlaylists()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var (bob, _) = await fixture.PersonAsync("bob");
+        string chords = Id(), other = Id();
+        var mine = await CreateAsync(ann, PlaylistAccess.Private);
+        var mySong = await AddAsync(ann, mine, chords, "Mine");
+        var bobs = await CreateAsync(bob, PlaylistAccess.Private, PlaylistAddPolicy.Admins);
+        var bobsSong = await AddAsync(bob, bobs, chords, "Bob's");
+        await JoinAsync(bob, ann, bobs, PlaylistRole.Member);
+        var empty = await CreateAsync(ann, PlaylistAccess.Private);
+        var followed = await CreateAsync(bob, PlaylistAccess.Public);
+        await AddAsync(bob, followed, chords, "Followed");
+        await Ok<Changed<JoinedPlaylist>>(ann, HttpMethod.Post, $"/api/playlists/{followed}/follow");
+        await SyncAsync(ann, null, new Change { Type = ChangeType.Key, Chords = chords, PlaylistId = mine, Semitones = -3 });
+
+        var places = await Ok<ChordsPlaces>(ann, HttpMethod.Get, $"/api/library/places?chords={chords}&chords={other}");
+
+        // the playlists the person is in (not the followed one), whether they may add to each
+        var playlists = places.Playlists.ToDictionary(x => x.Id);
+        Assert.DoesNotContain(followed, playlists.Keys);
+        Assert.Equal((true, false, true), (playlists[mine].CanAdd, playlists[bobs].CanAdd, playlists[empty].CanAdd));
+        Assert.Contains(playlists.Values, x => x.SystemKind == PlaylistSystemKind.OwnChords);
+
+        // where the chords are, by their song; and the "here" keys
+        Assert.Equal([(mine, mySong), (bobs, bobsSong)], places.Places.Where(x => x.Chords == chords).Select(x => (x.PlaylistId, x.SongId)).OrderBy(x => x.PlaylistId == mine ? 0 : 1));
+        Assert.DoesNotContain(places.Places, x => x.Chords == other || x.PlaylistId == followed);
+        Assert.Equal([(chords, mine, -3)], places.Keys.Select(x => (x.Chords, x.PlaylistId, x.Semitones)));
+
+        await Browser.AssertError(await fixture.Api.NewBrowser().SendAsync(HttpMethod.Get, $"/api/library/places?chords={chords}"), HttpStatusCode.Unauthorized, ErrorCodes.SignInRequired);
+    }
+
     private async Task WaitForSyncAsync(Browser browser, Guid playlist)
     {
         for (var i = 0; i < 100; i++)

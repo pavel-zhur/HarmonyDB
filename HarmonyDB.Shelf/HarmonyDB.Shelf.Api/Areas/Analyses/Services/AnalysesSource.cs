@@ -108,7 +108,8 @@ public sealed class AnalysesSource(ShelfDbContext db, IOptionsMonitor<AnalysesOp
             Content = new()
             {
                 Sheet = asked.Contains(ContentKind.Sheet) ? new SheetContent { Root = SheetBuilder.Build(timeline!, lyrics) } : null,
-                Timeline = asked.Contains(ContentKind.Timeline) ? timeline : null,
+                // its sections named as the sheet's headers name them
+                Timeline = asked.Contains(ContentKind.Timeline) ? SheetBuilder.WithSectionNames(timeline!) : null,
                 Lyrics = asked.Contains(ContentKind.Lyrics) ? lyrics : null,
                 Notes = asked.Contains(ContentKind.Notes) ? Get<Notes>(ContentKind.Notes) : null,
                 Score = asked.Contains(ContentKind.Score) ? Get<Score>(ContentKind.Score) : null,

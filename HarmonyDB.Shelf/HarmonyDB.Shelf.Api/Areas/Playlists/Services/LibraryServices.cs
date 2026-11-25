@@ -41,6 +41,7 @@ public static class LibraryServices
         services.AddScoped<SongPages>();
         services.AddScoped<OriginSync>();
         services.AddScoped<RecentService>();
+        services.AddScoped<PlacesService>();
         services.AddScoped<ShareService>();
         services.AddScoped<SyncService>();
     }

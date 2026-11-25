@@ -1,7 +1,7 @@
 namespace HarmonyDB.Shelf.Api.Clients.Audio;
 
 /// <summary>
-/// The music service's links and playlists, for importing a playlist by its link.
+/// The music service's links and playlists, for importing a playlist and syncing it.
 /// </summary>
 public sealed partial class AudioClient
 {
@@ -18,10 +18,10 @@ public sealed partial class AudioClient
     public static readonly TimeSpan PlaylistTimeout = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// A playlist of either service by its link, asked anew (<c>GET /internal/playlists/by-link</c>).
+    /// A playlist by its service and id, asked anew (<c>GET /internal/{service}/playlists/{id}</c>).
     /// </summary>
-    public Task<AudioAnswer<AudioLinkedPlaylist>> GetPlaylistByLinkAsync(string url, AudioActing acting, CancellationToken cancellationToken)
-        => SendAsync<AudioAnswer<AudioLinkedPlaylist>>(HttpMethod.Get, $"internal/playlists/by-link?url={Uri.EscapeDataString(url)}&fresh=true", acting, PlaylistTimeout, cancellationToken);
+    public Task<AudioAnswer<AudioPlaylistPage>> GetPlaylistAsync(AudioServiceName service, string id, AudioActing acting, CancellationToken cancellationToken)
+        => SendAsync<AudioAnswer<AudioPlaylistPage>>(HttpMethod.Get, $"internal/{Segment(service)}/playlists/{Uri.EscapeDataString(id)}?fresh=true", acting, PlaylistTimeout, cancellationToken);
 }
 
 public sealed record AudioResolved
@@ -49,17 +49,6 @@ public sealed record AudioAnswer<T>
     public bool FetchedNow { get; init; }
 
     public required T Data { get; init; }
-}
-
-public sealed record AudioLinkedPlaylist
-{
-    public required string Service { get; init; }
-
-    public required string Id { get; init; }
-
-    public AudioPlaylistPage? Yandex { get; init; }
-
-    public AudioPlaylistPage? Youtube { get; init; }
 }
 
 /// <summary>

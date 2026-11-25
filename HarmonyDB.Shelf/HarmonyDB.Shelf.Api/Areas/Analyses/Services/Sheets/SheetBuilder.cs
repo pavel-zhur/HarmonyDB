@@ -86,40 +86,60 @@ public static class SheetBuilder
     ///   occurs more than once is numbered in order ("Verse 1", "Verse 2"); the label's word with a capital.
     /// - Without bars there are no sections.
     /// </summary>
-    private static Timeline OnBarLines(Timeline timeline)
+    private static Timeline OnBarLines(Timeline timeline) => timeline with { Sections = Placed(timeline).Select(x => x.Section).ToList() };
+
+    /// <summary>
+    /// The timeline as it is, each of its sections with the name the sheet's header gives it (<see cref="OnBarLines"/>):
+    /// its own as written, else the one made of its label and its place. A section the sheet does not have (left with no
+    /// bar of its own, or with no bars at all) keeps the name it has.
+    /// </summary>
+    public static Timeline WithSectionNames(Timeline timeline)
+    {
+        var names = Placed(timeline).ToDictionary(x => x.Of, x => x.Section.Name);
+        return timeline with
+        {
+            Sections = timeline.Sections.Select((x, i) => names.TryGetValue(i, out var name) ? x with { Name = name } : x).ToList(),
+        };
+    }
+
+    /// <summary>
+    /// The sections of <see cref="OnBarLines"/>, each with the place of the section of the timeline it is.
+    /// </summary>
+    private static IReadOnlyList<(Section Section, int Of)> Placed(Timeline timeline)
     {
         if (timeline.Bars.Count == 0)
-            return timeline with { Sections = [] };
+            return [];
 
         var lines = timeline.Bars.Select(x => x.Start).Append(timeline.Bars[^1].End).ToList();
         int Nearest(double time) => Enumerable.Range(0, lines.Count).MinBy(i => Math.Abs(lines[i] - time));
 
         // the boundaries on the lines: a section that begins there, or null where one ends with none after it at once
-        var placed = new SortedDictionary<int, Section?>();
+        var placed = new SortedDictionary<int, int?>();
         double? end = null;
-        foreach (var section in timeline.Sections)
+        for (var of = 0; of < timeline.Sections.Count; of++)
         {
+            var section = timeline.Sections[of];
             if (section.Label == null && string.IsNullOrWhiteSpace(section.Name))
                 throw new ArgumentOutOfRangeException(nameof(timeline), "A section has a label or a name.");
 
             if (end.HasValue && end != section.Start) placed[Nearest(end.Value)] = null;
-            placed[Nearest(section.Start)] = section;
+            placed[Nearest(section.Start)] = of;
             end = section.End;
         }
 
         if (end.HasValue) placed[Nearest(end.Value)] = null;
 
         var marks = placed.ToList();
-        var sections = new List<(int from, int to, Section section)>();
+        var sections = new List<(int from, int to, Section section, int of)>();
         for (var i = 0; i < marks.Count; i++)
         {
             var to = i + 1 < marks.Count ? marks[i + 1].Key : lines.Count - 1;
-            if (marks[i].Value is { } section && to > marks[i].Key)
-                sections.Add((marks[i].Key, to, section));
+            if (marks[i].Value is { } of && to > marks[i].Key)
+                sections.Add((marks[i].Key, to, timeline.Sections[of], of));
         }
 
         // neighbours of one label are the parts of one section; a label of more than one section is numbered
-        var runs = new List<List<(int from, int to, Section section)>>();
+        var runs = new List<List<(int from, int to, Section section, int of)>>();
         foreach (var x in sections)
         {
             if (runs.Count > 0 && x.section.Label != null && runs[^1][^1].section.Label == x.section.Label && runs[^1][^1].to == x.from)
@@ -130,7 +150,7 @@ public static class SheetBuilder
 
         var total = runs.Where(x => x[0].section.Label != null).GroupBy(x => x[0].section.Label).ToDictionary(x => x.Key!.Value, x => x.Count());
         var seen = new Dictionary<SectionLabel, int>();
-        var named = new List<Section>();
+        var named = new List<(Section, int)>();
         foreach (var run in runs)
         {
             var label = run[0].section.Label;
@@ -143,24 +163,24 @@ public static class SheetBuilder
 
             for (var i = 0; i < run.Count; i++)
             {
-                var (from, to, section) = run[i];
+                var (from, to, section, of) = run[i];
                 var part = label.HasValue && run.Count > 1 ? i + 1 : (int?)null;
                 var letter = i > 0 ? ((char)('a' + Math.Min(i, 25))).ToString() : string.Empty;
                 var made = label.HasValue
                     ? label.Value + (number.HasValue ? $" {number}{letter}" : letter.Length > 0 ? $" {letter}" : string.Empty)
                     : null;
-                named.Add(section with
+                named.Add((section with
                 {
                     Start = lines[from],
                     End = lines[to],
                     Number = number,
                     Part = part,
                     Name = string.IsNullOrWhiteSpace(section.Name) ? made : section.Name,
-                });
+                }, of));
             }
         }
 
-        return timeline with { Sections = named };
+        return named;
     }
 
     // ------------------------------------------------------------------ the chords

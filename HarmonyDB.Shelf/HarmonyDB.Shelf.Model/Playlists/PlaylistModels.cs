@@ -59,7 +59,15 @@ public record PlaylistOrigin
 {
     public required MusicService Service { get; init; }
 
-    public required string Url { get; init; }
+    /// <summary>
+    /// The playlist's id on its service.
+    /// </summary>
+    public required string PlaylistId { get; init; }
+
+    /// <summary>
+    /// The link it was imported by; null when it was imported by its id.
+    /// </summary>
+    public string? Url { get; init; }
 
     /// <summary>
     /// Whether the caller imported it: only they see the sync and may press it.
@@ -309,12 +317,26 @@ public record InvitationView
     public required bool AlreadyMember { get; init; }
 }
 
+/// <summary>
+/// A playlist of a music service to import: by its link, or by its service and id (as <c>MusicPlaylist</c> names it —
+/// one of the person's own, read with their linked account, or any other).
+/// </summary>
 public record ImportPlaylistRequest
 {
     /// <summary>
-    /// A link to a playlist of a music service.
+    /// A link to a playlist of a music service. Given alone.
     /// </summary>
-    public required string Url { get; init; }
+    public string? Url { get; init; }
+
+    /// <summary>
+    /// The playlist's service; given with <see cref="PlaylistId"/>, instead of a link.
+    /// </summary>
+    public MusicService? Service { get; init; }
+
+    /// <summary>
+    /// The playlist's id on its service; given with <see cref="Service"/>, instead of a link.
+    /// </summary>
+    public string? PlaylistId { get; init; }
 }
 
 /// <summary>

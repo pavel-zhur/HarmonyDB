@@ -83,6 +83,12 @@ public sealed record MusicTrack
 
     /// <summary>Whether there is an analysis of it (chords recognized from it), open to this person.</summary>
     public required bool HasAnalysis { get; init; }
+
+    /// <summary>
+    /// That analysis's chords, as they are opened (<c>GET /api/chords/{id}</c>): the newest, when there are several.
+    /// Given when <see cref="HasAnalysis"/> is true.
+    /// </summary>
+    public string? AnalysisChords { get; init; }
 }
 
 public sealed record MusicPlaylist

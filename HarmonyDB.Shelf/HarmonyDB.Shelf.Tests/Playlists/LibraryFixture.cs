@@ -141,7 +141,8 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
 }
 
 /// <summary>
-/// The music service as the tests set it: a link resolves to a playlist whose tracks are <see cref="Tracks"/>.
+/// The music service as the tests set it: a link resolves to the YouTube playlist <c>PL1</c>, whose tracks are
+/// <see cref="Tracks"/>; any credentials of YouTube are an account.
 /// </summary>
 public sealed class FakeAudio : HttpMessageHandler
 {
@@ -149,25 +150,32 @@ public sealed class FakeAudio : HttpMessageHandler
 
     public string Title { get; set; } = "A playlist there";
 
+    /// <summary>
+    /// How each asking of the playlist acted (anonymous, person …), in order.
+    /// </summary>
+    public List<string?> PlaylistModes { get; } = [];
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var path = request.RequestUri!.AbsolutePath;
+        if (path == "/internal/youtube/playlists/PL1")
+        {
+            lock (PlaylistModes)
+                PlaylistModes.Add(request.Headers.TryGetValues(AudioClient.ModeHeader, out var modes) ? modes.Single() : null);
+        }
+
         object? answer = path switch
         {
             "/internal/resolve" => new { service = "youtube", type = "playlist", id = "PL1" },
-            "/internal/playlists/by-link" => new
+            "/internal/youtube/me" => new { authed = true, account = "Someone there" },
+            "/internal/youtube/playlists/PL1" => new
             {
                 storedAt = DateTimeOffset.UtcNow,
                 fetchedNow = true,
                 data = new
                 {
-                    service = "youtube",
-                    id = "PL1",
-                    youtube = new
-                    {
-                        playlist = new { id = "PL1", title = Title },
-                        tracks = Tracks.Select(x => new { id = x.Id, title = x.Title, durationMs = 200000, artists = new[] { new { name = x.Artist } } }).ToList(),
-                    },
+                    playlist = new { id = "PL1", title = Title },
+                    tracks = Tracks.Select(x => new { id = x.Id, title = x.Title, durationMs = 200000, artists = new[] { new { name = x.Artist } } }).ToList(),
                 },
             },
             _ => null,

@@ -13,16 +13,41 @@ using M = HarmonyDB.Shelf.Model.Playlists;
 namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 
 /// <summary>
-/// A playlist of a music service imported by its link, and its sync by the button — seen and pressed only by the one
-/// who imported it, whoever owns the playlist later. The sync is a job (<see cref="PlaylistService.SyncJobKind"/>,
-/// done by <see cref="OriginSyncHandler"/>), so leaving the page loses nothing: importing makes the playlist at once,
-/// and its first sync names and fills it.
+/// A playlist of a music service imported by its link or by its service and id, and its sync by the button — seen and
+/// pressed only by the one who imported it, whoever owns the playlist later. The sync is a job
+/// (<see cref="PlaylistService.SyncJobKind"/>, done by <see cref="OriginSyncHandler"/>), so leaving the page loses
+/// nothing: importing makes the playlist at once, and its first sync names and fills it.
 /// </summary>
 public sealed class OriginSync(ShelfDbContext db, PlaylistGate gate, PlaylistService playlists, AudioClient audio, JobQueue jobs, UndoTokens undo, TimeProvider time)
 {
     public const int MaxUrlLength = 2000;
 
+    public const int MaxPlaylistIdLength = 200;
+
     public sealed record Input(Guid PlaylistId);
+
+    /// <summary>
+    /// Imports by a link, or by a service and an id: one of the two, whole.
+    /// </summary>
+    public Task<M.Changed<M.PlaylistDetails>> ImportAsync(Guid me, M.ImportPlaylistRequest request, CancellationToken cancellationToken)
+        => request switch
+        {
+            { Url: { } url, Service: null, PlaylistId: null } => ImportAsync(me, url, cancellationToken),
+            { Url: null, Service: { } service, PlaylistId: { } id } => ImportAsync(me, service, id, cancellationToken),
+            _ => throw ShelfException.BadRequest(),
+        };
+
+    /// <summary>
+    /// Imports a playlist by its service and id. Nothing is asked of the music service until the first sync.
+    /// </summary>
+    public Task<M.Changed<M.PlaylistDetails>> ImportAsync(Guid me, Model.Me.MusicService service, string playlistId, CancellationToken cancellationToken)
+    {
+        playlistId = playlistId.Trim();
+        if (playlistId.Length is 0 or > MaxPlaylistIdLength)
+            throw ShelfException.BadRequest();
+
+        return CreateAsync(me, Views.Map<MusicService>(service), playlistId, null, cancellationToken);
+    }
 
     public async Task<M.Changed<M.PlaylistDetails>> ImportAsync(Guid me, string url, CancellationToken cancellationToken)
     {
@@ -48,24 +73,30 @@ public sealed class OriginSync(ShelfDbContext db, PlaylistGate gate, PlaylistSer
             throw ShelfException.BadRequest(M.PlaylistErrorCodes.LinkNotPlaylist);
 
         var service = resolved.Service == "yandex" ? MusicService.Yandex : MusicService.Youtube;
-        var existing = await db.Playlists.Where(x => x.ImportedById == me && x.OriginService == service && x.OriginPlaylistId == resolved.Id)
+        return await CreateAsync(me, service, resolved.Id, url, cancellationToken);
+    }
+
+    private async Task<M.Changed<M.PlaylistDetails>> CreateAsync(Guid me, MusicService service, string playlistId, string? url, CancellationToken cancellationToken)
+    {
+        var existing = await db.Playlists.Where(x => x.ImportedById == me && x.OriginService == service && x.OriginPlaylistId == playlistId)
             .Select(x => (Guid?)x.Id).FirstOrDefaultAsync(cancellationToken);
         if (existing != null)
             throw ShelfException.Conflict(M.PlaylistErrorCodes.AlreadyImported, new Dictionary<string, string> { ["playlistId"] = existing.Value.ToString() });
 
         var now = time.GetUtcNow();
+        // named, until the first sync names it, by what it was imported by
+        var title = url ?? playlistId;
         var playlist = new Playlist
         {
             Id = Guid.NewGuid(),
             OwnerId = me,
-            // until the first sync names it
-            Title = url.Length > PlaylistService.MaxTitleLength ? url[..PlaylistService.MaxTitleLength] : url,
+            Title = title.Length > PlaylistService.MaxTitleLength ? title[..PlaylistService.MaxTitleLength] : title,
             Access = PlaylistAccess.Private,
             AddPolicy = PlaylistAddPolicy.AllMembers,
             SearchFirst = service,
             SystemKind = PlaylistSystemKind.None,
             OriginService = service,
-            OriginPlaylistId = resolved.Id,
+            OriginPlaylistId = playlistId,
             OriginUrl = url,
             ImportedById = me,
             CreatedAt = now,
@@ -102,9 +133,9 @@ public sealed class OriginSync(ShelfDbContext db, PlaylistGate gate, PlaylistSer
 /// <summary>
 /// One sync of an imported playlist: the tracks that are new there are added, as songs with their recording; the songs
 /// whose tracks were removed there stay; the songs removed here do not come back (their tracks are remembered); what
-/// was changed here stays. Asked as the importer with their own music account when they linked one (a private playlist
-/// opens so), otherwise anonymously (the music service reads no playlist by its service account). Run again from the
-/// start, it adds nothing twice.
+/// was changed here stays. Asked by its id (the one its link names, when it was imported by a link) as the importer with
+/// their own music account when they linked one (a private playlist opens so), otherwise anonymously (the music service
+/// reads no playlist by its service account). Run again from the start, it adds nothing twice.
 /// </summary>
 public sealed class OriginSyncHandler(ShelfDbContext db, AudioClient audio, MusicLinkStore musicLinks, ItemRows itemRows, TimeProvider time, ILogger<OriginSyncHandler> logger)
     : IJobHandler
@@ -122,8 +153,8 @@ public sealed class OriginSyncHandler(ShelfDbContext db, AudioClient audio, Musi
         try
         {
             var acting = await musicLinks.GetActingAsync(importer, Views.Map<Model.Me.MusicService>(service), cancellationToken) ?? AudioActing.Anonymous;
-            var answer = await audio.GetPlaylistByLinkAsync(playlist.OriginUrl!, acting, cancellationToken);
-            page = (service == MusicService.Yandex ? answer.Data.Yandex : answer.Data.Youtube) ?? throw new JobFailedException(ErrorCodes.Unavailable);
+            var audioService = service == MusicService.Yandex ? AudioServiceName.Yandex : AudioServiceName.Youtube;
+            page = (await audio.GetPlaylistAsync(audioService, playlist.OriginPlaylistId!, acting, cancellationToken)).Data;
         }
         catch (AudioException exception)
         {

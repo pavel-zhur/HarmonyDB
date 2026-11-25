@@ -31,7 +31,7 @@ public sealed class PlaylistsArea : IShelfArea
             => playlists.CreateAsync(Me(user), request, cancellationToken)).RequireSignIn().WithName("CreatePlaylist");
 
         group.MapPost("/import", (ClaimsPrincipal user, ImportPlaylistRequest request, OriginSync origin, CancellationToken cancellationToken)
-            => origin.ImportAsync(Me(user), request.Url, cancellationToken)).RequireSignIn().WithName("ImportPlaylist");
+            => origin.ImportAsync(Me(user), request, cancellationToken)).RequireSignIn().WithName("ImportPlaylist");
 
         group.MapGet("/{id:guid}", (ClaimsPrincipal user, Guid id, string? share, PlaylistService playlists, CancellationToken cancellationToken)
             => playlists.GetAsync(user.GetAccountId(), id, share, cancellationToken)).WithName("GetPlaylist");

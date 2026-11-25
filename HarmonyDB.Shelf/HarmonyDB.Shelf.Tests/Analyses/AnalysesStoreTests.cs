@@ -94,6 +94,30 @@ public sealed class AnalysesStoreTests(ShelfDatabaseFixture database) : IClassFi
     }
 
     [DatabaseFact]
+    public async Task TheTimelinesSectionsComeNamed()
+    {
+        var put = Put("named", "Named sections", null);
+        put = put with
+        {
+            Content = put.Content with
+            {
+                Timeline = Timeline() with
+                {
+                    Bars = [Timeline().Bars[0], Timeline().Bars[0] with { Start = 4, End = 8, Beats = [4, 5, 6, 7] }],
+                    Sections = [new() { Label = SectionLabel.Intro, Start = 0, End = 4 }, new() { Label = SectionLabel.Verse, Name = "Куплет", Start = 4, End = 8 }],
+                },
+            },
+        };
+        using var client = Api.CreateClient();
+        var response = await Send(client, HttpMethod.Put, "/internal/analyses", WriteKey, put);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var id = (await response.Content.ReadFromJsonAsync<PutAnalysisResponse>(SourceV2Json.Options))!.Id;
+
+        var content = await SourceAsync<GetContentResponse>("V2GetContent", new GetContentRequest { Caller = Caller(null), Id = id, Kinds = [ContentKind.Timeline] });
+        Assert.Equal(["Intro", "Куплет"], content.Content!.Timeline!.Sections.Select(x => x.Name));
+    }
+
+    [DatabaseFact]
     public async Task ThePlaylistHoldsExactlyTheAnalysesGiven()
     {
         var a = await PutAsync("playlist-a", "Song A", null);
