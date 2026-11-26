@@ -16,6 +16,8 @@
 .sheet .chord[chord-custom="search"] { background: var(--chord-hl); color: var(--chord-hl-ink); }
 .sheet .chord[chord-custom="search-first"] { background: var(--chord-hl); color: var(--chord-hl-ink); border-left: solid 2px var(--ok); margin-left: -2px; }
 .sheet .chord.now { background: var(--accent); color: var(--on-accent); }
+/* the word being sung (chords/time.ts SheetLight): its text lit, the markup untouched */
+::highlight(sung) { background-color: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--ink); }
 .sheet .chords-line.lnow { background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
 
 .sheet div.bold-div { font-weight: bold; }

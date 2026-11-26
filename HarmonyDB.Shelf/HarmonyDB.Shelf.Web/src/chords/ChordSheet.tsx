@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { NodeHtml, RepresentationSettings } from '../lib/representations';
 import { forgetPlayedChord, playChord } from './sound';
-import { followTime, light, playsFrom, seek } from './time';
+import { SheetLight, followTime, playsFrom, seek } from './time';
 import './chords.css';
 
 export function ChordSheet({ sheet, settings, onChord }: {
@@ -21,7 +21,15 @@ export function ChordSheet({ sheet, settings, onChord }: {
     const chordTap = useRef(onChord);
     chordTap.current = onChord;
 
-    useEffect(() => followTime(seconds => box.current && light(box.current, seconds)), [html]);
+    useEffect(() => {
+        if (!box.current) return;
+        const lit = new SheetLight(box.current);
+        const stop = followTime(seconds => lit.set(seconds));
+        return () => {
+            stop();
+            lit.set(null);
+        };
+    }, [html]);
 
     // the fingerings of a chord tapped here do not outlive the sheet (another view, other chords, another page)
     useEffect(() => forgetPlayedChord, []);

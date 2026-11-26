@@ -10,7 +10,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSongRecordings } from '../data/recordings';
 import type { TrackRoute } from '../data/media';
-import { chordAt } from '../analysis/piece';
 import { useAnalysisPiece } from '../analysis/useAnalysisPiece';
 import { sheetTime } from '../chords/time';
 import { chooseAnalysis, useChosenRecording, usePlaysAnalysis } from '../screens/recordings/choice';
@@ -36,11 +35,11 @@ function AnalysisPlayer({ chordsId, share }: { chordsId: string; share: string |
         ? { kind: 'analysis', chordsId, share, title: header.title ?? '', subtitle: [header.artists.join(', '), t('player.analysisRecording')].filter(Boolean).join(' · ') }
         : null;
 
-    const shown = useRef(-2);
     const started = useRef(false);
-    // The sheet follows the music once it has been played: it is told when another chord sounds, and a tap on it goes
-    // there (playing on, or resting there while paused). Before the first play, and after the end, the sheet is told
-    // nothing: a tap on a chord sounds the chord and shows its fingerings.
+    // The sheet follows the music once it has been played: it is told the time at every frame and lights by its own
+    // times what sounds (chords/time.ts), and a tap on it goes there (playing on, or resting there while paused). Before
+    // the first play, and after the end, the sheet is told nothing: a tap on a chord sounds the chord and shows its
+    // fingerings.
     useEffect(() => {
         const stop = sheetTime.onSeek(seconds => player.seek(seconds));
         return () => {
@@ -50,7 +49,6 @@ function AnalysisPlayer({ chordsId, share }: { chordsId: string; share: string |
             stop();
             sheetTime.show(null);
             started.current = false;
-            shown.current = -2;
         };
     }, [chordsId]);
     const follow = useCallback((position: number, playing: boolean) => {
@@ -58,14 +56,9 @@ function AnalysisPlayer({ chordsId, share }: { chordsId: string; share: string |
         if (playing) started.current = true;
         else if (started.current && position >= player.getState().duration - 0.05) {
             started.current = false;
-            shown.current = -2;
             sheetTime.show(null);
         }
-        if (!started.current) return;
-        const chord = chordAt(piece, position);
-        if (chord === shown.current) return;
-        shown.current = chord;
-        sheetTime.show(position);
+        if (started.current) sheetTime.show(position);
     }, [piece]);
     useClock(follow);
 

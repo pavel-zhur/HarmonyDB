@@ -4,8 +4,10 @@
 // does anything.
 //
 //   import { sheetTime } from '../../chords/time';
-//   sheetTime.show(seconds);                  // what sounds now is lit in every sheet shown: the chord (class `now`)
-//                                             // and its line (class `lnow`); null: nothing lit
+//   sheetTime.show(seconds);                  // the time now, told at every frame while the player follows: what
+//                                             // sounds is lit in every sheet shown, by the sheet's own times — the
+//                                             // chord (class `now`), its line (class `lnow`), the word being sung (the
+//                                             // highlight `sung`); null: nothing lit
 //   const stop = sheetTime.onSeek(seconds => player.seek(seconds));
 //                                             // while the sheet follows the music (a time is shown), a tap on a timed
 //                                             // chord or word tells its time; before that a tap only plays the
@@ -64,16 +66,86 @@ export function followTime(listener: (seconds: number | null) => void): () => vo
     return () => showListeners.delete(listener);
 }
 
-/** internal: lights in a rendered sheet the chord sounding at this time and its line. */
-export function light(element: HTMLElement, seconds: number | null): void {
-    element.querySelectorAll('.now, .lnow').forEach(x => x.classList.remove('now', 'lnow'));
-    if (seconds === null) return;
-    let current: Element | null = null;
-    for (const chord of element.querySelectorAll('b.chord[data-time]')) {
-        if (Number(chord.getAttribute('data-time')) <= seconds) current = chord;
-        else break;
+/** The last of times (ascending) at or before t: its index, −1 when none. */
+function lastAt(times: readonly number[], t: number): number {
+    let lo = 0, hi = times.length - 1, found = -1;
+    while (lo <= hi) {
+        const m = (lo + hi) >> 1;
+        if (times[m]! <= t) {
+            found = m;
+            lo = m + 1;
+        } else hi = m - 1;
     }
-    if (!current) return;
-    current.classList.add('now');
-    current.closest('.chords-line')?.classList.add('lnow');
+    return found;
+}
+
+/**
+ * internal: what sounds, lit in a rendered sheet. Its timed chords and words are read once; at each time told, only
+ * what changed is touched. A word (a timed span, with the rest of it that a chord over it cut off, up to its space) is
+ * lit as a highlight of its text, which leaves the sheet's own markup and wrapping as they are; where the browser has
+ * no highlights, the words are not lit.
+ */
+export class SheetLight {
+    private readonly chords: Element[];
+    private readonly chordTimes: number[];
+    private readonly words: Element[];
+    private readonly wordTimes: number[];
+    private chord = -1;
+    private word = -1;
+
+    constructor(private readonly element: HTMLElement) {
+        this.chords = [...element.querySelectorAll('b.chord[data-time]')];
+        this.chordTimes = this.chords.map(x => Number(x.getAttribute('data-time')));
+        this.words = [...element.querySelectorAll('span[data-time]:not(.chords-line):not(.sheet-mark)')];
+        this.wordTimes = this.words.map(x => Number(x.getAttribute('data-time')));
+    }
+
+    set(seconds: number | null): void {
+        const chord = seconds === null ? -1 : lastAt(this.chordTimes, seconds);
+        if (chord !== this.chord) {
+            this.element.querySelectorAll('.now, .lnow').forEach(x => x.classList.remove('now', 'lnow'));
+            const current = this.chords[chord];
+            current?.classList.add('now');
+            current?.closest('.chords-line')?.classList.add('lnow');
+            this.chord = chord;
+        }
+        const word = seconds === null ? -1 : lastAt(this.wordTimes, seconds);
+        if (word !== this.word) {
+            this.word = word;
+            sing(this.words[word] ?? null);
+        }
+    }
+}
+
+const sungName = 'sung';
+const highlights = (globalThis as { CSS?: { highlights?: Map<string, unknown> } }).CSS?.highlights;
+const HighlightOf = (globalThis as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
+
+/** The word being sung, as a highlight: its timed span and what follows it of the same word (outside the chords). */
+function sing(word: Element | null): void {
+    if (!highlights || !HighlightOf) return;
+    if (!word) {
+        highlights.delete(sungName);
+        return;
+    }
+    const ranges: Range[] = [];
+    const whole = document.createRange();
+    whole.selectNodeContents(word);
+    ranges.push(whole);
+    // the rest of the word: the text after the span up to a space, stepping over a chord flying over it
+    for (let node = word.nextSibling; node; node = node.nextSibling) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent ?? '';
+            const space = text.search(/\s/);
+            const range = document.createRange();
+            range.setStart(node, 0);
+            range.setEnd(node, space < 0 ? text.length : space);
+            if (!range.collapsed) ranges.push(range);
+            if (space >= 0) break;
+        } else if (node instanceof Element) {
+            if (node.classList.contains('flying')) continue;
+            break;
+        }
+    }
+    highlights.set(sungName, new HighlightOf(...ranges));
 }
