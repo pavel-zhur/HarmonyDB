@@ -10,6 +10,7 @@ using HarmonyDB.Shelf.Tests.Jobs;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Api;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HarmonyDB.Shelf.Tests.Import;
 
@@ -66,6 +67,72 @@ public sealed class ImportTests(WorkFixture fixture) : IClassFixture<WorkFixture
         var songs = await db.PlaylistSongs.Where(x => x.PlaylistId == result.PlaylistId).ToListAsync();
         Assert.Equal($"Title of {open}", Assert.Single(songs).Title);
         Assert.Equal(PlaylistSystemKind.ImportedChords, (await db.Playlists.SingleAsync(x => x.Id == result.PlaylistId)).SystemKind);
+    }
+
+    [DatabaseFact]
+    public async Task ALineLongerThanALinkIsNotALinkAndTheRestIsImported()
+    {
+        var me = await fixture.AccountAsync();
+        var tag = Guid.NewGuid().ToString("N");
+        var tooLong = $"https://unknown-{tag}.example/" + new string('я', ImportService.MaxLinkBytes / 2);
+        var unknown = $"https://unknown-{tag}.example/song";
+        fixture.Index.Answer = (operation, body) => operation == "V2Resolve"
+            ? (HttpStatusCode.OK, new ResolveResponse
+            {
+                Items = body.GetProperty("uris").EnumerateArray().Select(x => new ResolvedUri { Uri = new(x.GetString()!), State = ResolveState.NotResolved }).ToList(),
+            })
+            : (HttpStatusCode.InternalServerError, null);
+
+        using var client = fixture.Api.CreateClient();
+        var started = await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/import/links", me, body: new ImportLinksRequest { Links = [tooLong, unknown] }));
+        var done = await fixture.FinishedAsync(me, JsonSerializer.Deserialize<JobInfo>(await started.Content.ReadAsStringAsync(), Browser.Json)!.Id);
+
+        Assert.Equal(JobStatus.Succeeded, done.Status);
+        Assert.Equal([ImportLinkState.NotALink, ImportLinkState.NotFound], Assert.IsType<ImportResult>(done.Result).Links.Select(x => x.State));
+        await using var db = fixture.CreateContext();
+        Assert.Equal([unknown], await db.UnreadLinks.Where(x => x.Link.Contains(tag)).Select(x => x.Link).ToListAsync());
+    }
+
+    [DatabaseFact]
+    public async Task ALinkNotFoundIsKeptForTheAdminWithWhoPastedItWhoGoesWithTheProfile()
+    {
+        var me = await fixture.AccountAsync();
+        var link = $"https://unknown-{Guid.NewGuid():N}.example/song";
+        fixture.Index.Answer = (operation, body) => operation == "V2Resolve"
+            ? (HttpStatusCode.OK, new ResolveResponse
+            {
+                Items = body.GetProperty("uris").EnumerateArray().Select(x => new ResolvedUri { Uri = new(x.GetString()!), State = ResolveState.NotResolved }).ToList(),
+            })
+            : (HttpStatusCode.InternalServerError, null);
+        fixture.Store.Answer = (_, _) => (HttpStatusCode.OK, new { removed = 0 });
+        using var client = fixture.Api.CreateClient();
+
+        // pasted in two imports
+        for (var i = 0; i < 2; i++)
+        {
+            var started = await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/import/links", me, body: new ImportLinksRequest { Links = [link] }));
+            var job = JsonSerializer.Deserialize<JobInfo>(await started.Content.ReadAsStringAsync(), Browser.Json)!;
+            Assert.Equal(JobStatus.Succeeded, (await fixture.FinishedAsync(me, job.Id)).Status);
+        }
+
+        async Task<HarmonyDB.Shelf.Model.Admin.AdminUnreadLink> ListedAsync()
+        {
+            await using var scope = fixture.Api.Services.CreateAsyncScope();
+            var links = await scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Api.Areas.Admin.Services.UnreadLinksAdmin>().ListAsync(500, CancellationToken.None);
+            return Assert.Single(links, x => x.Link == link);
+        }
+
+        var listed = await ListedAsync();
+        Assert.Equal((2, me), (listed.Times, Assert.Single(listed.People).Id));
+
+        // the person deletes their profile: the link stays, who pasted it goes
+        await using (var scope = fixture.Api.Services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Api.Areas.Me.Services.ProfileRemoval>().DeleteAsync(me, CancellationToken.None);
+
+        listed = await ListedAsync();
+        Assert.Equal((2, 0), (listed.Times, listed.People.Count));
+        await using var db = fixture.CreateContext();
+        Assert.All(await db.UnreadLinks.Where(x => x.Link == link).ToListAsync(), x => Assert.Null(x.AccountId));
     }
 
     [DatabaseFact]

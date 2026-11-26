@@ -1,0 +1,45 @@
+@using HarmonyDB.Shelf.Model.Admin
+@using OneShelf.Admin.Web.ShelfAdmin
+@model List<AdminUnreadLink>
+@{
+    ViewBag.Title = "Links imports did not find";
+    Layout = "_Layout";
+}
+<partial name="_Shelf" />
+
+<p class="shelf-muted"><a asp-action="Index">← Shelf people</a></p>
+
+<h2>Links imports did not find</h2>
+<p class="shelf-muted">Pasted into an import of chords by links; the latest met first.</p>
+
+@if (Model.Count == 0)
+{
+    <p class="shelf-muted">None yet.</p>
+}
+else
+{
+    <table class="shelf-table">
+        <tr class="shelf-muted">
+            <th>Link</th>
+            <th>Times</th>
+            <th>Last (UTC)</th>
+            <th>First (UTC)</th>
+            <th>Pasted by</th>
+        </tr>
+        @foreach (var link in Model)
+        {
+            <tr>
+                <td style="word-break: break-all;">@link.Link</td>
+                <td>@link.Times</td>
+                <td class="shelf-muted">@ShelfPermissionNames.Time(link.LastSeenAt)</td>
+                <td class="shelf-muted">@ShelfPermissionNames.Time(link.FirstSeenAt)</td>
+                <td>
+                    @foreach (var person in link.People)
+                    {
+                        <a asp-action="Person" asp-route-id="@person.Id">@(string.IsNullOrEmpty(person.DisplayName) ? "(no name)" : person.DisplayName)</a><br />
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+}

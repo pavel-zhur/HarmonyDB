@@ -5,7 +5,8 @@ using OneShelf.Admin.Web.ShelfAdmin;
 namespace OneShelf.Admin.Web.Controllers;
 
 /// <summary>
-/// The people of the new shelf and their permissions, through the shelf's internal admin API.
+/// The people of the new shelf and their permissions, and the links its imports did not find, through the shelf's
+/// internal admin API.
 /// </summary>
 [ShelfUnavailable]
 public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
@@ -92,6 +93,9 @@ public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
         var catalog = await shelf.GetPermissionCatalogAsync(cancellationToken);
         return View(new ShelfChangesModel(changes, catalog));
     }
+
+    public async Task<IActionResult> UnreadLinks(CancellationToken cancellationToken)
+        => View(await shelf.GetUnreadLinksAsync(200, cancellationToken));
 
     private ViewResult NoSuchPerson()
     {

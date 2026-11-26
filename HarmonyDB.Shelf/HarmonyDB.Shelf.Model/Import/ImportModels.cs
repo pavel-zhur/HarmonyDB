@@ -25,7 +25,7 @@ public enum ImportLinkState
     /// <summary>A source that may know the page did not answer: try again later.</summary>
     Unavailable,
 
-    /// <summary>Not a link to a web page.</summary>
+    /// <summary>Not a link to a web page (or longer than such a link is).</summary>
     NotALink,
 }
 

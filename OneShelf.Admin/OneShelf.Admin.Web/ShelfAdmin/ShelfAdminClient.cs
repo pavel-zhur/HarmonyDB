@@ -29,6 +29,9 @@ public sealed class ShelfAdminClient(HttpClient http, IOptions<ShelfAdminOptions
     public Task<AdminPermissionCatalog> GetPermissionCatalogAsync(CancellationToken cancellationToken)
         => SendAsync<AdminPermissionCatalog>(HttpMethod.Get, "permissions", null, cancellationToken);
 
+    public Task<List<AdminUnreadLink>> GetUnreadLinksAsync(int take, CancellationToken cancellationToken)
+        => SendAsync<List<AdminUnreadLink>>(HttpMethod.Get, $"unread-links?take={take}", null, cancellationToken);
+
     public Task<List<AdminPermissionChange>> GetPermissionChangesAsync(Guid? accountId, int take, CancellationToken cancellationToken)
         => SendAsync<List<AdminPermissionChange>>(HttpMethod.Get, $"permission-changes?take={take}{(accountId == null ? null : $"&accountId={accountId}")}", null, cancellationToken);
 

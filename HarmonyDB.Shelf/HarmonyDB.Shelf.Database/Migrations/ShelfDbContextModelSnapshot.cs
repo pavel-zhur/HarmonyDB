@@ -1815,6 +1815,48 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.UnreadLink", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("job_id");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("link");
+
+                    b.Property<DateTimeOffset>("SeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("seen_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_unread_links");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_unread_links_account_id");
+
+                    b.HasIndex("Link")
+                        .HasDatabaseName("ix_unread_links_link");
+
+                    b.HasIndex("JobId", "Link")
+                        .IsUnique()
+                        .HasDatabaseName("ix_unread_links_job_id_link");
+
+                    b.ToTable("unread_links", (string)null);
+                });
+
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AccountLogin", b =>
                 {
                     b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
@@ -2365,6 +2407,17 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("Chords");
 
                     b.Navigation("Playlist");
+                });
+
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.UnreadLink", b =>
+                {
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_unread_links_accounts_account_id");
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.Account", b =>

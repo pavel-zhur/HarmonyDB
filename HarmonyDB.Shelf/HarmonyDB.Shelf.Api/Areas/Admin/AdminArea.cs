@@ -8,7 +8,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Admin;
 
 /// <summary>
 /// For the admin site, an internal client (scope <see cref="Scope"/>): the people of the shelf, the permissions there
-/// are and the defaults, a person's permissions read and set, and the latest changes of permissions.
+/// are and the defaults, a person's permissions read and set, the latest changes of permissions, and the links imports
+/// did not find.
 /// </summary>
 public sealed class AdminArea : IShelfArea
 {
@@ -17,6 +18,7 @@ public sealed class AdminArea : IShelfArea
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<PeopleAdmin>();
+        services.AddScoped<UnreadLinksAdmin>();
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
@@ -35,6 +37,9 @@ public sealed class AdminArea : IShelfArea
             => people.SetPermissionsAsync(id, request, client.FindFirst(InternalKeyDefaults.ClientClaimType)!.Value, cancellationToken)).WithName("AdminSetPermissions");
 
         group.MapGet("/permissions", (PeopleAdmin people) => people.GetCatalog()).WithName("AdminGetPermissionCatalog");
+
+        group.MapGet("/unread-links", (int? take, UnreadLinksAdmin links, CancellationToken cancellationToken)
+            => links.ListAsync(take ?? 200, cancellationToken)).WithName("AdminListUnreadLinks");
 
         group.MapGet("/permission-changes", (Guid? accountId, int? take, PeopleAdmin people, CancellationToken cancellationToken)
             => people.GetChangesAsync(accountId, take ?? 100, cancellationToken)).WithName("AdminGetPermissionChanges");

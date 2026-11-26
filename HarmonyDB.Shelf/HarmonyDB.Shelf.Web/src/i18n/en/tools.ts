@@ -84,7 +84,7 @@ export const toolScreens = {
         stage: { resolving: 'finding the pages', adding: 'adding to the playlist' },
         linkState: {
             imported: 'In “Imported chords”',
-            notFound: 'No chords here: the page has none, or its site is not one the shelf reads yet',
+            notFound: 'Chords from a source like this are not read yet — coming soon',
             unavailable: 'The site did not answer; try again later',
             notALink: 'Not a link to a web page',
         },

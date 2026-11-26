@@ -67,6 +67,7 @@ public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords,
         await RemoveWhatNobodyNeedsAsync(accountId, removed, cancellationToken);
 
         await db.MusicLinks.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
+        await db.UnreadLinks.Where(x => x.AccountId == accountId).ExecuteUpdateAsync(x => x.SetProperty(l => l.AccountId, (Guid?)null), cancellationToken);
 
         await db.AccountLogins.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
         await db.Sessions.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);

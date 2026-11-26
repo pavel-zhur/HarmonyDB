@@ -11,7 +11,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// Merges a second account into the first, in one transaction, logged in the audit log:
 /// <list type="bullet">
 /// <item>everything of the second moves to the first: sign-ins, playlists (owned, and memberships), marks, keys, notes,
-/// recent, choices of variants, what the second added or made (songs, variants, links, invitations, imports, jobs);</item>
+/// recent, choices of variants, what the second added or made (songs, variants, links, invitations, imports, jobs,
+/// the links an import did not find);</item>
 /// <item>a conflict keeps the first's: the second's row is marked removed and stays with the second (both marked the
 /// same chords with the same mark; both have a key, a note, a recent row, a choice for the same thing; settings). Where
 /// both are members of one playlist, the first's membership stays with the higher of the two roles; where both have
@@ -103,6 +104,10 @@ public sealed class AccountMerger(ShelfDbContext db, AudioClient audio, TimeProv
                 moved[$"music_link_{link.Service.ToString().ToLowerInvariant()}"] = 1;
             }
         }
+
+        // The links the second pasted that an import did not find.
+        moved["unread_links"] = await db.UnreadLinks.Where(x => x.AccountId == second)
+            .ExecuteUpdateAsync(x => x.SetProperty(l => l.AccountId, first), cancellationToken);
 
         // The merge is remembered: the second's name, and the names of the accounts merged into it before, stay the
         // first's names to the sources (what the second wrote there is still the person's), for as long as the first lives.

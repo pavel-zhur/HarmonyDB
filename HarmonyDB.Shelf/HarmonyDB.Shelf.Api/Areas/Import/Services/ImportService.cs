@@ -26,6 +26,12 @@ public sealed class ImportService(JobQueue jobs, SourceCallers callers)
 
     public const int MaxLinks = 100;
 
+    /// <summary>
+    /// The longest a link to a page of chords is, in UTF-8 bytes; a longer line is not a link to one (and could not be
+    /// kept as a link not found).
+    /// </summary>
+    public const int MaxLinkBytes = 2000;
+
     public async Task<JobInfo> StartAsync(ClaimsPrincipal user, ImportLinksRequest request, CancellationToken cancellationToken)
     {
         var links = Split(request.Links ?? []);
@@ -51,10 +57,10 @@ public sealed class ImportService(JobQueue jobs, SourceCallers callers)
 }
 
 /// <summary>
-/// Resolves the links and puts the chords into the person's playlist of imported chords. Stages: <c>resolving</c>,
-/// <c>adding</c>.
+/// Resolves the links and puts the chords into the person's playlist of imported chords; a link the sources did not
+/// find is kept for the admin site (<see cref="UnreadLink"/>). Stages: <c>resolving</c>, <c>adding</c>.
 /// </summary>
-public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlaylists systemPlaylists, SongService songs) : IJobHandler
+public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlaylists systemPlaylists, SongService songs, TimeProvider time) : IJobHandler
 {
     /// <summary>
     /// How many links are asked of the sources at once.
@@ -70,7 +76,8 @@ public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlayli
         var uris = new List<(string Link, Uri Uri)>();
         foreach (var link in input.Links)
         {
-            if (Uri.TryCreate(link, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
+            if (System.Text.Encoding.UTF8.GetByteCount(link) <= ImportService.MaxLinkBytes
+                && Uri.TryCreate(link, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
                 uris.Add((link, uri));
             else
                 states[link] = (ImportLinkState.NotALink, null);
@@ -91,6 +98,8 @@ public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlayli
                 };
             }
         }
+
+        await KeepUnreadAsync(run, states.Where(x => x.Value.State == ImportLinkState.NotFound).Select(x => x.Key).ToList(), cancellationToken);
 
         await run.ReportAsync("adding", 0.5, cancellationToken);
         var playlist = await systemPlaylists.GetOrCreateAsync(run.AccountId, PlaylistSystemKind.ImportedChords, cancellationToken);
@@ -118,6 +127,20 @@ public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlayli
                 };
             }).ToList(),
         });
+    }
+
+    /// <summary>
+    /// The links the sources did not find, kept with who pasted them; once for the import, however often it is run.
+    /// </summary>
+    private async Task KeepUnreadAsync(JobRun run, IReadOnlyList<string> links, CancellationToken cancellationToken)
+    {
+        var now = time.GetUtcNow();
+        foreach (var link in links)
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO unread_links (link, job_id, account_id, seen_at) VALUES ({link}, {run.Id}, {run.AccountId}, {now}) ON CONFLICT (job_id, link) DO NOTHING",
+                cancellationToken);
+        }
     }
 
     /// <summary>

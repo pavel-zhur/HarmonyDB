@@ -176,6 +176,35 @@ public record AdminPermissionCatalog
     public required IReadOnlyList<string> NewAccountDefaults { get; init; }
 }
 
+/// <summary>
+/// A link an import of chords by links did not find, with each time it came.
+/// </summary>
+public record AdminUnreadLink
+{
+    public required string Link { get; init; }
+
+    /// <summary>
+    /// In how many imports it came.
+    /// </summary>
+    public required int Times { get; init; }
+
+    public required DateTimeOffset FirstSeenAt { get; init; }
+
+    public required DateTimeOffset LastSeenAt { get; init; }
+
+    /// <summary>
+    /// Who pasted it, as they are now; a deleted profile is left out.
+    /// </summary>
+    public required IReadOnlyList<AdminPersonRef> People { get; init; }
+}
+
+public record AdminPersonRef
+{
+    public required Guid Id { get; init; }
+
+    public required string DisplayName { get; init; }
+}
+
 public record AdminCustomPermission
 {
     public required string Key { get; init; }
