@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Auth.Services;
 using HarmonyDB.Shelf.Api.Areas.Auth.Services.Providers;
@@ -36,12 +37,14 @@ public sealed class AuthArea : IShelfArea
         services.AddScoped<AccountMerger>();
         services.AddAudioClient(configuration);
 
-        // The providers: one class each.
-        AddOidcProvider(services, SignInProviders.Telegram, TelegramSignInProvider.DiscoveryAddress,
+        // The providers: one class each; their HTTP clients registered through ProviderClient.
+        var clients = new List<string>();
+        AddOidcProvider(services, clients, SignInProviders.Telegram, TelegramSignInProvider.DiscoveryAddress,
             (x, http, discovery) => new TelegramSignInProvider(http, discovery, x.GetRequiredService<IOptionsMonitor<SignInOptions>>(), x.GetRequiredService<TimeProvider>()));
-        AddOidcProvider(services, SignInProviders.Google, GoogleSignInProvider.DiscoveryAddress,
+        AddOidcProvider(services, clients, SignInProviders.Google, GoogleSignInProvider.DiscoveryAddress,
             (x, http, discovery) => new GoogleSignInProvider(http, discovery, x.GetRequiredService<IOptionsMonitor<SignInOptions>>(), x.GetRequiredService<TimeProvider>()));
-        services.AddHttpClient<YandexSignInProvider>();
+        ProviderClient(clients, services.AddHttpClient<YandexSignInProvider>());
+        services.AddSingleton(new SignInProviderClients(clients));
         services.AddScoped<ISignInProvider>(x => x.GetRequiredService<YandexSignInProvider>());
         services.AddScoped<ISignInProvider, DevSignInProvider>();
 
@@ -62,16 +65,28 @@ public sealed class AuthArea : IShelfArea
 
     public void UseMiddleware(IApplicationBuilder app) => app.Use(CsrfTokens.MiddlewareAsync);
 
+    /// <summary>
+    /// A provider's site may send its answer compressed though it was not asked to (Telegram sends its keys gzipped):
+    /// every client of the providers is registered through this, takes compressed answers, and is named in
+    /// <see cref="SignInProviderClients"/>.
+    /// </summary>
+    private static IHttpClientBuilder ProviderClient(List<string> names, IHttpClientBuilder client)
+    {
+        names.Add(client.Name);
+        return client.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All });
+    }
+
     private static void AddOidcProvider<TProvider>(
         IServiceCollection services,
+        List<string> clients,
         string name,
         string discoveryAddress,
         Func<IServiceProvider, HttpClient, OidcDiscovery, TProvider> create)
         where TProvider : OidcSignInProvider
     {
         var discoveryClient = $"{name}-discovery";
-        services.AddHttpClient(name);
-        services.AddHttpClient(discoveryClient);
+        ProviderClient(clients, services.AddHttpClient(name));
+        ProviderClient(clients, services.AddHttpClient(discoveryClient));
         services.AddKeyedSingleton(name, (x, _) => OidcDiscovery.FromAddress(discoveryAddress, x.GetRequiredService<IHttpClientFactory>().CreateClient(discoveryClient)));
         services.AddScoped<ISignInProvider>(x => create(x, x.GetRequiredService<IHttpClientFactory>().CreateClient(name), x.GetRequiredKeyedService<OidcDiscovery>(name)));
     }
@@ -135,3 +150,9 @@ public sealed class AuthArea : IShelfArea
     internal static IReadOnlyList<string> BuiltIn(IReadOnlySet<string> inForce)
         => BuiltInPermissions.All.Where(inForce.Contains).ToList();
 }
+
+/// <summary>
+/// The names of the HTTP clients the sign-in providers call their sites with (discovery, keys, token, user info), as
+/// they were registered.
+/// </summary>
+public sealed record SignInProviderClients(IReadOnlyList<string> Names);

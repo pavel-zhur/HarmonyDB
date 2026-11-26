@@ -71,7 +71,7 @@ public sealed class SignInFlowService(
             ExpiresAt = now + lifetime,
         };
 
-        var redirectUrl = provider.SendsAway ? await provider.GetAuthorizationUrlAsync(flow, cancellationToken) : null;
+        var redirectUrl = provider.SendsAway ? await AskAsync(provider, () => provider.GetAuthorizationUrlAsync(flow, cancellationToken)) : null;
 
         // Flows past their time are not kept.
         await db.SignInFlows.Where(x => x.ExpiresAt <= now).ExecuteDeleteAsync(cancellationToken);
@@ -92,7 +92,24 @@ public sealed class SignInFlowService(
         if (provider.SendsAway)
             throw ShelfException.BadRequest(AuthErrorCodes.FlowInvalid);
 
-        return await FinishAsync(context, flow, await provider.CompleteAsync(flow, answer, cancellationToken), cancellationToken);
+        return await FinishAsync(context, flow, await AskAsync(provider, () => provider.CompleteAsync(flow, answer, cancellationToken)), cancellationToken);
+    }
+
+    /// <summary>
+    /// A step of a sign-in at its provider; when the provider fails it, the failure is logged with its cause (the
+    /// reasons name no secret and no token) before it goes on to the person.
+    /// </summary>
+    private async Task<T> AskAsync<T>(ISignInProvider provider, Func<Task<T>> step)
+    {
+        try
+        {
+            return await step();
+        }
+        catch (SignInProviderException exception)
+        {
+            logger.LogWarning("A sign-in by {Provider} failed: {Reason}", provider.Name, exception.Reason);
+            throw;
+        }
     }
 
     /// <summary>
@@ -112,14 +129,11 @@ public sealed class SignInFlowService(
                 throw ShelfException.BadRequest(AuthErrorCodes.FlowInvalid);
 
             var answer = query.ToDictionary(x => x.Key, x => x.Value.ToString());
-            var result = await FinishAsync(context, flow, await provider.CompleteAsync(flow, answer, cancellationToken), cancellationToken);
+            var result = await FinishAsync(context, flow, await AskAsync(provider, () => provider.CompleteAsync(flow, answer, cancellationToken)), cancellationToken);
             return WithQuery(returnPath, ToCode(result.Outcome), result.Outcome == SignInOutcome.MergeNeeded ? state : null);
         }
         catch (ShelfException exception)
         {
-            if (exception is SignInProviderException providerException)
-                logger.LogWarning("A sign-in by {Provider} failed: {Reason}", providerName, providerException.Reason);
-
             context.Response.Cookies.Delete(cookies.FlowName, cookies.Expired(true));
             return WithQuery(returnPath, exception.Code, null);
         }

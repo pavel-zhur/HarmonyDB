@@ -73,4 +73,15 @@ public sealed class SignInProviderException(int statusCode, string code, string 
     public static SignInProviderException Refused(string reason) => new(StatusCodes.Status400BadRequest, AuthErrorCodes.ProviderRefused, reason);
 
     public static SignInProviderException Unavailable(string reason) => new(StatusCodes.Status503ServiceUnavailable, AuthErrorCodes.ProviderUnavailable, reason);
+
+    /// <summary>
+    /// An exception's message and its causes' messages, for the reason.
+    /// </summary>
+    public static string Causes(Exception exception)
+    {
+        var messages = new List<string>();
+        for (var e = exception; e != null; e = e.InnerException)
+            messages.Add(e.Message);
+        return string.Join(" <- ", messages);
+    }
 }

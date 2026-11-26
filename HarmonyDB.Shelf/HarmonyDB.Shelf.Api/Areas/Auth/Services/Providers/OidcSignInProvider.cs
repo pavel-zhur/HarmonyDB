@@ -139,13 +139,13 @@ public abstract class OidcSignInProvider(
         }
         catch (HttpRequestException exception)
         {
-            throw SignInProviderException.Unavailable($"{Name}'s token endpoint: {exception.Message}");
+            throw SignInProviderException.Unavailable($"{Name}'s token endpoint: {SignInProviderException.Causes(exception)}");
         }
 
         using (response)
         {
             if (!response.IsSuccessStatusCode)
-                throw SignInProviderException.Invalid($"{Name}'s token endpoint answered {(int)response.StatusCode}.");
+                throw SignInProviderException.Invalid($"{Name}'s token endpoint answered {(int)response.StatusCode}{await ErrorOfAsync(response, cancellationToken)}.");
 
             var tokens = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
             if (string.IsNullOrEmpty(tokens?.IdToken))
@@ -216,9 +216,28 @@ public abstract class OidcSignInProvider(
         }
         catch (InvalidOperationException exception)
         {
-            throw SignInProviderException.Unavailable($"{Name}'s discovery document: {exception.Message}");
+            // the library's messages, the cause's too (they hide what may be personal)
+            throw SignInProviderException.Unavailable($"{Name}'s discovery document: {SignInProviderException.Causes(exception)}");
         }
     }
+
+    /// <summary>
+    /// The error code an OAuth answer of an error names (RFC 6749, 5.2), when it names one: never more of the answer.
+    /// </summary>
+    private static async Task<string> ErrorOfAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken);
+            return string.IsNullOrWhiteSpace(error?.Error) ? string.Empty : $" ({error.Error})";
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or NotSupportedException or HttpRequestException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private sealed record ErrorResponse([property: JsonPropertyName("error")] string? Error);
 
     private sealed record TokenResponse([property: JsonPropertyName("id_token")] string? IdToken);
 }

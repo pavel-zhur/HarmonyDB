@@ -87,7 +87,7 @@ public sealed class YandexSignInProvider(HttpClient http, IOptionsMonitor<SignIn
         }
         catch (HttpRequestException exception)
         {
-            throw SignInProviderException.Unavailable($"Yandex: {exception.Message}");
+            throw SignInProviderException.Unavailable($"Yandex: {SignInProviderException.Causes(exception)}");
         }
     }
 
