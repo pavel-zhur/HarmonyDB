@@ -442,8 +442,11 @@ services:
     depends_on:
       - postgres
     networks:
-      - default
-      - shelf-web
+      default:
+      # the shelf's web servers reach it by this name, only on this network: their calls come from the subnet it trusts
+      shelf-web:
+        aliases:
+          - shelf-api.shelf-web
 
   # The new shelf's app (HarmonyDB.Shelf.Web) and its API on one origin: nginx serves the app's build and passes /api,
   # /mcp and /.well-known on to shelf-api, telling it the client's address. Its address is SHELF_PUBLIC_ORIGIN.
@@ -454,6 +457,10 @@ services:
       # the fingerings' model the app is built with (one file: fingerings.json)
       additional_contexts:
         fingerings: ../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
+    environment:
+      # the proxies in front whose X-Forwarded-For gives the visitor's address (CIDR, separated by spaces; none: visitors
+      # come straight to it)
+      SHELF_EDGE_PROXIES: ${SHELF_EDGE_PROXIES}
     ports:
       - "${SHELF_WEB_PORT}:80"
     depends_on:
@@ -473,6 +480,9 @@ services:
       additional_contexts:
         fingerings: ../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
     environment:
+      # the proxies in front whose X-Forwarded-For gives the visitor's address (CIDR, separated by spaces; none: visitors
+      # come straight to it)
+      SHELF_EDGE_PROXIES: ${SHELF_EDGE_PROXIES}
       SHELF_SITE_ORIGIN: ${SHELF_SITE_ORIGIN}
       SHELF_APP_ORIGIN: ${SHELF_PUBLIC_ORIGIN}
     ports:
