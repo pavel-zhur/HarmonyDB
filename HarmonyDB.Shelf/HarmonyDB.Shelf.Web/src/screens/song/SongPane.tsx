@@ -20,6 +20,8 @@ import { local, useLocalView } from '../../local';
 import { Avatar } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { SourceIcon } from '../../kit/SongRow';
+import { ChordsMarks } from '../../kit/ChordsMarks';
+import { foundOrder, foundSortOf } from '../lists/found';
 import { ToTop } from '../../app/ToTop';
 import { ChordsView } from './ChordsView';
 import { SongRecordings } from '../recordings/SongRecordings';
@@ -231,9 +233,9 @@ function VariantRow({ page, variant, index, on, onOpen, onKey }: {
             <span className="l">{letter(index)}.</span>
             {header?.source.iconUrl && <SourceIcon source={header.source} />}
             <span>{header?.source.title}</span>
+            {header && <ChordsMarks header={header} />}
             {variant.chords.state === 'notOpen' && <span className="na">{t('song.chords.notOpenShort')}</span>}
             {variant.chords.state === 'unavailable' && <span className="na">{t('song.chords.unavailableShort')}</span>}
-            {!!header?.rating && <span className="rt">☆ {header.rating}</span>}
             {page.myMainItemId === variant.itemId && page.variants.length > 1 && <span className="pin">{t('song.main')}</span>}
             {differs && <span className="aka">{t('song.inSource', { name: `${header!.artists.join(', ')} — ${header!.title ?? ''}` })}</span>}
             {people.map(([id, x]) => (
@@ -273,10 +275,10 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
     const illustrations = useIllustrations(content.data?.state === 'open' ? chordsId : null);
     const cover = illustrations.data?.images[0]?.urls['512'] ?? null;
 
-    // the search the chords were opened from: its chords, in its order
+    // the search the chords were opened from: its chords, as its list shows them (by song, in the order chosen)
     const q = params.get('q') ?? '';
     const results = useSearch(q, ['songs', 'chords']);
-    const ids = results.data?.chords?.map(x => x.id) ?? [];
+    const ids = useMemo(() => foundOrder(results.data?.chords ?? [], foundSortOf(params.get('found'))), [results.data, params]);
     const index = ids.indexOf(chordsId);
     const at = (id: string | undefined) => (id ? pathname.slice(0, pathname.lastIndexOf('/') + 1) + encodeURIComponent(id) + search : null);
     const pager = index >= 0 ? { index, count: ids.length, prev: at(ids[index - 1]), next: at(ids[index + 1]) } : undefined;

@@ -96,6 +96,9 @@ public enum BookItemState
 
     /// <summary>Its source did not answer: left out; try again later.</summary>
     Unavailable,
+
+    /// <summary>Its source does not vouch for its sheet: left out.</summary>
+    Unstable,
 }
 
 public record BookItemPages

@@ -142,6 +142,41 @@ public sealed class BookTests(WorkFixture fixture) : IClassFixture<WorkFixture>
         Assert.All(prepared, x => Assert.Equal(BookItemState.Printed, x.State));
     }
 
+    [DatabaseFact]
+    public async Task ASheetItsSourceDoesNotVouchForIsLeftOut()
+    {
+        var me = await fixture.AccountAsync();
+        var (stable, unstable) = ($"book-{Guid.NewGuid():N}", $"book-{Guid.NewGuid():N}");
+        fixture.Index.Answer = (operation, body) => operation == "V2GetContent"
+            ? (HttpStatusCode.OK, new GetContentResponse
+            {
+                Id = body.GetProperty("id").GetString()!,
+                State = ItemState.Open,
+                Header = FakeIndex.Header(body.GetProperty("id").GetString()!, "Source"),
+                Content = new() { Sheet = new() { Root = new NodeHtml { Name = "pre" }, UnstableMessage = body.GetProperty("id").GetString() == unstable ? "Its words" : null } },
+            })
+            : (HttpStatusCode.InternalServerError, null);
+
+        await using var scope = fixture.Api.Services.CreateAsyncScope();
+        var printer = scope.ServiceProvider.GetRequiredService<BookPrinter>();
+        var request = new BookRequest { Items = [new() { ChordsId = stable }, new() { ChordsId = unstable }], Options = new() };
+
+        var prepared = await printer.PrepareAsync(me, request, [], _ => Task.CompletedTask, CancellationToken.None);
+        Assert.Equal([BookItemState.Printed, BookItemState.Unstable], prepared.Select(x => x.State));
+        Assert.Null(prepared[1].Root);
+    }
+
+    [Fact]
+    public void TheLineNamesTheSourceShortlyWhereItGivesAShortName()
+    {
+        PreparedItem Item(string? shortSource) => new(
+            new() { ChordsId = "x" }, BookItemState.Printed, 0,
+            FakeIndex.Header("x", "The source") with { Marks = new() { ShortSource = shortSource } }, new NodeHtml { Name = "pre" }, new(false, false, null));
+
+        Assert.Contains("(TS)</span>", BookPrinter.SongHtml(Item("TS"), false));
+        Assert.Contains("(The source)</span>", BookPrinter.SongHtml(Item(null), false));
+    }
+
     [Fact]
     public async Task OnlyThePeopleWithThePdfPermissionMayAsk()
     {

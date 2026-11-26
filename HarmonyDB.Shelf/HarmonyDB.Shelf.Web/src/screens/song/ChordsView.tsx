@@ -1,22 +1,24 @@
 // The chords of a variant (or chords alone): their header (the letter, the source as a link, "to a playlist", share,
-// close), the line about the source (its key, the detected keys, the tempo), the calm grid above the sheet — Key,
+// close), the line about the source (the key it states, the tempo), the calm grid above the sheet — Key,
 // Chords, Marks, Notes, From the author — the tools (loops, circle of fifths, similar songs), and the sheet.
 // No arrows: a swipe over the whole area goes to the next or the previous variant (or search result).
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
 import { playlistTitle } from '../../data/playlists';
 import { useProfile, useSession } from '../../data/session';
 import { useSettings } from '../../data/settings';
-import { useChordsAnalysis, useChordsContent, useChordsPlaces, useOwnChords, useSimilarChords, type ChordsVariant, type PersonRef, type SongPage } from '../../data/song';
+import { useChordsContent, useChordsPlaces, useOwnChords, useSimilarChords, type ChordsVariant, type PersonRef, type SongPage } from '../../data/song';
 import { useMarkKinds, useMarkSign } from '../../data/marks';
 import { local, useLocalView, useMyKey, useMyMarks, useMyNote } from '../../local';
 import { Avatar } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
 import { SourceIcon } from '../../kit/SongRow';
+import { ChordsMarks } from '../../kit/ChordsMarks';
 import { NoteAlteration } from '../../lib/common/HarmonyDB.Common/NoteAlteration';
 import { RepresentationSettings, SheetKey, SimplificationMode } from '../../lib/representations';
 import { ChordSheet } from '../../chords/ChordSheet';
@@ -63,9 +65,17 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     const answer = content.data;
     const header = answer?.header ?? place.variant?.chords.header ?? null;
     const state = answer?.state ?? place.variant?.chords.state ?? null;
-    // an analysis (it has a time line) states its own keys; the index's detection is for the other chords
+    // not open: their address in the old shelf, where the shelf keeps one — where they may be looked at
+    const keptAddress = answer?.address ?? place.variant?.chords.address ?? null;
+    // "Try again", as the old shelf's «Повтор»: the source asked anew; chords that open now open in the lists too
+    const queries = useQueryClient();
+    const retry = () => void content.refetch().then(again => {
+        if (again.data?.state === 'open') void Promise.all([['song'], ['songs'], ['library'], ['recent']].map(queryKey => queries.invalidateQueries({ queryKey })));
+    });
+    // a sheet its source does not vouch for: its words and the page in the sheet's place, as the old shelf showed it
+    const unstable = answer?.content?.sheet?.unstableMessage ?? null;
+    // an analysis (it has a time line) states its own keys
     const timed = isAnalysis(header?.kinds);
-    const analysis = useChordsAnalysis(chordsId, state === 'open' && header !== null && !timed);
     const settings = useSettings();
     const playlistId = place.page?.song.playlistId;
 
@@ -151,6 +161,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                     {header?.address
                         ? <a className="el srcl" href={header.address} target="_blank" rel="noreferrer" title={t('song.chords.openSource', { source: header.source.title })}>{header.source.title}<Icon name="ext" /></a>
                         : <span className="el">{header?.source.title}</span>}
+                    {header && <ChordsMarks header={header} />}
                 </span>
                 {place.pager && place.pager.count > 1 && (
                     <span className="pips" aria-label={t('song.chords.results')}>
@@ -182,14 +193,26 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 chords={{ id: chordsId, address: header?.address ?? null, isPublic: header?.isPublic ?? false }}
                 target={place.page ? { kind: 'song', playlistId: place.page.song.playlistId, songId: place.page.song.id, share: place.share ?? null } : { kind: 'chords', chords: chordsId }} />
 
-            {state === 'notOpen' && <p className="vstate">{t('song.chords.notOpen')}</p>}
+            {state === 'notOpen' && (
+                <p className="vstate">
+                    {t('song.chords.notOpen')}
+                    {keptAddress && <> {t('song.chords.notOpenAt')} <a href={keptAddress} target="_blank" rel="noreferrer">{hostOf(keptAddress)}</a></>}
+                    {' '}<button type="button" className="lnk" disabled={content.isFetching} onClick={retry}>{content.isFetching ? t('common.loading') : t('common.retry')}</button>
+                </p>
+            )}
+            {state === 'open' && unstable !== null && (
+                <p className="vstate">
+                    {unstable}
+                    {header?.address && <> <a href={header.address} target="_blank" rel="noreferrer">{header.source.title}</a></>}
+                </p>
+            )}
             {state === 'unavailable' && <p className="vstate">{t('song.chords.unavailable')}</p>}
             {content.isError && <p className="vstate failed">{errorText(content.error)}</p>}
             {state === 'open' && !answer && <p className="vstate loading">{t('common.loading')}</p>}
 
-            {state === 'open' && answer && (
+            {state === 'open' && answer && unstable === null && (
                 <div className="tools">
-                    <Meta settings={base} stated={statedKeys(sheet?.keys ?? null, header?.attributes.key ?? null)} detected={timed ? [] : analysis.data?.keys ?? []} bpm={header?.attributes.bpm ?? null} />
+                    <Meta settings={base} stated={statedKeys(sheet?.keys ?? null, header?.attributes.key ?? null)} bpm={header?.attributes.bpm ?? null} />
                     <div className="panel">
                         <KeyRow chordsId={chordsId} playlistId={playlistId} member={!!place.page?.playlist?.myRole} transpose={transpose} remembered={remembered} shown={shown} onShow={onShow} />
 
@@ -249,7 +272,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 </div>
             )}
 
-            {state === 'open' && answer && (timed || sheet) && (
+            {state === 'open' && answer && unstable === null && (timed || sheet) && (
                 // the other views of an analysis name the chords as the sheet does (chords/view.tsx); an analysis
                 // shows its views whether or not it has a text with chords (a piece without words has none)
                 <ChordsViewProvider value={representation}>
@@ -300,6 +323,15 @@ function Simpler({ value, onChange }: { value: Simplification; onChange: (value:
     );
 }
 
+/** An address's host, as the old shelf named the page ("Или же источник: <host>"); the address itself when it is none. */
+function hostOf(address: string): string {
+    try {
+        return new URL(address).host || address;
+    } catch {
+        return address;
+    }
+}
+
 /**
  * The keys the item states: the sheet's own keys when it has them (an analysis: the keys of its time line, in the order
  * they come), else the key its source gives (a name; one not read as a key is shown as it is written).
@@ -315,28 +347,19 @@ function statedKeys(keys: readonly SheetKey[] | null, attribute: string | null):
 }
 
 /**
- * The key(s) the item states, the detected ones with their confidence (the second hidden on a phone), the tempo: facts
- * about the chords as they are written, not moved by the transposition. When the chords are shown in another key, where
- * they are now is said apart ("now E").
+ * The key(s) the item states and the tempo: facts about the chords as they are written, not moved by the
+ * transposition. When the chords are shown in another key, where the stated key is now is said apart ("now E").
  */
-function Meta({ settings, stated, detected, bpm }: { settings: RepresentationSettings; stated: (SheetKey | string)[]; detected: { key: { tonic: string; isMinor: boolean }; confidence: number }[]; bpm: number | null }) {
+function Meta({ settings, stated, bpm }: { settings: RepresentationSettings; stated: (SheetKey | string)[]; bpm: number | null }) {
     const { t } = useTranslation();
     const written = settings.with({ transpose: 0, relativeTo: null, alteration: null, showNotesAsWritten: true });
     const name = (key: SheetKey | string, view = written) => (typeof key === 'string' ? key : key.shown(view).name);
-    const first = stated.find((x): x is SheetKey => typeof x !== 'string') ?? (detected[0] ? new SheetKey(detected[0].key.tonic, detected[0].key.isMinor) : null);
+    const first = stated.find((x): x is SheetKey => typeof x !== 'string') ?? null;
     const now = settings.transpose !== 0 && first ? name(first, settings.with({ relativeTo: null })) : null;
-    if (!stated.length && !detected.length && !bpm) return null;
+    if (!stated.length && !bpm) return null;
     return (
         <div className="meta">
             {stated.length > 0 && <span className="mi"><b>{stated.map(x => name(x)).join(' → ')}</b>{t('song.meta.stated')}</span>}
-            {detected.length > 0 && (
-                <span className="mi" title={t('song.meta.detectedSub')}>
-                    <i>{t('song.meta.detected')}</i>
-                    {detected.map((x, i) => (
-                        <span key={i} className={i ? 'alt' : ''}>{i > 0 && <i>· </i>}<b>{name(new SheetKey(x.key.tonic, x.key.isMinor))}</b> {Math.round(x.confidence * 100)}%</span>
-                    ))}
-                </span>
-            )}
             {now && <span className="mi"><i>{t('song.meta.now')}</i><b>{now}</b></span>}
             {!!bpm && <span className="mi"><b>{Math.round(bpm)}</b>BPM</span>}
         </div>

@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import type { SongListParams, SongSort } from '../../data/songs';
+import { foundSortOf, type FoundSort } from './found';
 
 /** "compact": by artist, the titles of one artist on one line. */
 export type ListSort = SongSort | 'compact';
@@ -13,6 +14,8 @@ export interface ListState {
     /** whose marks: "me" (default), "all", or a person's id */
     who: string;
     mark: string | null;
+    /** the order of the chords found at the sources */
+    found: FoundSort;
 }
 
 const sorts: ListSort[] = ['popular', 'artist', 'title', 'newSongs', 'newChords', 'myMarks', 'order', 'compact'];
@@ -26,6 +29,7 @@ export function useListState(): [ListState, (patch: Partial<ListState>) => void,
             sort: sort && sorts.includes(sort) ? sort : null,
             who: params.get('who') ?? 'me',
             mark: params.get('mark'),
+            found: foundSortOf(params.get('found')),
         };
     }, [params]);
 
@@ -33,7 +37,7 @@ export function useListState(): [ListState, (patch: Partial<ListState>) => void,
         setParams(previous => {
             const next = new URLSearchParams(previous);
             for (const [key, value] of Object.entries(patch)) {
-                if (value === null || value === '' || (key === 'who' && value === 'me')) next.delete(key);
+                if (value === null || value === '' || (key === 'who' && value === 'me') || (key === 'found' && value === 'original')) next.delete(key);
                 else next.set(key, String(value));
             }
             return next;

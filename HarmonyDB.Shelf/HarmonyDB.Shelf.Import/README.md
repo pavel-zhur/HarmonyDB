@@ -63,6 +63,8 @@ See `Planning/Planner.cs` for the whole mapping. In short:
   time; keys → "mine" (what the person saw everywhere) and "here" (a list's); comments → notes (on a song of several
   variants each comment begins with its variant's letter); visits → recent; own chords → the author's own chords
   playlist; the main variant where it is not the first.
+- each chords' row gets the old address it was resolved by (`old_address`), so that chords their source does not give
+  are shown with their page; own chords get none (their address may open them to whoever holds it);
 - the old illustrations, kept under the old addresses, are found by the chords' ids: after a run the import gives the
   illustrations service each resolved address with its id, as an alias (while both shelves run an item has two names);
 - what a person already had in the shelf (a key, a note, a mark …) is theirs: the import never changes it; an account

@@ -11,8 +11,8 @@ public enum ChordsState
     /// <summary>Open to the person: its header (and content) is given.</summary>
     Open,
 
-    /// <summary>Not open to the person (or not known). Nothing else is said of it: the app shows "not available to
-    /// you", with the title a playlist keeps for it.</summary>
+    /// <summary>Not open to the person (or not known, or the source could not give it). Nothing else of it is said but
+    /// its address in the old shelf, where the shelf keeps one: the app shows "could not be loaded", with that address.</summary>
     NotOpen,
 
     /// <summary>Its source did not answer now. Not "not open": try later.</summary>
@@ -77,6 +77,22 @@ public sealed record ChordsAttributes
     public string? TimeSignature { get; init; }
 }
 
+/// <summary>
+/// What the source marks about the item, where it marks it.
+/// </summary>
+public sealed record ChordsMarks
+{
+    /// <summary>The source vouches for the item as one of its best.</summary>
+    public bool IsChosen { get; init; }
+
+    /// <summary>The source's words for that mark, when it has them.</summary>
+    public string? ChosenText { get; init; }
+
+    /// <summary>Whether the source fully supports the item's kind (<see cref="ChordsHeader.Type"/>); null when it does
+    /// not say.</summary>
+    public bool? IsSupported { get; init; }
+}
+
 public sealed record ChordsHeader
 {
     /// <summary>
@@ -105,6 +121,8 @@ public sealed record ChordsHeader
 
     public required ChordsAttributes Attributes { get; init; }
 
+    public required ChordsMarks Marks { get; init; }
+
     /// <summary>Whether the item may be shown on public pages.</summary>
     public required bool IsPublic { get; init; }
 }
@@ -119,6 +137,11 @@ public sealed record ChordsAnswer
     public required ChordsState State { get; init; }
 
     public ChordsHeader? Header { get; init; }
+
+    /// <summary>
+    /// Not open: the item's address in the old shelf, when the shelf keeps one — where the person may look at it.
+    /// </summary>
+    public string? Address { get; init; }
 }
 
 public sealed record ChordsHeadersRequest
@@ -163,6 +186,11 @@ public sealed record ChordsContentResponse
     public Guid? ChordsId { get; init; }
 
     public ChordsHeader? Header { get; init; }
+
+    /// <summary>
+    /// Not open: the item's address in the old shelf, when the shelf keeps one — where the person may look at it.
+    /// </summary>
+    public string? Address { get; init; }
 
     /// <summary>
     /// The kinds asked that the item has, in the source contract's (version 2) own models and JSON: one property per

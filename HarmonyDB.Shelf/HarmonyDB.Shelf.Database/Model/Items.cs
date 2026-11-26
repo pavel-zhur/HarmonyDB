@@ -30,6 +30,13 @@ public class ChordsItem
 
     public string? SourceUri { get; set; }
 
+    /// <summary>
+    /// The old shelf's address of the item, as the import resolved it; never of own chords (their address may open them
+    /// to whoever holds it). The only page shown to a person the item is not open to, as where it may be looked at: a
+    /// page kept from a header is not, as it may open the item.
+    /// </summary>
+    public string? OldAddress { get; set; }
+
     public string? SourceIcon { get; set; }
 
     /// <summary>

@@ -135,11 +135,17 @@ function Chords({ chordsId, share, inApp, title, artists }: { chordsId: string; 
     const state = content.data.state;
     // an analysis shows its views whether or not it has a text with chords (a piece without words has none)
     const analysis = isAnalysis(header?.kinds);
-    if (state !== 'open' || (!sheet && !analysis)) {
+    // a sheet its source does not vouch for: its words and the page in the sheet's place, as in the app
+    const unstable = state === 'open' ? content.data.content?.sheet?.unstableMessage ?? null : null;
+    if (state !== 'open' || unstable !== null || (!sheet && !analysis)) {
         return (
             <Message>
                 <Title title={shownTitle} artists={shownArtists} />
-                <p className="muted">{t(state === 'notOpen' ? 'public.notOpen' : state === 'unavailable' ? 'song.chords.unavailable' : 'song.chords.noSheet')}</p>
+                <p className="muted">
+                    {unstable !== null
+                        ? <>{unstable}{header?.address && <> <a href={header.address} target="_blank" rel="noreferrer">{header.source.title}</a></>}</>
+                        : t(state === 'notOpen' ? 'public.notOpen' : state === 'unavailable' ? 'song.chords.unavailable' : 'song.chords.noSheet')}
+                </p>
                 <Invite to={appAddress(inApp)} />
             </Message>
         );

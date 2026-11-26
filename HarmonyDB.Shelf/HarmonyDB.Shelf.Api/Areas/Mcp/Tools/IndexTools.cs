@@ -58,7 +58,9 @@ public static class IndexTools
         new("get_chords",
             "Open chords by chordsId. Default kind 'sheet': the song as text with chords, optionally transposed. " + SheetFormat +
             " Other kinds an item may have (see its kinds): timeline, lyrics, notes, score, chart, recording — answered " +
-            "with a short summary and a link (url, valid minutes) to the full JSON. state notOpen: not open to this person.",
+            "with a short summary and a link (url, valid minutes) to the full JSON. state notOpen: not open to this person. " +
+            "A sheet its source does not vouch for comes without its text: unstableMessage (the source's words) and the " +
+            "address of its page instead.",
             McpToolEffect.Read,
             async (
                 ClaimsPrincipal user, ChordsReader reader, McpFiles files,
@@ -78,6 +80,10 @@ public static class IndexTools
                 if (asked == ChordsKind.Sheet)
                 {
                     var sheet = answer.Content?.Sheet;
+                    // as a person is shown it: the source's words and its page in the place of a sheet it does not vouch for
+                    if (sheet?.UnstableMessage is { } unstable)
+                        return new { chords = Slim.Chords(answer.Header!), unstableMessage = unstable, address = answer.Header!.Address };
+
                     var settings = new RepresentationSettings(transpose ?? 0);
                     return new
                     {

@@ -290,6 +290,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("made_from_recording_id");
 
+                    b.Property<string>("OldAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("old_address");
+
                     b.Property<DateTimeOffset?>("RecordingsSearchedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("recordings_searched_at");

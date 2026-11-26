@@ -5993,7 +5993,8 @@
         "enum": [
           "printed",
           "notOpen",
-          "unavailable"
+          "unavailable",
+          "unstable"
         ],
         "type": "string"
       },
@@ -6247,6 +6248,10 @@
           },
           "header": {
             "$ref": "#/components/schemas/ChordsHeader"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6299,6 +6304,10 @@
           "header": {
             "$ref": "#/components/schemas/ChordsHeader"
           },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
           "content": {
             "$ref": "#/components/schemas/SourceV2Content"
           },
@@ -6330,6 +6339,7 @@
           "id",
           "isPublic",
           "kinds",
+          "marks",
           "source"
         ],
         "type": "object",
@@ -6371,6 +6381,9 @@
           },
           "attributes": {
             "$ref": "#/components/schemas/ChordsAttributes"
+          },
+          "marks": {
+            "$ref": "#/components/schemas/ChordsMarks"
           },
           "isPublic": {
             "type": "boolean"
@@ -6529,6 +6542,26 @@
             "items": {
               "$ref": "#/components/schemas/DetectedKey"
             }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChordsMarks": {
+        "required": [
+          "isChosen"
+        ],
+        "type": "object",
+        "properties": {
+          "isChosen": {
+            "type": "boolean"
+          },
+          "chosenText": {
+            "type": "string",
+            "nullable": true
+          },
+          "isSupported": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11374,6 +11407,10 @@
             "$ref": "#/components/schemas/NodeHtml"
           },
           "authorComment": {
+            "type": "string",
+            "nullable": true
+          },
+          "unstableMessage": {
             "type": "string",
             "nullable": true
           }

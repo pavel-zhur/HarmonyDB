@@ -121,7 +121,7 @@ export const toolScreens = {
         twoColumns: '2 columns',
         pagesShort_one: '{{count}} p.',
         pagesShort_other: '{{count}} p.',
-        state: { printed: '', notOpen: 'not open to you: left out', unavailable: 'the source did not answer: left out' },
+        state: { printed: '', notOpen: 'could not be loaded: left out', unavailable: 'the source did not answer: left out', unstable: 'the source does not vouch for them: left out' },
         spreads: 'How the pages will lie',
         spreadsFirst: 'Count the pages to see the spreads and to save pages.',
         spreadsNote: 'Each pair is a spread. A number is the song’s. A hatched page is empty: it is there so that a song of two pages is not split by turning the page.',

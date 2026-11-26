@@ -48,6 +48,8 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
             await progress(Interlocked.Increment(ref done));
             return response.State switch
             {
+                // a sheet its source does not vouch for is not printed, as the old shelf left it out
+                ItemState.Open when response.Content!.Sheet is { UnstableMessage: not null } => new PreparedItem(item, BookItemState.Unstable, transpose, null, null, settings),
                 ItemState.Open when response.Content!.Sheet is { } sheet => new PreparedItem(item, BookItemState.Printed, transpose, response.Header, sheet.Root, settings),
                 ItemState.Open or ItemState.NotOpen => new PreparedItem(item, BookItemState.NotOpen, transpose, null, null, settings),
                 _ => new PreparedItem(item, BookItemState.Unavailable, transpose, null, null, settings),
@@ -131,8 +133,8 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
     }
 
     /// <summary>
-    /// A song's page as the old shelf printed it: the artists and the title, with the source's name, the key and the
-    /// sharps or flats; the chords under them.
+    /// A song's page as the old shelf printed it: the artists and the title, with the source's short name (its label's
+    /// title when it gives none), the key and the sharps or flats; the chords under them.
     /// </summary>
     internal static string SongHtml(PreparedItem item, bool twoColumns)
     {
@@ -145,7 +147,7 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
             ShowNotesAsWritten = item.Settings.Alteration == null,
         };
 
-        var notes = new List<string> { E(item.Header!.Source.Title) };
+        var notes = new List<string> { E(item.Header!.Marks.ShortSource ?? item.Header.Source.Title) };
         if (settings.Transpose != 0)
             notes.Add(settings.Transpose.Transposition());
         if (item.Settings.Alteration is { } alteration)

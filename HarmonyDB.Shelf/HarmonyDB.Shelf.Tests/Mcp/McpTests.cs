@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Web;
+using HarmonyDB.Common.Representations.OneShelf;
 using HarmonyDB.Shelf.Api.Areas.Auth.Services;
 using HarmonyDB.Shelf.Api.Areas.OAuth.Services;
 using HarmonyDB.Shelf.Api.Clients.Index;
@@ -514,6 +515,36 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
         Assert.Equal(["mcp.pdf", "mcp.yandex.anonymous"], item.InForce);
         Assert.Equal(HttpStatusCode.NoContent, (await browser.SendAsync(HttpMethod.Delete, $"/api/mcp/keys/{item.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await PostMcpAsync(key)).StatusCode);
+    }
+
+    [DatabaseFact]
+    public async Task ASheetItsSourceDoesNotVouchForComesAsItsMessageAndPageWithoutItsText()
+    {
+        var index = new FakeIndex
+        {
+            Answer = (_, body) => (HttpStatusCode.OK, new GetContentResponse
+            {
+                Id = body.GetProperty("id").GetString()!,
+                State = ItemState.Open,
+                Header = FakeIndex.Header(body.GetProperty("id").GetString()!, "Source") with { Address = new("https://example.com/page") },
+                Content = new() { Sheet = new() { Root = new NodeHtml { Name = "pre", Children = [new NodeChild(new NodeText("the sheet's words"))] }, UnstableMessage = "Its source's words" } },
+            }),
+        };
+        await _api.DisposeAsync();
+        _api = new McpApiFactory(database.ConnectionString, index: index);
+
+        var (browser, _) = await PersonAsync("mcp-unstable", BuiltInPermissions.McpIndex);
+        var clientId = await RegisterAsync(refresh: false);
+        var (requestId, verifier) = await AuthorizeAsync(clientId, null);
+        var access = (await ApproveAndRedeemAsync(browser, clientId, requestId, verifier, ["mcp.index"])).GetProperty("access_token").GetString()!;
+
+        await using var client = await ConnectAsync(access);
+        var result = await client.CallToolAsync("get_chords", new Dictionary<string, object?> { ["chordsId"] = "u1" });
+        var answer = Json(result);
+        Assert.Equal("Its source's words", answer.GetProperty("unstableMessage").GetString());
+        Assert.Equal("https://example.com/page", answer.GetProperty("address").GetString());
+        Assert.False(answer.TryGetProperty("text", out _));
+        Assert.DoesNotContain("the sheet's words", ((TextContentBlock)result.Content[0]).Text);
     }
 
     [DatabaseFact]

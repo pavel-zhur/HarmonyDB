@@ -164,3 +164,11 @@ textarea.field { resize: vertical; min-height: 80px; }
 .locked h1 { margin: 10px 0 6px; }
 .locked p { margin: 0 0 10px; }
 .lockic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--surface2); color: var(--muted); }
+
+/* what a source marks about an item (kit/ChordsMarks): its pick, and the item's type there */
+.cmk { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: 6px; vertical-align: 1px; font-weight: 400; }
+.cmk > span { font-size: 11px; line-height: 17px; padding: 0 7px; border-radius: 999px; white-space: nowrap; }
+.cmk .ch { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.cmk .rt { color: var(--muted); padding: 0 2px; }
+.cmk .ty { color: var(--muted); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 40%, transparent); }
+.cmk .ty.off { opacity: .6; box-shadow: none; outline: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); outline-offset: -1px; }

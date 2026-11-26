@@ -1865,7 +1865,7 @@ export interface components {
             transpose: number;
         };
         /** @enum {string} */
-        BookItemState: "printed" | "notOpen" | "unavailable";
+        BookItemState: "printed" | "notOpen" | "unavailable" | "unstable";
         BookOptions: {
             caption?: string | null;
             contents: boolean;
@@ -1942,6 +1942,7 @@ export interface components {
             id: string;
             state: components["schemas"]["ChordsState"];
             header?: components["schemas"]["ChordsHeader"];
+            address?: string | null;
         };
         ChordsAttributes: {
             key?: string | null;
@@ -1957,6 +1958,7 @@ export interface components {
             /** Format: uuid */
             chordsId?: string | null;
             header?: components["schemas"]["ChordsHeader"];
+            address?: string | null;
             content?: components["schemas"]["SourceV2Content"];
             marks: components["schemas"]["MarkItem"][];
             keys: components["schemas"]["KeyItem"][];
@@ -1973,6 +1975,7 @@ export interface components {
             type?: string | null;
             kinds: components["schemas"]["ChordsKind"][];
             attributes: components["schemas"]["ChordsAttributes"];
+            marks: components["schemas"]["ChordsMarks"];
             isPublic: boolean;
         };
         ChordsHeadersRequest: {
@@ -2012,6 +2015,11 @@ export interface components {
             /** Format: int32 */
             songsWithIt: number;
             keys: components["schemas"]["DetectedKey"][];
+        };
+        ChordsMarks: {
+            isChosen: boolean;
+            chosenText?: string | null;
+            isSupported?: boolean | null;
         };
         ChordsMedia: {
             recordingUrl?: string | null;
@@ -3298,6 +3306,7 @@ export interface components {
         SourceV2SheetContent: {
             root: components["schemas"]["NodeHtml"];
             authorComment?: string | null;
+            unstableMessage?: string | null;
         };
         /** @enum {string} */
         SourceV2Stem: "vocals" | "guitar" | "bass" | "drums" | "piano" | "other";

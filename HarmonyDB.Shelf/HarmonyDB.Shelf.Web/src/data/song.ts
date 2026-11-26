@@ -15,7 +15,6 @@ export type ChordsVariant = Schemas['ChordsVariant'];
 export type ChordsAnswer = Schemas['ChordsAnswer'];
 export type ChordsHeader = Schemas['ChordsHeader'];
 export type ChordsContent = Schemas['ChordsContentResponse'];
-export type ChordsAnalysis = Schemas['ChordsAnalysis'];
 export type SheetKeyValue = Schemas['SheetKey'];
 export type PersonRef = Schemas['PersonRef'];
 
@@ -41,16 +40,6 @@ export function useChordsContent(chordsId: string | null) {
         enabled: !!chordsId,
         staleTime: 5 * 60_000,
         networkMode: 'always',
-    });
-}
-
-/** The detected keys with their confidence, and the key the source states. */
-export function useChordsAnalysis(chordsId: string | null, enabled = true) {
-    return useQuery({
-        queryKey: ['chords-analysis', chordsId],
-        queryFn: () => call(api.GET('/api/analysis/chords/{id}', { params: { path: { id: chordsId! } } })),
-        enabled: !!chordsId && enabled,
-        staleTime: Infinity,
     });
 }
 

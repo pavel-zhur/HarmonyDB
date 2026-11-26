@@ -47,8 +47,28 @@ public sealed class ChordsReader(
         if (ids.Any(string.IsNullOrWhiteSpace))
             throw ShelfException.BadRequest();
 
-        return (await GetAnswersAsync(caller, ids, cancellationToken)).Select(ToAnswer).ToList();
+        return await WithKeptAddressesAsync((await GetAnswersAsync(caller, ids, cancellationToken)).Select(ToAnswer).ToList(), cancellationToken);
     }
+
+    /// <summary>
+    /// The answers, those not open given the old shelf's address of the item (<see cref="ChordsItem.OldAddress"/>),
+    /// where the shelf keeps one: the person is shown where the item may be looked at. Never a page kept from a header:
+    /// such a page may open the item to whoever holds it.
+    /// </summary>
+    private async Task<IReadOnlyList<ChordsAnswer>> WithKeptAddressesAsync(IReadOnlyList<ChordsAnswer> answers, CancellationToken cancellationToken)
+    {
+        var notOpen = answers.Where(x => x.State == ChordsState.NotOpen).Select(x => x.Id).Distinct(StringComparer.Ordinal).ToList();
+        if (notOpen.Count == 0)
+            return answers;
+
+        var kept = await KeptAddressesAsync(notOpen, cancellationToken);
+        return answers.Select(x => x.State == ChordsState.NotOpen && kept.TryGetValue(x.Id, out var address) ? x with { Address = address } : x).ToList();
+    }
+
+    private async Task<Dictionary<string, string>> KeptAddressesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+        => await db.Chords.AsNoTracking()
+            .Where(x => ids.Contains(x.SourceId) && x.OldAddress != null)
+            .ToDictionaryAsync(x => x.SourceId, x => x.OldAddress!, StringComparer.Ordinal, cancellationToken);
 
     /// <summary>
     /// The state and header of each item for the person, with the person's own marks, keys and notes on them: for a
@@ -129,18 +149,22 @@ public sealed class ChordsReader(
     public async Task<ChordsContentResponse> GetContentAsync(Caller caller, Guid? viewer, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
-        Remember(caller, address, new() { Id = id, State = response.State, Header = response.Header });
+        var header = RememberContent(caller, address, new() { Id = id, State = response.State, Header = response.Header }).Header;
         if (response.State != ItemState.Open)
-            return new() { Id = id, State = ToState(response.State), Marks = [], Keys = [], MyNotes = [] };
+        {
+            var state = ToState(response.State);
+            var kept = state == ChordsState.NotOpen ? (await KeptAddressesAsync([id], cancellationToken)).GetValueOrDefault(id) : null;
+            return new() { Id = id, State = state, Address = kept, Marks = [], Keys = [], MyNotes = [] };
+        }
 
-        var row = await rows.GetOrCreateChordsAsync(id, response.Header, IsAnonymous(caller, address), cancellationToken);
+        var row = await rows.GetOrCreateChordsAsync(id, header, IsAnonymous(caller, address), cancellationToken);
         var seen = await annotations.ReadAsync(viewer, [row.Id], null, null, cancellationToken);
         return new()
         {
             Id = id,
             State = ChordsState.Open,
             ChordsId = row.Id,
-            Header = ToHeader(response.Header!),
+            Header = ToHeader(header!),
             Content = response.Content,
             Marks = seen.Marks,
             Keys = seen.Keys,
@@ -163,7 +187,7 @@ public sealed class ChordsReader(
     public async Task<Content?> GetOpenContentAsync(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
-        Remember(caller, address, new() { Id = id, State = response.State, Header = response.Header });
+        RememberContent(caller, address, new() { Id = id, State = response.State, Header = response.Header });
         return response.State switch
         {
             ItemState.Open => response.Content,
@@ -217,6 +241,12 @@ public sealed class ChordsReader(
             Capo = header.Attributes.Capo,
             TimeSignature = header.Attributes.TimeSignature,
         },
+        Marks = new()
+        {
+            IsChosen = header.Marks.IsChosen,
+            ChosenText = header.Marks.ChosenText,
+            IsSupported = header.Marks.IsSupported,
+        },
         IsPublic = header.IsPublic,
     };
 
@@ -237,6 +267,25 @@ public sealed class ChordsReader(
     {
         if (answer.State != ItemState.Unavailable)
             cache.Set(CacheKey(caller, answer.Id, address), answer, Keep);
+    }
+
+    /// <summary>
+    /// The answer that came with an item's content, taken into the answer kept for the item, where one is kept: the
+    /// content's header gives what it states, and what it does not state (whether the source fully supports the item's
+    /// kind: only a header says it) stays as kept. With none kept, nothing is kept: the next reading of headers asks the
+    /// source, so that an answer with less never stands for one with more.
+    /// </summary>
+    /// <returns>The answer as kept now (the content's own, where none was kept).</returns>
+    private HeaderAnswer RememberContent(Caller caller, Uri? address, HeaderAnswer answer)
+    {
+        var key = CacheKey(caller, answer.Id, address);
+        if (answer.State == ItemState.Unavailable || !cache.TryGetValue(key, out HeaderAnswer? kept))
+            return answer;
+
+        if (answer.Header is { Marks.IsSupported: null } header && kept!.Header?.Marks.IsSupported is { } supported)
+            answer = answer with { Header = header with { Marks = header.Marks with { IsSupported = supported } } };
+        cache.Set(key, answer, Keep);
+        return answer;
     }
 
     private static (string, string, string, string, string?) CacheKey(Caller caller, string id, Uri? address)

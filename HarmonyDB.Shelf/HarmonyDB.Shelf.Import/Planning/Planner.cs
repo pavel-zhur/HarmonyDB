@@ -106,9 +106,24 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
             Notes = Notes(playlists),
             Recent = Recent(),
             Preferences = Preferences(playlists),
+            Addresses = OldAddresses(),
             Unmapped = _unmapped,
             Remarks = _remarks,
         };
+    }
+
+    /// <summary>
+    /// The address each chords were resolved by (the first, in order, of several), by the source's id; none for own
+    /// chords — the ids any own chords' address resolved to.
+    /// </summary>
+    private Dictionary<string, string> OldAddresses()
+    {
+        var ownUris = old.Versions.Where(x => x.CollectiveId != null).Select(x => x.Uri).ToHashSet(StringComparer.Ordinal);
+        var ownIds = resolution.Addresses.Where(x => ownUris.Contains(x.Key) && x.Value.SourceId != null).Select(x => x.Value.SourceId!).ToHashSet(StringComparer.Ordinal);
+        return resolution.Addresses
+            .Where(x => x.Value.SourceId is { } id && !ownIds.Contains(id))
+            .GroupBy(x => x.Value.SourceId!, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.Select(a => a.Key).Order(StringComparer.Ordinal).First(), StringComparer.Ordinal);
     }
 
     private List<PersonPlan> People()

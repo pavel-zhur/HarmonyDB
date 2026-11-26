@@ -1,5 +1,6 @@
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Import;
+using HarmonyDB.Shelf.Import.Old;
 using HarmonyDB.Shelf.Import.Planning;
 using HarmonyDB.Shelf.Import.Writing;
 using HarmonyDB.Shelf.Tests.Auth;
@@ -65,6 +66,29 @@ public sealed class ShelfWriterTests : IAsyncLifetime
         Assert.Equal(1, second.Get("song", Report.Outcomes.LeftByPerson));
         Assert.Equal(1, second.Get("heart", Report.Outcomes.LeftByPerson));
         Assert.Equal(1, second.Get("key mine", Report.Outcomes.Updated));
+    }
+
+    [DatabaseFact]
+    public async Task TheOldAddressIsKeptForEveryChordsButOwnChords()
+    {
+        var old = new OldShelfBuilder();
+        var song = old.Song(SharedTenant, 1001, "song", "a");
+        // own chords: their address may open them to whoever holds it — also where a plain version names it
+        old.Version(song, "own", Keeper, collectiveType: OldCollectiveType.Public, collectiveId: Guid.NewGuid());
+        old.Song(SharedTenant, 1002, "other", "own");
+        var plan = old.Plan();
+        Assert.Equal(new Dictionary<string, string> { [Id("a")] = Uri("a") }, plan.Addresses);
+
+        var first = await WriteAsync(plan);
+        await using (var db = Context())
+        {
+            var addresses = await db.Chords.ToDictionaryAsync(x => x.SourceId, x => x.OldAddress);
+            Assert.Equal(Uri("a"), addresses[Id("a")]);
+            Assert.Null(addresses[Id("own")]);
+        }
+
+        Assert.Equal(1, first.Get("chords old address", Report.Outcomes.Updated));
+        Assert.Equal(0, (await WriteAsync(plan)).Get("chords old address", Report.Outcomes.Updated));
     }
 
     [DatabaseFact]

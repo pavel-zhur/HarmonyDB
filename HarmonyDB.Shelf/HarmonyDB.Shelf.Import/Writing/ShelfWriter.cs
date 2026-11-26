@@ -177,6 +177,21 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
 
         report.Count("chords", O.Created, missing.Length);
         report.Count("chords", O.Found, existing.Count);
+
+        // the old address each was resolved by (own chords have none in the plan)
+        var addressed = ids.Where(plan.Addresses.ContainsKey).ToArray();
+        if (addressed.Length > 0)
+        {
+            var written = await db.Database.ExecuteSqlInterpolatedAsync(
+                $"""
+                 UPDATE chords SET old_address = x.uri
+                 FROM unnest({addressed}, {addressed.Select(x => plan.Addresses[x]).ToArray()}) AS x(id, uri)
+                 WHERE chords.source_id = x.id AND chords.old_address IS DISTINCT FROM x.uri
+                 """,
+                cancellationToken);
+            report.Count("chords old address", O.Updated, written);
+        }
+
         return await db.Chords.Where(x => ids.Contains(x.SourceId)).ToDictionaryAsync(x => x.SourceId, x => x.Id, StringComparer.Ordinal, cancellationToken);
     }
 

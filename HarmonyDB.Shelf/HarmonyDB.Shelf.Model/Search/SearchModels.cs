@@ -70,7 +70,8 @@ public sealed record SearchResponse
     public IReadOnlyList<SearchSong>? Songs { get; init; }
 
     /// <summary>
-    /// The chords found that are in none of the songs above: each item on its own, never grouped into songs.
+    /// The chords found that are in none of the songs above: each item on its own, in the order found (the app groups
+    /// them by their artists and title).
     /// </summary>
     public IReadOnlyList<ChordsHeader>? Chords { get; init; }
 

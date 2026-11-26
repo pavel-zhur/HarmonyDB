@@ -31,11 +31,16 @@ export const song = {
             prev: 'Previous chords',
             next: 'Next chords',
             close: 'Close the chords',
-            notOpen: 'These chords are not open to you.',
-            notOpenShort: 'closed',
+            notOpen: 'These chords could not be loaded.',
+            notOpenAt: 'Their page at the source:',
+            notOpenShort: 'not loaded',
             unavailable: 'The source did not answer. Try again later.',
             unavailableShort: 'the source did not answer',
             noSheet: 'These chords have no text with chords.',
+        },
+        source: {
+            chosen: 'the source’s pick',
+            notSupported: 'The source does not fully support this kind',
         },
         links: {
             similar: 'Similar',
@@ -44,9 +49,7 @@ export const song = {
         },
         meta: {
             stated: 'in the source',
-            detected: 'auto',
             now: 'now',
-            detectedSub: 'The key found from the chords, and how sure it is',
         },
         grid: {
             key: 'Key',

@@ -24,6 +24,13 @@ public sealed record ImportPlan
     public required IReadOnlyList<PreferencePlan> Preferences { get; init; }
 
     /// <summary>
+    /// The old address each chords were resolved by, by the source's id, for every chords but own chords (an own chords'
+    /// address may open them to whoever holds it): kept in the chords' row, so that chords their source does not give
+    /// are shown with their page.
+    /// </summary>
+    public required IReadOnlyDictionary<string, string> Addresses { get; init; }
+
+    /// <summary>
     /// What could not be mapped, with the reason.
     /// </summary>
     public required IReadOnlyList<Unmapped> Unmapped { get; init; }

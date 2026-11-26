@@ -96,3 +96,10 @@
 .mover button:hover:not(:disabled) { background: var(--surface2); color: var(--ink); }
 .mover button:disabled { opacity: .3; }
 .mover svg.ic { width: 16px; height: 16px; }
+
+/* a song found at the sources with several versions: its versions under it, each with what its source says of it */
+.fver { display: grid; margin: -4px 0 4px; padding-left: 22px; }
+.fver a { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 8px; border-radius: 8px; color: var(--muted); font-size: 13.5px; }
+.fver a:hover, .fver a.last { background: var(--surface2); }
+.fver a:hover .slogo, .fver a.last .slogo { filter: none; opacity: 1; }
+.fver .cmk { margin-left: 0; }
