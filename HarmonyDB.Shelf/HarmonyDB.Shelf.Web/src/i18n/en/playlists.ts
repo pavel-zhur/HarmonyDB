@@ -62,6 +62,7 @@ export const playlists = {
         passOwnership: 'Pass the playlist on',
         passConfirm: 'Pass «{{title}}» on to {{name}}? You stay an admin.',
         removeConfirm: 'Take {{name}} out of the playlist?',
+        removeGoneConfirm: 'Take this deleted profile out of the playlist?',
         contacts: 'Telegram',
         viewLink: 'Link and QR code',
         viewLinkNote: 'By the link the playlist opens to anyone, no sign-in needed. To add, one signs in and becomes a member.',

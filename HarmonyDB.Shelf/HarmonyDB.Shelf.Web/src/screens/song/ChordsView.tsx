@@ -29,6 +29,7 @@ import { chordNames, firstAttribute, loopAttributes, loopsOf, progressionBetween
 import { sheetFromApi } from '../../chords/sheet';
 import { AddPop, SharePop } from './Actions';
 import { keyText, stepKey } from './keys';
+import { personName } from '../../kit/person';
 
 export interface ChordsPlace {
     /** the song in its playlist, when the chords are its variant */
@@ -442,7 +443,7 @@ function MarksRow({ chordsId, page }: { chordsId: string; page?: SongPage }) {
                         const on = mineMarks.includes(kind);
                         return (
                             <button type="button" key={kind} className={on ? 'rx on' : 'rx'} aria-pressed={on}
-                                title={`${who.map(id => person(id).name).join(', ')} — ${t(on ? 'song.marks.takeOff' : 'song.marks.put')}`} onClick={() => toggle(kind)}>
+                                title={`${who.map(id => personName(person(id))).join(', ')} — ${t(on ? 'song.marks.takeOff' : 'song.marks.put')}`} onClick={() => toggle(kind)}>
                                 {markSign(kind)}
                                 <span className="fc">{who.slice(0, 3).map(id => <Avatar key={id} person={person(id)} size="s" />)}{who.length > 3 && <i className="ct">+{who.length - 3}</i>}</span>
                             </button>
@@ -460,7 +461,7 @@ function MarksRow({ chordsId, page }: { chordsId: string; page?: SongPage }) {
                         <div className="wholist">
                             {[...groups].map(([kind, who]) => (
                                 <div key={kind}><span className="e">{markSign(kind)}</span>
-                                    <span>{who.map(id => <span key={id} className="who"><Avatar person={person(id)} size="s" />{id === accountId ? t('common.me') : person(id).name}</span>)}</span>
+                                    <span>{who.map(id => <span key={id} className="who"><Avatar person={person(id)} size="s" />{id === accountId ? t('common.me') : personName(person(id))}</span>)}</span>
                                 </div>
                             ))}
                         </div>

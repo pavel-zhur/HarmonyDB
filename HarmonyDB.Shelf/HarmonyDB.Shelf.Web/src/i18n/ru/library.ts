@@ -29,6 +29,7 @@ export const library = {
             anyShort: 'любые',
             mineShort: 'мои',
             onlyOf: 'Только песни, которые отметил(а) {{name}}',
+            onlyOfGone: 'Только песни, отмеченные человеком, чей профиль удалён',
             withMark: 'Только с отметкой',
             resetMark: 'Любая отметка',
         },

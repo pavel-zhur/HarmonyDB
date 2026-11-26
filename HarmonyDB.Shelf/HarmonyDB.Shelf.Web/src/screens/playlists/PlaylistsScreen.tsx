@@ -13,6 +13,7 @@ import { Avatar, Switch } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { Cover, PlaylistMeta, playlistIcon } from './PlaylistMeta';
 import { MyServiceLists } from '../music/MyServiceLists';
+import { personName } from '../../kit/person';
 
 export function PlaylistsScreen() {
     const { t } = useTranslation();
@@ -67,7 +68,7 @@ export function PlaylistLine({ playlist: p }: { playlist: PlaylistSummary }) {
                     <span className="m"><Icon name={playlistIcon(p)} /><PlaylistMeta playlist={p} /></span>
                     <span className="m">
                         {p.firstMembers.slice(0, 5).map(m => <Avatar key={m.id} person={m} size="s" />)}
-                        {p.owner.id !== accountId && <span>{t('playlists.owner', { name: p.owner.name })}</span>}
+                        {p.owner.id !== accountId && <span>{t('playlists.owner', { name: personName(p.owner) })}</span>}
                     </span>
                 </span>
             </Link>

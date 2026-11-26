@@ -19,6 +19,7 @@ import { LinkBox } from '../../kit/LinkBox';
 import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
 import { startLinking } from './linking';
 import { useWide } from '../../app/layout';
+import { personName } from '../../kit/person';
 
 /** Where the shared chords are: in a song of a playlist (the link keeps the song around them), or alone. */
 export type ShareTarget = { kind: 'song'; playlistId: string; songId: string; share: string | null } | { kind: 'chords'; chords: string };
@@ -225,7 +226,7 @@ export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLEl
             {(named || variant.addedBy) && (
                 <p className="note">
                     {named && <>{t('song.menu.inSource', { name: `${header!.artists.join(', ')} — ${header!.title ?? ''}` })}<br /></>}
-                    {variant.addedBy && t('song.menu.addedBy', { name: variant.addedBy.name })}
+                    {variant.addedBy && t('song.menu.addedBy', { name: personName(variant.addedBy) })}
                 </p>
             )}
             {ownItem?.editable && <MenuItem onClick={() => { onClose(); navigate(`/editor?own=${encodeURIComponent(ownItem.id)}`); }}>{t('song.menu.edit')}</MenuItem>}

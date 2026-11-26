@@ -19,6 +19,7 @@ import { Icon } from '../../kit/Icon';
 import './playlists.css';
 import { MenuItem, Popover } from '../../kit/Popover';
 import { LinkBox } from '../../kit/LinkBox';
+import { personName } from '../../kit/person';
 
 export function PlaylistSettingsScreen() {
     const { t } = useTranslation();
@@ -123,7 +124,7 @@ function Members({ details }: { details: PlaylistDetails }) {
                     <div className="mem" key={m.person.id}>
                         <Avatar person={m.person} />
                         <span className="n">
-                            {m.person.id === accountId ? t('common.me') : m.person.gone ? t('common.gone') : m.person.name}
+                            {m.person.id === accountId ? t('common.me') : personName(m.person)}
                             {m.contacts.telegram.map(name => (
                                 <a key={name} className="contact" href={`https://t.me/${encodeURIComponent(name)}`} target="_blank" rel="noreferrer">@{name}</a>
                             ))}
@@ -142,11 +143,11 @@ function MemberMenu({ details, member, canPass }: { details: PlaylistDetails; me
     const { t } = useTranslation();
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const [ask, setAsk] = useState<'remove' | 'pass' | null>(null);
-    const id = details.playlist.id, accountId = member.person.id, name = member.person.name;
+    const id = details.playlist.id, accountId = member.person.id, name = member.person.name, gone = member.person.gone;
     const close = () => setAnchor(null);
     if (ask)
         return (
-            <Confirm text={ask === 'remove' ? t('playlist.removeConfirm', { name }) : t('playlist.passConfirm', { name, title: playlistTitle(details.playlist) })}
+            <Confirm text={ask === 'remove' ? (gone ? t('playlist.removeGoneConfirm') : t('playlist.removeConfirm', { name })) : t('playlist.passConfirm', { name, title: playlistTitle(details.playlist) })}
                 choices={[[ask === 'remove' ? t('playlist.remove') : t('playlist.passOwnership'), () => {
                     setAsk(null);
                     void (ask === 'remove' ? removeMember({ id, accountId }) : passOwnership({ id, accountId })).catch(() => undefined);
@@ -160,7 +161,8 @@ function MemberMenu({ details, member, canPass }: { details: PlaylistDetails; me
                 <MenuItem on={member.role === 'member'} onClick={() => { close(); void setMemberRole({ id, accountId, role: 'member' }).catch(() => undefined); }}>{t('playlist.role.member')}</MenuItem>
                 <MenuItem on={member.role === 'admin'} onClick={() => { close(); void setMemberRole({ id, accountId, role: 'admin' }).catch(() => undefined); }}>{t('playlist.role.admin')}</MenuItem>
                 <hr />
-                {canPass && <MenuItem onClick={() => { close(); setAsk('pass'); }}>{t('playlist.passOwnership')}</MenuItem>}
+                {/* a profile deleted takes nothing on */}
+                {canPass && !gone && <MenuItem onClick={() => { close(); setAsk('pass'); }}>{t('playlist.passOwnership')}</MenuItem>}
                 <MenuItem onClick={() => { close(); setAsk('remove'); }}><span className="danger">{t('playlist.remove')}</span></MenuItem>
             </Popover>
         </>

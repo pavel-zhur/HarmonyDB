@@ -33,6 +33,7 @@ import '../home/home.css';
 import { SongLinks } from './SongLinks';
 import { keyText, letter } from './keys';
 import './song.css';
+import { personName } from '../../kit/person';
 
 export type SongTarget = { playlistId: string; songId: string; share?: string | null } | { chords: string };
 
@@ -237,7 +238,7 @@ function VariantRow({ page, variant, index, on, onOpen, onKey }: {
             {people.map(([id, x]) => (
                 <span key={id} className="pp">
                     <Avatar person={id === accountId ? { id, name: profile?.displayName ?? t('common.me'), pictureUrl: profile?.pictureUrl ?? null } : person(id)} size="s" />
-                    {id === accountId ? t('common.me') : person(id).name} {x.marks.map(markSign).join('')}
+                    {id === accountId ? t('common.me') : personName(person(id))} {x.marks.map(markSign).join('')}
                     {x.mine !== null && <> {keyButton(x.mine, false)}</>}
                     {x.here !== null && <> {keyButton(x.here, true)}</>}
                 </span>

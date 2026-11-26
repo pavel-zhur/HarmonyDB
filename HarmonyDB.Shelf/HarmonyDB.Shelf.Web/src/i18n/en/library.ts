@@ -27,6 +27,7 @@ export const library = {
             anyShort: 'any',
             mineShort: 'mine',
             onlyOf: 'Only songs marked by {{name}}',
+            onlyOfGone: 'Only songs marked by someone whose profile is deleted',
             withMark: 'Only with the mark',
             resetMark: 'Any mark',
         },

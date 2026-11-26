@@ -20,6 +20,7 @@ import { serverParams, useListState, type ListSort } from './listParams';
 import { LinkBar, LinkPick } from '../song/linking';
 import { MusicSearch } from '../music/MusicSearch';
 import { notOnDevice } from '../../offline';
+import { personName } from '../../kit/person';
 
 export interface SongListProps {
     source: SongSource;
@@ -269,7 +270,7 @@ function SortChip({ sort, sorts, onSort }: { sort: ListSort; sorts: ListSort[]; 
 }
 
 function WhoChip({ who, mark, people, onChange }: {
-    who: string; mark: string | null; people: { id: string; name: string }[]; onChange: (patch: { who?: string; mark?: string | null }) => void;
+    who: string; mark: string | null; people: { id: string; name: string; gone?: boolean }[]; onChange: (patch: { who?: string; mark?: string | null }) => void;
 }) {
     const { t } = useTranslation();
     const markSign = useMarkSign();
@@ -277,7 +278,8 @@ function WhoChip({ who, mark, people, onChange }: {
     const { accountId } = useSession();
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const others = people.filter(person => person.id !== accountId);
-    const name = who === 'me' ? t('library.who.mineShort') : who === 'all' ? t('library.who.anyShort') : others.find(x => x.id === who)?.name ?? '';
+    const one = others.find(x => x.id === who);
+    const name = who === 'me' ? t('library.who.mineShort') : who === 'all' ? t('library.who.anyShort') : one ? personName(one) : '';
     const label = who === 'me' && !mark ? t('library.who.marks') : `${mark ? markSign(mark) : '♥'} ${name}`;
     const close = () => setAnchor(null);
     return (
@@ -288,8 +290,8 @@ function WhoChip({ who, mark, people, onChange }: {
                 <MenuItem on={who === 'me'} onClick={() => { onChange({ who: 'me' }); close(); }}>{t('library.who.mine')}</MenuItem>
                 <MenuItem on={who === 'all'} onClick={() => { onChange({ who: 'all' }); close(); }}>{t('library.who.any')}</MenuItem>
                 {others.map(person => (
-                    <MenuItem key={person.id} on={who === person.id} sub={t('library.who.onlyOf', { name: person.name })}
-                        onClick={() => { onChange({ who: person.id }); close(); }}>{person.name}</MenuItem>
+                    <MenuItem key={person.id} on={who === person.id} sub={person.gone ? t('library.who.onlyOfGone') : t('library.who.onlyOf', { name: person.name })}
+                        onClick={() => { onChange({ who: person.id }); close(); }}>{personName(person)}</MenuItem>
                 ))}
                 <hr />
                 <MenuTitle>{t('library.who.withMark')}</MenuTitle>

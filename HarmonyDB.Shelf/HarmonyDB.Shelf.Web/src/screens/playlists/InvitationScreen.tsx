@@ -26,7 +26,7 @@ export function InvitationScreen() {
                 {v && (
                     <>
                         <p>
-                            {v.invitedBy ? t('invitation.text', { name: v.invitedBy.name, title: playlistTitle({ title: v.playlistTitle, systemKind: v.systemKind }) })
+                            {v.invitedBy && !v.invitedBy.gone ? t('invitation.text', { name: v.invitedBy.name, title: playlistTitle({ title: v.playlistTitle, systemKind: v.systemKind }) })
                                 : t('invitation.textNoName', { title: playlistTitle({ title: v.playlistTitle, systemKind: v.systemKind }) })}
                             {' '}{t('invitation.as', { role: t(`playlist.role.${v.role}`).toLowerCase() })}
                         </p>

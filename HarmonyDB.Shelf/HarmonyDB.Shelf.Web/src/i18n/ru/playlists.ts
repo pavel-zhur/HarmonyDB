@@ -66,6 +66,7 @@ export const playlists = {
         passOwnership: 'Передать плейлист',
         passConfirm: 'Передать «{{title}}» человеку {{name}}? Вы останетесь админом.',
         removeConfirm: 'Убрать {{name}} из плейлиста?',
+        removeGoneConfirm: 'Убрать этот удалённый профиль из плейлиста?',
         contacts: 'Telegram',
         viewLink: 'Ссылка и QR-код',
         viewLinkNote: 'По ссылке плейлист откроется у любого, вход не нужен. Чтобы добавлять, человек входит и становится участником.',
