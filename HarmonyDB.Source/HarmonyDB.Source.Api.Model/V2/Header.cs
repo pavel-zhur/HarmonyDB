@@ -40,6 +40,11 @@ public record Header
     public required HeaderAttributes Attributes { get; init; }
 
     /// <summary>
+    /// What the source marks about the item, where it marks it.
+    /// </summary>
+    public HeaderMarks Marks { get; init; } = new();
+
+    /// <summary>
     /// The recording the item was made from, when it was made from a track of a music service: a fact about the item,
     /// stated by its source.
     /// </summary>
