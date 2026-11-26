@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
-import { drawIllustrations, drawPermission, presetName, useDrawnIllustrations, usePresets } from '../../data/illustrations';
+import { drawIllustrations, drawPermission, moodName, useDrawnIllustrations, usePresets } from '../../data/illustrations';
 import { useSession } from '../../data/session';
 import { Icon } from '../../kit/Icon';
 import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
@@ -44,7 +44,7 @@ function VariantIllustrations({ variant, onBig }: { variant: IllustratedVariant;
     const data = illustrations.data;
     const may = !!session?.permissions.includes(drawPermission);
     const images = data?.images ?? [];
-    const moods = [...new Set(images.map(x => x.preset ?? ''))];
+    const moods = [...new Set(images.map(x => x.mood ?? ''))];
     return (
         <div className="il-var">
             {(variant.label || may) && (
@@ -61,14 +61,14 @@ function VariantIllustrations({ variant, onBig }: { variant: IllustratedVariant;
             {data?.drawing && (
                 <div className="il-drawing">
                     <Icon name="loop" className="spin" />
-                    <span>{t('ills.drawing', { preset: presetName(data.drawing.preset) })}<span className="muted small">{t('ills.drawingNote')}</span></span>
+                    <span>{t('ills.drawing', { preset: moodName(data.drawing.mood) })}<span className="muted small">{t('ills.drawingNote')}</span></span>
                 </div>
             )}
             {moods.map(mood => (
                 <div key={mood}>
-                    {mood && (moods.length > 1 || mood.split('-')[0] !== 'plain') && <div className="il-mood">{presetName(mood)}</div>}
+                    {mood && (moods.length > 1 || mood !== 'plain') && <div className="il-mood">{moodName(mood)}</div>}
                     <div className="illgrid">
-                        {images.filter(x => (x.preset ?? '') === mood).map((image, i) => (
+                        {images.filter(x => (x.mood ?? '') === mood).map((image, i) => (
                             <button type="button" key={image.id} onClick={() => onBig(image.urls['1024'] ?? image.urls['512'] ?? null)} aria-label={t('song.illustration', { n: i + 1 })}>
                                 <img src={image.urls['256']} alt="" loading="lazy" />
                             </button>
@@ -87,7 +87,7 @@ export function OrderPop({ anchor, onClose, chordsId }: { anchor: HTMLElement | 
     const { t } = useTranslation();
     const presets = usePresets();
     const draw = useMutation({ mutationFn: drawIllustrations });
-    const [chosen, setChosen] = useState<string | null>(null);
+    const [chosen, setChosen] = useState<{ key: string; mood: string } | null>(null);
     const close = () => {
         setChosen(null);
         onClose();
@@ -98,14 +98,14 @@ export function OrderPop({ anchor, onClose, chordsId }: { anchor: HTMLElement | 
                 <>
                     <MenuTitle>{t('ills.orderTitle')}</MenuTitle>
                     {presets.isError && <p className="note">{errorText(presets.error)}</p>}
-                    {presets.data?.presets.map(preset => <MenuItem key={preset} onClick={() => setChosen(preset)}>{presetName(preset)}</MenuItem>)}
+                    {presets.data?.presets.map(preset => <MenuItem key={preset.key} onClick={() => setChosen(preset)}>{moodName(preset.mood)}</MenuItem>)}
                     <p className="note">{t('ills.orderNote')}</p>
                 </>
             ) : (
                 <div className="il-ask">
-                    <p>{t('ills.orderAsk', { preset: presetName(chosen) })}</p>
+                    <p>{t('ills.orderAsk', { preset: moodName(chosen.mood) })}</p>
                     <div className="chips">
-                        <button type="button" className="btn pri" onClick={() => { close(); draw.mutate({ chordsId, preset: chosen }); }}>{t('ills.orderYes')}</button>
+                        <button type="button" className="btn pri" onClick={() => { close(); draw.mutate({ chordsId, preset: chosen.key }); }}>{t('ills.orderYes')}</button>
                         <button type="button" className="btn" onClick={() => setChosen(null)}>{t('common.cancel')}</button>
                     </div>
                 </div>

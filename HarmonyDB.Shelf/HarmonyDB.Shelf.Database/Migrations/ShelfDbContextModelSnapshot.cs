@@ -933,55 +933,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.ToTable("oauth_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.OutboxMessage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("integer")
-                        .HasColumnName("attempts");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("kind");
-
-                    b.Property<string>("LastError")
-                        .HasColumnType("text")
-                        .HasColumnName("last_error");
-
-                    b.Property<DateTimeOffset>("NextAttemptAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("next_attempt_at");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("processed_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_outbox");
-
-                    b.HasIndex("NextAttemptAt")
-                        .HasDatabaseName("ix_outbox_next_attempt_at")
-                        .HasFilter("processed_at IS NULL");
-
-                    b.ToTable("outbox", (string)null);
-                });
-
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.PersonalKey", b =>
                 {
                     b.Property<Guid>("Id")

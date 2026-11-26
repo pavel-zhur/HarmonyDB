@@ -8,6 +8,12 @@ public record ResolveRequest
     public required Caller Caller { get; init; }
 
     public required IReadOnlyList<Uri> Uris { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a caller, and addresses, each absolute.
+    /// </summary>
+    public static bool IsValid(ResolveRequest request)
+        => Caller.IsValid(request.Caller) && request.Uris != null && request.Uris.All(x => x is { IsAbsoluteUri: true });
 }
 
 public record ResolveResponse

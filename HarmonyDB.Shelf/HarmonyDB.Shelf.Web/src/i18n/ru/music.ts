@@ -5,6 +5,8 @@ export const music = {
         analysed: 'Разобрана',
         openAnalysis: 'Открыть разбор',
         inMyPlaylists: 'Уже в моих плейлистах',
+        inPlaylist: 'В моём плейлисте «{{title}}»',
+        alreadyThere: 'Уже там: открыть песню',
         findChords: 'Найти аккорды',
         video: 'Видео',
         nothing: 'Здесь пусто',

@@ -43,6 +43,20 @@ public sealed class IllustratedTests(LibraryFixture fixture) : IClassFixture<Lib
         await Browser.AssertError(await fixture.Api.NewBrowser().SendAsync(HttpMethod.Get, "/api/library/illustrated"), HttpStatusCode.Unauthorized, ErrorCodes.SignInRequired);
     }
 
+    [DatabaseFact]
+    public async Task PresetsAndPicturesSayTheirMood()
+    {
+        var (ann, _) = await fixture.PersonAsync("ann");
+        var chords = $"test-mood-{Guid.NewGuid():N}";
+        lock (fixture.Illustrations.Images)
+            fixture.Illustrations.Images[chords] = [Guid.NewGuid()];
+
+        var presets = await Ok<Model.Illustrations.IllustrationPresetList>(ann, HttpMethod.Get, "/api/illustrations/presets");
+        Assert.Equal([("a", "evil")], presets.Presets.Select(x => (x.Key, x.Mood)));
+        var drawn = await Ok<Model.Illustrations.ChordsIllustrations>(ann, HttpMethod.Get, $"/api/illustrations/{chords}");
+        Assert.Equal(("a", "evil"), (drawn.Images.Single().Preset, drawn.Images.Single().Mood));
+    }
+
     private static async Task<T> Ok<T>(Browser browser, HttpMethod method, string path, object? body = null)
     {
         var response = await browser.SendAsync(method, path, body);

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
 using HarmonyDB.Shelf.Model;
@@ -33,7 +32,9 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         var playlist = SessionTests.Playlist(secondId, "second's", firstId);
         db.Playlists.Add(playlist);
         db.AccountPermissions.Add(new() { AccountId = secondId, Permission = "mcp.index", GrantedAt = DateTimeOffset.UtcNow });
-        db.MusicLinks.AddRange(Link(firstId, MusicService.Yandex), Link(secondId, MusicService.Yandex), Link(secondId, MusicService.Youtube));
+        var (secondYandexLink, secondYoutubeLink) = (Link(secondId, MusicService.Yandex), Link(secondId, MusicService.Youtube));
+        var (secondYandex, secondYoutube) = (secondYandexLink.Id, secondYoutubeLink.Id);
+        db.MusicLinks.AddRange(Link(firstId, MusicService.Yandex), secondYandexLink, secondYoutubeLink);
         await db.SaveChangesAsync();
 
         // The first adds the second's sign-in: asked, then merged.
@@ -80,7 +81,8 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         Assert.Contains("pdf", permissions);
         var links = await db.MusicLinks.Where(x => x.AccountId == firstId).ToListAsync();
         Assert.Equal(2, links.Count);
-        Assert.Contains(await db.Outbox.Select(x => x.Kind).ToListAsync(), x => x == AudioSubjectPurge.OutboxKind);
+        Assert.Contains(secondYandex.ToString(), database.Api.Purges.Subjects);
+        Assert.DoesNotContain(secondYoutube.ToString(), database.Api.Purges.Subjects);
 
         // The second is left deleted; the merge is logged.
         Assert.NotNull((await db.Accounts.SingleAsync(x => x.Id == secondId)).DeletedAt);

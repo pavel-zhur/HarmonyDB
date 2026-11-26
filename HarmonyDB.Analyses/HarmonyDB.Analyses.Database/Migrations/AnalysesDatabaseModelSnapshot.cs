@@ -120,21 +120,24 @@ namespace HarmonyDB.Analyses.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("content_type");
 
-                    b.Property<string>("Sha256")
+                    b.Property<string>("Kind")
                         .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Sha256")
                         .HasColumnType("text")
                         .HasColumnName("sha256");
 
-                    b.Property<long>("Size")
+                    b.Property<long?>("Size")
                         .HasColumnType("bigint")
                         .HasColumnName("size");
 
-                    b.Property<DateTimeOffset>("StoredAt")
+                    b.Property<DateTimeOffset?>("StoredAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("stored_at");
 
                     b.Property<string>("StoredName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("stored_name");
 

@@ -1,6 +1,6 @@
-using System.Text.Json;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Contents;
+using HarmonyDB.Source.Api.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OneShelf.Common.Api;
@@ -19,20 +19,7 @@ namespace OneShelf.Sources.Self.Api.Functions.V2;
 public class SelfV2Preview(StructureParser structureParser)
 {
     [Function(SelfApiUrls.V2Preview, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.PreviewScope)]
-    public async Task<IActionResult> Run(HttpRequest req, CancellationToken cancellationToken)
-    {
-        PreviewRequest? request;
-        try
-        {
-            request = await JsonSerializer.DeserializeAsync<PreviewRequest>(req.Body, SourceV2Json.Options, cancellationToken);
-        }
-        catch (JsonException)
-        {
-            return new BadRequestResult();
-        }
-
-        if (request?.Contents == null) return new BadRequestResult();
-
-        return new JsonResult(new SheetContent { Root = structureParser.ContentToHtml(request.Contents) }, SourceV2Json.Options);
-    }
+    public Task<IActionResult> Run(HttpRequest req)
+        => SourceV2Requests.Handle<PreviewRequest, SheetContent>(req, r => r.Contents != null,
+            r => Task.FromResult(new SheetContent { Root = structureParser.ContentToHtml(r.Contents) }));
 }

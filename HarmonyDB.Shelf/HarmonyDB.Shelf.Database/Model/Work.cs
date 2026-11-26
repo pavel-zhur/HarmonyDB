@@ -95,35 +95,6 @@ public class JobOutput
 }
 
 /// <summary>
-/// A call to another service that must happen after a change is committed (purging what the music service cached under
-/// a removed music link …): written in the same transaction as the change, sent by a worker until it succeeds.
-/// </summary>
-public class OutboxMessage
-{
-    public long Id { get; set; }
-
-    /// <summary>
-    /// What is to be done, a stable code.
-    /// </summary>
-    public required string Kind { get; set; }
-
-    /// <summary>
-    /// JSON.
-    /// </summary>
-    public required string Payload { get; set; }
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public int Attempts { get; set; }
-
-    public DateTimeOffset NextAttemptAt { get; set; }
-
-    public string? LastError { get; set; }
-
-    public DateTimeOffset? ProcessedAt { get; set; }
-}
-
-/// <summary>
 /// A record of a change that matters later (accounts merged, permissions given or taken, a profile deleted). Not tied to
 /// the account by a key, so it outlives it.
 /// </summary>
@@ -176,17 +147,6 @@ internal sealed class JobOutputConfiguration : IEntityTypeConfiguration<JobOutpu
         builder.ToTable("job_outputs");
         builder.HasKey(x => x.JobId);
         builder.HasIndex(x => x.ExpiresAt);
-    }
-}
-
-internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
-{
-    public void Configure(EntityTypeBuilder<OutboxMessage> builder)
-    {
-        builder.ToTable("outbox");
-        builder.Property(x => x.Id).UseIdentityAlwaysColumn();
-        builder.Property(x => x.Payload).HasColumnType("jsonb");
-        builder.HasIndex(x => x.NextAttemptAt).HasFilter("processed_at IS NULL");
     }
 }
 

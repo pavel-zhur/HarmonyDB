@@ -59,13 +59,18 @@ Generate three images showing the song from different various angles, so their c
         }
     };
 
-    public static readonly IReadOnlyDictionary<string, (string title, string systemMessage)> Alterations = new
-        Dictionary<string, (string title, string systemMessage)>
+    /// <summary>
+    /// The alterations of a system message, by key: the title the old shelf shows, the mood (a stable code the new shelf's
+    /// app words) and the text added to the system message.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (string title, string mood, string systemMessage)> Alterations = new
+        Dictionary<string, (string title, string mood, string systemMessage)>
     {
         {
             "evil-2023.12.19",
             (
                 "Злость 😈",
+                "evil",
                 @"-------------------
 
 CURRENT MODE: EVIL DRAMA.
@@ -77,6 +82,7 @@ Change the meanings to extreme evil black humor drama, exaggeration, emotion, ma
             "despair-2023.12.19",
             (
                 "Грусть 😭",
+                "despair",
                 @"-------------------
 
 CURRENT MODE: DESPAIR, MISERY, HOPELESSNESS, CRY
@@ -88,6 +94,7 @@ Change the meanings to extreme sadness, gloom, despair, misery. Exaggerate to ex
             "drama-2023.12.19",
             (
                 "Драма 😱",
+                "drama",
                 @"-------------------
 
 CURRENT MODE: DRAMA.

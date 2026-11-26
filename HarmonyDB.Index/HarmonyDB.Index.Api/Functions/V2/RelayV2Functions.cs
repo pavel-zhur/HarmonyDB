@@ -3,6 +3,7 @@ using HarmonyDB.Index.Api.Services.V2;
 using HarmonyDB.Source.Api.Client.V2;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Api;
+using HarmonyDB.Source.Api.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OneShelf.Common.Api;
@@ -17,38 +18,32 @@ public class RelayV2Functions(SourceV2Relay relay)
 {
     [Function(SourceV2Urls.V2Search, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Search(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<SearchRequest, SearchResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller) && !string.IsNullOrWhiteSpace(r.Query),
+        => SourceV2Requests.Handle<SearchRequest, SearchResponse>(req, SearchRequest.IsValid,
             r => relay.Search(r.Caller, r.Query, cancellationToken));
 
     [Function(SourceV2Urls.V2GetHeaders, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetHeaders(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<GetHeadersRequest, GetHeadersResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller) && r.Ids != null && r.Ids.All(x => !string.IsNullOrEmpty(x)),
+        => SourceV2Requests.Handle<GetHeadersRequest, GetHeadersResponse>(req, GetHeadersRequest.IsValid,
             r => relay.GetHeaders(r.Caller, r.Ids, cancellationToken));
 
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<GetContentRequest, GetContentResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null && r.Address is null or { IsAbsoluteUri: true },
+        => SourceV2Requests.Handle<GetContentRequest, GetContentResponse>(req, GetContentRequest.IsValid,
             r => relay.GetContent(r.Caller, r.Id, r.Kinds, r.Address, cancellationToken));
 
     [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<GetContentsRequest, GetContentsResponse>(req,
-            GetContentsRequest.IsValid,
+        => SourceV2Requests.Handle<GetContentsRequest, GetContentsResponse>(req, GetContentsRequest.IsValid,
             r => relay.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken));
 
     [Function(SourceV2Urls.V2GetSources, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetSources(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<GetSourcesRequest, GetSourcesResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller),
+        => SourceV2Requests.Handle<GetSourcesRequest, GetSourcesResponse>(req, GetSourcesRequest.IsValid,
             r => relay.GetSources(r.Caller, cancellationToken));
 
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
-        => RelayV2Function.Handle<ResolveRequest, ResolveResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller) && r.Uris != null && r.Uris.All(x => x is { IsAbsoluteUri: true }),
+        => SourceV2Requests.Handle<ResolveRequest, ResolveResponse>(req, ResolveRequest.IsValid,
             r => relay.Resolve(r.Caller, r.Uris, cancellationToken));
 
     /// <summary>
@@ -101,8 +96,7 @@ public class RelayV2Functions(SourceV2Relay relay)
     {
         try
         {
-            return await RelayV2Function.HandleResult<GetIconRequest>(req,
-                r => !string.IsNullOrEmpty(r.Name),
+            return await SourceV2Requests.HandleResult<GetIconRequest>(req, GetIconRequest.IsValid,
                 async r => await relay.GetIcon(r.Name, cancellationToken) is { } icon
                     ? (IActionResult)new FileContentResult(icon.Content, icon.ContentType)
                     : new NotFoundResult());

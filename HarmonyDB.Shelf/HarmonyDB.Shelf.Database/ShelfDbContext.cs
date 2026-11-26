@@ -42,7 +42,6 @@ public class ShelfDbContext(DbContextOptions<ShelfDbContext> options) : DbContex
 
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<JobOutput> JobOutputs => Set<JobOutput>();
-    public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
 
     public DbSet<OAuthClient> OAuthClients => Set<OAuthClient>();

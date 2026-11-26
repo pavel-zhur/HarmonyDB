@@ -196,8 +196,16 @@ public sealed class FakeAudio : HttpMessageHandler
     /// </summary>
     public List<string?> PlaylistModes { get; } = [];
 
+    /// <summary>
+    /// Its purges of subjects.
+    /// </summary>
+    public FakePurges Purges { get; } = new();
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if (Purges.Answer(request) is { } purged)
+            return Task.FromResult(purged);
+
         var path = request.RequestUri!.AbsolutePath;
         if (path == "/internal/youtube/playlists/PL1")
         {
@@ -247,7 +255,7 @@ public sealed class FakeIllustrations : HttpMessageHandler
         switch (request.RequestUri!.AbsolutePath)
         {
             case "/api/ShelfPresets":
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new { presets = new[] { "a" }, sizes = new[] { 256, 512 } }, options: web) };
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new { presets = new[] { new { key = "a", mood = "evil" } }, sizes = new[] { 256, 512 } }, options: web) };
             case "/api/ShelfRead":
                 var key = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.GetProperty("key").GetString()!;
                 List<Guid> images;
@@ -255,7 +263,7 @@ public sealed class FakeIllustrations : HttpMessageHandler
                     images = Images.GetValueOrDefault(key)?.ToList() ?? [];
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = JsonContent.Create(new { images = images.Select(x => new { id = x, preset = "a", createdOn = DateTimeOffset.UtcNow }) }, options: web),
+                    Content = JsonContent.Create(new { images = images.Select(x => new { id = x, preset = "a", mood = "evil", createdOn = DateTimeOffset.UtcNow }) }, options: web),
                 };
         }
 

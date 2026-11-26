@@ -21,12 +21,18 @@ namespace HarmonyDB.Shelf.Api.Areas.Me.Services;
 /// Deleting first removes for good, in the own chords' store, the person's private own chords written in this shelf (by
 /// the account or one merged into it), every version with its text: their private writing goes with them. Their public
 /// and club own chords stay — others' playlists hold them —, and so does what they wrote in the old shelf, whose
-/// account lives on. The store is asked first because its removal is harmless alone and repeats safely: when it does
-/// not answer, nothing is deleted (503 <c>unavailable</c>); when the shelf's part fails after it, deleting again
-/// finishes.
+/// account lives on.
+/// </para>
+/// <para>
+/// Before anything here is touched, and outside the transaction, two services are asked, each a step that is harmless
+/// alone and repeats safely: first the music service forgets what it keeps under the person's music links, then the
+/// own chords' store removes the private own chords. When the music service does not answer, nothing is changed;
+/// when the store does not answer, only the music service's copies are gone; either way the deletion answers 503
+/// <c>unavailable</c> and deleting again goes on. When the shelf's part fails after them, deleting again finishes. A
+/// music link made in the moment between the purge and the transaction is removed without its purge.
 /// </para>
 /// </summary>
-public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords, TimeProvider time)
+public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords, AudioClient audio, TimeProvider time)
 {
     public const string WipedAction = "profile_wiped";
     public const string DeletedAction = "profile_deleted";
@@ -50,6 +56,7 @@ public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords,
 
     public async Task DeleteAsync(Guid accountId, CancellationToken cancellationToken)
     {
+        await audio.PurgeLinksAsync(await db.MusicLinks.Where(x => x.AccountId == accountId).Select(x => x.Id).ToListAsync(cancellationToken), cancellationToken);
         await DeletePrivateOwnChordsAsync(accountId, cancellationToken);
 
         var now = time.GetUtcNow();
@@ -59,11 +66,7 @@ public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords,
         var removed = await ClearAsync(accountId, now, keepSystemPlaylists: false, cancellationToken);
         await RemoveWhatNobodyNeedsAsync(accountId, removed, cancellationToken);
 
-        foreach (var link in await db.MusicLinks.Where(x => x.AccountId == accountId).ToListAsync(cancellationToken))
-        {
-            db.MusicLinks.Remove(link);
-            AudioSubjectPurge.Enqueue(db, link.Id, now);
-        }
+        await db.MusicLinks.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
 
         await db.AccountLogins.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
         await db.Sessions.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);

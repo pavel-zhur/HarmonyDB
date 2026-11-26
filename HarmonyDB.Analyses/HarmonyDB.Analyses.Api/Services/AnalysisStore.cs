@@ -63,12 +63,12 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
             }
         }
 
-        // the files the content names, with their content types
-        var files = new Dictionary<string, string>(StringComparer.Ordinal);
-        void Name(FileRef? file)
+        // the files the content names, with the kind that names them and their content types
+        var files = new Dictionary<string, (string Kind, string ContentType)>(StringComparer.Ordinal);
+        void Name(FileRef? file, ContentKind kind)
         {
             if (file == null) return;
-            if (file.Name == null || !FileName().IsMatch(file.Name) || string.IsNullOrWhiteSpace(file.ContentType) || !files.TryAdd(file.Name, file.ContentType))
+            if (file.Name == null || !FileName().IsMatch(file.Name) || string.IsNullOrWhiteSpace(file.ContentType) || !files.TryAdd(file.Name, (KindName(kind), file.ContentType)))
                 throw new AnalysesException(StatusCodes.Status400BadRequest, AnalysesErrorCodes.BadFileName, file.Name);
         }
 
@@ -78,7 +78,7 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
                 || audio.Track is { } track && (string.IsNullOrWhiteSpace(track.Service) || track.Service != track.Service.ToLowerInvariant() || string.IsNullOrWhiteSpace(track.Id)))
                 throw new AnalysesException(StatusCodes.Status400BadRequest, AnalysesErrorCodes.BadAudio);
 
-            Name(audio.File);
+            Name(audio.File, ContentKind.Recording);
         }
 
         if (content.Recording != null)
@@ -87,7 +87,7 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
             foreach (var stem in content.Recording.Stems ?? []) Audio(stem?.Audio);
         }
 
-        Name(content.Notes?.Midi);
+        Name(content.Notes?.Midi, ContentKind.Notes);
 
         var id = IdOf(client, request.Key);
         var now = time.GetUtcNow();
@@ -151,12 +151,18 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
                 }
             }
 
-            // a file the content no longer names (or names in another type, to be put again) is no longer the analysis's
-            foreach (var file in analysis.Files.Where(x => !files.TryGetValue(x.Name, out var type) || type != x.ContentType).ToList())
+            // a file the content no longer names (or names otherwise, to be put again) is no longer the analysis's
+            foreach (var file in analysis.Files.Where(x => files.GetValueOrDefault(x.Name) != (x.Kind, x.ContentType)).ToList())
             {
+                analysis.Files.Remove(file);
                 db.AnalysisFiles.Remove(file);
-                dropped.Add((analysis.Id, file.StoredName));
+                if (file.StoredName != null)
+                    dropped.Add((analysis.Id, file.StoredName));
             }
+
+            // a file it newly names is written down, to be uploaded
+            foreach (var (name, named) in files.Where(x => analysis.Files.All(f => f.Name != x.Key)))
+                analysis.Files.Add(new() { Name = name, Kind = named.Kind, ContentType = named.ContentType });
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -180,12 +186,12 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
         if (length > maxBytes)
             throw new AnalysesException(StatusCodes.Status413PayloadTooLarge, AnalysesErrorCodes.FileTooLarge, name);
 
-        var analysis = await db.Analyses.AsNoTracking().Include(x => x.Contents)
+        var analysis = await db.Analyses.AsNoTracking().Include(x => x.Files)
                            .SingleOrDefaultAsync(x => x.SourceId == id && x.CreatedBy == client, cancellationToken)
                        ?? throw new AnalysesException(StatusCodes.Status404NotFound, AnalysesErrorCodes.NoSuchAnalysis);
 
-        var type = NamedFiles(analysis.Contents).GetValueOrDefault(name);
-        if (type == null || contentType == null || !string.Equals(type, contentType.Split(';')[0].Trim(), StringComparison.OrdinalIgnoreCase))
+        var named = analysis.Files.SingleOrDefault(x => x.Name == name);
+        if (named == null || contentType == null || !string.Equals(named.ContentType, contentType.Split(';')[0].Trim(), StringComparison.OrdinalIgnoreCase))
             throw new AnalysesException(StatusCodes.Status400BadRequest, AnalysesErrorCodes.FileNotNamed, name);
 
         var written = await folder.WriteAsync(analysis.Id, name, body, maxBytes, cancellationToken)
@@ -198,23 +204,12 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
             await LockAsync(id, cancellationToken);
 
             // the content may have been put again meanwhile
-            var contents = await db.AnalysisContents.AsNoTracking().Where(x => x.AnalysisId == analysis.Id).ToListAsync(cancellationToken);
-            if (NamedFiles(contents).GetValueOrDefault(name) != type)
+            var file = await db.AnalysisFiles.SingleOrDefaultAsync(x => x.AnalysisId == analysis.Id && x.Name == name, cancellationToken);
+            if (file == null || (file.Kind, file.ContentType) != (named.Kind, named.ContentType))
                 throw new AnalysesException(StatusCodes.Status409Conflict, AnalysesErrorCodes.FileDropped, name);
 
-            var file = await db.AnalysisFiles.SingleOrDefaultAsync(x => x.AnalysisId == analysis.Id && x.Name == name, cancellationToken);
-            if (file == null)
-            {
-                file = new() { AnalysisId = analysis.Id, Name = name, StoredName = written.StoredName, ContentType = type, Sha256 = written.Sha256 };
-                db.AnalysisFiles.Add(file);
-            }
-            else
-            {
-                replaced = file.StoredName;
-            }
-
+            replaced = file.StoredName;
             file.StoredName = written.StoredName;
-            file.ContentType = type;
             file.Size = written.Size;
             file.Sha256 = written.Sha256;
             file.StoredAt = time.GetUtcNow();
@@ -230,7 +225,7 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
         if (replaced != null)
             folder.Delete(analysis.Id, replaced);
 
-        return new() { Name = name, ContentType = type, Bytes = written.Size, Sha256 = written.Sha256 };
+        return new() { Name = name, ContentType = named.ContentType, Bytes = written.Size, Sha256 = written.Sha256 };
     }
 
     /// <summary>
@@ -243,8 +238,9 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
                        ?? throw new AnalysesException(StatusCodes.Status404NotFound, AnalysesErrorCodes.NoSuchAnalysis);
 
         return analysis.Files
+            .Where(x => x.StoredName != null)
             .OrderBy(x => x.Name, StringComparer.Ordinal)
-            .Select(x => new AnalysisFileInfo { Name = x.Name, ContentType = x.ContentType, Bytes = x.Size, Sha256 = x.Sha256 })
+            .Select(x => new AnalysisFileInfo { Name = x.Name, ContentType = x.ContentType, Bytes = x.Size!.Value, Sha256 = x.Sha256! })
             .ToList();
     }
 
@@ -270,42 +266,8 @@ public sealed partial class AnalysisStore(AnalysesDatabase db, AnalysisFolder fo
     }
 
     /// <summary>
-    /// The files the content names, with their content types: the recording's and its instruments' sound, and the notes'
-    /// MIDI file.
-    /// </summary>
-    public static Dictionary<string, string> NamedFiles(IEnumerable<AnalysisContent> contents)
-    {
-        var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        void Add(FileRef? file)
-        {
-            if (file != null) result[file.Name] = file.ContentType;
-        }
-
-        foreach (var row in contents)
-        {
-            if (row.Kind == KindName(ContentKind.Recording))
-            {
-                var recording = JsonSerializer.Deserialize<Recording>(row.Content, SourceV2Json.Options)!;
-                Add(recording.Audio.File);
-                foreach (var stem in recording.Stems) Add(stem.Audio.File);
-            }
-            else if (row.Kind == KindName(ContentKind.Notes))
-            {
-                Add(JsonSerializer.Deserialize<NotesMidi>(row.Content, SourceV2Json.Options)!.Midi);
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
     /// Holds the analysis of this id for the transaction: its content and its files change one at a time.
     /// </summary>
     private Task LockAsync(string id, CancellationToken cancellationToken)
         => db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({id}, 0))", cancellationToken);
-
-    /// <summary>
-    /// Of the notes, the MIDI file only (the notes themselves are many).
-    /// </summary>
-    private sealed record NotesMidi(FileRef? Midi);
 }

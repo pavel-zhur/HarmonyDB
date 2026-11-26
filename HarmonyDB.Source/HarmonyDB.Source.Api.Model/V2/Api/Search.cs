@@ -5,6 +5,12 @@ public record SearchRequest
     public required Caller Caller { get; init; }
 
     public required string Query { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a caller and a query that is not blank.
+    /// </summary>
+    public static bool IsValid(SearchRequest request)
+        => Caller.IsValid(request.Caller) && !string.IsNullOrWhiteSpace(request.Query);
 }
 
 public record SearchResponse

@@ -24,7 +24,7 @@ public static class MusicShapes
         CoverUrl = x.Cover,
         IsVideo = false,
         Available = x.Available,
-        InMyPlaylists = false,
+        InMySongs = [],
     };
 
     public static MusicTrack Track(TTrack x) => new()
@@ -38,7 +38,7 @@ public static class MusicShapes
         CoverUrl = x.Cover,
         IsVideo = x.IsVideo,
         Available = x.Available,
-        InMyPlaylists = false,
+        InMySongs = [],
     };
 
     public static MusicTrack Track(TTrackPage x) => new()
@@ -51,7 +51,7 @@ public static class MusicShapes
         DurationMs = x.DurationMs,
         CoverUrl = x.Cover,
         IsVideo = x.IsVideo,
-        InMyPlaylists = false,
+        InMySongs = [],
     };
 
     /// <summary>
@@ -65,7 +65,7 @@ public static class MusicShapes
         Artists = x.Artists.Select(a => new MusicArtistRef { Name = a }).ToList(),
         DurationMs = x.DurationSeconds == null ? null : (int)Math.Round(x.DurationSeconds.Value * 1000),
         CoverUrl = x.CoverUrl,
-        InMyPlaylists = false,
+        InMySongs = [],
     };
 
     /// <summary>

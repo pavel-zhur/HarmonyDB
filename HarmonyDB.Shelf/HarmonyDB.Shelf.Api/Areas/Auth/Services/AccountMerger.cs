@@ -17,8 +17,10 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// both are members of one playlist, the first's membership stays with the higher of the two roles; where both have
 /// a system playlist of one kind, the second's songs move into the first's;</item>
 /// <item>permissions are united;</item>
-/// <item>a music link of the second is taken only where the first has none for that service; otherwise it is deleted
-/// and what the music service keeps under it is purged;</item>
+/// <item>a music link of the second is taken only where the first has none for that service; otherwise it is deleted,
+/// what the music service keeps under it purged first, before the transaction: when the music service does not do it,
+/// nothing is merged (503 <c>unavailable</c>). One linked in the moment between the purge and the transaction is
+/// deleted without its purge;</item>
 /// <item>the merge is remembered (<see cref="AccountMerge"/>): the second's name stays one of the first's names to the
 /// sources, so what the second wrote there (own chords) is still the person's;</item>
 /// <item>the second's sessions, MCP grants and personal keys are revoked;</item>
@@ -26,12 +28,18 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// </list>
 /// Rows already marked removed stay where they are: they are history and go with the purge.
 /// </summary>
-public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
+public sealed class AccountMerger(ShelfDbContext db, AudioClient audio, TimeProvider time)
 {
     public const string AuditAction = "accounts_merged";
 
     public async Task MergeAsync(Guid first, Guid second, CancellationToken cancellationToken)
     {
+        // the second's music links that give way to the first's: their copies at the music service go first
+        await audio.PurgeLinksAsync(await db.MusicLinks
+            .Where(x => x.AccountId == second && db.MusicLinks.Any(f => f.AccountId == first && f.Service == x.Service))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken), cancellationToken);
+
         var now = time.GetUtcNow();
         var moved = new Dictionary<string, int>();
 
@@ -88,10 +96,7 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
         foreach (var link in await db.MusicLinks.Where(x => x.AccountId == second).ToListAsync(cancellationToken))
         {
             if (firstServices.Contains(link.Service))
-            {
                 db.MusicLinks.Remove(link);
-                AudioSubjectPurge.Enqueue(db, link.Id, now);
-            }
             else
             {
                 link.AccountId = first;

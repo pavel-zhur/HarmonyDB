@@ -1,6 +1,6 @@
-using System.Text.Json;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Api;
+using HarmonyDB.Source.Api.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OneShelf.Common.Api;
@@ -18,70 +18,41 @@ public class SelfV2Functions(SelfV2Source source)
 {
     [Function(SourceV2Urls.V2Search, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> Search(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<SearchRequest>(req,
-            r => IsComplete(r.Caller) && !string.IsNullOrWhiteSpace(r.Query),
-            async r => Json(await source.Search(r.Caller, r.Query, cancellationToken)));
+        => SourceV2Requests.Handle<SearchRequest, SearchResponse>(req, SearchRequest.IsValid,
+            r => source.Search(r.Caller, r.Query, cancellationToken));
 
     [Function(SourceV2Urls.V2GetHeaders, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetHeaders(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<GetHeadersRequest>(req,
-            r => IsComplete(r.Caller) && r.Ids != null && r.Ids.All(x => !string.IsNullOrEmpty(x)),
-            async r => Json(await source.GetHeaders(r.Caller, r.Ids, cancellationToken)));
+        => SourceV2Requests.Handle<GetHeadersRequest, GetHeadersResponse>(req, GetHeadersRequest.IsValid,
+            r => source.GetHeaders(r.Caller, r.Ids, cancellationToken));
 
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<GetContentRequest>(req,
-            r => IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null && r.Address is null or { IsAbsoluteUri: true },
-            async r => Json(await source.GetContent(r.Caller, r.Id, r.Kinds, r.Address, cancellationToken)));
+        => SourceV2Requests.Handle<GetContentRequest, GetContentResponse>(req, GetContentRequest.IsValid,
+            r => source.GetContent(r.Caller, r.Id, r.Kinds, r.Address, cancellationToken));
 
     [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<GetContentsRequest>(req,
-            GetContentsRequest.IsValid,
-            async r => Json(await source.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken)));
+        => SourceV2Requests.Handle<GetContentsRequest, GetContentsResponse>(req, GetContentsRequest.IsValid,
+            r => source.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken));
 
     [Function(SourceV2Urls.V2GetSources, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetSources(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<GetSourcesRequest>(req,
-            r => IsComplete(r.Caller),
-            r => Task.FromResult<IActionResult>(Json(new GetSourcesResponse { Sources = [source.Label], Failures = [] })));
+        => SourceV2Requests.Handle<GetSourcesRequest, GetSourcesResponse>(req, GetSourcesRequest.IsValid,
+            _ => Task.FromResult(new GetSourcesResponse { Sources = [source.Label], Failures = [] }));
 
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<ResolveRequest>(req,
-            r => IsComplete(r.Caller) && r.Uris != null && r.Uris.All(x => x is { IsAbsoluteUri: true }),
-            async r => Json(await source.Resolve(r.Caller, r.Uris, cancellationToken)));
+        => SourceV2Requests.Handle<ResolveRequest, ResolveResponse>(req, ResolveRequest.IsValid,
+            r => source.Resolve(r.Caller, r.Uris, cancellationToken));
 
     [Function(SourceV2Urls.V2GetIcon, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetIcon(HttpRequest req, CancellationToken cancellationToken)
-        => Handle<GetIconRequest>(req,
-            r => !string.IsNullOrEmpty(r.Name),
+        => SourceV2Requests.HandleResult<GetIconRequest>(req, GetIconRequest.IsValid,
             async r => await source.GetIcon(r.Name, cancellationToken) is { } icon
                 ? (IActionResult)new FileContentResult(icon.Content, icon.ContentType)
                 : new NotFoundResult());
 
     [Function(SourceV2Urls.V2Ping, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public IActionResult Ping() => new OkResult();
-
-    private static JsonResult Json<TResponse>(TResponse response) => new(response, SourceV2Json.Options);
-
-    private static bool IsComplete(Caller? caller) => Caller.IsValid(caller);
-
-    private static async Task<IActionResult> Handle<TRequest>(HttpRequest httpRequest, Func<TRequest, bool> isComplete, Func<TRequest, Task<IActionResult>> execute)
-        where TRequest : class
-    {
-        TRequest? request;
-        try
-        {
-            request = await JsonSerializer.DeserializeAsync<TRequest>(httpRequest.Body, SourceV2Json.Options, httpRequest.HttpContext.RequestAborted);
-        }
-        catch (JsonException)
-        {
-            return new BadRequestResult();
-        }
-
-        if (request == null || !isComplete(request)) return new BadRequestResult();
-
-        return await execute(request);
-    }
 }

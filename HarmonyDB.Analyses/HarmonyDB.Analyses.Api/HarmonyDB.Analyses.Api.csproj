@@ -17,6 +17,7 @@
     <ProjectReference Include="..\HarmonyDB.Analyses.Database\HarmonyDB.Analyses.Database.csproj" />
     <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api\HarmonyDB.Source.Api.csproj" />
   </ItemGroup>
 
 </Project>

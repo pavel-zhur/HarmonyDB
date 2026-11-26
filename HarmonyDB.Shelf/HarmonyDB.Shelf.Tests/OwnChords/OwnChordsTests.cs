@@ -100,6 +100,34 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
         Assert.Null((await scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Database.ShelfDbContext>().Accounts.FindAsync(account))!.DeletedAt);
     }
     [DatabaseFact]
+    public async Task WhenTheMusicServiceDoesNotAnswerNothingOfTheProfileIsTouched()
+    {
+        // the music service of this host answers nothing
+        var account = await fixture.AccountAsync(("google", "g-music-down"));
+        await using (var db = fixture.CreateContext())
+        {
+            db.MusicLinks.Add(new()
+            {
+                Id = Guid.NewGuid(), AccountId = account, Service = HarmonyDB.Shelf.Database.Model.MusicService.Yandex,
+                Ciphertext = [1], Nonce = [2], Tag = [3], KeyVersion = 1, CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        fixture.Store.Answer = (_, _) => (HttpStatusCode.OK, new { removed = 0 });
+        await using var scope = fixture.Api.Services.CreateAsyncScope();
+        await Assert.ThrowsAsync<HarmonyDB.Shelf.Api.Foundation.Errors.ShelfException>(() =>
+            scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Api.Areas.Me.Services.ProfileRemoval>().DeleteAsync(account, CancellationToken.None));
+
+        // the store was not asked, and the profile and its link are there
+        Assert.DoesNotContain(fixture.Store.Requests, x => x.Operation == "OwnRemovePrivate"
+            && x.Body.GetProperty("author").GetProperty("subjects")[0].GetString() == $"account:{account:D}");
+        await using var check = fixture.CreateContext();
+        Assert.Null((await check.Accounts.FindAsync(account))!.DeletedAt);
+        Assert.True(await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(check.MusicLinks.Where(x => x.AccountId == account)));
+    }
+
+    [DatabaseFact]
     public async Task AnAccountsOwnChordsAreCountedAsItsListHoldsThem()
     {
         var account = await fixture.AccountAsync(("telegram", "333"));

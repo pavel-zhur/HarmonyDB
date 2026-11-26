@@ -3,6 +3,8 @@ export const music = {
         service: { yandex: 'Yandex Music', youtube: 'YouTube' },
         back: 'Back',
         inMyPlaylists: 'Already in my playlists',
+        inPlaylist: 'In my playlist “{{title}}”',
+        alreadyThere: 'There already: open the song',
         analysed: 'Analysed',
         openAnalysis: 'Open its analysis',
         findChords: 'Find its chords',

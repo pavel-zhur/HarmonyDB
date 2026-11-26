@@ -36,7 +36,7 @@ public sealed class IllustrationsService(
     public const string ImagesPath = "/api/illustrations/images";
 
     public async Task<IllustrationPresetList> GetPresetsAsync(CancellationToken cancellationToken)
-        => new() { Presets = (await illustrations.GetPresetsAsync(cancellationToken)).Presets };
+        => new() { Presets = (await illustrations.GetPresetsAsync(cancellationToken)).Presets.Select(x => new IllustrationPreset { Key = x.Key, Mood = x.Mood }).ToList() };
 
     /// <summary>
     /// The chords' illustrations, when the chords are open to the caller; and the batch being drawn, if one is.
@@ -45,7 +45,7 @@ public sealed class IllustrationsService(
     {
         await RequireOpenAsync(callers.For(user), chordsId, cancellationToken);
 
-        var sizes = (await illustrations.GetPresetsAsync(cancellationToken)).Sizes;
+        var presets = await illustrations.GetPresetsAsync(cancellationToken);
         var images = await illustrations.ReadAsync(chordsId, cancellationToken);
         var drawing = await db.Jobs
             .Where(x => x.Kind == JobKind && x.SubjectId == chordsId && (x.State == JobState.Queued || x.State == JobState.Running))
@@ -61,16 +61,18 @@ public sealed class IllustrationsService(
             {
                 Id = x.Id,
                 Preset = x.Preset,
+                Mood = x.Mood,
                 CreatedAt = x.CreatedOn,
-                Urls = sizes.ToDictionary(s => s, s => $"{ImagesPath}/{x.Id}/{s}"),
+                Urls = presets.Sizes.ToDictionary(s => s, s => $"{ImagesPath}/{x.Id}/{s}"),
             }).ToList(),
-            Drawing = drawing == null
-                ? null
-                : new()
-                {
-                    Preset = JsonSerializer.Deserialize<DrawInput>(drawing.Input, JobQueue.JsonOptions)!.Preset,
-                    JobId = drawing.AccountId == me ? drawing.Id : null,
-                },
+            Drawing = drawing == null ? null : Drawing(JsonSerializer.Deserialize<DrawInput>(drawing.Input, JobQueue.JsonOptions)!.Preset, drawing.AccountId == me ? drawing.Id : null),
+        };
+
+        IllustrationDrawing Drawing(string preset, Guid? jobId) => new()
+        {
+            Preset = preset,
+            Mood = presets.Presets.SingleOrDefault(x => x.Key == preset)?.Mood,
+            JobId = jobId,
         };
     }
 
@@ -79,7 +81,7 @@ public sealed class IllustrationsService(
     /// </summary>
     public async Task<Guid> DrawAsync(ClaimsPrincipal user, string chordsId, string preset, CancellationToken cancellationToken)
     {
-        if (!(await illustrations.GetPresetsAsync(cancellationToken)).Presets.Contains(preset))
+        if ((await illustrations.GetPresetsAsync(cancellationToken)).Presets.All(x => x.Key != preset))
             throw ShelfException.BadRequest(IllustrationsErrorCodes.UnknownPreset);
 
         var caller = callers.For(user);

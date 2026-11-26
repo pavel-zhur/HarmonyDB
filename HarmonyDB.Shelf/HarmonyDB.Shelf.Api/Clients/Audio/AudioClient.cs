@@ -27,10 +27,24 @@ public sealed partial class AudioClient(HttpClient http, IOptionsMonitor<AudioCl
         => SendAsync<AudioWho>(HttpMethod.Get, $"internal/{Segment(service)}/me", acting, cancellationToken);
 
     /// <summary>
-    /// Forgets every personal answer the service keeps under the subject (<c>DELETE /internal/subjects/{subject}</c>).
+    /// Forgets every personal answer the service keeps under each of the music links (a link's id is its subject there,
+    /// <c>DELETE /internal/subjects/{subject}</c>). Called before the links are removed; done again, it does no harm.
     /// </summary>
-    public Task<AudioPurged> PurgeSubjectAsync(string subject, CancellationToken cancellationToken)
-        => SendAsync<AudioPurged>(HttpMethod.Delete, $"internal/subjects/{Uri.EscapeDataString(subject)}", null, cancellationToken);
+    /// <exception cref="ShelfException">503 <c>unavailable</c>: the music service did not do it; the links are to stay.</exception>
+    public async Task PurgeLinksAsync(IEnumerable<Guid> musicLinkIds, CancellationToken cancellationToken)
+    {
+        foreach (var id in musicLinkIds)
+        {
+            try
+            {
+                await SendAsync<AudioPurged>(HttpMethod.Delete, $"internal/subjects/{id}", null, cancellationToken);
+            }
+            catch (AudioException)
+            {
+                throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
+            }
+        }
+    }
 
     /// <summary>
     /// How long a call may take, unless it says otherwise.

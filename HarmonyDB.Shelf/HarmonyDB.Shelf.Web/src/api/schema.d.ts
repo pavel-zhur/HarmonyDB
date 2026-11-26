@@ -2179,6 +2179,7 @@ export interface components {
         };
         IllustrationDrawing: {
             preset: string;
+            mood?: string | null;
             /** Format: uuid */
             jobId?: string | null;
         };
@@ -2186,14 +2187,19 @@ export interface components {
             /** Format: uuid */
             id: string;
             preset?: string | null;
+            mood?: string | null;
             /** Format: date-time */
             createdAt: string;
             urls: {
                 [key: string]: string;
             };
         };
+        IllustrationPreset: {
+            key: string;
+            mood: string;
+        };
         IllustrationPresetList: {
-            presets: string[];
+            presets: components["schemas"]["IllustrationPreset"][];
         };
         IllustrationsJobResult: {
             /** Format: int32 */
@@ -2540,7 +2546,7 @@ export interface components {
             coverUrl?: string | null;
             isVideo?: boolean | null;
             available?: boolean | null;
-            inMyPlaylists: boolean;
+            inMySongs: components["schemas"]["MusicTrackSong"][];
             madeInto?: string | null;
         };
         MusicTrackList: {
@@ -2550,6 +2556,12 @@ export interface components {
         MusicTrackPage: {
             track: components["schemas"]["MusicTrack"];
             lyricsAvailable: boolean;
+        };
+        MusicTrackSong: {
+            /** Format: uuid */
+            playlistId: string;
+            /** Format: uuid */
+            songId: string;
         };
         MyCarryingLink: {
             link?: components["schemas"]["ShareLinkItem"];

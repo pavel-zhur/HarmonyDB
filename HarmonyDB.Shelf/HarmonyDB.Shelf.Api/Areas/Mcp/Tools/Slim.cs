@@ -98,7 +98,7 @@ public static class Slim
         album = x.Album?.Title,
         seconds = x.DurationMs / 1000,
         video = x.IsVideo == true ? true : (bool?)null,
-        inMyPlaylists = showLibrary && x.InMyPlaylists ? true : (bool?)null,
+        inMyPlaylists = showLibrary && x.InMySongs.Count > 0 ? true : (bool?)null,
     };
 
     public static object Album(MusicAlbum x) => new { x.Id, x.Title, artists = string.Join(", ", x.Artists.Select(a => a.Name)), x.Year, tracks = x.TrackCount };

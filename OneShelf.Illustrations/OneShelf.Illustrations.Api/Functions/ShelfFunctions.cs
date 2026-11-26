@@ -28,7 +28,26 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
     /// </summary>
     public const string PlainPreset = "plain";
 
-    public static IReadOnlyList<string> Presets { get; } = SystemMessages.Alterations.Keys.Prepend(PlainPreset).ToList();
+    /// <summary>
+    /// The plain preset's mood.
+    /// </summary>
+    public const string PlainMood = "plain";
+
+    public static IReadOnlyList<ShelfPreset> Presets { get; } = SystemMessages.Alterations
+        .Select(x => new ShelfPreset { Key = x.Key, Mood = x.Value.mood })
+        .Prepend(new() { Key = PlainPreset, Mood = PlainMood })
+        .ToList();
+
+    /// <summary>
+    /// The preset's key images were drawn by, by their prompts; null for prompts made otherwise.
+    /// </summary>
+    private static string? PresetOf(OneShelf.Illustrations.Database.Models.IllustrationsPrompts? prompts)
+        => prompts is { SpecialSystemMessage: SystemMessage } ? prompts.AlterationKey ?? PlainPreset : null;
+
+    /// <summary>
+    /// A preset's mood; null for no preset, or one no longer offered.
+    /// </summary>
+    private static string? MoodOf(string? preset) => Presets.SingleOrDefault(x => x.Key == preset)?.Mood;
 
     [Function(IllustrationsApiUrls.ShelfPresets, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
     public IActionResult GetPresets(HttpRequest req) => new OkObjectResult(new ShelfPresetsResponse
@@ -56,7 +75,8 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
                 {
                     Id = x.Id,
                     CreatedOn = x.CreatedOn,
-                    Preset = prompts.GetValueOrDefault(x.PromptsId) is { SpecialSystemMessage: SystemMessage } p ? p.AlterationKey ?? PlainPreset : null,
+                    Preset = PresetOf(prompts.GetValueOrDefault(x.PromptsId)),
+                    Mood = MoodOf(PresetOf(prompts.GetValueOrDefault(x.PromptsId))),
                 })
                 .ToList(),
         });
@@ -81,7 +101,7 @@ public class ShelfFunctions(IllustrationsDatabase illustrationsDatabase, Illustr
     [Function(IllustrationsApiUrls.ShelfGenerate, AuthorizationLevel.Internal, "post", InternalScope = IllustrationsModule.InternalScope)]
     public async Task<IActionResult> Generate(HttpRequest req, [FromBody] ShelfGenerateRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request?.Key) || request.Lyrics == null! || !Presets.Contains(request.Preset))
+        if (string.IsNullOrWhiteSpace(request?.Key) || request.Lyrics == null! || Presets.All(x => x.Key != request.Preset))
             return new BadRequestResult();
 
         // one drawing of a preset for a key at a time: an order while one is drawn waits for it and gets its answer

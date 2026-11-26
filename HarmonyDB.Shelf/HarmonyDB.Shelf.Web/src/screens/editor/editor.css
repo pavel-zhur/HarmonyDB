@@ -15,7 +15,7 @@ textarea.ed-desc { min-height: 70px; margin: 0 0 10px; }
 .ed-draft .lnk { padding: 0; font-size: 13px; }
 
 /* the chords I wrote (OwnChordsScreen): a line each, its buttons at the end */
-.ed-own { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.ed-own-t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ed-own { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ed-own-t { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; }
 .ed-own-t a { color: inherit; }
 .ed-own-none { color: var(--here); }

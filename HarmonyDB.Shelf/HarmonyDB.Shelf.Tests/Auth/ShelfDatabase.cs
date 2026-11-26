@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.TestHost;
 using HarmonyDB.Shelf.Tests.Api;
+using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Database;
 using Microsoft.AspNetCore.Hosting;
@@ -86,6 +87,11 @@ public sealed class AuthApiFactory(string? connectionString, string environment 
 {
     public const string InternalKey = "an-internal-key-of-the-tests-0123456789";
 
+    /// <summary>
+    /// The music service's purges of subjects.
+    /// </summary>
+    public FakePurges Purges { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment);
@@ -106,7 +112,11 @@ public sealed class AuthApiFactory(string? connectionString, string environment 
             ["Clients:OwnChords:Endpoint"] = NoOwnChords.Endpoint,
             ["Clients:OwnChords:Key"] = NoOwnChords.Key,
         }));
-        builder.ConfigureTestServices(services => services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => new NoOwnChords()));
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => new NoOwnChords());
+            services.AddHttpClient<AudioClient>().ConfigurePrimaryHttpMessageHandler(() => Purges);
+        });
         if (settings != null)
             builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(settings));
     }

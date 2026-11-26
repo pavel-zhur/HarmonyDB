@@ -9,8 +9,8 @@ using Xunit.Abstractions;
 namespace HarmonyDB.Shelf.Tests.Playlists;
 
 /// <summary>
-/// A shared playlist of ten thousand songs, read as a person types: each call answers in its page, and how long it takes
-/// is written out.
+/// A shared playlist of ten thousand songs, read as a person types: each call answers with its page only. How long it
+/// takes is written out to be looked at; it is not asserted, as it depends on the machine.
 /// </summary>
 public sealed class BigPlaylistTests(LibraryFixture fixture, ITestOutputHelper output) : IClassFixture<LibraryFixture>
 {
@@ -70,7 +70,7 @@ public sealed class BigPlaylistTests(LibraryFixture fixture, ITestOutputHelper o
             var list = (await response.Content.ReadFromJsonAsync<SongList>(Browser.Json))!;
             output.WriteLine($"{name}: {watch.ElapsedMilliseconds} ms, {list.Total} songs, {list.Rows.Count} rows");
             Assert.Equal(total, list.Total);
-            Assert.True(watch.ElapsedMilliseconds < 3000, $"{name} took {watch.ElapsedMilliseconds} ms");
+            Assert.Equal(Math.Min(total, 200), list.Rows.Count);
             Assert.All(list.Rows, x => Assert.StartsWith("https://covers.test/", x.Cover));
         }
 

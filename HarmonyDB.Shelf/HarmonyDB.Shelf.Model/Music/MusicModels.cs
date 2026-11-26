@@ -78,14 +78,26 @@ public sealed record MusicTrack
     /// <summary>False when the service says it cannot be played.</summary>
     public bool? Available { get; init; }
 
-    /// <summary>Whether it is already in a playlist of this person (always false for a guest).</summary>
-    public required bool InMyPlaylists { get; init; }
+    /// <summary>
+    /// The songs of this person's playlists that hold it, to open (and not to add it beside them again); none for a guest.
+    /// </summary>
+    public required IReadOnlyList<MusicTrackSong> InMySongs { get; init; }
 
     /// <summary>
     /// Chords made from this track (an analysis of it), as the shelf knows them — open to everyone —, to open by
     /// <c>GET /api/chords/{id}</c>: the newest, when there are several; null when the shelf knows none.
     /// </summary>
     public string? MadeInto { get; init; }
+}
+
+/// <summary>
+/// A song of a playlist that holds a track.
+/// </summary>
+public sealed record MusicTrackSong
+{
+    public required Guid PlaylistId { get; init; }
+
+    public required Guid SongId { get; init; }
 }
 
 public sealed record MusicPlaylist

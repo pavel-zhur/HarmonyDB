@@ -7163,6 +7163,10 @@
           "preset": {
             "type": "string"
           },
+          "mood": {
+            "type": "string",
+            "nullable": true
+          },
           "jobId": {
             "type": "string",
             "format": "uuid",
@@ -7187,6 +7191,10 @@
             "type": "string",
             "nullable": true
           },
+          "mood": {
+            "type": "string",
+            "nullable": true
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -7200,6 +7208,22 @@
         },
         "additionalProperties": false
       },
+      "IllustrationPreset": {
+        "required": [
+          "key",
+          "mood"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "mood": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "IllustrationPresetList": {
         "required": [
           "presets"
@@ -7209,7 +7233,7 @@
           "presets": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/IllustrationPreset"
             }
           }
         },
@@ -8518,7 +8542,7 @@
         "required": [
           "artists",
           "id",
-          "inMyPlaylists",
+          "inMySongs",
           "service"
         ],
         "type": "object",
@@ -8563,8 +8587,11 @@
             "type": "boolean",
             "nullable": true
           },
-          "inMyPlaylists": {
-            "type": "boolean"
+          "inMySongs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MusicTrackSong"
+            }
           },
           "madeInto": {
             "type": "string",
@@ -8604,6 +8631,24 @@
           },
           "lyricsAvailable": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MusicTrackSong": {
+        "required": [
+          "playlistId",
+          "songId"
+        ],
+        "type": "object",
+        "properties": {
+          "playlistId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "songId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "additionalProperties": false

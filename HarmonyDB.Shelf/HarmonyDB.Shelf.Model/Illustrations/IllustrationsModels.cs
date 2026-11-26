@@ -8,10 +8,23 @@ namespace HarmonyDB.Shelf.Model.Illustrations;
 public record IllustrationPresetList
 {
     /// <summary>
-    /// The presets' keys, the plain one first; the frontend words them ("plain"; the others are moods: anger, sadness,
-    /// drama …, by their keys).
+    /// The presets, the plain one first.
     /// </summary>
-    public required IReadOnlyList<string> Presets { get; init; }
+    public required IReadOnlyList<IllustrationPreset> Presets { get; init; }
+}
+
+public record IllustrationPreset
+{
+    /// <summary>
+    /// What a drawing is ordered by; it changes with the preset's version.
+    /// </summary>
+    public required string Key { get; init; }
+
+    /// <summary>
+    /// What it draws in, a stable code the frontend words: <c>plain</c>, or a mood (<c>evil</c>, <c>despair</c>,
+    /// <c>drama</c> …); a mood it has no words for is another mood.
+    /// </summary>
+    public required string Mood { get; init; }
 }
 
 public record IllustrationImage
@@ -22,6 +35,11 @@ public record IllustrationImage
     /// The preset it was drawn by; null for one drawn otherwise (earlier, by other means).
     /// </summary>
     public string? Preset { get; init; }
+
+    /// <summary>
+    /// That preset's mood (<see cref="IllustrationPreset.Mood"/>); null with it, or for a preset no longer offered.
+    /// </summary>
+    public string? Mood { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }
 
@@ -37,6 +55,11 @@ public record IllustrationImage
 public record IllustrationDrawing
 {
     public required string Preset { get; init; }
+
+    /// <summary>
+    /// That preset's mood (<see cref="IllustrationPreset.Mood"/>); null for a preset no longer offered.
+    /// </summary>
+    public string? Mood { get; init; }
 
     /// <summary>
     /// The job, when the person ordered it (<c>/api/jobs/{id}</c>).

@@ -47,14 +47,12 @@ export function usePresets() {
 }
 
 /**
- * A preset's name in words. A preset is the server's key ("plain", "drama-2023.12.19": a mood and its version) and
- * comes with no words of its own: the mood is worded by the app; a mood it has no words for is "another mood", never
- * its key.
+ * A mood in words: the server gives each preset, drawing and picture its mood (plain, evil, despair, drama); the app
+ * words it. A mood it has no words for, or none, is "another mood", never a key.
  */
-export function presetName(preset: string | null | undefined): string {
-    if (!preset) return '';
-    const key = `ills.preset.${preset.split('-')[0]!}`;
-    return i18n.exists(key) ? i18n.t(key as 'ills.preset.plain') : i18n.t('ills.presetOther');
+export function moodName(mood: string | null | undefined): string {
+    const key = `ills.preset.${mood ?? ''}`;
+    return mood && i18n.exists(key) ? i18n.t(key as 'ills.preset.plain') : i18n.t('ills.presetOther');
 }
 
 export const drawIllustrations = action('drawIllustrations', 'change',

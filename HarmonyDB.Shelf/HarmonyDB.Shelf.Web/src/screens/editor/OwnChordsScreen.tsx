@@ -26,7 +26,8 @@ export function OwnChordsScreen() {
     const ids = items.map(x => x.chordsId).filter((x): x is string => !!x);
     const places = usePlacesOf(ids);
     const placed = new Set(places.data?.places.map(x => x.chords) ?? []);
-    const where = (places.data?.playlists ?? []).filter(p => p.canAdd)
+    // my playlists I may add to; of the system ones only "My chords" (not imported chords, not analyses)
+    const where = (places.data?.playlists ?? []).filter(p => p.canAdd && (p.systemKind === 'none' || p.systemKind === 'ownChords'))
         .sort((a, b) => (a.systemKind === 'ownChords' ? -1 : b.systemKind === 'ownChords' ? 1 : 0));
     return (
         <Page>

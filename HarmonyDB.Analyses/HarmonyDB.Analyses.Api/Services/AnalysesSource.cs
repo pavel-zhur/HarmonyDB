@@ -146,17 +146,13 @@ public sealed class AnalysesSource(AnalysesDatabase db, AnalysisFolder folder, I
     /// <returns>Null when there is no such analysis or file, or the kind that names it is not had yet.</returns>
     public async Task<(string path, string contentType, string sha256, DateTimeOffset storedAt)?> GetFileAsync(string id, string name, CancellationToken cancellationToken)
     {
-        var analysis = await db.Analyses.AsNoTracking().Include(x => x.Contents).Include(x => x.Files)
-            .SingleOrDefaultAsync(x => x.SourceId == id, cancellationToken);
-        if (analysis == null) return null;
+        // the file, of a kind whose every file is kept
+        var file = await db.AnalysisFiles.AsNoTracking()
+            .Where(x => x.Analysis.SourceId == id && x.Name == name && x.StoredName != null
+                        && !db.AnalysisFiles.Any(f => f.AnalysisId == x.AnalysisId && f.Kind == x.Kind && f.StoredName == null))
+            .SingleOrDefaultAsync(cancellationToken);
 
-        var header = (await HeadersAsync([analysis], cancellationToken)).Single();
-        var given = analysis.Contents.Where(x => header.Kinds.Any(k => AnalysisStore.KindName(k) == x.Kind));
-        var file = analysis.Files.SingleOrDefault(x => x.Name == name);
-        if (file == null || AnalysisStore.NamedFiles(given).GetValueOrDefault(name) != file.ContentType)
-            return null;
-
-        return (folder.PathOf(analysis.Id, file.StoredName), file.ContentType, file.Sha256, file.StoredAt);
+        return file == null ? null : (folder.PathOf(file.AnalysisId, file.StoredName!), file.ContentType, file.Sha256!, file.StoredAt!.Value);
     }
 
     /// <summary>
@@ -187,17 +183,11 @@ public sealed class AnalysesSource(AnalysesDatabase db, AnalysisFolder folder, I
     private async Task<IReadOnlyList<Header>> HeadersAsync(IReadOnlyList<Analysis> analyses, CancellationToken cancellationToken)
     {
         var ids = analyses.Select(x => x.Id).ToList();
-        var kinds = (await db.Database.SqlQuery<ReadyKind>($$"""
-                SELECT c.analysis_id, c.kind
-                FROM analysis_contents c
-                WHERE c.analysis_id = ANY({{ids}}) AND NOT EXISTS (
-                    SELECT 1
-                    FROM (SELECT jsonb_path_query(c.content, 'lax $.audio.file.name') AS name
-                          UNION ALL SELECT jsonb_path_query(c.content, 'lax $.stems[*].audio.file.name')
-                          UNION ALL SELECT jsonb_path_query(c.content, 'lax $.midi.name')) named
-                    WHERE jsonb_typeof(named.name) = 'string' AND NOT EXISTS (
-                        SELECT 1 FROM analysis_files f WHERE f.analysis_id = c.analysis_id AND f.name = named.name #>> '{}'))
-                """).ToListAsync(cancellationToken))
+        // a kind is had once every file it names is kept
+        var kinds = (await db.AnalysisContents.AsNoTracking()
+                .Where(c => ids.Contains(c.AnalysisId) && !db.AnalysisFiles.Any(f => f.AnalysisId == c.AnalysisId && f.Kind == c.Kind && f.StoredName == null))
+                .Select(c => new { c.AnalysisId, c.Kind })
+                .ToListAsync(cancellationToken))
             .ToLookup(x => x.AnalysisId, x => x.Kind);
         var timeline = AnalysisStore.KindName(ContentKind.Timeline);
         var attributes = (await db.Database.SqlQuery<TimelineAttributes>($$"""
@@ -232,13 +222,6 @@ public sealed class AnalysesSource(AnalysesDatabase db, AnalysisFolder folder, I
                 MadeFrom = x is { MadeFromService: { } service, MadeFromId: { } track } ? new() { Service = service, Id = track } : null,
             };
         }).ToList();
-    }
-
-    private sealed class ReadyKind
-    {
-        public Guid AnalysisId { get; set; }
-
-        public string Kind { get; set; } = string.Empty;
     }
 
     private sealed class TimelineAttributes

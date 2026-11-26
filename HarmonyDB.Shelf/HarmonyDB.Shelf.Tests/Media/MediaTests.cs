@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using HarmonyDB.Shelf.Api.Areas.Media.Services;
+using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Model.Media;
 using HarmonyDB.Shelf.Tests.Api;
@@ -9,6 +10,8 @@ using HarmonyDB.Shelf.Tests.Chords;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Api;
 using HarmonyDB.Source.Api.Model.V2.Contents;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace HarmonyDB.Shelf.Tests.Media;
@@ -150,6 +153,54 @@ public sealed class MediaTests
             (asked.GetProperty("id").GetString(), asked.GetProperty("name").GetString(), asked.GetProperty("caller").GetProperty("subjects")[0].GetString()));
 
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync("/api/media/chords", new ChordsMediaRequest { Id = "closed" }, Browser.Json)).StatusCode);
+    }
+
+    [Fact]
+    public async Task ATracksSoundIsPlayedInRangesAsTheMusicServiceGivesThem()
+    {
+        var asked = new List<(HttpMethod Method, string Path, string? Range, string? IfRange)>();
+        var music = new Handler(request =>
+        {
+            asked.Add((request.Method, request.RequestUri!.AbsolutePath, request.Headers.Range?.ToString(), request.Headers.IfRange?.ToString()));
+            var answer = new HttpResponseMessage(HttpStatusCode.PartialContent) { Content = new ByteArrayContent(request.Method == HttpMethod.Head ? [] : [5, 6, 7]) };
+            answer.Content.Headers.ContentType = new("audio/mpeg");
+            answer.Content.Headers.ContentRange = new(2, 4, 100);
+            answer.Content.Headers.ContentLength = 3;
+            answer.Headers.ETag = new("\"t1\"");
+            answer.Headers.AcceptRanges.Add("bytes");
+            return answer;
+        });
+        using var api = new FakeIndex().Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["Media:SigningKey"] = SigningKey })
+            .WithWebHostBuilder(x => x.ConfigureTestServices(services => services.AddHttpClient<AudioMediaClient>().ConfigurePrimaryHttpMessageHandler(() => music)));
+        using var client = api.CreateClient();
+        var made = await client.PostAsJsonAsync("/api/media/tracks", new TrackMediaRequest { Service = Model.Me.MusicService.Yandex, Id = "42", Kind = MediaKind.Audio }, Browser.Json);
+        var address = (await made.Content.ReadFromJsonAsync<MediaAddress>(Browser.Json))!.Url;
+
+        // a range, and the validator it is to match, go to the music service; its part comes back as it gave it
+        var play = new HttpRequestMessage(HttpMethod.Get, address);
+        play.Headers.Range = new(2, 4);
+        play.Headers.IfRange = new(new System.Net.Http.Headers.EntityTagHeaderValue("\"t1\""));
+        var played = await client.SendAsync(play);
+        Assert.Equal(HttpStatusCode.PartialContent, played.StatusCode);
+        Assert.Equal([5, 6, 7], await played.Content.ReadAsByteArrayAsync());
+        Assert.Equal(("bytes 2-4/100", 3L, "\"t1\"", "audio/mpeg"),
+            (played.Content.Headers.ContentRange!.ToString(), played.Content.Headers.ContentLength, played.Headers.ETag!.Tag, played.Content.Headers.ContentType!.MediaType));
+        Assert.Contains("bytes", played.Headers.AcceptRanges);
+
+        // the headers alone, as a player asks before it plays
+        var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, address) { Headers = { Range = new(2, 4) } });
+        Assert.Equal(HttpStatusCode.PartialContent, head.StatusCode);
+        Assert.Equal("bytes 2-4/100", head.Content.Headers.ContentRange!.ToString());
+
+        Assert.Equal(
+            [(HttpMethod.Get, "/internal/yandex/tracks/42/audio", "bytes=2-4", "\"t1\""), (HttpMethod.Head, "/internal/yandex/tracks/42/audio", "bytes=2-4", null)],
+            asked);
+    }
+
+    private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> answer) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(answer(request));
     }
 
     private sealed class ManualTime(DateTimeOffset now) : TimeProvider

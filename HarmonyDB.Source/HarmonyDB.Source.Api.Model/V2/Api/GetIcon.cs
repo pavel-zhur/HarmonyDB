@@ -7,4 +7,9 @@ namespace HarmonyDB.Source.Api.Model.V2.Api;
 public record GetIconRequest
 {
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a name.
+    /// </summary>
+    public static bool IsValid(GetIconRequest request) => !string.IsNullOrEmpty(request.Name);
 }

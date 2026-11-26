@@ -17,6 +17,13 @@ public record GetContentRequest
     /// rule; an address opens only the item it is the address of.
     /// </summary>
     public Uri? Address { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a caller, an id, kinds, and an address only an absolute one.
+    /// </summary>
+    public static bool IsValid(GetContentRequest request)
+        => Caller.IsValid(request.Caller) && !string.IsNullOrEmpty(request.Id) && request.Kinds != null
+           && request.Address is null or { IsAbsoluteUri: true };
 }
 
 /// <summary>

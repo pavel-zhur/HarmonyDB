@@ -159,9 +159,9 @@ The frontend's part:
 
 1. `POST /api/auth/flows {provider, purpose: signIn | link, returnPath}` → `{state, redirectUrl}`. With a
    `redirectUrl`, go there; the browser comes back to `returnPath?auth=<outcome or error code>&auth_flow=<state>`.
-   Without one (dev), post `{name}` to `/api/auth/flows/{state}/complete`. To walk the stand as an imported person,
-   post `{accountId}` instead: the dev sign-in signs in as that account and changes nothing in it (no sign-in row is
-   added). An account takes its name and picture only from the sign-in it was made with; other sign-ins never rename
+   Without one (dev), post `{"answer": {"name": …}}` to `/api/auth/flows/{state}/complete`. To walk the stand as an
+   imported person, post `{"answer": {"accountId": …}}` instead: the dev sign-in signs in as that account and changes
+   nothing in it (no sign-in row is added). An account takes its name and picture only from the sign-in it was made with; other sign-ins never rename
    it. Starting and finishing are rate-limited
    per client address (429 `too_many_requests`).
 2. The outcome `mergeNeeded` (when adding a sign-in that has its own account): show `GET /api/auth/flows/{state}`
@@ -195,8 +195,12 @@ internal scope, or `.AllowGuests()` when it is open to guests on purpose; a test
 
 A guest's writing action answers 401 `sign_in_required`: the frontend offers sign-in and repeats the action. A person's
 own music account, to call the music service as them: `MusicLinkStore.GetActingAsync(accountId, service)`. The music
-service's client is `Clients/Audio/AudioClient` (add its calls there); removing a link purges its subject through the
-outbox (`AudioSubjectPurge`). What a person pastes as a music credential may be at most 48 KiB; more answers 400
+service's client is `Clients/Audio/AudioClient` (add its calls there). A link is removed (replaced, unlinked, merged
+away, deleted with its profile) after the music service has purged its subject (`AudioClient.PurgeLinksAsync`), asked
+before the shelf's own change and outside its transaction: when it does not answer, the act answers 503 `unavailable`
+and nothing is changed. What the link brings in between the purge and its removal stays at the music service. Deleting
+a profile also asks the own chords' store first, after the music service: when the store does not answer, only the
+music service's copies are gone, and deleting again goes on. What a person pastes as a music credential may be at most 48 KiB; more answers 400
 `music_credentials_too_large` (they copied more than the request's headers).
 
 **Internal**: `GET /internal/accounts/{accountId}/logins/{provider}` → `{subjects}` (scope `shelf.accounts`).

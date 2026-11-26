@@ -94,9 +94,9 @@ public sealed class LimitsTests(WorkFixture fixture) : IClassFixture<WorkFixture
         {
             Images =
             [
-                new(Guid.NewGuid(), "plain", now.AddHours(-1).AddMinutes(1)),
-                new(Guid.NewGuid(), "plain", now.AddHours(-1).AddMinutes(1)),
-                new(Guid.NewGuid(), "plain", now.AddDays(-3)),
+                new(Guid.NewGuid(), "plain", "plain", now.AddHours(-1).AddMinutes(1)),
+                new(Guid.NewGuid(), "plain", "plain", now.AddHours(-1).AddMinutes(1)),
+                new(Guid.NewGuid(), "plain", "plain", now.AddDays(-3)),
             ],
         };
         await using var scope = fixture.Api.WithWebHostBuilder(x => x.ConfigureServices(s =>
@@ -149,7 +149,7 @@ public sealed class FakeIllustrations : HttpMessageHandler
     {
         object answer = request.RequestUri!.AbsolutePath.Split('/').Last() switch
         {
-            "ShelfPresets" => new { presets = new[] { "plain" }, sizes = new[] { 256 } },
+            "ShelfPresets" => new { presets = new[] { new { key = "plain", mood = "plain" } }, sizes = new[] { 256 } },
             "ShelfRead" => new { images = Images },
             _ => throw new InvalidOperationException(request.RequestUri.ToString()),
         };

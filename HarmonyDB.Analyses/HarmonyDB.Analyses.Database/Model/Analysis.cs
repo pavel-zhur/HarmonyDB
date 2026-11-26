@@ -71,8 +71,8 @@ public class AnalysisContent
 }
 
 /// <summary>
-/// A file of an analysis that its content names (the recording, a separate instrument, a MIDI file), kept in the
-/// analyses' folder.
+/// A file of an analysis that its content names (the recording, a separate instrument, a MIDI file): written down when
+/// the content is put, with the kind that names it; kept in the analyses' folder once it is uploaded.
 /// </summary>
 public class AnalysisFile
 {
@@ -86,21 +86,29 @@ public class AnalysisFile
     public required string Name { get; set; }
 
     /// <summary>
-    /// The name of its file in the analysis's folder: a new one for each upload, so an upload never touches the file
-    /// being read.
+    /// The content kind that names it, as the source contract's wire format writes it ("recording", "notes").
     /// </summary>
-    public required string StoredName { get; set; }
+    public required string Kind { get; set; }
 
+    /// <summary>
+    /// Its content type, as the content names it.
+    /// </summary>
     public required string ContentType { get; set; }
 
-    public long Size { get; set; }
+    /// <summary>
+    /// The name of its file in the analysis's folder, a new one for each upload, so an upload never touches the file
+    /// being read; null while it is not uploaded.
+    /// </summary>
+    public string? StoredName { get; set; }
+
+    public long? Size { get; set; }
 
     /// <summary>
     /// The SHA-256 of its bytes, lower-case hex.
     /// </summary>
-    public required string Sha256 { get; set; }
+    public string? Sha256 { get; set; }
 
-    public DateTimeOffset StoredAt { get; set; }
+    public DateTimeOffset? StoredAt { get; set; }
 }
 
 internal sealed class AnalysisConfiguration : IEntityTypeConfiguration<Analysis>

@@ -33,8 +33,8 @@ public sealed class TrackMarksTests(ShelfDatabaseFixture database) : IClassFixtu
         }
 
         var tracks = new[] { several, closed }
-            .Select(x => new MusicTrack { Service = Model.Me.MusicService.Youtube, Id = x.ServiceId, Artists = [], InMyPlaylists = false })
-            .Append(new MusicTrack { Service = Model.Me.MusicService.Youtube, Id = $"unknown-{tag}", Artists = [], InMyPlaylists = false })
+            .Select(x => new MusicTrack { Service = Model.Me.MusicService.Youtube, Id = x.ServiceId, Artists = [], InMySongs = [] })
+            .Append(new MusicTrack { Service = Model.Me.MusicService.Youtube, Id = $"unknown-{tag}", Artists = [], InMySongs = [] })
             .ToList();
 
         await using (var db = database.CreateContext())

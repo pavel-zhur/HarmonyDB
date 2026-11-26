@@ -6,6 +6,11 @@ namespace HarmonyDB.Source.Api.Model.V2.Api;
 public record GetSourcesRequest
 {
     public required Caller Caller { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a caller.
+    /// </summary>
+    public static bool IsValid(GetSourcesRequest request) => Caller.IsValid(request.Caller);
 }
 
 public record GetSourcesResponse

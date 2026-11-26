@@ -5,6 +5,12 @@ public record GetHeadersRequest
     public required Caller Caller { get; init; }
 
     public required IReadOnlyList<string> Ids { get; init; }
+
+    /// <summary>
+    /// Whether the request is one the contract takes: a caller, and ids, none empty.
+    /// </summary>
+    public static bool IsValid(GetHeadersRequest request)
+        => Caller.IsValid(request.Caller) && request.Ids != null && request.Ids.All(x => !string.IsNullOrEmpty(x));
 }
 
 public record GetHeadersResponse

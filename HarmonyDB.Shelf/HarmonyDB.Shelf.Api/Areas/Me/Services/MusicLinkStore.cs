@@ -12,7 +12,9 @@ namespace HarmonyDB.Shelf.Api.Areas.Me.Services;
 /// <summary>
 /// A person's linked music accounts: what they copied from the browser, kept encrypted (<see cref="MusicLinkCipher"/>),
 /// never given back to the browser. The link's id is the subject the music service keeps the person's answers under;
-/// removing a link purges them (through the outbox, after the removal is committed).
+/// removing a link purges them first (<see cref="AudioClient.PurgeLinksAsync"/>), then removes it: when the music
+/// service does not do it, the link stays and the act answers 503 <c>unavailable</c>. What is kept under the link in
+/// the moment between the purge and the removal stays at the music service.
 /// <para>
 /// For the areas that act with the person's own music account: <see cref="GetActingAsync"/>.
 /// </para>
@@ -68,9 +70,17 @@ public sealed class MusicLinkStore(ShelfDbContext db, MusicLinkCipher cipher, Au
         link.ExternalName = await CheckAsync(link, credentials, cancellationToken);
         cipher.Encrypt(link, credentials);
 
+        var replaced = await db.MusicLinks.SingleOrDefaultAsync(x => x.AccountId == accountId && x.Service == link.Service, cancellationToken);
+        if (replaced != null)
+            await audio.PurgeLinksAsync([replaced.Id], cancellationToken);
+
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        await RemoveAsync(accountId, link.Service, now, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        if (replaced != null)
+        {
+            db.MusicLinks.Remove(replaced);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
         db.MusicLinks.Add(link);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -80,9 +90,12 @@ public sealed class MusicLinkStore(ShelfDbContext db, MusicLinkCipher cipher, Au
 
     public async Task DeleteAsync(Guid accountId, Model.Me.MusicService service, CancellationToken cancellationToken)
     {
-        if (!await RemoveAsync(accountId, ToDatabase(service), time.GetUtcNow(), cancellationToken))
-            throw ShelfException.NotFound(MeErrorCodes.NoSuchMusicLink);
+        var databaseService = ToDatabase(service);
+        var link = await db.MusicLinks.SingleOrDefaultAsync(x => x.AccountId == accountId && x.Service == databaseService, cancellationToken)
+                   ?? throw ShelfException.NotFound(MeErrorCodes.NoSuchMusicLink);
 
+        await audio.PurgeLinksAsync([link.Id], cancellationToken);
+        db.MusicLinks.Remove(link);
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -104,21 +117,6 @@ public sealed class MusicLinkStore(ShelfDbContext db, MusicLinkCipher cipher, Au
         link.LastUsedAt = time.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
         return AudioActing.Person(link.Id.ToString(), credentials);
-    }
-
-    /// <summary>
-    /// Removes the account's link of the service, if there is one, and queues the purge of its subject (saved with the
-    /// context's next changes).
-    /// </summary>
-    private async Task<bool> RemoveAsync(Guid accountId, MusicService service, DateTimeOffset now, CancellationToken cancellationToken)
-    {
-        var existing = await db.MusicLinks.SingleOrDefaultAsync(x => x.AccountId == accountId && x.Service == service, cancellationToken);
-        if (existing == null)
-            return false;
-
-        db.MusicLinks.Remove(existing);
-        AudioSubjectPurge.Enqueue(db, existing.Id, now);
-        return true;
     }
 
     /// <summary>

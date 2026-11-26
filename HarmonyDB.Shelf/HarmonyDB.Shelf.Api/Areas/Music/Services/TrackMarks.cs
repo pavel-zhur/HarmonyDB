@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HarmonyDB.Shelf.Api.Areas.Music.Services;
 
 /// <summary>
-/// What the shelf knows of the tracks in a list, from its own tables (no source is asked): whether a track is already in
-/// one of the person's playlists, and the chords made from it that the shelf knows (an analysis of it) — those whose
+/// What the shelf knows of the tracks in a list, from its own tables (no source is asked): the songs of the person's
+/// playlists that hold a track, and the chords made from it that the shelf knows (an analysis of it) — those whose
 /// header it keeps, which it keeps only of items open to everyone, so the mark shows nothing a person may not open.
 /// (Whether the sources have chords for it is not told: almost everything has a few, and almost all of them are wrong.)
 /// </summary>
@@ -29,14 +29,14 @@ public sealed class TrackMarks(ShelfDbContext db)
 
         var marks = await LoadAsync(user.GetAccountId(), tracks, cancellationToken);
         return build(x => marks.TryGetValue((x.Service, x.Id), out var mark)
-            ? x with { InMyPlaylists = mark.InMyPlaylists, MadeInto = mark.MadeInto }
+            ? x with { InMySongs = mark.InMySongs, MadeInto = mark.MadeInto }
             : x);
     }
 
-    private async Task<Dictionary<(Model.Me.MusicService, string), (bool InMyPlaylists, string? MadeInto)>> LoadAsync(
+    private async Task<Dictionary<(Model.Me.MusicService, string), (IReadOnlyList<MusicTrackSong> InMySongs, string? MadeInto)>> LoadAsync(
         Guid? accountId, IReadOnlyList<MusicTrack> tracks, CancellationToken cancellationToken)
     {
-        var result = new Dictionary<(Model.Me.MusicService, string), (bool, string?)>();
+        var result = new Dictionary<(Model.Me.MusicService, string), (IReadOnlyList<MusicTrackSong>, string?)>();
         foreach (var group in tracks.GroupBy(x => x.Service))
         {
             var service = MusicShapes.ToDatabase(group.Key);
@@ -46,11 +46,15 @@ public sealed class TrackMarks(ShelfDbContext db)
                 .Select(r => new
                 {
                     r.ServiceId,
-                    InMyPlaylists = accountId != null && db.PlaylistSongItems.Any(i =>
-                        i.RecordingId == r.Id
-                        && i.Song.DeletedAt == null
-                        && i.Song.Playlist.DeletedAt == null
-                        && i.Song.Playlist.Members.Any(m => m.AccountId == accountId && m.DeletedAt == null)),
+                    InMySongs = db.PlaylistSongItems
+                        .Where(i => accountId != null
+                                    && i.RecordingId == r.Id
+                                    && i.Song.DeletedAt == null
+                                    && i.Song.Playlist.DeletedAt == null
+                                    && i.Song.Playlist.Members.Any(m => m.AccountId == accountId && m.DeletedAt == null))
+                        .OrderBy(i => i.Song.PlaylistId).ThenBy(i => i.SongId)
+                        .Select(i => new MusicTrackSong { PlaylistId = i.Song.PlaylistId, SongId = i.SongId })
+                        .ToList(),
                     MadeInto = db.Chords
                         .Where(c => c.MadeFromRecordingId == r.Id && c.SourceKey != null)
                         .OrderByDescending(c => c.CreatedAt).ThenBy(c => c.SourceId)
@@ -60,7 +64,7 @@ public sealed class TrackMarks(ShelfDbContext db)
                 .ToListAsync(cancellationToken);
 
             foreach (var row in rows)
-                result[(group.Key, row.ServiceId)] = (row.InMyPlaylists, row.MadeInto);
+                result[(group.Key, row.ServiceId)] = (row.InMySongs, row.MadeInto);
         }
 
         return result;

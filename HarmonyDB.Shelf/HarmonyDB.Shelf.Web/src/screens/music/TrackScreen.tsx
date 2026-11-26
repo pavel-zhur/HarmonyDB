@@ -3,7 +3,7 @@
 // tracks, radio; its words. Analysing it is "soon".
 
 import { useCallback, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ToTop } from '../../app/ToTop';
@@ -63,7 +63,7 @@ function TrackBody({ track, lyrics }: { track: MusicTrack; lyrics: boolean }) {
                 <button type="button" className="btn" disabled><Icon name="ai" />{t('music.analyse')} <Soon /></button>
             </div>
             <div className="mu-mlinks">
-                {track.inMyPlaylists && <span className="lnk muted"><Icon name="pls" />{t('music.inMyPlaylists')}</span>}
+                <InMySongs track={track} />
                 {track.madeInto && <Link className="lnk" to={`/chords/${encodeURIComponent(track.madeInto)}`}><Icon name="ai" />{t('music.openAnalysis')}</Link>}
                 {track.title && <Link className="lnk" to={`/?q=${encodeURIComponent([...track.artists.map(artist => artist.name), track.title].filter(Boolean).join(' '))}`}><Icon name="search" />{t('music.findChords')}</Link>}
                 <Link className="lnk" to={musicHref.similar(service, track.id)}><Icon name="simil" />{t('music.similar')}</Link>
@@ -75,9 +75,31 @@ function TrackBody({ track, lyrics }: { track: MusicTrack; lyrics: boolean }) {
     );
 }
 
-/** Puts the track into one of my playlists as a song made of this one recording. */
+/** The songs of my playlists that hold this recording: each a way to it, by its playlist. */
+function InMySongs({ track }: { track: MusicTrack }) {
+    const { t } = useTranslation();
+    const playlists = useMyPlaylists();
+    return (
+        <>
+            {track.inMySongs.map(song => {
+                const playlist = playlists.data?.find(p => p.id === song.playlistId);
+                return (
+                    <Link key={`${song.playlistId}/${song.songId}`} className="lnk" to={`/playlists/${song.playlistId}/songs/${song.songId}`}>
+                        <Icon name="pls" />{playlist ? t('music.inPlaylist', { title: playlistTitle(playlist) }) : t('music.inMyPlaylists')}
+                    </Link>
+                );
+            })}
+        </>
+    );
+}
+
+/**
+ * Puts the track into one of my playlists as a song made of this one recording; a playlist that has a song of it
+ * already leads to that song instead (no second song of the same recording).
+ */
 function AddToPlaylist({ track }: { track: MusicTrack }) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { signedIn } = useSession();
     const playlists = useMyPlaylists();
     const add = useMutation({ mutationFn: addRecordingSong });
@@ -91,12 +113,20 @@ function AddToPlaylist({ track }: { track: MusicTrack }) {
             </button>
             <Popover anchor={anchor} onClose={() => setAnchor(null)} label={t('music.addToPlaylist')}>
                 <MenuTitle>{t('music.addToPlaylistTitle')}</MenuTitle>
-                {mine.map(p => (
-                    <MenuItem key={p.id} onClick={() => {
-                        setAnchor(null);
-                        add.mutate({ playlistId: p.id, service: track.service, trackId: track.id });
-                    }}>{playlistTitle(p)}</MenuItem>
-                ))}
+                {mine.map(p => {
+                    const there = track.inMySongs.find(song => song.playlistId === p.id);
+                    return there ? (
+                        <MenuItem key={p.id} sub={t('music.alreadyThere')} onClick={() => {
+                            setAnchor(null);
+                            navigate(`/playlists/${p.id}/songs/${there.songId}`);
+                        }}>{playlistTitle(p)}</MenuItem>
+                    ) : (
+                        <MenuItem key={p.id} onClick={() => {
+                            setAnchor(null);
+                            add.mutate({ playlistId: p.id, service: track.service, trackId: track.id });
+                        }}>{playlistTitle(p)}</MenuItem>
+                    );
+                })}
                 {!mine.length && !playlists.isPending && (
                     <>
                         <p className="note">{t('music.noPlaylistToAdd')}</p>

@@ -95,7 +95,7 @@ export function TrackRow({ track, n }: { track: MusicTrack; n?: number }) {
                 <b>{track.title}</b>
                 {sub && <span>{sub}</span>}
             </span>
-            {track.inMyPlaylists && <span className="tin" title={t('music.inMyPlaylists')} aria-label={t('music.inMyPlaylists')}><Icon name="pls" /></span>}
+            {track.inMySongs.length > 0 && <span className="tin" title={t('music.inMyPlaylists')} aria-label={t('music.inMyPlaylists')}><Icon name="pls" /></span>}
             {track.madeInto && <span className="tin" title={t('music.analysed')} aria-label={t('music.analysed')}><Icon name="ai" /></span>}
             {track.isVideo && <span className="tin q" title={t('music.video')} aria-label={t('music.video')}><Icon name="yt" /></span>}
             {track.durationMs ? <span className="d">{clock(track.durationMs / 1000)}</span> : null}

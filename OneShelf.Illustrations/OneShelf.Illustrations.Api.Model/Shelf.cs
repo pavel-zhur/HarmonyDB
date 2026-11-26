@@ -6,14 +6,25 @@ namespace OneShelf.Illustrations.Api.Model;
 public class ShelfPresetsResponse
 {
     /// <summary>
-    /// The presets' keys, the plain one first.
+    /// The presets, the plain one first.
     /// </summary>
-    public required List<string> Presets { get; init; }
+    public required List<ShelfPreset> Presets { get; init; }
 
     /// <summary>
     /// The sides of the square copies every image has, at <see cref="IllustrationsApiUrls.Images"/>.
     /// </summary>
     public required List<int> Sizes { get; init; }
+}
+
+public class ShelfPreset
+{
+    public required string Key { get; init; }
+
+    /// <summary>
+    /// What it draws in, a stable code (<c>plain</c>, or a mood: <c>evil</c>, <c>despair</c>, <c>drama</c> …); a preset's
+    /// key changes with its version, its mood does not.
+    /// </summary>
+    public required string Mood { get; init; }
 }
 
 public class ShelfReadRequest
@@ -40,6 +51,11 @@ public class ShelfImage
     /// The preset it was made by; null for one made otherwise.
     /// </summary>
     public string? Preset { get; init; }
+
+    /// <summary>
+    /// That preset's mood; null with it.
+    /// </summary>
+    public string? Mood { get; init; }
 
     public required DateTime CreatedOn { get; init; }
 }

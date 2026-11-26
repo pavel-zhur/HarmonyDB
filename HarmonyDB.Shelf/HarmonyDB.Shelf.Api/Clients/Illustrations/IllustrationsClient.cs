@@ -78,12 +78,16 @@ public sealed partial class IllustrationsClient(HttpClient http, IOptions<Illust
     private sealed record ReadAnswer(IReadOnlyList<StoredIllustration> Images);
 }
 
-/// <param name="Presets">The presets' keys, the plain one first.</param>
+/// <param name="Presets">The presets, the plain one first.</param>
 /// <param name="Sizes">The sides of the square copies every image has.</param>
-public sealed record IllustrationPresets(IReadOnlyList<string> Presets, IReadOnlyList<int> Sizes);
+public sealed record IllustrationPresets(IReadOnlyList<StoredPreset> Presets, IReadOnlyList<int> Sizes);
+
+/// <param name="Mood">What it draws in, a stable code.</param>
+public sealed record StoredPreset(string Key, string Mood);
 
 /// <param name="Preset">The preset it was drawn by; null for one drawn otherwise.</param>
-public sealed record StoredIllustration(Guid Id, string? Preset, DateTimeOffset CreatedOn);
+/// <param name="Mood">That preset's mood; null with it, or for a preset no longer offered.</param>
+public sealed record StoredIllustration(Guid Id, string? Preset, string? Mood, DateTimeOffset CreatedOn);
 
 public enum GenerateOutcome
 {
