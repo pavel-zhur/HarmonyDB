@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Areas.Music.Services;
 using HarmonyDB.Shelf.Api.Clients.Audio;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
@@ -96,13 +97,11 @@ public sealed class MusicArea : IShelfArea
     /// <summary>
     /// The service of the address: <c>yandex</c> or <c>youtube</c>; one marked "soon" answers 501 <c>not_yet</c>.
     /// </summary>
-    public static MusicService Parse(string service) => service switch
-    {
-        "yandex" => MusicService.Yandex,
-        "youtube" => MusicService.Youtube,
-        SoonService => throw new ShelfException(StatusCodes.Status501NotImplemented, ErrorCodes.NotYet),
-        _ => throw ShelfException.NotFound(MusicErrorCodes.NoSuchService),
-    };
+    public static MusicService Parse(string service)
+        => MusicServiceNames.Of(service)
+           ?? throw (service == SoonService
+               ? new ShelfException(StatusCodes.Status501NotImplemented, ErrorCodes.NotYet)
+               : ShelfException.NotFound(MusicErrorCodes.NoSuchService));
 
     private static int Page(int? page) => Math.Max(0, page ?? 0);
 }

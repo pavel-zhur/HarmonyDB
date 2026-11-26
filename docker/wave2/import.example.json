@@ -10,6 +10,7 @@
     "NotImportedTenants": [
       { "TenantId": 0, "ImportPeople": [], "BeyondTenantId": null }
     ],
+    "PermissionsForEveryone": [ "pdf", "<custom permission key>" ],
     "PermissionsByTenantTag": {
       "<tenant tag>": [ "<custom permission key>" ]
     }

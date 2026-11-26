@@ -5,7 +5,7 @@ namespace HarmonyDB.Source.Api.Model.V2;
 /// </summary>
 public enum ContentKind
 {
-    /// <summary>Text with chords. Every item of chords has it.</summary>
+    /// <summary>Text with chords.</summary>
     Sheet,
 
     /// <summary>The analysis of a recording: keys, bars and beats, chords on them, sections.</summary>

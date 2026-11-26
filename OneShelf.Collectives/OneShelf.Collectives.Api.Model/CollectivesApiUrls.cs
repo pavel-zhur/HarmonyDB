@@ -1,4 +1,4 @@
-﻿namespace OneShelf.Collectives.Api.Model;
+namespace OneShelf.Collectives.Api.Model;
 
 public static class CollectivesApiUrls
 {
@@ -11,12 +11,12 @@ public static class CollectivesApiUrls
     public const string Get = nameof(Get);
     public const string ListAll = nameof(ListAll);
 
-    // the own chords for the new shelf and its source, to internal clients
+    // the own chords by their authors' names, and every one for their source, to internal clients
     public const string Items = nameof(Items);
     public const string OwnList = nameof(OwnList);
     public const string OwnGet = nameof(OwnGet);
     public const string OwnInsert = nameof(OwnInsert);
     public const string OwnUpdate = nameof(OwnUpdate);
     public const string OwnDelete = nameof(OwnDelete);
-    public const string OwnMove = nameof(OwnMove);
+    public const string OwnRemovePrivate = nameof(OwnRemovePrivate);
 }

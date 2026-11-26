@@ -32,6 +32,31 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
     }
 
     /// <summary>
+    /// The chords of each song's main variant for the viewer: the variant they chose, else the first; by song. A song
+    /// with no chords is left out.
+    /// </summary>
+    public async Task<Dictionary<Guid, string>> MainChordsAsync(Guid? viewer, IReadOnlyCollection<Guid> songIds, CancellationToken cancellationToken)
+    {
+        if (songIds.Count == 0)
+            return [];
+
+        var ids = songIds.Distinct().ToList();
+        var items = await db.PlaylistSongItems
+            .Where(x => ids.Contains(x.SongId) && x.Chords != null)
+            .OrderBy(x => x.Position).ThenBy(x => x.Id)
+            .Select(x => new { x.Id, x.SongId, x.Chords!.SourceId })
+            .ToListAsync(cancellationToken);
+        var chosen = viewer == null
+            ? []
+            : await db.PlaylistSongPreferences.Where(x => x.AccountId == viewer && ids.Contains(x.SongId) && x.MainItemId != null)
+                .ToDictionaryAsync(x => x.SongId, x => x.MainItemId!.Value, cancellationToken);
+
+        return items.GroupBy(x => x.SongId).ToDictionary(
+            song => song.Key,
+            song => (song.FirstOrDefault(x => chosen.TryGetValue(song.Key, out var main) && x.Id == main) ?? song.First()).SourceId);
+    }
+
+    /// <summary>
     /// The chords as their sources give them to the caller now (open with the header and label for the caller, not open,
     /// unavailable), by their ids; asked through the chords' reader, which keeps the answers a while per item, keys and
     /// account.

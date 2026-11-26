@@ -63,7 +63,7 @@ public static class LibraryTools
             "newChords, myMarks.",
             McpToolEffect.Read,
             async (
-                ClaimsPrincipal user, SongLists lists,
+                ClaimsPrincipal user, SongLists lists, Views views,
                 Guid playlistId,
                 [Description("Title or artist words.")] string? query = null,
                 [Description("A mark kind, by anyone (who='me': by this person).")] string? mark = null,
@@ -75,7 +75,7 @@ public static class LibraryTools
             {
                 var (skip, take) = Slim.Paging(offset, limit, 20);
                 var list = await lists.PlaylistAsync(user, playlistId, null, new(query, sort, who, mark, skip, take), cancellationToken);
-                return new Slim.Page<object>(list.Total, list.Offset, list.Rows.Select(Slim.Song).ToList());
+                return await Slim.SongsAsync(user, views, list, cancellationToken);
             },
             BuiltInPermissions.McpLibraryRead),
 
@@ -84,7 +84,7 @@ public static class LibraryTools
             "Filter by title words or a mark kind; sort: popular (default), artist, title, newSongs, newChords, myMarks.",
             McpToolEffect.Read,
             async (
-                ClaimsPrincipal user, SongLists lists,
+                ClaimsPrincipal user, SongLists lists, Views views,
                 [Description("Title or artist words.")] string? query = null,
                 [Description("A mark kind (who='me': by this person).")] string? mark = null,
                 [Description("'me': marked by this person.")] string? who = null,
@@ -95,7 +95,7 @@ public static class LibraryTools
             {
                 var (skip, take) = Slim.Paging(offset, limit, 20);
                 var list = await lists.LibraryAsync(user, new(query, sort, who, mark, skip, take), cancellationToken);
-                return new Slim.Page<object>(list.Total, list.Offset, list.Rows.Select(Slim.Song).ToList());
+                return await Slim.SongsAsync(user, views, list, cancellationToken);
             },
             BuiltInPermissions.McpLibraryRead),
 
@@ -193,7 +193,8 @@ public static class LibraryTools
 
         new("get_my_own_chords",
             "One of this person's own chords: its current version's text and fields (or an older version by number), and " +
-            "the list of versions. " + IndexTools.SheetFormat,
+            "the list of versions; editable false for those written in the old shelf, which are not changed or deleted here. " +
+            IndexTools.SheetFormat,
             McpToolEffect.Read,
             async (
                 ClaimsPrincipal user, OwnChordsService ownChords,
@@ -210,6 +211,7 @@ public static class LibraryTools
                     ownChordsId = details.Item.Id,
                     details.Item.ChordsId,
                     version = version ?? details.Item.Version,
+                    details.Item.Editable,
                     text,
                     versions = details.History.Select(x => new { x.Version, x.CreatedAt, comment = Slim.Short(x.Text.VersionComment, 100) }).ToList(),
                 };

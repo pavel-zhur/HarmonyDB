@@ -22,6 +22,7 @@ import { RepresentationSettings, SheetKey, SimplificationMode } from '../../lib/
 import { ChordSheet } from '../../chords/ChordSheet';
 import { ChordsViewProvider } from '../../chords/view';
 import { AnalysisViews } from '../../analysis/AnalysisViews';
+import { isAnalysis } from '../../data/analysis';
 import { CircleOfFifths, type Tonic } from '../../chords/CircleOfFifths';
 import { FingeringWindow } from '../../chords/FingeringWindow';
 import { chordNames, firstAttribute, loopAttributes, loopsOf, progressionBetween, progressionOf, type Loop } from '../../chords/analysis';
@@ -62,7 +63,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     const header = answer?.header ?? place.variant?.chords.header ?? null;
     const state = answer?.state ?? place.variant?.chords.state ?? null;
     // an analysis (it has a time line) states its own keys; the index's detection is for the other chords
-    const timed = !!header?.kinds.includes('timeline');
+    const timed = isAnalysis(header?.kinds);
     const analysis = useChordsAnalysis(chordsId, state === 'open' && header !== null && !timed);
     const settings = useSettings();
     const playlistId = place.page?.song.playlistId;
@@ -143,8 +144,8 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                 <span className="t">
                     {place.letter && <b>{place.letter}</b>}
                     {header?.source.iconUrl && <SourceIcon source={header.source} />}
-                    {header?.source.uri
-                        ? <a className="el srcl" href={header.source.uri} target="_blank" rel="noreferrer" title={t('song.chords.openSource', { source: header.source.title })}>{header.source.title}<Icon name="ext" /></a>
+                    {header?.address
+                        ? <a className="el srcl" href={header.address} target="_blank" rel="noreferrer" title={t('song.chords.openSource', { source: header.source.title })}>{header.source.title}<Icon name="ext" /></a>
                         : <span className="el">{header?.source.title}</span>}
                 </span>
                 {place.pager && place.pager.count > 1 && (
@@ -169,7 +170,7 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
             </div>
             <AddPop anchor={addAnchor} onClose={() => setAddAnchor(null)} chordsId={chordsId} />
             <SharePop anchor={shareAnchor} onClose={() => setShareAnchor(null)} title={header?.title ?? place.page?.song.title ?? ''}
-                chords={{ id: chordsId, sourceUri: header?.source.uri ?? null }}
+                chords={{ id: chordsId, address: header?.address ?? null, isPublic: header?.isPublic ?? false }}
                 target={place.page ? { kind: 'song', playlistId: place.page.song.playlistId, songId: place.page.song.id, share: place.share ?? null } : { kind: 'chords', chords: chordsId }} />
 
             {state === 'notOpen' && <p className="vstate">{t('song.chords.notOpen')}</p>}

@@ -11,7 +11,7 @@ namespace HarmonyDB.Shelf.Tests.SourceV2;
 /// </summary>
 public sealed class WireFormatTests
 {
-    private static readonly BlobRef Blob = new() { Key = "blob-1", ContentType = "audio/flac" };
+    private static readonly FileRef File = new() { Name = "drums.flac", ContentType = "audio/flac" };
 
     public static TheoryData<string, object> Kinds() => new()
     {
@@ -116,7 +116,7 @@ public sealed class WireFormatTests
             new() { Name = "Acoustic guitar", Program = 24, Notes = [new() { Start = 1, End = 2, Pitch = 52 }] },
         ],
         Drums = [new() { Start = 0.5, Drum = 36 }],
-        Midi = new() { Key = "midi-1", ContentType = "audio/midi" },
+        Midi = new() { Name = "notes.mid", ContentType = "audio/midi" },
     };
 
     private static Chart Chart() => new()
@@ -137,8 +137,8 @@ public sealed class WireFormatTests
 
     private static Recording Recording() => new()
     {
-        Audio = new() { Track = new() { Service = MusicService.Youtube, Id = "track-1" } },
+        Audio = new() { Track = new() { Service = "youtube", Id = "track-1" } },
         Duration = 212.5,
-        Stems = [new() { Stem = Stem.Drums, Audio = new() { Blob = Blob } }],
+        Stems = [new() { Stem = Stem.Drums, Audio = new() { File = File } }],
     };
 }

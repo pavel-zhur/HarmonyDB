@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Database;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using HarmonyDB.Common.ServiceAuth;
@@ -68,7 +69,8 @@ public sealed class ShelfApiFactory : WebApplicationFactory<Program>
             var allowed = Request.Headers.TryGetValue(ClientAllowedHeader, out var header)
                 ? header.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)
                 : null;
-            var identity = ShelfIdentity.Create(Scheme, Guid.Parse(account.ToString()), given, allowed);
+            var accountId = Guid.Parse(account.ToString());
+            var identity = ShelfIdentity.Create(Scheme, accountId, [AccountSubjects.Of(accountId)], given, allowed);
             return Task.FromResult(AuthenticateResult.Success(new(new ClaimsPrincipal(identity), Scheme)));
         }
     }

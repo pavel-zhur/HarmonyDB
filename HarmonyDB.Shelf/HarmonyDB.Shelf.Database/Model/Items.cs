@@ -40,6 +40,14 @@ public class ChordsItem
     public DateTimeOffset? HeaderUpdatedAt { get; set; }
 
     /// <summary>
+    /// The music service's track the item was made from, as its header states it (kept with the header, so only when a
+    /// caller with no keys may open the item); null when it was not made from one the shelf plays.
+    /// </summary>
+    public Guid? MadeFromRecordingId { get; set; }
+
+    public Recording? MadeFromRecording { get; set; }
+
+    /// <summary>
     /// When recordings of the music services were last looked for for these chords (see <see cref="ChordsRecording"/>).
     /// </summary>
     public DateTimeOffset? RecordingsSearchedAt { get; set; }
@@ -100,6 +108,8 @@ internal sealed class ChordsItemConfiguration : IEntityTypeConfiguration<ChordsI
     {
         builder.ToTable("chords");
         builder.HasIndex(x => x.SourceId).IsUnique();
+        builder.HasIndex(x => x.MadeFromRecordingId);
+        builder.HasOne(x => x.MadeFromRecording).WithMany().HasForeignKey(x => x.MadeFromRecordingId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

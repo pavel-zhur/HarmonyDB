@@ -6,19 +6,21 @@ import { Page } from '../../app/panes';
 import { guestOtherNav, openTo, otherNav, toolsNav, type NavItem } from '../../app/nav';
 import { isDark } from '../../app/appearance';
 import { useSession } from '../../data/session';
+import { useAssistantsOpen } from '../../data/mcp';
 import { updateSettings, useSettings } from '../../data/settings';
 import { Soon } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 
 export function MoreScreen() {
     const { t } = useTranslation();
-    const { signedIn, session } = useSession();
+    const { signedIn } = useSession();
+    const assistants = useAssistantsOpen();
     useSettings();
     return (
         <Page>
             <h1>{signedIn ? t('nav.more') : t('nav.tools')}</h1>
             {signedIn && <h2 style={{ marginTop: 8 }}>{t('nav.tools')}</h2>}
-            <div className="menu">{openTo(toolsNav, session?.permissions).map(item => <Line key={item.to} item={item} />)}</div>
+            <div className="menu">{openTo(toolsNav, { assistants }).map(item => <Line key={item.to} item={item} />)}</div>
             <h2>{t('nav.other')}</h2>
             <div className="menu">
                 {(signedIn ? otherNav : guestOtherNav).map(item => <Line key={item.to} item={item} />)}

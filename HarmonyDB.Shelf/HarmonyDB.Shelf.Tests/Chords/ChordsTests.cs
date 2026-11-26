@@ -31,13 +31,13 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
         await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/chords/x1", person, "pdf"));
         await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/chords/x1", person, $"pdf,{Custom}", clientAllowed: "pdf"));
 
-        var callers = index.Callers("V2GetContent").Select(x => (Account: x.GetProperty("accountId").ToString(), Keys: string.Join(',', x.GetProperty("keys").EnumerateArray().Select(k => k.GetString())))).ToList();
+        var callers = index.Callers("V2GetContent").Select(x => (Account: string.Join(",", x.GetProperty("subjects").EnumerateArray().Select(s => s.GetString())), Keys: string.Join(',', x.GetProperty("keys").EnumerateArray().Select(k => k.GetString())))).ToList();
         Assert.Equal(
         [
             (string.Empty, string.Empty),           // a guest: no account, and the guest's defaults have no custom key
-            (person.ToString(), Custom),            // the custom key only, never a built-in permission
-            (person.ToString(), string.Empty),
-            (person.ToString(), string.Empty),      // a client acting for the person: only what it was allowed
+            ($"account:{person:D}", Custom),        // the custom key only, never a built-in permission
+            ($"account:{person:D}", string.Empty),
+            ($"account:{person:D}", string.Empty),      // a client acting for the person: only what it was allowed
         ], callers);
     }
 
@@ -132,7 +132,7 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
             Answer = (_, body) =>
             {
                 var caller = body.GetProperty("caller");
-                var keyed = caller.GetProperty("keys").GetArrayLength() > 0 || caller.GetProperty("accountId").ValueKind != JsonValueKind.Null;
+                var keyed = caller.GetProperty("keys").GetArrayLength() > 0 || caller.GetProperty("subjects").GetArrayLength() > 0;
                 return (HttpStatusCode.OK, new GetContentResponse
                 {
                     Id = "secret",

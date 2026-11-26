@@ -43,6 +43,12 @@ public sealed class ImportOptions
     /// </summary>
     public Dictionary<string, List<string>> PermissionsByTenantTag { get; set; } = new();
 
+    /// <summary>
+    /// The permissions given to every person imported, besides what they had: built-in ones by their names, custom ones
+    /// by their keys.
+    /// </summary>
+    public List<string> PermissionsForEveryone { get; set; } = [];
+
     public void Validate()
     {
         var failures = new List<string>();
@@ -64,6 +70,9 @@ public sealed class ImportOptions
         if (NotImportedTenants.GroupBy(x => x.TenantId).Any(x => x.Count() > 1)) failures.Add($"{SectionName}:{nameof(NotImportedTenants)}: a tenant is listed twice.");
         if (PermissionsByTenantTag.Any(x => string.IsNullOrWhiteSpace(x.Key) || x.Value.Any(string.IsNullOrWhiteSpace)))
             failures.Add($"{SectionName}:{nameof(PermissionsByTenantTag)} has an empty tag or key.");
+
+        if (PermissionsForEveryone.Any(string.IsNullOrWhiteSpace))
+            failures.Add($"{SectionName}:{nameof(PermissionsForEveryone)} has an empty one.");
 
         if (failures.Count > 0)
             throw new InvalidOperationException(string.Join(Environment.NewLine, failures));

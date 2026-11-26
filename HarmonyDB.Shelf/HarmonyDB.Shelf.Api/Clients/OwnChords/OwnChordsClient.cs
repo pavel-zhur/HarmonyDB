@@ -12,8 +12,8 @@ namespace HarmonyDB.Shelf.Api.Clients.OwnChords;
 
 /// <summary>
 /// The store of own chords (the old services' collectives) and its editor's preview, called as an internal client with
-/// the shelf's keys. Own chords written here belong to the account; those written in the old shelf belong to a Telegram
-/// user and are the account's when it has that Telegram sign-in (<see cref="OwnChordsAuthor"/>).
+/// the shelf's keys. Own chords are the person's when one of the names the person is known by is their author
+/// (<see cref="OwnChordsAuthor"/>).
 /// Not configured, or not answering: 503 <c>unavailable</c>.
 /// </summary>
 public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOptions> options)
@@ -30,34 +30,33 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
         => PostAsync<StoredOwnChords, StoredOwnChords>("OwnGet", new { author, collectiveId }, x => x, cancellationToken);
 
     /// <exception cref="ShelfException">400 when the store refuses the text (an empty title, artists or text).</exception>
-    public async Task<StoredOwnChords> InsertAsync(Guid accountId, StoredText collective, CancellationToken cancellationToken)
-        => (await PostAsync<StoredOwnChords, StoredOwnChords>("OwnInsert", new { accountId, collective }, x => x, cancellationToken))!;
+    public async Task<StoredOwnChords> InsertAsync(OwnChordsAuthor author, StoredText collective, CancellationToken cancellationToken)
+        => (await PostAsync<StoredOwnChords, StoredOwnChords>("OwnInsert", new { author, collective }, x => x, cancellationToken))!;
 
     /// <returns>Null when they are not the author's, not there, or deleted.</returns>
+    /// <exception cref="ShelfException">409 when they are not changed here (<see cref="StoredOwnChords.Editable"/>).</exception>
     public Task<StoredOwnChords?> UpdateAsync(OwnChordsAuthor author, Guid collectiveId, StoredText collective, CancellationToken cancellationToken)
         => PostAsync<StoredOwnChords, StoredOwnChords>("OwnUpdate", new { author, collectiveId, collective }, x => x, cancellationToken);
 
     /// <returns>False when they are not the author's, not there, or deleted already.</returns>
+    /// <exception cref="ShelfException">409 when they are not deleted here (<see cref="StoredOwnChords.Editable"/>).</exception>
     public async Task<bool> DeleteAsync(OwnChordsAuthor author, Guid collectiveId, CancellationToken cancellationToken)
     {
         if (!_options.IsConfigured) throw Unavailable();
 
         using var response = await SendAsync(new Uri(_options.Endpoint!, "OwnDelete"), _options.Key!, JsonContent.Create(new { author, collectiveId }, options: Json), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound) return false;
+        if (response.StatusCode == HttpStatusCode.Conflict) throw NotEditable();
         if (!response.IsSuccessStatusCode) throw Unavailable();
         return true;
     }
 
     /// <summary>
-    /// The own chords the one account wrote become the other's (the first is merged into the second).
+    /// Removes for good the person's private own chords written here (those deleted while private too), every version.
+    /// Done again, it removes what is left.
     /// </summary>
-    public async Task MoveAuthorAsync(Guid fromAccountId, Guid toAccountId, CancellationToken cancellationToken)
-    {
-        if (!_options.IsConfigured) throw Unavailable();
-
-        using var response = await SendAsync(new Uri(_options.Endpoint!, "OwnMove"), _options.Key!, JsonContent.Create(new { fromAccountId, toAccountId }, options: Json), cancellationToken);
-        if (!response.IsSuccessStatusCode) throw Unavailable();
-    }
+    public async Task RemovePrivateAsync(OwnChordsAuthor author, CancellationToken cancellationToken)
+        => await PostAsync<RemovePrivateResponse, RemovePrivateResponse>("OwnRemovePrivate", new { author }, x => x, cancellationToken);
 
     /// <summary>
     /// The text in the editor's markup shown as a sheet, as the source will give it once saved.
@@ -79,6 +78,7 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
         using var response = await SendAsync(new Uri(_options.Endpoint!, operation), _options.Key!, JsonContent.Create(request, options: Json), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         if (response.StatusCode == HttpStatusCode.BadRequest) throw ShelfException.BadRequest(OwnChordsClientErrors.Refused);
+        if (response.StatusCode == HttpStatusCode.Conflict) throw NotEditable();
 
         return result(await ReadAsync<TAnswer>(response, Json, cancellationToken));
     }
@@ -115,7 +115,11 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
 
     private static ShelfException Unavailable() => new(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
 
+    private static ShelfException NotEditable() => ShelfException.Conflict(HarmonyDB.Shelf.Model.OwnChords.OwnChordsErrorCodes.NotEditable);
+
     private sealed record OwnListResponse(IReadOnlyList<StoredOwnChords> Items);
+
+    private sealed record RemovePrivateResponse(int Removed);
 }
 
 public static class OwnChordsClientErrors
@@ -127,9 +131,10 @@ public static class OwnChordsClientErrors
 }
 
 /// <summary>
-/// Who acts on own chords: the account, and the Telegram users it is (its Telegram sign-ins).
+/// Who acts on own chords: the names the person is known by (<see cref="HarmonyDB.Shelf.Database.AccountSubjects"/>), the
+/// first being the one what they write is authored by.
 /// </summary>
-public sealed record OwnChordsAuthor(Guid AccountId, IReadOnlyList<long> TelegramUserIds);
+public sealed record OwnChordsAuthor(IReadOnlyList<string> Subjects);
 
 /// <summary>
 /// The store's visibility of own chords: private — the author only; club — anyone holding their id; public — also found
@@ -157,6 +162,7 @@ public sealed record StoredText(
 
 public sealed record StoredVersion(int VersionNumber, DateTimeOffset CreatedOn, StoredText Collective);
 
+/// <param name="Editable">Whether they are changed and deleted here: those written in the old shelf are not.</param>
 public sealed record StoredOwnChords(
     Guid CollectiveId,
     StoredText Collective,
@@ -164,8 +170,8 @@ public sealed record StoredOwnChords(
     DateTimeOffset CreatedOn,
     DateTimeOffset UpdatedOn,
     Uri Uri,
-    long? AuthorTelegramUserId,
-    Guid? AuthorAccountId,
+    string Author,
+    bool Editable,
     IReadOnlyList<StoredVersion>? History);
 
 /// <summary>
@@ -229,7 +235,6 @@ public static class OwnChordsClientExtensions
         services.AddOptions<OwnChordsClientOptions>().Bind(configuration.GetSection(OwnChordsClientOptions.SectionName)).ValidateOnStart();
         services.AddSingleton<IValidateOptions<OwnChordsClientOptions>, OwnChordsClientOptionsValidator>();
         services.AddHttpClient<OwnChordsClient>(x => x.Timeout = Timeout.InfiniteTimeSpan);
-        services.AddHostedService<OwnChordsAuthorMoveWorker>();
         return services;
     }
 }

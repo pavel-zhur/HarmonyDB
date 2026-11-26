@@ -46,7 +46,7 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         var candidate = question.MergeCandidate;
         Assert.Equal((1, 0, 2, 0, 0), (candidate.OwnedPlaylists, candidate.JoinedPlaylists, candidate.Marks, candidate.Keys, candidate.Notes));
         // the own chords' store is not configured here: their number is not known
-        Assert.Null(candidate.OwnChords);
+        Assert.Equal(0, candidate.OwnChords);   // the store holds none of the second's
 
         var merged = await first.SendAsync(HttpMethod.Post, $"/api/auth/flows/{state}/merge");
         Assert.Equal(HttpStatusCode.OK, merged.StatusCode);
@@ -85,6 +85,10 @@ public sealed class MergeTests(ShelfDatabaseFixture database) : IClassFixture<Sh
         // The second is left deleted; the merge is logged.
         Assert.NotNull((await db.Accounts.SingleAsync(x => x.Id == secondId)).DeletedAt);
         Assert.True(await db.AuditLog.AnyAsync(x => x.AccountId == firstId && x.Action == "accounts_merged"));
+
+        // the second's name stays one of the first's names to the sources
+        Assert.Equal(firstId, (await db.AccountMerges.SingleAsync(x => x.MergedId == secondId)).IntoId);
+        Assert.Contains($"account:{secondId:D}", await AccountSubjects.LoadAsync(db, firstId, CancellationToken.None));
     }
 
     [DatabaseFact]

@@ -47,18 +47,13 @@ public enum ChordsKind
 }
 
 /// <summary>
-/// Where an item comes from, as its source gives it to this person: it may differ between people.
+/// A source as it is shown to this person (of an item: where it comes from): it may differ between people.
 /// </summary>
 public sealed record ChordsSource
 {
     public required string Key { get; init; }
 
     public required string Title { get; init; }
-
-    /// <summary>
-    /// The item's page at the source, when given to this person.
-    /// </summary>
-    public string? Uri { get; init; }
 
     /// <summary>
     /// The source's picture (<c>GET /api/chords/icons/{name}</c>), when it has one.
@@ -90,6 +85,12 @@ public sealed record ChordsHeader
     public required string Id { get; init; }
 
     public required ChordsSource Source { get; init; }
+
+    /// <summary>
+    /// The item's page at its source, when given to this person. A link to it opens the item to whoever holds it where
+    /// its source says so (<c>GET /api/chords/{id}?address=</c>).
+    /// </summary>
+    public string? Address { get; init; }
 
     public string? Title { get; init; }
 
@@ -178,4 +179,17 @@ public sealed record ChordsContentResponse
     public required IReadOnlyList<KeyItem> Keys { get; init; }
 
     public required IReadOnlyList<ChordsNote> MyNotes { get; init; }
+}
+
+/// <summary>
+/// The sources this person may see: their labels, as a search could show them.
+/// </summary>
+public sealed record ChordsSourcesResponse
+{
+    public required IReadOnlyList<ChordsSource> Sources { get; init; }
+
+    /// <summary>
+    /// Some source did not answer: the list may lack its labels.
+    /// </summary>
+    public required bool Incomplete { get; init; }
 }

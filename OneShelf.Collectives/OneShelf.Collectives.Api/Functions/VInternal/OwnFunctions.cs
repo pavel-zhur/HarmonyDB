@@ -11,16 +11,20 @@ using OneShelf.Common.Api;
 namespace OneShelf.Collectives.Api.Functions.VInternal;
 
 /// <summary>
-/// The own chords for the new shelf: it writes and reads its people's own chords here, as an internal client with the
-/// scope <see cref="CollectivesModule.InternalScope"/>; and its source (the own chords' source of the contract, version 2)
-/// reads them all, with a function key (<see cref="Items"/>). The new shelf's own chords belong to
-/// its accounts (<see cref="AccountCollective"/>); those written in the old shelf belong to Telegram users and are the
-/// shelf account's when it tells that it is that Telegram user. Nothing here touches the old shelf's songs.
+/// The own chords by their authors: an internal client with the scope <see cref="CollectivesModule.InternalScope"/>
+/// writes and reads a person's own chords here, naming the person by opaque names (<see cref="OwnChordsAuthor"/>); and
+/// their source (the own chords' source of the contract, version 2) reads them all, with a function key
+/// (<see cref="Items"/>). Own chords are the person's when any of the names is their author: of those written in the old
+/// shelf, <c>telegram:</c> and its Telegram user's id (<see cref="Mapper.OldAuthor"/>); of the others
+/// (<see cref="AuthoredCollective"/>), the name they were written by. The store compares names and asks no one what
+/// one means. Nothing here touches the old shelf's songs.
 /// <list type="bullet">
 /// <item>A request that cannot be read is answered 400; own chords that do not exist, are deleted or are not the
 /// author's are answered 404.</item>
-/// <item>A change adds a version. A change of chords written in the old shelf keeps their search tag, so their address
-/// in the old shelf keeps naming them.</item>
+/// <item>Only own chords written here are changed and deleted here (<see cref="OwnCollective.Editable"/>); those written in
+/// the old shelf are read here and changed there: a change or a delete of them is answered 409.</item>
+/// <item>A change adds a version, with a new code: a link to an older version opens nothing more.</item>
+/// <item>A person's private own chords written here are removed for good, all at once, when their profile goes (<see cref="RemovePrivate"/>).</item>
 /// </list>
 /// </summary>
 public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
@@ -30,7 +34,7 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
     {
         var ids = request.CollectiveIds?.Distinct().ToList();
         var old = ids == null ? await database.GetCollectives() : await database.GetCollectives(ids);
-        var own = await database.GetAccountCollectives(ids);
+        var own = await database.GetAuthoredCollectives(ids);
 
         return new OkObjectResult(new ItemsResponse
         {
@@ -46,10 +50,10 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
         if (!IsComplete(request.Author)) return new BadRequestResult();
 
         var old = new List<Collective>();
-        foreach (var telegramUserId in request.Author.TelegramUserIds.Distinct())
+        foreach (var telegramUserId in OldAuthors(request.Author))
             old.AddRange(await database.GetCollectives(telegramUserId));
 
-        var own = await database.GetAccountCollectives(request.Author.AccountId);
+        var own = await database.GetAuthoredCollectives(request.Author.Subjects);
 
         return new OkObjectResult(new OwnListResponse
         {
@@ -68,7 +72,7 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
         return await Find(request.Author, request.CollectiveId) switch
         {
             (Collective old, _) => new OkObjectResult(old.ToOwn(urlsManager.Generate(old), true)),
-            (_, AccountCollective own) => new OkObjectResult(own.ToOwn(Uri(own), true)),
+            (_, AuthoredCollective own) => new OkObjectResult(own.ToOwn(Uri(own), true)),
             _ => new NotFoundResult(),
         };
     }
@@ -76,19 +80,19 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
     [Function(CollectivesApiUrls.OwnInsert, AuthorizationLevel.Internal, "post", InternalScope = CollectivesModule.InternalScope)]
     public async Task<IActionResult> Insert(HttpRequest req, [FromBody] OwnInsertRequest request)
     {
-        if (request.AccountId == Guid.Empty || request.Collective == null!) return new BadRequestResult();
+        if (!IsComplete(request.Author) || request.Collective == null!) return new BadRequestResult();
 
-        var collective = new AccountCollective
+        var collective = new AuthoredCollective
         {
             Id = Guid.NewGuid(),
-            AccountId = request.AccountId,
+            Author = request.Author.Subjects[0],
             LatestVisibility = request.Collective.Visibility.ToDatabaseVisibility(),
-            Versions = [request.Collective.ToDatabaseVersion(Random.Shared.Next(100000, 999999))],
+            Versions = [request.Collective.ToDatabaseVersion(NewCode())],
         };
 
         if (!IsValid(collective)) return new BadRequestResult();
 
-        await database.UpsertAccountCollective(collective);
+        await database.UpsertAuthoredCollective(collective);
         return new OkObjectResult(collective.ToOwn(Uri(collective), true));
     }
 
@@ -99,24 +103,16 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
 
         switch (await Find(request.Author, request.CollectiveId))
         {
-            case (Collective old, _):
+            case (Collective, _):
+                return new ConflictResult();
+            case (_, AuthoredCollective own):
             {
-                var version = request.Collective.ToDatabaseVersion(old.Versions.Last().SearchTag);
-                old.Versions.Add(version);
-                old.LatestVisibility = version.Visibility;
-                if (!IsValid(old)) return new BadRequestResult();
-
-                await database.UpsertCollective(old);
-                return new OkObjectResult(old.ToOwn(urlsManager.Generate(old), true));
-            }
-            case (_, AccountCollective own):
-            {
-                var version = request.Collective.ToDatabaseVersion(own.Versions.Last().SearchTag);
+                var version = request.Collective.ToDatabaseVersion(NewCode());
                 own.Versions.Add(version);
                 own.LatestVisibility = version.Visibility;
                 if (!IsValid(own)) return new BadRequestResult();
 
-                await database.UpsertAccountCollective(own);
+                await database.UpsertAuthoredCollective(own);
                 return new OkObjectResult(own.ToOwn(Uri(own), true));
             }
             default:
@@ -131,48 +127,56 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
 
         switch (await Find(request.Author, request.CollectiveId))
         {
-            case (Collective old, _):
-                old.Versions.Add(Deleted(old.Versions.Last()));
-                old.LatestVisibility = CollectiveVisibility.Deleted;
-                await database.UpsertCollective(old);
-                return new NoContentResult();
-            case (_, AccountCollective own):
+            case (Collective, _):
+                return new ConflictResult();
+            case (_, AuthoredCollective own):
                 own.Versions.Add(Deleted(own.Versions.Last()));
                 own.LatestVisibility = CollectiveVisibility.Deleted;
-                await database.UpsertAccountCollective(own);
+                await database.UpsertAuthoredCollective(own);
                 return new NoContentResult();
             default:
                 return new NotFoundResult();
         }
     }
 
-    /// <summary>
-    /// The own chords one account wrote become another's: the first was merged into the second. Done again, it moves
-    /// nothing more.
-    /// </summary>
-    [Function(CollectivesApiUrls.OwnMove, AuthorizationLevel.Internal, "post", InternalScope = CollectivesModule.InternalScope)]
-    public async Task<IActionResult> Move(HttpRequest req, [FromBody] OwnMoveRequest request)
+    [Function(CollectivesApiUrls.OwnRemovePrivate, AuthorizationLevel.Internal, "post", InternalScope = CollectivesModule.InternalScope)]
+    public async Task<IActionResult> RemovePrivate(HttpRequest req, [FromBody] OwnRemovePrivateRequest request)
     {
-        if (request.FromAccountId == Guid.Empty || request.ToAccountId == Guid.Empty || request.FromAccountId == request.ToAccountId)
-            return new BadRequestResult();
+        if (!IsComplete(request.Author)) return new BadRequestResult();
 
-        await database.MoveAccountCollectives(request.FromAccountId, request.ToAccountId);
-        return new NoContentResult();
+        var ids = (await database.GetAuthoredCollectives(request.Author.Subjects))
+            .Where(x => x.Versions.LastOrDefault(v => v.Visibility != CollectiveVisibility.Deleted)?.Visibility is null or CollectiveVisibility.Private)
+            .Select(x => x.Id)
+            .ToList();
+
+        return new OkObjectResult(new OwnRemovePrivateResponse { Removed = ids.Count == 0 ? 0 : await database.RemoveAuthoredCollectives(ids) });
     }
 
     /// <summary>
-    /// The author's own chords of the id that are not deleted: written in the old shelf by one of the author's Telegram
-    /// users, or in the new one by the author's account.
+    /// The person's own chords of the id that are not deleted: those whose author is one of the person's names.
     /// </summary>
-    private async Task<(Collective? old, AccountCollective? own)> Find(OwnChordsAuthor author, Guid collectiveId)
+    private async Task<(Collective? old, AuthoredCollective? own)> Find(OwnChordsAuthor author, Guid collectiveId)
     {
         var old = await database.GetCollective(collectiveId);
         if (old != null)
-            return old.LatestVisibility != CollectiveVisibility.Deleted && author.TelegramUserIds.Contains(old.CreatedByUserId) ? (old, null) : (null, null);
+            return old.LatestVisibility != CollectiveVisibility.Deleted && author.Subjects.Contains(Mapper.OldAuthor(old.CreatedByUserId)) ? (old, null) : (null, null);
 
-        var own = await database.GetAccountCollective(collectiveId);
-        return own != null && own.LatestVisibility != CollectiveVisibility.Deleted && own.AccountId == author.AccountId ? (null, own) : (null, null);
+        var own = await database.GetAuthoredCollective(collectiveId);
+        return own != null && own.LatestVisibility != CollectiveVisibility.Deleted && author.Subjects.Contains(own.Author) ? (null, own) : (null, null);
     }
+
+    /// <summary>
+    /// The Telegram users among the person's names: the authors of the person's chords written in the old shelf.
+    /// </summary>
+    private static IEnumerable<long> OldAuthors(OwnChordsAuthor author)
+        => author.Subjects.Select(x => x.StartsWith("telegram:", StringComparison.Ordinal) && long.TryParse(x["telegram:".Length..], out var id) && Mapper.OldAuthor(id) == x ? id : (long?)null)
+            .OfType<long>()
+            .Distinct();
+
+    /// <summary>
+    /// The code of a new version: six digits.
+    /// </summary>
+    private static int NewCode() => Random.Shared.Next(100000, 999999);
 
     private static Database.Models.Version Deleted(Database.Models.Version last) => last with
     {
@@ -180,9 +184,10 @@ public class OwnFunctions(CollectivesDatabase database, UrlsManager urlsManager)
         Visibility = CollectiveVisibility.Deleted,
     };
 
-    private Uri Uri(AccountCollective collective) => new(urlsManager.Generate(collective.Id, collective.Versions.Last().SearchTag, collective.Versions.Count));
+    private Uri Uri(AuthoredCollective collective) => new(urlsManager.Generate(collective.Id, collective.Versions.Last().SearchTag, collective.Versions.Count));
 
-    private static bool IsComplete(OwnChordsAuthor? author) => author is { TelegramUserIds: not null } && author.AccountId != Guid.Empty;
+    private static bool IsComplete(OwnChordsAuthor? author)
+        => author is { Subjects: { Count: > 0 } subjects } && subjects.All(x => !string.IsNullOrWhiteSpace(x));
 
     /// <summary>
     /// The store's rules for own chords (authors and title trimmed, contents not empty): what breaks them is the caller's

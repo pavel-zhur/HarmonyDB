@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Database;
 using System.Net;
 using System.Net.Http.Json;
 using HarmonyDB.Shelf.Database.Model;
@@ -259,22 +260,23 @@ public sealed class SessionTests(ShelfDatabaseFixture database) : IClassFixture<
     }
 
     [DatabaseFact]
-    public async Task AnInternalClientReadsTheSignInsOfAnAccount()
+    public async Task APersonIsKnownToTheSourcesByTheirAccountTheAccountsMergedIntoItAndTheirTelegramSignIns()
     {
-        await database.Api.NewBrowser().DevAsync("internal-read");
-        await using var db = database.CreateContext();
-        var accountId = (await db.AccountLogins.SingleAsync(x => x.Subject == "internal-read")).AccountId;
+        var now = DateTimeOffset.UtcNow;
+        var (me, merged, earlier) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        await using (var db = database.CreateContext())
+        {
+            db.Accounts.Add(new() { Id = me, DisplayName = "me", CreatedAt = now });
+            db.AccountLogins.Add(new() { Id = Guid.NewGuid(), AccountId = me, Provider = "telegram", Subject = "4242", CreatedAt = now, LastSignInAt = now });
+            db.AccountLogins.Add(new() { Id = Guid.NewGuid(), AccountId = me, Provider = "dev", Subject = $"dev-{me:N}", CreatedAt = now, LastSignInAt = now });
+            db.AccountMerges.Add(new() { MergedId = earlier, IntoId = me, MergedAt = now.AddDays(-1) });
+            db.AccountMerges.Add(new() { MergedId = merged, IntoId = me, MergedAt = now });
+            await db.SaveChangesAsync();
+        }
 
-        var client = database.Api.CreateClient();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync($"/internal/accounts/{accountId}/logins/dev")).StatusCode);
-
-        client.DefaultRequestHeaders.Add("X-Internal-Key", AuthApiFactory.InternalKey);
-        var subjects = await client.GetFromJsonAsync<AccountLoginSubjects>($"/internal/accounts/{accountId}/logins/dev", Browser.Json);
-        Assert.Equal(["internal-read"], subjects!.Subjects);
-        Assert.Empty((await client.GetFromJsonAsync<AccountLoginSubjects>($"/internal/accounts/{accountId}/logins/telegram", Browser.Json))!.Subjects);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/internal/accounts/{Guid.NewGuid()}/logins/telegram")).StatusCode);
+        await using (var db = database.CreateContext())
+            Assert.Equal([$"account:{me:D}", $"account:{earlier:D}", $"account:{merged:D}", "telegram:4242"], await AccountSubjects.LoadAsync(db, me, CancellationToken.None));
     }
-
     internal static Playlist Playlist(Guid ownerId, string title, params Guid[] members)
     {
         var now = DateTimeOffset.UtcNow;

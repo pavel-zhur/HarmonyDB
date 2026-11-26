@@ -16,15 +16,16 @@ namespace OneShelf.Sources.Self.Api.Services.V2;
 /// The own chords (the collectives) as a source of the contract, version 2.
 /// <list type="bullet">
 /// <item>The id of a collective is <c>mj-{its id}</c>: it stays the same through the collective's versions.</item>
-/// <item>A public collective is open to every caller and found by every search. A club one (there are no clubs in the
-/// shelf; the club's people keep its collectives in shared playlists) is open to every caller who holds its id, and
-/// found by the searches of its author only. A private one is open to, and found by, its author only. The author is
-/// the caller whose account wrote it in the shelf, or, for one written in the old shelf, whose account the shelf links
-/// to the Telegram user who made it (<see cref="ShelfAccountsClient"/>).
-/// A deleted collective is not open. The caller's keys open nothing here.</item>
-/// <item>For a caller who is a person, the shelf is asked who it is before anything else, so what is answered does not
-/// depend on what exists. When the shelf does not answer, a search gives what is open to all and reports this source
-/// as failed, and an id that is not open to all is unavailable, whether it exists or not.</item>
+/// <item>Its author is the opaque name the store keeps; it is the caller's when any of the caller's subjects is it. The
+/// source compares names and asks no one what one means.</item>
+/// <item>A public collective is found by every search and open to everyone. A club one is found by its author's
+/// searches, and open to everyone who holds its id. A private one is found by its author's searches, and open to its
+/// author and to whoever holds its current address (<see cref="SelfAddresses"/>): its id, its code and its version are
+/// the collective's. A new version takes the private links handed out before it back. A deleted collective is not
+/// open. The caller's keys open nothing here.</item>
+/// <item>An address resolves when the collective is open to the caller with it: its current address for everyone, an
+/// older address of a public or club collective for everyone, an older address of a private one for its author.</item>
+/// <item>An item's address in its header is its current one, by this source's own template.</item>
 /// <item>The icon's name begins with <see cref="IdPrefix"/>: the index routes it to this source as it routes an id.</item>
 /// </list>
 /// </summary>
@@ -33,18 +34,16 @@ public partial class SelfV2Source
     public const string IdPrefix = "mj-";
 
     private readonly CollectivesApiClient _collectivesApiClient;
-    private readonly ShelfAccountsClient _shelfAccountsClient;
     private readonly StructureParser _structureParser;
-    private readonly MetadataBuilder _metadataBuilder;
+    private readonly SelfAddresses _addresses;
     private readonly SelfApiOptions _selfOptions;
     private readonly SelfV2Options _options;
 
-    public SelfV2Source(CollectivesApiClient collectivesApiClient, ShelfAccountsClient shelfAccountsClient, StructureParser structureParser, MetadataBuilder metadataBuilder, IOptions<SelfApiOptions> selfOptions, IOptions<SelfV2Options> options)
+    public SelfV2Source(CollectivesApiClient collectivesApiClient, StructureParser structureParser, SelfAddresses addresses, IOptions<SelfApiOptions> selfOptions, IOptions<SelfV2Options> options)
     {
         _collectivesApiClient = collectivesApiClient;
-        _shelfAccountsClient = shelfAccountsClient;
         _structureParser = structureParser;
-        _metadataBuilder = metadataBuilder;
+        _addresses = addresses;
         _selfOptions = selfOptions.Value;
         _options = options.Value;
     }
@@ -57,15 +56,24 @@ public partial class SelfV2Source
             : null;
 
     /// <summary>
+    /// The source's one label.
+    /// </summary>
+    public SourceLabel Label => new()
+    {
+        Key = _selfOptions.SourceName,
+        Title = _selfOptions.SourceName,
+        Icon = _options.IconName,
+    };
+
+    /// <summary>
     /// The collectives the caller finds whose title or authors contain every word of the query, by title.
     /// </summary>
     public async Task<SearchResponse> Search(Caller caller, string query, CancellationToken cancellationToken)
     {
-        var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var words = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
 
         var headers = (await _collectivesApiClient.Items(null)).Items
-            .Where(viewer.Finds)
+            .Where(version => Finds(caller, version))
             .Where(version =>
             {
                 var text = string.Join(' ', version.Collective.Authors.Prepend(version.Collective.Title));
@@ -78,15 +86,12 @@ public partial class SelfV2Source
         return new()
         {
             Headers = headers,
-            Failures = viewer.IsUnknownPerson
-                ? [new() { Source = _selfOptions.SourceName, Reason = SearchFailureReason.Unavailable }]
-                : [],
+            Failures = [],
         };
     }
 
     public async Task<GetHeadersResponse> GetHeaders(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {
-        var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var found = await Get(ids.Select(FromId));
 
         return new()
@@ -95,24 +100,19 @@ public partial class SelfV2Source
                 .Select(id =>
                 {
                     var version = FromId(id) is { } collectiveId ? found.GetValueOrDefault(collectiveId) : null;
-                    var state = viewer.StateOf(version);
-                    return new HeaderAnswer
-                    {
-                        Id = id,
-                        State = state,
-                        Header = state == ItemState.Open ? ToHeader(version!) : null,
-                    };
+                    return IsOpen(caller, version, null)
+                        ? new HeaderAnswer { Id = id, State = ItemState.Open, Header = ToHeader(version!) }
+                        : new HeaderAnswer { Id = id, State = ItemState.NotOpen };
                 })
                 .ToList(),
         };
     }
 
-    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
-        var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var collectiveId = FromId(id);
         var version = collectiveId == null ? null : (await Get([collectiveId])).GetValueOrDefault(collectiveId.Value);
-        return ContentOf(viewer, id, version, kinds);
+        return ContentOf(caller, id, version, kinds, address);
     }
 
     /// <summary>
@@ -120,30 +120,28 @@ public partial class SelfV2Source
     /// </summary>
     public async Task<GetContentsResponse> GetContents(Caller caller, IReadOnlyList<string> ids, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
     {
-        var viewer = await Viewer.Create(caller, _shelfAccountsClient, cancellationToken);
         var found = await Get(ids.Select(FromId));
         return new()
         {
-            Items = ids.Select(id => ContentOf(viewer, id, FromId(id) is { } collectiveId ? found.GetValueOrDefault(collectiveId) : null, kinds)).ToList(),
+            Items = ids.Select(id => ContentOf(caller, id, FromId(id) is { } collectiveId ? found.GetValueOrDefault(collectiveId) : null, kinds, null)).ToList(),
         };
     }
 
-    private GetContentResponse ContentOf(Viewer viewer, string id, OwnCollective? version, IReadOnlyList<ContentKind> kinds)
+    private GetContentResponse ContentOf(Caller caller, string id, OwnCollective? version, IReadOnlyList<ContentKind> kinds, Uri? address)
     {
-        var state = viewer.StateOf(version);
-        if (state != ItemState.Open)
+        if (!IsOpen(caller, version, address))
         {
             return new()
             {
                 Id = id,
-                State = state,
+                State = ItemState.NotOpen,
             };
         }
 
         return new()
         {
             Id = id,
-            State = state,
+            State = ItemState.Open,
             Header = ToHeader(version!),
             Content = new()
             {
@@ -159,34 +157,19 @@ public partial class SelfV2Source
     }
 
     /// <summary>
-    /// An address of a collective resolves when the collective is open to the caller.
+    /// An address of a collective resolves when the collective is open to the caller with it.
     /// </summary>
     public async Task<ResolveResponse> Resolve(Caller caller, IReadOnlyList<Uri> uris, CancellationToken cancellationToken)
     {
-        var collectiveIds = uris.Select(_metadataBuilder.GetCollectiveId).ToList();
-        var ours = collectiveIds.Any(x => x.HasValue);
-
-        // the shelf is asked only when an address is of this source at all: an address of another source says nothing
-        // of what exists here
-        var viewer = ours ? await Viewer.Create(caller, _shelfAccountsClient, cancellationToken) : null;
-        var found = ours ? await Get(collectiveIds) : new Dictionary<Guid, OwnCollective>();
+        var parts = uris.Select(_addresses.Read).ToList();
+        var found = parts.Any(x => x != null) ? await Get(parts.Select(x => x?.CollectiveId)) : new Dictionary<Guid, OwnCollective>();
 
         return new()
         {
             Items = uris
-                .Select((uri, i) =>
-                {
-                    if (collectiveIds[i] is not { } collectiveId)
-                        return new ResolvedUri { Uri = uri, State = ResolveState.NotResolved };
-
-                    return viewer!.StateOf(found.GetValueOrDefault(collectiveId)) switch
-                    {
-                        ItemState.Open => new ResolvedUri { Uri = uri, State = ResolveState.Resolved, Id = ToId(collectiveId) },
-                        ItemState.NotOpen => new ResolvedUri { Uri = uri, State = ResolveState.NotResolved },
-                        ItemState.Unavailable => new ResolvedUri { Uri = uri, State = ResolveState.Unavailable },
-                        _ => throw new ArgumentOutOfRangeException(),
-                    };
-                })
+                .Select((uri, i) => parts[i] is { } address && found.GetValueOrDefault(address.CollectiveId) is { } version && IsOpen(caller, version, uri)
+                    ? new ResolvedUri { Uri = uri, State = ResolveState.Resolved, Id = ToId(address.CollectiveId) }
+                    : new ResolvedUri { Uri = uri, State = ResolveState.NotResolved })
                 .ToList(),
         };
     }
@@ -203,6 +186,30 @@ public partial class SelfV2Source
     }
 
     /// <summary>
+    /// Whether the collective is open to the caller, who came by the address given or by its id.
+    /// </summary>
+    /// <param name="version">The collective, or null when there is none of that id.</param>
+    private bool IsOpen(Caller caller, OwnCollective? version, Uri? address)
+        => version?.Collective.Visibility switch
+        {
+            null => false,
+            CollectiveVisibility.Public or CollectiveVisibility.Club => true,
+            _ => IsAuthor(caller, version) || IsCurrent(version, address),
+        };
+
+    private bool Finds(Caller caller, OwnCollective version)
+        => version.Collective.Visibility == CollectiveVisibility.Public || IsAuthor(caller, version);
+
+    private static bool IsAuthor(Caller caller, OwnCollective version) => caller.Subjects.Contains(version.Author, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether the address is the collective's current one: its id, its code and its version are the collective's.
+    /// </summary>
+    private bool IsCurrent(OwnCollective version, Uri? address)
+        => address != null && _addresses.Read(address) is { } parts
+                           && parts == new SelfAddresses.Parts(version.CollectiveId, version.SearchTag, version.VersionNumber);
+
+    /// <summary>
     /// The collectives of these ids that exist and are not deleted.
     /// </summary>
     private async Task<IReadOnlyDictionary<Guid, OwnCollective>> Get(IEnumerable<Guid?> collectiveIds)
@@ -216,13 +223,8 @@ public partial class SelfV2Source
     private Header ToHeader(OwnCollective version) => new()
     {
         Id = ToId(version.CollectiveId),
-        Source = new()
-        {
-            Key = _selfOptions.SourceName,
-            Title = _selfOptions.SourceName,
-            Uri = version.Uri,
-            Icon = _options.IconName,
-        },
+        Source = Label,
+        Address = _addresses.Make(version.CollectiveId, version.SearchTag, version.VersionNumber),
         Title = version.Collective.Title,
         Artists = version.Collective.Authors,
         Kinds = [ContentKind.Sheet],
@@ -239,58 +241,4 @@ public partial class SelfV2Source
     /// </summary>
     [GeneratedRegex("^[A-G][#b]?m?$")]
     private static partial Regex KeyPattern();
-
-    /// <summary>
-    /// What is open to one caller, and what its searches find.
-    /// </summary>
-    private sealed class Viewer
-    {
-        private readonly Guid? _accountId;
-        private readonly IReadOnlySet<long>? _telegramUserIds;
-
-        private Viewer(Guid? accountId, IReadOnlySet<long>? telegramUserIds)
-        {
-            _accountId = accountId;
-            _telegramUserIds = telegramUserIds;
-        }
-
-        private bool IsPerson => _accountId != null;
-
-        /// <summary>
-        /// The caller is a person whom the shelf could not tell.
-        /// </summary>
-        public bool IsUnknownPerson => IsPerson && _telegramUserIds == null;
-
-        /// <summary>
-        /// For a person, asks the shelf who it is, always and first.
-        /// </summary>
-        public static async Task<Viewer> Create(Caller caller, ShelfAccountsClient shelfAccountsClient, CancellationToken cancellationToken)
-        {
-            if (caller.AccountId is not { } accountId) return new(null, null);
-
-            try
-            {
-                return new(accountId, await shelfAccountsClient.GetTelegramUserIds(accountId, cancellationToken));
-            }
-            catch (ShelfUnavailableException)
-            {
-                return new(accountId, null);
-            }
-        }
-
-        /// <param name="version">The collective, or null when there is none of that id.</param>
-        public ItemState StateOf(OwnCollective? version)
-        {
-            if (version?.Collective.Visibility is CollectiveVisibility.Public or CollectiveVisibility.Club) return ItemState.Open;
-            if (!IsPerson) return ItemState.NotOpen;
-            if (version != null && version.AuthorAccountId == _accountId) return ItemState.Open;
-            if (_telegramUserIds == null) return ItemState.Unavailable;
-            return version?.AuthorTelegramUserId is { } author && _telegramUserIds.Contains(author) ? ItemState.Open : ItemState.NotOpen;
-        }
-
-        public bool Finds(OwnCollective version)
-            => version.Collective.Visibility == CollectiveVisibility.Public
-               || (IsPerson && version.AuthorAccountId == _accountId)
-               || (version.AuthorTelegramUserId is { } author && (_telegramUserIds?.Contains(author) ?? false));
-    }
 }

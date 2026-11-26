@@ -45,6 +45,7 @@ services:
       ConnectionStrings__CollectivesDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_COLLECTIVES};Password=${PG_PASSWORD_COLLECTIVES}"
       ConnectionStrings__IllustrationsDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_ILLUSTRATIONS};Password=${PG_PASSWORD_ILLUSTRATIONS}"
       ConnectionStrings__FrontendDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_FRONTEND};Password=${PG_PASSWORD_FRONTEND}"
+      ConnectionStrings__AnalysesDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_ANALYSES:?};Password=${PG_PASSWORD_ANALYSES:?}"
       # the OpenAI account and the Google ones (illustrations, the bots)
       OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
       # music (Google Vertex AI): the key file of a service account, as one line of JSON
@@ -71,6 +72,17 @@ services:
       # ---------- Billing ----------
       # (the songs database only)
 
+      # ---------- Analyses: the analyses as a source ----------
+      # its label, its items' address (the public page, with {id} where the id goes),
+      # its folder of files, and the client that puts analyses in
+      Analyses__AnalysesOptions__SourceKey: ${ANALYSES_SOURCE_KEY:?}
+      Analyses__AnalysesOptions__SourceTitle: ${ANALYSES_SOURCE_TITLE:?}
+      Analyses__AnalysesOptions__PublicUriTemplate: ${ANALYSES_PUBLIC_URI_TEMPLATE:?}
+      Analyses__AnalysesOptions__FilesFolder: /analyses-files
+      Analyses__InternalClients__0__Name: analyses
+      Analyses__InternalClients__0__Key: ${ANALYSES_WRITE_KEY:?}
+      Analyses__InternalClients__0__Scopes__0: analyses.write
+
       # ---------- Collectives (the songs people add themselves) ----------
       Collectives__CollectivesOptions__UrlTemplate: ${COLLECTIVES_URL_TEMPLATE}
       Collectives__CollectivesOptions__UrlIdPattern: ${COLLECTIVES_URL_ID_PATTERN}
@@ -78,6 +90,8 @@ services:
       Collectives__AuthorizationApiClientOptions__PingEndpoint: &authorization-ping http://api/authorization/api/Ping
 
       # ---------- SourcesSelf: the source of the songs people add themselves ----------
+      # the address of own chords the source contract, version 2, gives (their public page), with {id}, {code}, {version}
+      SourcesSelf__SelfV2__AddressTemplate: ${SELF_ADDRESS_TEMPLATE:?}
       SourcesSelf__SelfApiOptions__SourceName: ${SELF_SOURCE_NAME}
       SourcesSelf__SelfApiOptions__ShortSourceName: ${SELF_SHORT_SOURCE_NAME}
       SourcesSelf__SelfApiOptions__Hosts__0: ${SELF_HOST}
@@ -176,6 +190,7 @@ services:
       - "${API_PORT}:80"
     volumes:
       - index-cache:/cache
+      - analyses-files:/analyses-files
     depends_on:
       - postgres
       - pdfs-api
@@ -313,3 +328,5 @@ volumes:
   postgres-data:
   # the Index's cache files
   index-cache:
+  # the analyses' files
+  analyses-files:

@@ -20,11 +20,6 @@ public class Account
     /// </summary>
     public string? Locale { get; set; }
 
-    /// <summary>
-    /// Set for a system account only: its stable name, by which tools find it. Null for a person.
-    /// </summary>
-    public string? SystemName { get; set; }
-
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? LastSeenAt { get; set; }
@@ -305,7 +300,6 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
     public void Configure(EntityTypeBuilder<Account> builder)
     {
         builder.ToTable("accounts");
-        builder.HasIndex(x => x.SystemName).IsUnique();
         builder.HasOne(x => x.Settings).WithOne(x => x.Account).HasForeignKey<AccountSettings>(x => x.AccountId).OnDelete(DeleteBehavior.Cascade);
     }
 }
@@ -376,5 +370,35 @@ internal sealed class AccountSettingsConfiguration : IEntityTypeConfiguration<Ac
             x.HasCheckConstraint("ck_account_settings_interface_scale", "interface_scale > 0");
         });
         builder.HasKey(x => x.AccountId);
+    }
+}
+/// <summary>
+/// That one account was merged into another: the merged account's own name stays one of the other's names (as the
+/// sources know people by), for as long as the other lives. A merge into an account later merged again points at the
+/// last one.
+/// </summary>
+public class AccountMerge
+{
+    /// <summary>
+    /// The account merged away.
+    /// </summary>
+    public Guid MergedId { get; set; }
+
+    /// <summary>
+    /// The account it lives on in.
+    /// </summary>
+    public Guid IntoId { get; set; }
+
+    public DateTimeOffset MergedAt { get; set; }
+}
+
+internal sealed class AccountMergeConfiguration : IEntityTypeConfiguration<AccountMerge>
+{
+    public void Configure(EntityTypeBuilder<AccountMerge> builder)
+    {
+        builder.ToTable("account_merges");
+        builder.HasKey(x => x.MergedId);
+        builder.HasIndex(x => x.IntoId);
+        builder.HasOne<Account>().WithMany().HasForeignKey(x => x.IntoId).OnDelete(DeleteBehavior.Cascade);
     }
 }

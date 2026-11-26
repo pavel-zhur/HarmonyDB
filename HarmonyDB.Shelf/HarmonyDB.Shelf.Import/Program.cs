@@ -1,3 +1,4 @@
+using System.Globalization;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Import;
 using HarmonyDB.Shelf.Import.Audit;
@@ -156,13 +157,13 @@ async Task<Resolution> ResolveAsync()
 
     // what resolved once stays resolved; the rest is asked again (a later pass)
     var addresses = uris.Where(x => known.GetValueOrDefault(("uri", x)) is { SourceId: not null }).ToDictionary(x => x, x => known[("uri", x)], StringComparer.Ordinal);
-    var asked = await resolver.ResolveAsync(uris.Where(x => !addresses.ContainsKey(x)).ToList(), null, cancellationToken);
+    var asked = await resolver.ResolveAsync(uris.Where(x => !addresses.ContainsKey(x)).ToList(), [], cancellationToken);
 
     // own chords not open to all are open to their author
     foreach (var author in old.Versions.Where(x => x.CollectiveId != null && asked.GetValueOrDefault(x.Uri) is { SourceId: null }).GroupBy(x => old.OwnChords.SingleOrDefault(c => c.Id == x.CollectiveId)?.AuthorUserId))
     {
-        if (author.Key is { } person && accounts.TryGetValue(person, out var accountId))
-            foreach (var (uri, answer) in await resolver.ResolveAsync(author.Select(x => x.Uri).Distinct().ToList(), accountId, cancellationToken))
+        if (author.Key is { } person && accounts.ContainsKey(person))
+            foreach (var (uri, answer) in await resolver.ResolveAsync(author.Select(x => x.Uri).Distinct().ToList(), [AccountSubjects.OfTelegram(person.ToString(CultureInfo.InvariantCulture))], cancellationToken))
                 asked[uri] = answer;
     }
 

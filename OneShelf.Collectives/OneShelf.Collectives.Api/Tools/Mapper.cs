@@ -1,4 +1,4 @@
-﻿using OneShelf.Collectives.Api.Model.V2.Sub;
+using OneShelf.Collectives.Api.Model.V2.Sub;
 using OneShelf.Collectives.Api.Model.VInternal;
 using Version = OneShelf.Collectives.Database.Models.Version;
 
@@ -41,12 +41,17 @@ internal static class Mapper
         };
 
     public static OwnCollective ToOwn(this Database.Models.Collective collective, Uri uri, bool withHistory)
-        => ToOwn(collective.Id, collective.Versions, uri, withHistory, collective.CreatedByUserId, null);
+        => ToOwn(collective.Id, collective.Versions, uri, withHistory, OldAuthor(collective.CreatedByUserId), false);
 
-    public static OwnCollective ToOwn(this Database.Models.AccountCollective collective, Uri uri, bool withHistory)
-        => ToOwn(collective.Id, collective.Versions, uri, withHistory, null, collective.AccountId);
+    public static OwnCollective ToOwn(this Database.Models.AuthoredCollective collective, Uri uri, bool withHistory)
+        => ToOwn(collective.Id, collective.Versions, uri, withHistory, collective.Author, true);
 
-    private static OwnCollective ToOwn(Guid id, List<Version> versions, Uri uri, bool withHistory, long? telegramUserId, Guid? accountId)
+    /// <summary>
+    /// The author's name of own chords written in the old shelf, by a Telegram user.
+    /// </summary>
+    public static string OldAuthor(long telegramUserId) => $"telegram:{telegramUserId}";
+
+    private static OwnCollective ToOwn(Guid id, List<Version> versions, Uri uri, bool withHistory, string author, bool editable)
     {
         var version = versions.Last();
         return new()
@@ -58,8 +63,8 @@ internal static class Mapper
             UpdatedOn = version.CreatedOn,
             SearchTag = version.SearchTag,
             Uri = uri,
-            AuthorTelegramUserId = telegramUserId,
-            AuthorAccountId = accountId,
+            Author = author,
+            Editable = editable,
             History = withHistory
                 ? versions.Select((x, i) => new OwnCollectiveVersion
                 {

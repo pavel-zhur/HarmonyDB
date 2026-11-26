@@ -1,8 +1,10 @@
 # HarmonyDB Shelf — the web app
 
 The new shelf's frontend: TypeScript, React 18, Vite, React Router, TanStack Query, i18next; an installable PWA.
-The design is the mock-up `OneShelf.Frontend/OneShelf.Frontend.WebTs.v3` (`src.html` and its `docs/`), its first
-style only, light and dark. Open it beside your screen while you work; its rules (`docs/1-history.md`) hold here.
+The mock-up `OneShelf.Frontend/OneShelf.Frontend.WebTs.v3` (`src.html` and its `docs/`) gives the direction and the
+look (its first style, light and dark), not a law: it was drawn by a designer who knew the application only roughly,
+and has its own mistakes. In its `docs`, the tables of the owner's own corrections are his words and hold; the rest is
+weighed by common sense against how the application really works.
 
 ## Layout
 
@@ -176,8 +178,9 @@ kinds of marks and their signs come from the server's public configuration: `dat
   came back from is lit (`app/lastOpened.ts`). A list's search, sort and filters live in its address.
 - The sync button spins while the local-first store exchanges with the server, and leads to the library, newest
   chords first.
-- A new version of the app: the worker takes the open page over and the page offers to reload (`app/pwa.ts`). The
-  fonts are kept with the app (`styles/fonts.css`), so it is whole offline.
+- A new build of the app: the worker keeps the current build only and takes the open page over; a page of the build
+  before that asks for a part no longer there loads the new build, once (`app/pwa.ts`, `build/service-worker.js`).
+  The fonts are kept with the app (`styles/fonts.css`), so it is whole offline.
 
 ## Libraries and fonts kept with the app
 
@@ -185,8 +188,7 @@ Besides the frameworks in `package.json`:
 
 - `@soundtouchjs/core` (MPL-2.0) — the time-stretch under the tempo (`player/sound/stretchPipe.ts`). That file
   changes the library's overlap search, so it is under the MPL-2.0 itself, as its first lines say.
-- `opensheetmusicdisplay` (BSD-3-Clause) — engraves the score (`analysis/views/ScoreView.tsx`); its two style writes
-  are patched where it is bundled (`build/engraverStyles.ts`), for the content policy.
+- `opensheetmusicdisplay` (BSD-3-Clause) — engraves the score (`analysis/views/ScoreView.tsx`), as it is.
 - Bravura (SIL Open Font License 1.1) — the music font of the lead sheet, with its licence beside it
   (`analysis/views/lead/OFL.txt`).
 
@@ -194,8 +196,9 @@ Besides the frameworks in `package.json`:
 
 nginx (`docker/security.conf`) gives every answer `X-Frame-Options: DENY`, a Content-Security-Policy (only the app's own
 scripts, styles, fonts and connections; pictures also from https; `frame-ancestors 'none'`), `nosniff` and a
-referrer policy. No inline script or style in the page: a new need (a picture from elsewhere, a player) is a change of
-the policy there, said in the review.
+referrer policy. No inline script and no style element in the page; inline style attributes are allowed
+(`style-src-attr 'unsafe-inline'`: they cannot run script; the sheet and the score write them). A new need (a picture
+from elsewhere, a player) is a change of the policy there, said in the review.
 
 ## The consent page of the MCP's sign-in (a later unit)
 
@@ -211,8 +214,8 @@ target `public`, **http://localhost:14109** on the stand): the showcase — the 
 there with the app's views and player — and whatever a link leads to, for one who has never seen the app. It shares
 `src/` (the views, the player, the chord sheet, the kit, the client, the i18n) but not the app's frame, worker,
 manifest, sign-in or local store; it reads the API always as a guest through its own nginx (`docker/public.nginx.conf`:
-only the calls it makes go on to shelf-api, by exact address and method, without the browser's cookies; tested when
-the image is built, `docker/public-web.test.sh`; the same content policy).
+`/api/` goes on to shelf-api without the browser's cookies and credentials, and no cookie comes back — what a guest may
+do is the API's to decide; tested when the image is built, `docker/public-web.test.sh`; the same content policy).
 
 - Addresses: `/` the showcase, `/songs/:songId` a song of it, `/chords/:chordsId` chords by id, `/s/:token` a share
   link (chords, a song, a playlist), `/s/:token/:songId` a song of a shared playlist.

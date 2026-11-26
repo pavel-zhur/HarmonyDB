@@ -67,4 +67,45 @@ public sealed class ImportTests(WorkFixture fixture) : IClassFixture<WorkFixture
         Assert.Equal($"Title of {open}", Assert.Single(songs).Title);
         Assert.Equal(PlaylistSystemKind.ImportedChords, (await db.Playlists.SingleAsync(x => x.Id == result.PlaylistId)).SystemKind);
     }
+
+    [DatabaseFact]
+    public async Task ManyLinksAreImportedWhateverTheLookupsTheyStart()
+    {
+        var me = await fixture.AccountAsync();
+        var prefix = $"many-{Guid.NewGuid():N}";
+        fixture.Index.Answer = (operation, body) => operation switch
+        {
+            "V2Resolve" => (HttpStatusCode.OK, new ResolveResponse
+            {
+                Items = body.GetProperty("uris").EnumerateArray().Select(x => new Uri(x.GetString()!))
+                    .Select(uri => new ResolvedUri { Uri = uri, State = ResolveState.Resolved, Id = $"{prefix}{uri.AbsolutePath.Replace('/', '-')}" }).ToList(),
+            }),
+            "V2GetHeaders" => (HttpStatusCode.OK, new GetHeadersResponse
+            {
+                Headers = body.GetProperty("ids").EnumerateArray().Select(x => new HeaderAnswer { Id = x.GetString()!, State = ItemState.Open, Header = FakeIndex.Header(x.GetString()!, "Source") }).ToList(),
+            }),
+            _ => (HttpStatusCode.InternalServerError, null),
+        };
+
+        // more links than a person may start jobs of one kind: each song added queues the shelf's lookup of its recordings
+        var links = Enumerable.Range(1, 6).Select(i => $"https://known.example/song{i}").ToArray();
+        using var client = fixture.Api.CreateClient();
+        var started = await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/import/links", me, body: new ImportLinksRequest { Links = links }));
+        Assert.Equal(HttpStatusCode.OK, started.StatusCode);
+        var job = JsonSerializer.Deserialize<JobInfo>(await started.Content.ReadAsStringAsync(), Browser.Json)!;
+
+        var done = await fixture.FinishedAsync(me, job.Id);
+        Assert.Equal(JobStatus.Succeeded, done.Status);
+        var result = Assert.IsType<ImportResult>(done.Result);
+        Assert.All(result.Links, x => Assert.Equal(ImportLinkState.Imported, x.State));
+
+        // the lookups are the shelf's: queued with the songs, one each, and not in the person's list of jobs
+        await using var db = fixture.CreateContext();
+        var songs = await db.PlaylistSongs.Where(x => x.PlaylistId == result.PlaylistId).Select(x => x.Id.ToString()).ToListAsync();
+        Assert.Equal(6, songs.Count);
+        Assert.Equal(6, await db.Jobs.CountAsync(x => x.Kind == HarmonyDB.Shelf.Api.Areas.Recordings.Services.SongRecordingsJob.Kind && songs.Contains(x.SubjectId!)));
+        var listed = await (await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/jobs", me))).Content.ReadAsStringAsync();
+        Assert.DoesNotContain(HarmonyDB.Shelf.Api.Areas.Recordings.Services.SongRecordingsJob.Kind, listed);
+        Assert.Contains(job.Id.ToString(), listed);
+    }
 }

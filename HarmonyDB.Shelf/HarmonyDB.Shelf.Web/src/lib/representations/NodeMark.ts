@@ -32,15 +32,12 @@ function round(x: number, digits = 0): number {
 const N = (x: number): string => String(x);
 
 const svg = (left: number, top: number, width: number, height: number, heightEm: number, content: string): string =>
-    `<svg viewBox='${N(left)} ${N(top)} ${N(width)} ${N(height)}' height='${N(heightEm)}em' width='${N(round(heightEm * width / height, 3))}em' fill='currentColor' stroke='currentColor' aria-hidden='true'>${content}</svg>`;
+    `<svg viewBox='${N(left)} ${N(top)} ${N(width)} ${N(height)}' height='${N(heightEm)}em' width='${N(round(heightEm * width / height, 3))}em' style='vertical-align: middle' fill='currentColor' stroke='currentColor' aria-hidden='true'>${content}</svg>`;
 
 /**
  * A mark in the flow of the text, on a line of its own: here the key, the tempo or the time signature changes (or is set, at the start).
  * Rendered as a musician writes them: the key signature on a piece of staff with the key's name, the time signature, the tempo as a note and its number.
  * The text and the chords know nothing of these marks: a sheet without them is read as before.
- *
- * Departure from the .NET side: its two inline styles (`white-space: nowrap` on the mark, `vertical-align: middle` on
- * the drawings) are left out, as the page's content policy allows no inline style; chords/chords.css carries both.
  */
 export class NodeMark extends NodeBase {
     key: SheetKey | null = null;
@@ -76,7 +73,7 @@ export class NodeMark extends NodeBase {
         if (this.key === null && this.tempo === null && this.timeSignature === null && !this.meter)
             throw new InvalidOperationException('A mark carries a key, a tempo, a time signature or the meter.');
 
-        builder.append('<span class=\'sheet-mark\'');
+        builder.append('<span class=\'sheet-mark\' style=\'white-space: nowrap\'');
         const moment = this.moment(traversalContext.times);
         if (moment !== null) {
             builder.append(' ');

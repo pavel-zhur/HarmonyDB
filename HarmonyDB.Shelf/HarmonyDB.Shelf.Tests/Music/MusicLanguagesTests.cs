@@ -32,7 +32,7 @@ public sealed class MusicLanguagesTests(ShelfDatabaseFixture database) : IClassF
 
         await using var context = database.CreateContext();
         var languages = new MusicLanguages(context);
-        ClaimsPrincipal Person(Account x) => new(ShelfIdentity.Create("tests", x.Id, [], null));
+        ClaimsPrincipal Person(Account x) => new(ShelfIdentity.Create("tests", x.Id, [HarmonyDB.Shelf.Database.AccountSubjects.Of(x.Id)], [], null));
         var guest = new ClaimsPrincipal(new ClaimsIdentity());
 
         Assert.Equal("en", await languages.OfAsync(Person(russian), "en", "ru", CancellationToken.None));

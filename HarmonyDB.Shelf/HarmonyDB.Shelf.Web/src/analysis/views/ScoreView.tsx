@@ -70,8 +70,7 @@ export default function ScoreView({ score }: { score: Score }) {
     useEffect(() => {
         const el = host.current;
         if (!el) return;
-        // every bar drawn as a measure of its own (no rests of many bars gathered into one): measure i is bar i. (The
-        // engraver writes its styles through the style object: build/engraverStyles.ts.)
+        // every bar drawn as a measure of its own (no rests of many bars gathered into one): measure i is bar i
         const engraver = new OpenSheetMusicDisplay(el, {
             autoResize: false, backend: 'svg', drawTitle: false, drawComposer: false, drawCredits: false, drawPartNames: true,
             autoGenerateMultipleRestMeasuresFromRestMeasures: false,

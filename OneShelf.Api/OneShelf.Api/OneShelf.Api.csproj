@@ -8,6 +8,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\HarmonyDB.Analyses\HarmonyDB.Analyses.Api\HarmonyDB.Analyses.Api.csproj" />
     <ProjectReference Include="..\..\HarmonyDB.Index\HarmonyDB.Index.Api\HarmonyDB.Index.Api.csproj" />
     <ProjectReference Include="..\..\OneShelf.Authorization\OneShelf.Authorization.Api\OneShelf.Authorization.Api.csproj" />
     <ProjectReference Include="..\..\OneShelf.Billing\OneShelf.Billing.Api\OneShelf.Billing.Api.csproj" />

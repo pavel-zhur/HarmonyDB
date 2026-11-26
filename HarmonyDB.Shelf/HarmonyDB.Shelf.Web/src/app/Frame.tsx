@@ -12,6 +12,7 @@ import { SignInDialog } from '../screens/signin/SignInDialog';
 import { ConnectionNote } from '../screens/offline/ConnectionNote';
 import { offerSignIn } from '../data/signInOffer';
 import { useProfile, useSession } from '../data/session';
+import { useAssistantsOpen } from '../data/mcp';
 import { updateSettings, useSettings } from '../data/settings';
 import { attach, local, useSyncStatus } from '../local';
 import { toast } from './toasts';
@@ -114,7 +115,8 @@ export function NavEntry({ item, className }: { item: NavItem; className?: (on: 
 
 function Side() {
     const { t } = useTranslation();
-    const { signedIn, known, session } = useSession();
+    const { signedIn, known } = useSession();
+    const assistants = useAssistantsOpen();
     if (!known) return <aside className="side" />;
     return (
         <aside className="side">
@@ -125,7 +127,7 @@ function Side() {
                 </>
             )}
             <h6>{t('nav.tools')}</h6>
-            {openTo(toolsNav, session?.permissions).map(item => <NavEntry key={item.to} item={item} />)}
+            {openTo(toolsNav, { assistants }).map(item => <NavEntry key={item.to} item={item} />)}
             <h6>{t('nav.other')}</h6>
             {(signedIn ? otherNav : guestOtherNav).map(item => <NavEntry key={item.to} item={item} />)}
         </aside>

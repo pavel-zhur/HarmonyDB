@@ -23,21 +23,32 @@ import { useWide } from '../../app/layout';
 /** Where the shared chords are: in a song of a playlist (the link keeps the song around them), or alone. */
 export type ShareTarget = { kind: 'song'; playlistId: string; songId: string; share: string | null } | { kind: 'chords'; chords: string };
 
+/** Whether chords are of our own sources: their own address is on the public page (it opens in any browser). */
+function useOurs(address: string | null): boolean {
+    const { data: configuration } = useConfiguration();
+    const origin = configuration?.publicPageOrigin ?? null;
+    return origin !== null && address !== null && address.startsWith(origin + '/');
+}
+
 /**
  * Sharing the chords open (the mock-up's box): their title, the link with Copy, Telegram ("soon") and their PDF, the QR
  * code, and below the link that opens without the app. From a song the link is the song's — whoever opens it sees these
  * chords and the song's other open variants around them, not whose playlist it is — and it opens on these chords.
+ * Chords of our own sources not open to all (own chords kept to their link) open only by their own address: that is
+ * the link given, not one of the app's, which would not open them.
  */
 export function SharePop({ anchor, onClose, target, title, chords }: {
     anchor: HTMLElement | null; onClose: () => void; target: ShareTarget; title: string;
-    /** the chords open (from a song: its open variant's), their id and their source's own address */
-    chords: { id: string; sourceUri: string | null };
+    /** the chords open (from a song: its open variant's): their id, their own address (their page at their source),
+     * whether they are open to all */
+    chords: { id: string; address: string | null; isPublic: boolean };
 }) {
     const { t } = useTranslation();
     const [link, setLink] = useState<string | null>(null);
     const [failed, setFailed] = useState<unknown>(null);
+    const byOwnAddress = useOurs(chords.address) && !chords.isPublic;
     useEffect(() => {
-        if (!anchor) return;
+        if (!anchor || byOwnAddress) return;
         let gone = false;
         shareLink(target.kind === 'song'
             ? { kind: 'song', playlistId: target.playlistId, songId: target.songId, share: target.share, carriesAccess: false }
@@ -48,7 +59,20 @@ export function SharePop({ anchor, onClose, target, title, chords }: {
             gone = true;
         };
         // the same target: the same link (its parts, not the object made anew at each render)
-    }, [anchor, target.kind, target.kind === 'song' ? target.songId : target.chords, chords.id]);
+    }, [anchor, byOwnAddress, target.kind, target.kind === 'song' ? target.songId : target.chords, chords.id]);
+    if (byOwnAddress) {
+        return (
+            <Popover anchor={anchor} onClose={onClose} width={320} label={t('song.share.title')}>
+                <div className="sharepop">
+                    <b>{title}</b>
+                    <div className="muted small">{t('song.share.own')}</div>
+                    <LinkBox link={chords.address!} note={t('song.share.qr')}>
+                        <p className="tgrow"><Pdf chordsId={chords.id} /></p>
+                    </LinkBox>
+                </div>
+            </Popover>
+        );
+    }
     return (
         <Popover anchor={anchor} onClose={onClose} width={320} label={t('song.share.title')}>
             <div className="sharepop">
@@ -92,14 +116,14 @@ function Pdf({ chordsId }: { chordsId: string }) {
 /**
  * A link to these chords on the public page, which opens in any browser without the app and shows the chords as the
  * person sees them: the one there is (copy, remove), or the offer to make it. Not for chords of our own sources: their
- * source's address is the public page already. A guest has none.
+ * own address is on the public page already (shown as the link where it is the one that opens them). A guest has none.
  */
-function StaticLink({ chords }: { chords: { id: string; sourceUri: string | null } }) {
+function StaticLink({ chords }: { chords: { id: string; address: string | null } }) {
     const { t } = useTranslation();
     const { signedIn } = useSession();
     const { data: configuration } = useConfiguration();
     const origin = configuration?.publicPageOrigin ?? null;
-    const ours = origin !== null && chords.sourceUri !== null && chords.sourceUri.startsWith(origin + '/');
+    const ours = useOurs(chords.address);
     const offered = signedIn && origin !== null && !ours;
     const mine = useStaticLink(offered ? chords.id : null);
     const make = useMutation({ mutationFn: makeStaticLink });
@@ -204,7 +228,8 @@ export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLEl
                     {variant.addedBy && t('song.menu.addedBy', { name: variant.addedBy.name })}
                 </p>
             )}
-            {ownItem && <MenuItem onClick={() => { onClose(); navigate(`/editor?own=${encodeURIComponent(ownItem.id)}`); }}>{t('song.menu.edit')}</MenuItem>}
+            {ownItem?.editable && <MenuItem onClick={() => { onClose(); navigate(`/editor?own=${encodeURIComponent(ownItem.id)}`); }}>{t('song.menu.edit')}</MenuItem>}
+            {ownItem && !ownItem.editable && <p className="note">{t('song.menu.notEditable')}</p>}
             {page.canAdd && (
                 <>
                     <hr />

@@ -2,9 +2,9 @@ export const music = {
     music: {
         service: { yandex: 'Яндекс Музыка', youtube: 'YouTube' },
         back: 'Назад',
-        inMyPlaylists: 'Уже в моих плейлистах',
-        hasAnalysis: 'Есть разбор',
+        analysed: 'Разобрана',
         openAnalysis: 'Открыть разбор',
+        inMyPlaylists: 'Уже в моих плейлистах',
         findChords: 'Найти аккорды',
         video: 'Видео',
         nothing: 'Здесь пусто',

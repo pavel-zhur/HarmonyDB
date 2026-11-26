@@ -5,7 +5,6 @@
   MUSIC_YANDEX_MP3_SALT     Yandex's file address salt
   AUDIO_YANDEX_TOKEN_FILE   optional: a file with the service account's Yandex token
   AUDIO_YOUTUBE_AUTH_FILE   optional: a file with the service account's YouTube request headers (JSON)
-  AUDIO_MAX_BLOB_BYTES      the largest file PUT under /internal/blobs
   AUDIO_MAX_URL_FILE_BYTES  the largest file kept from an address (/internal/files)
   InternalClients__N__Name, InternalClients__N__Key, InternalClients__N__Scopes__M
                             the internal clients allowed in, with their keys and scopes
@@ -33,7 +32,6 @@ class Settings:
     yandex_mp3_salt: str
     yandex_token: str | None          # the service account's, when configured
     youtube_auth: dict | None         # the service account's, when configured
-    max_blob_bytes: int
     max_url_file_bytes: int
     clients: tuple[InternalClient, ...]
 
@@ -94,6 +92,5 @@ def settings() -> Settings:
         yandex_mp3_salt=_required("MUSIC_YANDEX_MP3_SALT"),
         yandex_token=_optional_file("AUDIO_YANDEX_TOKEN_FILE"),
         youtube_auth=json.loads(youtube) if youtube else None,
-        max_blob_bytes=_bytes("AUDIO_MAX_BLOB_BYTES"),
         max_url_file_bytes=_bytes("AUDIO_MAX_URL_FILE_BYTES"),
         clients=_clients())

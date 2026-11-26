@@ -1,4 +1,3 @@
-using HarmonyDB.Shelf.Api.Areas.Analyses;
 using HarmonyDB.Shelf.Api.Areas.App;
 using HarmonyDB.Shelf.Api.Areas.Auth;
 using HarmonyDB.Shelf.Api.Areas.Me;
@@ -13,7 +12,6 @@ builder.AddShelfFoundation();
 builder.AddArea<AppArea>();
 builder.AddArea<AuthArea>();
 builder.AddArea<MeArea>();
-builder.AddArea<AnalysesArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Jobs.JobsArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Admin.AdminArea>();
 builder.AddArea<HarmonyDB.Shelf.Api.Areas.Playlists.PlaylistsArea>();

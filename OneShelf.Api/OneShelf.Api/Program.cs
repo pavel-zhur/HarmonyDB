@@ -1,3 +1,4 @@
+using HarmonyDB.Analyses.Api;
 using HarmonyDB.Index.Api;
 using OneShelf.Authorization.Api;
 using OneShelf.Billing.Api;
@@ -15,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApiModules(
     new IndexModule(),
+    new AnalysesModule(),
     new AuthorizationModule(),
     new BillingModule(),
     new CollectivesModule(),

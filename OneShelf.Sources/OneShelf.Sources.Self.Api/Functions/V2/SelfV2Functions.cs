@@ -31,14 +31,20 @@ public class SelfV2Functions(SelfV2Source source)
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
         => Handle<GetContentRequest>(req,
-            r => IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null,
-            async r => Json(await source.GetContent(r.Caller, r.Id, r.Kinds, cancellationToken)));
+            r => IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null && r.Address is null or { IsAbsoluteUri: true },
+            async r => Json(await source.GetContent(r.Caller, r.Id, r.Kinds, r.Address, cancellationToken)));
 
     [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
         => Handle<GetContentsRequest>(req,
             GetContentsRequest.IsValid,
             async r => Json(await source.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken)));
+
+    [Function(SourceV2Urls.V2GetSources, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
+    public Task<IActionResult> GetSources(HttpRequest req, CancellationToken cancellationToken)
+        => Handle<GetSourcesRequest>(req,
+            r => IsComplete(r.Caller),
+            r => Task.FromResult<IActionResult>(Json(new GetSourcesResponse { Sources = [source.Label], Failures = [] })));
 
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
@@ -59,7 +65,7 @@ public class SelfV2Functions(SelfV2Source source)
 
     private static JsonResult Json<TResponse>(TResponse response) => new(response, SourceV2Json.Options);
 
-    private static bool IsComplete(Caller? caller) => caller is { Keys: not null } && caller.Keys.All(x => x != null);
+    private static bool IsComplete(Caller? caller) => Caller.IsValid(caller);
 
     private static async Task<IActionResult> Handle<TRequest>(HttpRequest httpRequest, Func<TRequest, bool> isComplete, Func<TRequest, Task<IActionResult>> execute)
         where TRequest : class

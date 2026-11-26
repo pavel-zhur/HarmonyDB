@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -37,13 +38,13 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
     {
         var transpositions = await TranspositionsAsync(accountId, request.PlaylistId, request.Items.Select(x => x.ChordsId).ToList(), cancellationToken);
         var settings = await SettingsAsync(accountId, request.Options.Accidentals, cancellationToken);
-        var caller = new Caller { AccountId = accountId, Keys = keys };
+        var caller = new Caller { Subjects = await AccountSubjects.LoadAsync(db, accountId, cancellationToken), Keys = keys };
 
         var done = 0;
         return await ForEachAsync(request.Items, async (item, token) =>
         {
             var transpose = item.Transpose ?? transpositions.GetValueOrDefault(item.ChordsId);
-            var response = await index.Sources.GetContent(caller, item.ChordsId, [ContentKind.Sheet], token);
+            var response = await index.Sources.GetContent(caller, item.ChordsId, [ContentKind.Sheet], null, token);
             await progress(Interlocked.Increment(ref done));
             return response.State switch
             {

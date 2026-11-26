@@ -37,6 +37,11 @@ public sealed record ChordsMediaRequest
 {
     /// <summary>The item's id at its source.</summary>
     public required string Id { get; init; }
+
+    /// <summary>
+    /// The address the person came by (a link opened), when they came by one, as for <c>GET /api/chords/{id}</c>.
+    /// </summary>
+    public string? Address { get; init; }
 }
 
 /// <summary>

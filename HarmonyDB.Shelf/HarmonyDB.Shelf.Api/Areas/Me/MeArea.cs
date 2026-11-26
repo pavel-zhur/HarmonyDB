@@ -1,8 +1,10 @@
 using System.Security.Claims;
+using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Areas.Auth;
 using HarmonyDB.Shelf.Api.Areas.Auth.Services;
 using HarmonyDB.Shelf.Api.Areas.Me.Services;
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
@@ -23,6 +25,7 @@ public sealed class MeArea : IShelfArea
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<ProfileService>();
+        services.AddOwnChordsClient(configuration);
         services.AddScoped<ProfileRemoval>();
         services.AddScoped<MusicLinkStore>();
         services.AddSingleton<MusicLinkCipher>();
@@ -120,12 +123,8 @@ public sealed class MeArea : IShelfArea
         }).ToList());
     }
 
-    private static MusicService ParseService(string service) => service switch
-    {
-        "yandex" => MusicService.Yandex,
-        "youtube" => MusicService.Youtube,
-        _ => throw ShelfException.NotFound(MeErrorCodes.NoSuchMusicLink),
-    };
+    private static MusicService ParseService(string service)
+        => MusicServiceNames.Of(service) ?? throw ShelfException.NotFound(MeErrorCodes.NoSuchMusicLink);
 
     /// <summary>
     /// The signed-in person (the group requires sign-in).

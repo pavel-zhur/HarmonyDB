@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Model.OwnChords;
 using Microsoft.Extensions.Options;
@@ -11,12 +12,12 @@ namespace HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 /// were to go. Stages: <c>placing</c>. Fails with <c>unavailable</c> when the sources never answered; the chords stay in
 /// the person's list of own chords.
 /// </summary>
-public sealed class OwnChordsPlacingJob(OwnChordsService service, IOptionsMonitor<OwnChordsPlacingOptions> options, TimeProvider time) : IJobHandler
+public sealed class OwnChordsPlacingJob(OwnChordsService service, SourceCallers callers, IOptionsMonitor<OwnChordsPlacingOptions> options, TimeProvider time) : IJobHandler
 {
     public async Task<JobCompletion> RunAsync(JobRun run, CancellationToken cancellationToken)
     {
         var placing = run.Input<OwnChordsService.Placing>();
-        if (await service.ChordsIdAsync(new() { AccountId = run.AccountId, Keys = placing.Keys }, placing.Uri, cancellationToken) is not { } chordsId)
+        if (await service.ChordsIdAsync(await callers.ForAccountAsync(run.AccountId, placing.Keys, cancellationToken), placing.Uri, cancellationToken) is not { } chordsId)
         {
             var now = time.GetUtcNow();
             if (now - run.CreatedAt >= options.CurrentValue.GiveUpAfter)

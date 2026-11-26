@@ -13,8 +13,8 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
 {
     public const string InvalidAddress = "invalidAddress";
 
-    /// <param name="accountId">The person the call is made for (an author's own chords open to them only); null for none.</param>
-    public async Task<Dictionary<string, ResolvedAddress>> ResolveAsync(IReadOnlyCollection<string> uris, Guid? accountId, CancellationToken cancellationToken)
+    /// <param name="subjects">The names of the person the call is made for (an author's own chords open to them); none for nobody.</param>
+    public async Task<Dictionary<string, ResolvedAddress>> ResolveAsync(IReadOnlyCollection<string> uris, IReadOnlyList<string> subjects, CancellationToken cancellationToken)
     {
         var result = new Dictionary<string, ResolvedAddress>(StringComparer.Ordinal);
         var valid = new List<(string text, Uri uri)>();
@@ -28,7 +28,7 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
 
         foreach (var batch in valid.Chunk(options.BatchSize))
         {
-            var response = await relay.Resolve(Caller(accountId), batch.Select(x => x.uri).ToList(), cancellationToken);
+            var response = await relay.Resolve(Caller(subjects), batch.Select(x => x.uri).ToList(), cancellationToken);
             await RequireAnsweredAsync(response.Items.Select(x => x.State == ResolveState.Unavailable), cancellationToken);
             for (var i = 0; i < batch.Length; i++)
             {
@@ -49,7 +49,7 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
         if (!Uri.TryCreate(address, UriKind.Absolute, out var uri))
             return new(null, InvalidAddress);
 
-        var item = (await relay.Resolve(new() { Keys = options.SecondPassCallerKeys }, [uri], cancellationToken)).Items.Single();
+        var item = (await relay.Resolve(new() { Subjects = [], Keys = options.SecondPassCallerKeys }, [uri], cancellationToken)).Items.Single();
         if (item.State == ResolveState.Unavailable)
             await relay.Ping(cancellationToken);
         return new(item.State == ResolveState.Resolved ? item.Id : null, Name(item.State));
@@ -63,7 +63,7 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
         var result = new Dictionary<string, ResolvedAddress>(StringComparer.Ordinal);
         foreach (var batch in ids.Chunk(options.BatchSize))
         {
-            var response = await relay.GetHeaders(Caller(null), batch, cancellationToken);
+            var response = await relay.GetHeaders(Caller([]), batch, cancellationToken);
             await RequireAnsweredAsync(response.Headers.Select(x => x.State == ItemState.Unavailable), cancellationToken);
             foreach (var answer in response.Headers)
                 result[answer.Id] = new(answer.State == ItemState.Open ? answer.Id : null, Name(answer.State));
@@ -83,7 +83,7 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
             await relay.Ping(cancellationToken);
     }
 
-    private Caller Caller(Guid? accountId) => new() { AccountId = accountId, Keys = options.CallerKeys };
+    private Caller Caller(IReadOnlyList<string> subjects) => new() { Subjects = subjects, Keys = options.CallerKeys };
 
     private static string Name<T>(T state) where T : Enum => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(state.ToString());
 }

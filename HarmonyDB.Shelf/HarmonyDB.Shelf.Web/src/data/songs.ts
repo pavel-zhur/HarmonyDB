@@ -81,3 +81,13 @@ export function rowTarget(row: SongRow): { playlistId: string; songId: string } 
 export function rowId(row: SongRow): string {
     return row.songId ?? row.chords?.id ?? `${row.title}|${row.artists.join(',')}`;
 }
+
+/** The sources of chords this person may see, with their icons: where the one search looks for chords. */
+export function useChordsSources() {
+    return useQuery({
+        queryKey: ['chords-sources'],
+        queryFn: () => call(api.GET('/api/chords/sources')),
+        // a source that did not answer is asked again the next time, not half an hour later
+        staleTime: query => (query.state.data?.incomplete ? 0 : 30 * 60_000),
+    });
+}

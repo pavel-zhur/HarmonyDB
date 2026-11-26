@@ -22,7 +22,7 @@ namespace HarmonyDB.Shelf.Tests.OwnChords;
 public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixture>
 {
     [DatabaseFact]
-    public async Task TheAuthorIsTheAccountAndItsTelegramUsers()
+    public async Task TheAuthorIsKnownByTheAccountAndItsTelegramSignIns()
     {
         var withTelegram = await fixture.AccountAsync(("telegram", "111"), ("google", "g-1"), ("telegram", "222"));
         var withoutTelegram = await fixture.AccountAsync(("google", "g-2"));
@@ -39,19 +39,72 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
                 OwnChordsErrorCodes.NoSuchOwnChords);
         }
 
-        var authors = fixture.Store.Requests.Where(x => x.Operation == "OwnUpdate").Select(x => x.Body.GetProperty("author")).ToList();
-        Assert.Equal(withTelegram, authors[0].GetProperty("accountId").GetGuid());
-        Assert.Equal([111L, 222L], authors[0].GetProperty("telegramUserIds").EnumerateArray().Select(x => x.GetInt64()).Order());
-        Assert.Equal(withoutTelegram, authors[1].GetProperty("accountId").GetGuid());
-        Assert.Empty(authors[1].GetProperty("telegramUserIds").EnumerateArray());
+        var authors = fixture.Store.Requests.Where(x => x.Operation == "OwnUpdate" && x.Body.GetProperty("collectiveId").GetGuid() == id).Select(x => x.Body.GetProperty("author")).ToList();
+        Assert.Equal([$"account:{withTelegram:D}", "telegram:111", "telegram:222"], authors[0].GetProperty("subjects").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal([$"account:{withoutTelegram:D}"], authors[1].GetProperty("subjects").EnumerateArray().Select(x => x.GetString()));
     }
 
+    [DatabaseFact]
+    public async Task OwnChordsWrittenInTheOldShelfAreNotChangedOrDeletedHere()
+    {
+        var account = await fixture.AccountAsync(("telegram", "555"));
+        var id = Guid.NewGuid();
+        var old = new StoredOwnChords(id, new(["Artist"], "Title", ">Am\nla", StoredVisibility.Private, null, null, null, null),
+            1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new($"https://own.example/{id}"), "telegram:555", false, null);
+        fixture.Store.Answer = (operation, _) => operation switch
+        {
+            "OwnGet" => (HttpStatusCode.OK, old),
+            "OwnUpdate" or "OwnDelete" => (HttpStatusCode.Conflict, null),
+            _ => (HttpStatusCode.NotFound, null),
+        };
+        using var client = fixture.Api.CreateClient();
+
+        await Browser.AssertError(
+            await client.SendAsync(FakeIndex.As(HttpMethod.Put, $"/api/own-chords/{id}", account, body: new UpdateOwnChordsRequest { Text = Text() })),
+            HttpStatusCode.Conflict,
+            OwnChordsErrorCodes.NotEditable);
+        await Browser.AssertError(
+            await client.SendAsync(FakeIndex.As(HttpMethod.Delete, $"/api/own-chords/{id}", account)),
+            HttpStatusCode.Conflict,
+            OwnChordsErrorCodes.NotEditable);
+        Assert.DoesNotContain(fixture.Store.Requests, x => x.Operation == "OwnDelete" && x.Body.GetProperty("collectiveId").GetGuid() == id);
+    }
+
+    [DatabaseFact]
+    public async Task DeletingAProfileAsksTheStoreToRemoveItsPrivateOwnChordsFirst()
+    {
+        var account = await fixture.AccountAsync(("telegram", "444"));
+        fixture.Store.Answer = (operation, _) => operation == "OwnRemovePrivate"
+            ? (HttpStatusCode.OK, new { removed = 1 })
+            : (HttpStatusCode.NotFound, null);
+
+        await using var scope = fixture.Api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Api.Areas.Me.Services.ProfileRemoval>().DeleteAsync(account, CancellationToken.None);
+
+        // one removal by all the person's names (the store removes only what was written here); nothing one by one
+        var removals = fixture.Store.Requests.Where(x => x.Operation == "OwnRemovePrivate"
+            && x.Body.GetProperty("author").GetProperty("subjects")[0].GetString() == $"account:{account:D}").ToList();
+        Assert.Equal([$"account:{account:D}", "telegram:444"], Assert.Single(removals).Body.GetProperty("author").GetProperty("subjects").EnumerateArray().Select(x => x.GetString()));
+        Assert.DoesNotContain(fixture.Store.Requests, x => x.Operation == "OwnDelete");
+    }
+
+    [DatabaseFact]
+    public async Task WhenTheStoreDoesNotAnswerTheProfileIsNotDeleted()
+    {
+        var account = await fixture.AccountAsync(("google", "g-unanswered"));
+        fixture.Store.Answer = (_, _) => (HttpStatusCode.ServiceUnavailable, null);
+
+        await using var scope = fixture.Api.Services.CreateAsyncScope();
+        await Assert.ThrowsAsync<HarmonyDB.Shelf.Api.Foundation.Errors.ShelfException>(() =>
+            scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Api.Areas.Me.Services.ProfileRemoval>().DeleteAsync(account, CancellationToken.None));
+        Assert.Null((await scope.ServiceProvider.GetRequiredService<HarmonyDB.Shelf.Database.ShelfDbContext>().Accounts.FindAsync(account))!.DeletedAt);
+    }
     [DatabaseFact]
     public async Task AnAccountsOwnChordsAreCountedAsItsListHoldsThem()
     {
         var account = await fixture.AccountAsync(("telegram", "333"));
         var text = new StoredText(["Artist"], "Title", ">Am\nla", StoredVisibility.Private, null, null, null, null);
-        StoredOwnChords Stored() => new(Guid.NewGuid(), text, 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new($"https://own.example/{Guid.NewGuid()}"), 333, null, null);
+        StoredOwnChords Stored() => new(Guid.NewGuid(), text, 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new($"https://own.example/{Guid.NewGuid()}"), "telegram:333", false, null);
         fixture.Store.Answer = (operation, _) => operation == "OwnList"
             ? (HttpStatusCode.OK, new { items = new[] { Stored(), Stored(), Stored() } })
             : (HttpStatusCode.NotFound, null);
@@ -59,8 +112,7 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
         await using var scope = fixture.Api.Services.CreateAsyncScope();
         Assert.Equal(3, await scope.ServiceProvider.GetRequiredService<OwnChordsService>().CountAsync(account, CancellationToken.None));
         var author = fixture.Store.Requests.Last(x => x.Operation == "OwnList").Body.GetProperty("author");
-        Assert.Equal(account, author.GetProperty("accountId").GetGuid());
-        Assert.Equal([333L], author.GetProperty("telegramUserIds").EnumerateArray().Select(x => x.GetInt64()));
+        Assert.Equal([$"account:{account:D}", "telegram:333"], author.GetProperty("subjects").EnumerateArray().Select(x => x.GetString()));
     }
 
     [DatabaseFact]
@@ -72,7 +124,7 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
         var chordsId = $"own-{collectiveId}";
         fixture.Store.Answer = (operation, _) => operation == "OwnInsert"
             ? (HttpStatusCode.OK, new StoredOwnChords(collectiveId, new(["Somebody"], "A song", "words", StoredVisibility.Club, null, null, null, null),
-                1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Uri(uri), null, me, []))
+                1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Uri(uri), $"account:{me:D}", true, []))
             : (HttpStatusCode.InternalServerError, null);
         var resolves = 0;
         fixture.Index.Answer = (operation, body) => operation == "V2Resolve"

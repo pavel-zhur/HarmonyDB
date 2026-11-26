@@ -11,7 +11,7 @@ COPY --from=fingerings fingerings.json /fingerings/fingerings.json
 ENV SHELF_FINGERINGS=/fingerings/fingerings.json
 RUN npm run build && npm test
 
-# The public page's web server tested against a stand-in for shelf-api: what goes on, as a guest, and nothing else
+# The public page's web server tested against a stand-in for shelf-api: everything goes on as a guest's
 # (public-web.test.sh); the stage public takes its mark, so the image is not made when it fails.
 FROM nginx:1.27.5-alpine AS public-test
 RUN apk add --no-cache curl
@@ -41,3 +41,5 @@ FROM nginx:1.27.5-alpine AS app
 COPY docker/app.nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/security.conf /etc/nginx/snippets/security.conf
 COPY --from=build /web/dist /usr/share/nginx/html
+# the public page is public-web's alone: not at the app's address
+RUN rm /usr/share/nginx/html/public.html

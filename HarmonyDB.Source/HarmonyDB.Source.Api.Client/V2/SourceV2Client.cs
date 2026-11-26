@@ -14,7 +14,7 @@ namespace HarmonyDB.Source.Api.Client.V2;
 /// When the server cannot be reached, answers with an error or out of the contract, or does not answer in time, the
 /// failure is logged and becomes the contract's "unavailable" where the answer has a place for it (a search failure,
 /// <see cref="ItemState.Unavailable"/>, <see cref="ResolveState.Unavailable"/>); otherwise
-/// (<see cref="GetIcon"/>, <see cref="Ping"/>) <see cref="SourceUnavailableException"/> is thrown.
+/// (<see cref="GetFile"/>, <see cref="GetIcon"/>, <see cref="Ping"/>) <see cref="SourceUnavailableException"/> is thrown.
 /// A cancellation by the caller is not a failure of the server: it is thrown as it is.
 /// </summary>
 public class SourceV2Client
@@ -72,7 +72,7 @@ public class SourceV2Client
                     new()
                     {
                         Source = Name,
-                        Reason = e.IsTimeout ? SearchFailureReason.Timeout : SearchFailureReason.Unavailable,
+                        Reason = e.IsTimeout ? SourceFailureReason.Timeout : SourceFailureReason.Unavailable,
                     },
                 ],
             };
@@ -116,7 +116,8 @@ public class SourceV2Client
         }
     }
 
-    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken = default)
+    /// <param name="address">The address the person came by, when they came by one.</param>
+    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -125,6 +126,7 @@ public class SourceV2Client
                 Caller = caller,
                 Id = id,
                 Kinds = kinds,
+                Address = address,
             }, response =>
             {
                 Check(response.Id == id, "the content is of another id");
@@ -137,6 +139,40 @@ public class SourceV2Client
             {
                 Id = id,
                 State = ItemState.Unavailable,
+            };
+        }
+    }
+
+    /// <summary>
+    /// The sources' labels this caller may see; a server that did not answer is in the failures.
+    /// </summary>
+    public async Task<GetSourcesResponse> GetSources(Caller caller, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<GetSourcesRequest, GetSourcesResponse>(SourceV2Urls.V2GetSources, new()
+            {
+                Caller = caller,
+            }, response =>
+            {
+                Check(response.Sources != null && response.Failures != null, "a sources' answer has no list");
+                Check(response.Sources!.All(x => x is { Key: not null, Title: not null }), "a source's label is empty");
+                Check(response.Failures!.All(x => x is { Source: not null }), "a failure is empty");
+            }, cancellationToken);
+        }
+        catch (CallFailedException e)
+        {
+            return new()
+            {
+                Sources = [],
+                Failures =
+                [
+                    new()
+                    {
+                        Source = Name,
+                        Reason = e.IsTimeout ? SourceFailureReason.Timeout : SourceFailureReason.Unavailable,
+                    },
+                ],
             };
         }
     }
@@ -204,6 +240,63 @@ public class SourceV2Client
                     State = ResolveState.Unavailable,
                 }).ToList(),
             };
+        }
+    }
+
+    /// <summary>
+    /// A file of an item, for the caller: its headers once the server has sent them (the timeout covers only the wait
+    /// for them), and its body as a stream that is never cut by the timeout.
+    /// </summary>
+    /// <param name="headersOnly">Ask with <c>HEAD</c>: the headers alone.</param>
+    /// <param name="range">The <c>Range</c> asked, as HTTP gives it; null for the whole file.</param>
+    /// <param name="ifRange">The <c>If-Range</c> asked, as HTTP gives it.</param>
+    /// <returns>The file's answer, to be disposed; null when there is no such file open to the caller.</returns>
+    /// <exception cref="SourceUnavailableException">The server did not answer.</exception>
+    /// <param name="address">The address the person came by, when they came by one.</param>
+    public async Task<SourceFile?> GetFile(Caller caller, string id, string name, Uri? address, bool headersOnly, string? range, string? ifRange, CancellationToken cancellationToken = default)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_options.Timeout);
+
+        HttpResponseMessage? response = null;
+        try
+        {
+            using var request = new HttpRequestMessage(headersOnly ? HttpMethod.Head : HttpMethod.Get, new Uri(_options.Endpoint!, SourceV2Urls.V2GetFile));
+            request.Headers.Add(InternalKeyDefaults.HeaderName, _options.Key);
+            request.Headers.Add(GetFileRequest.HeaderName, GetFileRequest.Encode(new()
+            {
+                Caller = caller,
+                Id = id,
+                Name = name,
+                Address = address,
+            }));
+            SourceFile.AddRange(request.Headers, range, ifRange);
+
+            response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.NotFound:
+                    response.Dispose();
+                    return null;
+                case HttpStatusCode.OK or HttpStatusCode.PartialContent or HttpStatusCode.RequestedRangeNotSatisfiable:
+                    var file = new SourceFile(response);
+                    Check(file.Headers.ContainsKey("Content-Type"), "the file has no content type");
+                    return file;
+                default:
+                    throw new InvalidAnswerException($"the answer is {(int)response.StatusCode} {response.StatusCode}");
+            }
+        }
+        catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            response?.Dispose();
+            _logger.LogWarning(e, "The source {source} did not answer {operation} in {timeout}.", Name, SourceV2Urls.V2GetFile, _options.Timeout);
+            throw new SourceUnavailableException(Name, true, e);
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or InvalidAnswerException)
+        {
+            response?.Dispose();
+            _logger.LogError(e, "The source {source} failed {operation}.", Name, SourceV2Urls.V2GetFile);
+            throw new SourceUnavailableException(Name, false, e);
         }
     }
 

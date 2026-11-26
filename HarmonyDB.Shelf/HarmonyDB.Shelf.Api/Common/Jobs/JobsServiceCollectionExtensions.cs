@@ -21,6 +21,7 @@ public static class JobsServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<JobsOptions>, JobsOptionsValidator>());
         services.AddSingleton<JobSignal>();
         services.AddSingleton(provider => new JobResults(provider.GetServices<JobHandlerRegistration>()));
+        services.AddSingleton(provider => new JobKinds(provider.GetServices<JobHandlerRegistration>()));
         services.AddScoped<JobQueue>();
         services.AddHostedService<JobWorker>();
 
@@ -70,14 +71,23 @@ public static class JobsServiceCollectionExtensions
         where TResult : JobResult
         => services.Register<THandler>(configuration, kind, typeof(TResult));
 
-    private static IServiceCollection Register<THandler>(this IServiceCollection services, IConfiguration configuration, string kind, Type? resultType)
+    /// <summary>
+    /// The handler of a kind of the shelf's own follow-ups (<see cref="JobLane.FollowUp"/>), which end with no result:
+    /// <see cref="JobQueue.QueueFollowUp"/> with this kind has it run.
+    /// </summary>
+    public static IServiceCollection AddFollowUpJobHandler<THandler>(this IServiceCollection services, IConfiguration configuration, string kind)
+        where THandler : class, IJobHandler
+        => services.Register<THandler>(configuration, kind, null, JobLane.FollowUp);
+
+    private static IServiceCollection Register<THandler>(this IServiceCollection services, IConfiguration configuration, string kind, Type? resultType,
+        JobLane lane = JobLane.Person)
         where THandler : class, IJobHandler
     {
         services.AddJobs(configuration);
         if (services.Any(x => x.ImplementationInstance is JobHandlerRegistration registration && registration.Kind == kind))
             throw new InvalidOperationException($"The jobs of the kind {kind} have a handler already.");
 
-        services.AddSingleton(new JobHandlerRegistration(kind, typeof(THandler), resultType));
+        services.AddSingleton(new JobHandlerRegistration(kind, typeof(THandler), resultType, lane));
         services.AddScoped<THandler>();
         return services;
     }

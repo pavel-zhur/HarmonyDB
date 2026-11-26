@@ -173,14 +173,14 @@ public sealed class IllustrationsService(
 /// Draws a batch: reads the chords' words as the person who ordered it, and has the illustrations service draw by them.
 /// Stages: <c>reading</c>, <c>drawing</c>.
 /// </summary>
-public sealed class IllustrationsJob(IllustrationsClient illustrations, IndexClient index) : IJobHandler
+public sealed class IllustrationsJob(IllustrationsClient illustrations, IndexClient index, SourceCallers callers) : IJobHandler
 {
     public async Task<JobCompletion> RunAsync(JobRun run, CancellationToken cancellationToken)
     {
         var input = run.Input<IllustrationsService.DrawInput>();
         await run.ReportAsync("reading", cancellationToken: cancellationToken);
 
-        var content = await index.Sources.GetContent(new() { AccountId = run.AccountId, Keys = input.Keys }, input.ChordsId, [ContentKind.Sheet], cancellationToken);
+        var content = await index.Sources.GetContent(await callers.ForAccountAsync(run.AccountId, input.Keys, cancellationToken), input.ChordsId, [ContentKind.Sheet], null, cancellationToken);
         if (content.State != ItemState.Open)
             throw new JobFailedException(content.State == ItemState.NotOpen ? IllustrationsErrorCodes.ChordsNotOpen : ErrorCodes.Unavailable);
 

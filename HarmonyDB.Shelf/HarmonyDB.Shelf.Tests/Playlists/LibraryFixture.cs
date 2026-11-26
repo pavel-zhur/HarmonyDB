@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Tests.Api;
+using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -84,7 +86,7 @@ public sealed class LibraryFixture : IAsyncLifetime
                     Content = new()
                     {
                         Sheet = new() { Root = new HarmonyDB.Common.Representations.OneShelf.NodeHtml { Name = "pre" } },
-                        Recording = new() { Audio = new() { Blob = new() { Key = $"{asked}/take.mp3", ContentType = "audio/mpeg" } }, Duration = 100, Stems = [] },
+                        Recording = new() { Audio = new() { File = new() { Name = "take.mp3", ContentType = "audio/mpeg" } }, Duration = 100, Stems = [] },
                     },
                 }
                 : new GetContentResponse { Id = asked, State = ItemState.NotOpen });
@@ -101,8 +103,8 @@ public sealed class LibraryFixture : IAsyncLifetime
                 _ when id.StartsWith("keyed-", StringComparison.Ordinal) && keyed => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A keyed source") },
                 _ when id.StartsWith("away-", StringComparison.Ordinal) => new HeaderAnswer { Id = id, State = ItemState.Unavailable },
                 // "own-{account}-…": open to that account only, as a person's own private chords
-                _ when id.StartsWith("own-", StringComparison.Ordinal) && caller.TryGetProperty("accountId", out var account) && account.ValueKind == JsonValueKind.String
-                                                                      && id.StartsWith($"own-{account.GetString()}-", StringComparison.Ordinal)
+                _ when id.StartsWith("own-", StringComparison.Ordinal)
+                       && caller.GetProperty("subjects").EnumerateArray().Any(s => id.StartsWith($"own-{s.GetString()!.Replace("account:", "")}-", StringComparison.Ordinal))
                     => new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "Own") },
                 _ => new HeaderAnswer { Id = id, State = ItemState.NotOpen },
             }).ToList(),
@@ -161,12 +163,15 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
             ["Permissions:Custom:0:Key"] = LibraryFixture.Key,
             ["Permissions:Custom:0:Label"] = "Custom one",
             ["Media:SigningKey"] = Convert.ToBase64String(Enumerable.Range(1, 32).Select(x => (byte)x).ToArray()),
+            ["Clients:OwnChords:Endpoint"] = NoOwnChords.Endpoint,
+            ["Clients:OwnChords:Key"] = NoOwnChords.Key,
         }));
         builder.ConfigureTestServices(services =>
         {
             services.AddHttpClient<AudioClient>().ConfigurePrimaryHttpMessageHandler(() => audio);
             services.AddHttpClient<IndexClient>().ConfigurePrimaryHttpMessageHandler(() => index);
             services.AddHttpClient<IllustrationsClient>().ConfigurePrimaryHttpMessageHandler(() => illustrations);
+            services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => new NoOwnChords());
         });
     }
 

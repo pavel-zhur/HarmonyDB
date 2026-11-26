@@ -132,7 +132,7 @@ public sealed class ShareService(
     public async Task<ChordsContentResponse> ContentAsync(ClaimsPrincipal user, string token, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
     {
         var (id, caller) = await ChordsCallerAsync(user, token, cancellationToken);
-        return await reader.GetContentAsync(caller, user.GetAccountId(), id, kinds, cancellationToken);
+        return await reader.GetContentAsync(caller, user.GetAccountId(), id, kinds, null, cancellationToken);
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ public sealed class ShareService(
 
         // the link opens as the sharer's keys alone, with no account: one that would open nothing (the sharer's own
         // private chords, their private analysis) is not made
-        switch ((await reader.GetHeadersAsync(new Caller { Keys = keys }, [request.Chords], cancellationToken)).Single().State)
+        switch ((await reader.GetHeadersAsync(SourceCallers.Carrying(keys), [request.Chords], cancellationToken)).Single().State)
         {
             case ChordsState.NotOpen:
                 throw ShelfException.Forbidden(PlaylistErrorCodes.ChordsNotOpen);
@@ -267,7 +267,7 @@ public sealed class ShareService(
             throw ShelfException.NotFound(PlaylistErrorCodes.NoSuchLink);
 
         var now = callers.For(await chordsRows.PersonAsync(sharer, cancellationToken)).Keys;
-        return new() { AccountId = null, Keys = link.CarriedKeys!.Intersect(now, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList() };
+        return SourceCallers.Carrying(link.CarriedKeys!.Intersect(now, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList());
     }
 
     private Task<ShareLink?> FindAsync(ShareLink link, CancellationToken cancellationToken)

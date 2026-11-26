@@ -2,6 +2,7 @@
 // illustrations) and every change of a song (each an action: data/actions.ts). Marks, keys and notes are the
 // local-first store's (local/).
 
+import { addressOf } from './address';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ApiError, api, call, type Schemas } from '../api/client';
 import { keys, readThrough } from '../offline';
@@ -36,7 +37,7 @@ export function useSongPage(playlistId: string, songId: string, share?: string |
 export function useChordsContent(chordsId: string | null) {
     return useQuery({
         queryKey: ['chords', chordsId],
-        queryFn: () => readThrough(keys.chords(chordsId!), () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet' } } }))),
+        queryFn: () => readThrough(keys.chords(chordsId!), () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet', address: addressOf(chordsId!) } } }))),
         enabled: !!chordsId,
         staleTime: 5 * 60_000,
         networkMode: 'always',

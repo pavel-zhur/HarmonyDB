@@ -15,7 +15,10 @@ namespace HarmonyDB.Shelf.Tests.Playlists;
 /// <summary>
 /// The library kept on a device: its chords' ids, told again only when the library changed, and their content, many
 /// at once, of the library's chords only.
+/// A watermark is the oldest transaction still running anywhere on the server, so another test's transaction running
+/// meanwhile holds it back and the library reads as changed (correctly: it may have been). These tests run alone.
 /// </summary>
+[Collection(nameof(OfflineTests))]
 public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<LibraryFixture>
 {
     [DatabaseFact]
@@ -118,3 +121,9 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
         return (await response.Content.ReadFromJsonAsync<T>(Browser.Json))!;
     }
 }
+
+/// <summary>
+/// <see cref="OfflineTests"/> run with no other test at the same time.
+/// </summary>
+[CollectionDefinition(nameof(OfflineTests), DisableParallelization = true)]
+public sealed class OfflineTestsCollection;

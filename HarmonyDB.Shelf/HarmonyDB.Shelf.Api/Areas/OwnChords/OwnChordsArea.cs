@@ -13,7 +13,8 @@ namespace HarmonyDB.Shelf.Api.Areas.OwnChords;
 /// <summary>
 /// The person's own chords: written in the app (a new song, or a new variant of a song), changed with every version
 /// kept, deleted; how a text will look before it is saved; the text of other chords to start from (one's own variant,
-/// or a correction of an analysis by hand). Every endpoint is the person's own session's.
+/// or a correction of an analysis by hand). Those written in the old shelf are read here and not changed or deleted
+/// here. Every endpoint is the person's own session's.
 /// </summary>
 public sealed class OwnChordsArea : IShelfArea
 {

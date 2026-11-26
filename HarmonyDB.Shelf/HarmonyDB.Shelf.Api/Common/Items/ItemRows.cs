@@ -52,14 +52,18 @@ public sealed class ItemRows(ShelfDbContext db, TimeProvider time)
             row.Kinds = header.Kinds.Select(KindName).ToList();
             row.SourceKey = header.Source.Key;
             row.SourceTitle = header.Source.Title;
-            row.SourceUri = header.Source.Uri?.ToString();
+            row.SourceUri = header.Address?.ToString();
             row.SourceIcon = header.Source.Icon;
+            row.MadeFromRecordingId = header.MadeFrom is { } track && MusicServiceNames.StoredOf(track.Service) is { } service
+                ? (await GetOrCreateRecordingAsync(service, track.Id, null, cancellationToken)).Id
+                : null;
             row.HeaderUpdatedAt = time.GetUtcNow();
             await db.SaveChangesAsync(cancellationToken);
         }
 
         return row;
     }
+
 
     /// <summary>
     /// The local row of the music service's track, made when there is none; its cached description refreshed when one
@@ -71,13 +75,7 @@ public sealed class ItemRows(ShelfDbContext db, TimeProvider time)
         var now = time.GetUtcNow();
         if (row == null)
         {
-            var serviceName = service switch
-            {
-                MusicService.Yandex => "yandex",
-                MusicService.Youtube => "youtube",
-                _ => throw new ArgumentOutOfRangeException(nameof(service)),
-            };
-
+            var serviceName = MusicServiceNames.NameOf(service);
             await db.Database.ExecuteSqlInterpolatedAsync(
                 $"INSERT INTO recordings (id, service, service_id, artists, updated_at) VALUES ({Guid.NewGuid()}, {serviceName}, {serviceId}, {Array.Empty<string>()}, {now}) ON CONFLICT (service, service_id) DO NOTHING",
                 cancellationToken);

@@ -66,7 +66,7 @@ public sealed class ShareArea : IShelfArea
         group.MapPost("/{token}/media", async (ClaimsPrincipal user, string token, ShareService share, MediaService media, CancellationToken cancellationToken) =>
             {
                 var (id, caller) = await share.ChordsCallerAsync(user, token, cancellationToken);
-                return await media.SignChordsAsync(caller, id, cancellationToken);
+                return await media.SignChordsAsync(caller, id, null, cancellationToken);
             })
             .AllowGuests()
             .RequireRateLimiting(MediaArea.AddressesRateLimit)

@@ -97,7 +97,7 @@ export const account = {
             wiped: 'Profile cleared',
             delete: 'Delete the profile',
             deleteSub: 'Signing in again later makes a new, empty profile.',
-            deleteAsk: 'Delete the profile for good? Everything that clearing removes, and the profile too: its name, picture, sign-ins and settings. Shared playlists pass to their other members. The chords you wrote stay open by their links, without your name.',
+            deleteAsk: 'Delete the profile for good? Everything that clearing removes, and the profile too: its name, picture, sign-ins and settings. Shared playlists pass to their other members. Of the chords you wrote here, those kept to their own link are deleted; those in playlists or open to everyone stay, without your name — others’ playlists may hold them. What you wrote in the old shelf stays there.',
             deleteYes: 'Yes, delete the profile',
         },
         deleted: {

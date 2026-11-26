@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Database;
@@ -93,7 +94,7 @@ public sealed class PeopleAdmin(ShelfDbContext db, PermissionCatalog catalog, IO
             }).ToList(),
             MusicLinks = links.Select(x => new AdminMusicLink
             {
-                Service = ServiceName(x.Service),
+                Service = MusicServiceNames.NameOf(x.Service),
                 ExternalName = x.ExternalName,
                 CreatedAt = x.CreatedAt,
                 LastUsedAt = x.LastUsedAt,
@@ -238,7 +239,6 @@ public sealed class PeopleAdmin(ShelfDbContext db, PermissionCatalog catalog, IO
                 Id = x.Id,
                 DisplayName = x.DisplayName,
                 PictureUrl = x.PictureUrl,
-                SystemName = x.SystemName,
                 CreatedAt = x.CreatedAt,
                 LastSeenAt = x.LastSeenAt,
                 DeletedAt = x.DeletedAt,
@@ -263,12 +263,6 @@ public sealed class PeopleAdmin(ShelfDbContext db, PermissionCatalog catalog, IO
             .AsSplitQuery();
     }
 
-    private static string ServiceName(MusicService service) => service switch
-    {
-        MusicService.Yandex => "yandex",
-        MusicService.Youtube => "youtube",
-        _ => throw new ArgumentOutOfRangeException(nameof(service), service, null),
-    };
 
     private static string EscapeLike(string text) => text.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
 
@@ -277,7 +271,6 @@ public sealed class PeopleAdmin(ShelfDbContext db, PermissionCatalog catalog, IO
         public Guid Id { get; init; }
         public string DisplayName { get; init; } = string.Empty;
         public string? PictureUrl { get; init; }
-        public string? SystemName { get; init; }
         public DateTimeOffset CreatedAt { get; init; }
         public DateTimeOffset? LastSeenAt { get; init; }
         public DateTimeOffset? DeletedAt { get; init; }
@@ -294,12 +287,11 @@ public sealed class PeopleAdmin(ShelfDbContext db, PermissionCatalog catalog, IO
             Id = Id,
             DisplayName = DisplayName,
             PictureUrl = PictureUrl,
-            SystemName = SystemName,
             CreatedAt = CreatedAt,
             LastSeenAt = LastSeenAt,
             DeletedAt = DeletedAt,
             Logins = Logins,
-            MusicLinks = MusicServices.Select(ServiceName).ToList(),
+            MusicLinks = MusicServices.Select(x => MusicServiceNames.NameOf(x)).ToList(),
             Permissions = Permissions,
             Counts = new() { Playlists = Playlists, Marks = Marks, Sessions = Sessions, Clients = Clients },
         };

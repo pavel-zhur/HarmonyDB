@@ -56,7 +56,7 @@ public sealed class McpFiles(SignedPayloads signed, McpAddresses addresses, Time
         if (user == null || user.GetAccountId() != target.AccountId || !services.GetRequiredService<PermissionCatalog>().Has(user, BuiltInPermissions.McpIndex))
             throw ShelfException.Forbidden(ErrorCodes.PermissionDenied);
 
-        var content = await services.GetRequiredService<ChordsReader>().GetOpenContentAsync(user, target.ChordsId!, [target.Kind!.Value], cancellationToken)
+        var content = await services.GetRequiredService<ChordsReader>().GetOpenContentAsync(user, target.ChordsId!, [target.Kind!.Value], null, cancellationToken)
                       ?? throw ShelfException.NotFound();
         var json = JsonSerializer.SerializeToElement(content, SourceV2Json.Options);
         return json.TryGetProperty(JsonNamingPolicy.CamelCase.ConvertName(target.Kind.Value.ToString()), out var kind) && kind.ValueKind != JsonValueKind.Null

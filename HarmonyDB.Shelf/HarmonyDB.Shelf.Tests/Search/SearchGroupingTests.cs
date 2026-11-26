@@ -23,7 +23,7 @@ public sealed class SearchGroupingTests(ShelfDatabaseFixture database) : IClassF
             Answer = (_, _) => (HttpStatusCode.OK, new SearchResponse
             {
                 Headers = new[] { "s1", "s2", "s3", "s4", "s5" }.Select(x => FakeIndex.Header(x, "Label")).ToList(),
-                Failures = [new() { Source = "a broken one", Reason = SearchFailureReason.Timeout }],
+                Failures = [new() { Source = "a broken one", Reason = SourceFailureReason.Timeout }],
             }),
         };
         using var api = index.Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["ConnectionStrings:Shelf"] = database.ConnectionString });

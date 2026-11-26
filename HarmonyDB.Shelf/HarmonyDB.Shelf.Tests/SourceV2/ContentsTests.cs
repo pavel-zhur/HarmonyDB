@@ -14,7 +14,7 @@ namespace HarmonyDB.Shelf.Tests.SourceV2;
 /// </summary>
 public sealed class ContentsTests
 {
-    private static readonly Caller Caller = new() { Keys = ["k"] };
+    private static readonly Caller Caller = new() { Subjects = [], Keys = ["k"] };
 
     [Fact]
     public async Task ManyContentsComeInOneCallInTheOrderAskedAndAnAnswerOutOfTheContractIsUnavailable()

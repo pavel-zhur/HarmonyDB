@@ -17,8 +17,8 @@ export interface NavItem {
     soon?: boolean;
     /** the address is one of its section's (its tab is lit on them too) */
     match?: string[];
-    /** shown only to whom it is open: the person's permissions (a guest has none) */
-    open?: (permissions: readonly string[]) => boolean;
+    /** shown only to whom it is open: "assistants" — to a person who may let an assistant do something */
+    needs?: 'assistants';
 }
 
 export const mainNav: NavItem[] = [
@@ -35,12 +35,12 @@ export const toolsNav: NavItem[] = [
     { to: '/illustrations', icon: 'img', label: 'tools.illustrations', sub: 'tools.illustrationsSub' },
     { to: '/fingerings', icon: 'frets', label: 'tools.fingerings', sub: 'tools.fingeringsSub' },
     { to: '/tuner', icon: 'gauge', label: 'tools.tuner', sub: 'tools.tunerSub' },
-    { to: '/ai', icon: 'mcp', label: 'tools.mcp', sub: 'tools.mcpSub', open: permissions => permissions.some(p => p.startsWith('mcp.')) },
+    { to: '/ai', icon: 'mcp', label: 'tools.mcp', sub: 'tools.mcpSub', needs: 'assistants' },
 ];
 
-/** The items open to whom has these permissions. */
-export function openTo<T extends NavItem>(items: readonly T[], permissions: readonly string[] | undefined): T[] {
-    return items.filter(item => !item.open || item.open(permissions ?? []));
+/** The items open to this person (data/mcp.ts useAssistantsOpen: whether assistants are). */
+export function openTo<T extends NavItem>(items: readonly T[], open: { assistants: boolean }): T[] {
+    return items.filter(item => !item.needs || open[item.needs]);
 }
 
 export const otherNav: NavItem[] = [

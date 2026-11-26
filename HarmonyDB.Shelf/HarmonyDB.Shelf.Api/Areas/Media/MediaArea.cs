@@ -52,7 +52,7 @@ public sealed class MediaArea : IShelfArea
             .WithName("GetTrackMedia");
 
         group.MapPost("/chords", (ClaimsPrincipal user, ChordsMediaRequest request, MediaService media, CancellationToken cancellationToken)
-                => media.SignChordsAsync(user, request.Id, cancellationToken))
+                => media.SignChordsAsync(user, request.Id, ChordsArea.ParseAddress(request.Address), cancellationToken))
             .AllowGuests()
             .RequireRateLimiting(AddressesRateLimit)
             .WithName("GetChordsMedia");

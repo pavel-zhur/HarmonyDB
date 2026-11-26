@@ -25,10 +25,8 @@
 .sheet span.flying { position: absolute; margin-right: -1.25rem; }
 .sheet span.flying2 { position: relative; top: -1.28625em; margin-right: -1.4375em; }
 
-/* the marks of a key, a time signature and a tempo (NodeMark): on a line of their own, as a musician writes them
-   (the .NET side writes these two rules inline; the port leaves them out for the page's policy, so they are here) */
-.sheet .sheet-mark { white-space: nowrap; color: var(--here); font-weight: 600; font-size: 1.2em; display: inline-block; margin: .25em 0; }
-.sheet .sheet-mark svg { vertical-align: middle; }
+/* the marks of a key, a time signature and a tempo (NodeMark): on a line of their own, as a musician writes them */
+.sheet .sheet-mark { color: var(--here); font-weight: 600; font-size: 1.2em; display: inline-block; margin: .25em 0; }
 .sheet .sheet-mark-key-name { font-family: var(--sans); }
 .sheet .sheet-mark-tempo { font-family: var(--sans); }
 

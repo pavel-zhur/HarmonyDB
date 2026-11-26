@@ -22,12 +22,44 @@ public sealed class JobSignal
 }
 
 /// <summary>
-/// The kinds of jobs, their handlers' types and the types of their results (none for a kind that ends with no result).
+/// The kinds of jobs, their handlers' types, the types of their results (none for a kind that ends with no result), and
+/// the lane they run in.
 /// </summary>
-internal sealed record JobHandlerRegistration(string Kind, Type HandlerType, Type? ResultType);
+internal sealed record JobHandlerRegistration(string Kind, Type HandlerType, Type? ResultType, JobLane Lane = JobLane.Person);
 
 /// <summary>
-/// Runs the queued jobs of the kinds this app has handlers for, up to <see cref="JobsOptions.Concurrency"/> at once.
+/// Who a kind of jobs is for, said once where its handler is registered.
+/// </summary>
+public enum JobLane
+{
+    /// <summary>What a person starts (a book, pictures, an import, a sync): theirs, counted against
+    /// <see cref="JobsOptions.MaxActivePerPerson"/>, in their list of jobs.</summary>
+    Person,
+
+    /// <summary>What the shelf starts by itself after an ordinary act (a lookup): not the person's — not counted, not in
+    /// their list, never failing the act; queued with the act (<see cref="JobQueue.QueueFollowUp"/>) and run in a lane of
+    /// its own, <see cref="JobsOptions.FollowUpConcurrency"/> at once, so that many of them do not hold back the people's
+    /// jobs.</summary>
+    FollowUp,
+}
+
+/// <summary>
+/// The registered kinds by their lanes.
+/// </summary>
+public sealed class JobKinds
+{
+    private readonly IReadOnlyDictionary<string, JobLane> _lanes;
+
+    internal JobKinds(IEnumerable<JobHandlerRegistration> registrations) => _lanes = registrations.ToDictionary(x => x.Kind, x => x.Lane);
+
+    public bool IsFollowUp(string kind) => _lanes.TryGetValue(kind, out var lane) && lane == JobLane.FollowUp;
+
+    public string[] Of(JobLane lane) => _lanes.Where(x => x.Value == lane).Select(x => x.Key).ToArray();
+}
+
+/// <summary>
+/// Runs the queued jobs of the kinds this app has handlers for, in two lanes: the people's jobs up to
+/// <see cref="JobsOptions.Concurrency"/> at once, the shelf's follow-ups up to <see cref="JobsOptions.FollowUpConcurrency"/>.
 /// A job is taken under a row lock that other copies skip, and held by a lease renewed while it runs; a job whose
 /// lease ran out (its copy stopped) is taken again, up to <see cref="JobsOptions.MaxAttempts"/> starts. A job stopped
 /// with the app goes back to the queue at once; one that asked to be run again later goes back with its time.
@@ -36,6 +68,7 @@ internal sealed record JobHandlerRegistration(string Kind, Type HandlerType, Typ
 internal sealed class JobWorker(
     IServiceScopeFactory scopes,
     IEnumerable<JobHandlerRegistration> registrations,
+    JobKinds kinds,
     JobResults results,
     JobSignal signal,
     IOptionsMonitor<JobsOptions> options,
@@ -51,20 +84,30 @@ internal sealed class JobWorker(
         if (_handlers.Count == 0)
             return;
 
-        var running = new List<Task>();
+        var lanes = new[]
+            {
+                new Lane(kinds.Of(JobLane.Person), () => options.CurrentValue.Concurrency),
+                new Lane(kinds.Of(JobLane.FollowUp), () => options.CurrentValue.FollowUpConcurrency),
+            }
+            .Where(x => x.Kinds.Length > 0)
+            .ToList();
         var cleanedAt = DateTimeOffset.MinValue;
         while (!stoppingToken.IsCancellationRequested)
         {
-            running.RemoveAll(x => x.IsCompleted);
+            foreach (var lane in lanes)
+                lane.Running.RemoveAll(x => x.IsCompleted);
             var next = signal.Next;
             var tookOne = false;
             try
             {
-                if (running.Count < options.CurrentValue.Concurrency && await ClaimAsync(stoppingToken) is { } claim)
+                foreach (var lane in lanes)
                 {
-                    tookOne = true;
-                    if (claim.Job != null)
-                        running.Add(RunAsync(claim.Job, stoppingToken));
+                    if (lane.Running.Count < lane.Max() && await ClaimAsync(lane.Kinds, stoppingToken) is { } claim)
+                    {
+                        tookOne = true;
+                        if (claim.Job != null)
+                            lane.Running.Add(RunAsync(claim.Job, stoppingToken));
+                    }
                 }
 
                 if (time.GetUtcNow() - cleanedAt > CleanupInterval)
@@ -83,26 +126,25 @@ internal sealed class JobWorker(
 
             try
             {
-                await Task.WhenAny(running.Append(next).Append(Task.Delay(options.CurrentValue.Poll, time, stoppingToken)));
+                await Task.WhenAny(lanes.SelectMany(x => x.Running).Append(next).Append(Task.Delay(options.CurrentValue.Poll, time, stoppingToken)));
             }
             catch (OperationCanceledException)
             {
             }
         }
 
-        await Task.WhenAll(running);
+        await Task.WhenAll(lanes.SelectMany(x => x.Running));
     }
 
     /// <summary>
-    /// Takes the oldest job that is queued, or running with its lease run out. Null when there is none; a claim without a
-    /// job when the job taken was given up.
+    /// Takes the oldest job of the kinds that is queued, or running with its lease run out. Null when there is none; a
+    /// claim without a job when the job taken was given up.
     /// </summary>
-    private async Task<Claim?> ClaimAsync(CancellationToken cancellationToken)
+    private async Task<Claim?> ClaimAsync(string[] kinds, CancellationToken cancellationToken)
     {
         await using var scope = scopes.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ShelfDbContext>();
         var now = time.GetUtcNow();
-        var kinds = _handlers.Keys.ToArray();
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var job = await db.Jobs
@@ -320,4 +362,13 @@ internal sealed class JobWorker(
     }
 
     private sealed record Claim(Job? Job);
+
+    private sealed class Lane(string[] kinds, Func<int> max)
+    {
+        public string[] Kinds { get; } = kinds;
+
+        public Func<int> Max { get; } = max;
+
+        public List<Task> Running { get; } = [];
+    }
 }

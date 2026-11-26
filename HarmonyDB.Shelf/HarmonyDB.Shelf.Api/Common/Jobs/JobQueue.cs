@@ -13,7 +13,7 @@ namespace HarmonyDB.Shelf.Api.Common.Jobs;
 /// Starts background work for a person and tells them where it is. The work is done by <see cref="JobWorker"/> with the
 /// handler registered for the job's kind.
 /// </summary>
-public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults results, TimeProvider time, IOptionsMonitor<JobsOptions> options)
+public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults results, JobKinds kinds, TimeProvider time, IOptionsMonitor<JobsOptions> options)
 {
     /// <summary>
     /// The JSON of the jobs' inputs and results: the browser API's.
@@ -30,6 +30,9 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults res
     /// jobs of this kind queued or running already (details: <c>max</c>).</exception>
     public async Task<JobInfo> EnqueueAsync(Guid accountId, string kind, string? subjectId, object input, CancellationToken cancellationToken)
     {
+        if (kinds.IsFollowUp(kind))
+            throw new InvalidOperationException($"The jobs of the kind {kind} are the shelf's follow-ups: they are queued with {nameof(QueueFollowUp)}.");
+
         // the person's jobs of the kind are counted and added one request at a time: two at once wait for each other here,
         // in the caller's transaction when it has one
         await using var own = db.Database.CurrentTransaction == null ? await db.Database.BeginTransactionAsync(cancellationToken) : null;
@@ -59,10 +62,47 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults res
     }
 
     /// <summary>
+    /// Adds to the context a follow-up of the shelf's (<see cref="JobLane.FollowUp"/>) for a thing, saved with what the
+    /// caller saves next: the act and its follow-up are saved together, and nothing here can fail the act. Done for the
+    /// person's act (with their account, for its handler), but not the person's job. Not added when one of the kind is
+    /// waiting for the thing already (queued, or added to this context): that one finds the thing as it is when it runs.
+    /// </summary>
+    /// <param name="kind">A kind registered with <see cref="JobsServiceCollectionExtensions.AddFollowUpJobHandler{THandler}"/>.</param>
+    public async Task QueueFollowUp(Guid accountId, string kind, string subjectId, object input, CancellationToken cancellationToken)
+    {
+        if (!kinds.IsFollowUp(kind))
+            throw new InvalidOperationException($"The jobs of the kind {kind} are not the shelf's follow-ups.");
+
+        if (db.Jobs.Local.Any(x => x.Kind == kind && x.SubjectId == subjectId && x.State == JobState.Queued)
+            || await db.Jobs.AnyAsync(x => x.Kind == kind && x.SubjectId == subjectId && x.State == JobState.Queued, cancellationToken))
+            return;
+
+        db.Jobs.Add(new()
+        {
+            Id = Guid.NewGuid(),
+            AccountId = accountId,
+            Kind = kind,
+            SubjectId = subjectId,
+            State = JobState.Queued,
+            Input = JsonSerializer.Serialize(input, JsonOptions),
+            CreatedAt = time.GetUtcNow(),
+        });
+
+        // the worker of this copy is woken once it is saved; the others find it by looking at the queue
+        db.SavedChanges += Wake;
+
+        void Wake(object? sender, SavedChangesEventArgs e)
+        {
+            db.SavedChanges -= Wake;
+            signal.Notify();
+        }
+    }
+
+    /// <summary>
     /// The person's job.
     /// </summary>
     public async Task<JobInfo?> GetAsync(Guid accountId, Guid jobId, CancellationToken cancellationToken)
-        => (await Query(db.Jobs.Where(x => x.Id == jobId && x.AccountId == accountId)).SingleOrDefaultAsync(cancellationToken)) is { } row
+        => (await Query(Persons().Where(x => x.Id == jobId && x.AccountId == accountId)).SingleOrDefaultAsync(cancellationToken)) is { } row
             ? ToInfo(row.Job, row.File)
             : null;
 
@@ -73,7 +113,7 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults res
     public async Task<IReadOnlyList<JobInfo>> ListAsync(Guid accountId, string? kind, CancellationToken cancellationToken)
     {
         var since = time.GetUtcNow() - options.CurrentValue.RecentTime;
-        var jobs = db.Jobs.Where(x => x.AccountId == accountId && (x.FinishedAt == null || x.FinishedAt >= since));
+        var jobs = Persons().Where(x => x.AccountId == accountId && (x.FinishedAt == null || x.FinishedAt >= since));
         if (kind != null)
             jobs = jobs.Where(x => x.Kind == kind);
 
@@ -103,6 +143,15 @@ public sealed class JobQueue(ShelfDbContext db, JobSignal signal, JobResults res
             .Where(x => x.JobId == jobId && x.Job.AccountId == accountId && x.ExpiresAt > now)
             .Select(x => new JobFile(x.FileName, x.ContentType, x.Data))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The people's jobs: all but the shelf's follow-ups.
+    /// </summary>
+    private IQueryable<Job> Persons()
+    {
+        var followUps = kinds.Of(JobLane.FollowUp);
+        return db.Jobs.Where(x => !followUps.Contains(x.Kind));
     }
 
     private IQueryable<JobRow> Query(IQueryable<Job> jobs)

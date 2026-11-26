@@ -32,9 +32,11 @@ public sealed class RelayV2Tests : IAsyncLifetime
 
     private static readonly byte[] IconBytes = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
 
+    private static readonly byte[] FileBytes = Enumerable.Range(0, 100_000).Select(x => (byte)x).ToArray();
+
     private static readonly Caller Caller = new()
     {
-        AccountId = Guid.Parse("6c1f0a52-7d1e-4f1b-9a63-1b2f3c4d5e6f"),
+        Subjects = ["person-1", "person-1-before"],
         Keys = ["first", "second"],
     };
 
@@ -121,14 +123,14 @@ public sealed class RelayV2Tests : IAsyncLifetime
 
         Assert.Equal(["g-1"], response.Headers.Select(x => x.Id));
         Assert.Equal(
-            [("down", SearchFailureReason.Unavailable), ("slow", SearchFailureReason.Timeout), ("refusing", SearchFailureReason.Unavailable),
-                ("broken", SearchFailureReason.Unavailable)],
+            [("down", SourceFailureReason.Unavailable), ("slow", SourceFailureReason.Timeout), ("refusing", SourceFailureReason.Unavailable),
+                ("broken", SourceFailureReason.Unavailable)],
             response.Failures.Select(x => (x.Source, x.Reason)));
         Assert.True(stopwatch.Elapsed < RelayTimeout * 3, $"The slow source held the search for {stopwatch.Elapsed}.");
 
         // the caller reaches the source as it was sent
         var received = Assert.Single(_good.Callers);
-        Assert.Equal(Caller.AccountId, received.AccountId);
+        Assert.Equal(Caller.Subjects, received.Subjects);
         Assert.Equal(Caller.Keys, received.Keys);
     }
 
@@ -151,18 +153,31 @@ public sealed class RelayV2Tests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TheSourcesAreAskedAllAndTheirLabelsComeInTheOrderOfTheSources()
+    {
+        var response = await _relay.GetSources(Caller);
+
+        Assert.Equal(["g-", "b-"], response.Sources.Select(x => x.Key));
+        Assert.Equal([("down", SourceFailureReason.Unavailable), ("slow", SourceFailureReason.Timeout), ("refusing", SourceFailureReason.Unavailable)],
+            response.Failures.Select(x => (x.Source, x.Reason)));
+        Assert.Equal(Caller.Subjects, _good.Callers.Last().Subjects);
+    }
+
+    [Fact]
     public async Task ContentMakesTheRoundTripInTheWireFormat()
     {
-        var response = await _relay.GetContent(Caller, "g-7", [ContentKind.Sheet, ContentKind.Timeline]);
+        var response = await _relay.GetContent(Caller, "g-7", [ContentKind.Sheet, ContentKind.Timeline], new Uri("https://example.com/g-7?code=1"));
 
         Assert.Equal(ItemState.Open, response.State);
         Assert.Equal([ContentKind.Sheet, ContentKind.Timeline], response.Header!.Kinds);
         Assert.Equal("F#m", response.Header.Attributes.Key);
-        Assert.Equal(new Uri("https://example.com/g-7"), response.Header.Source.Uri);
+        Assert.Equal(new Uri("https://example.com/g-7"), response.Header.Address);
+        // the address the person came by reaches the source as it was sent
+        Assert.Equal(new Uri("https://example.com/g-7?code=1"), _good.AddressesAsked.Last());
         Assert.NotNull(response.Content);
 
         // on the wire: camel case, enums as camel-case strings
-        var raw = await Post(SourceV2Urls.V2GetContent, """{"caller":{"accountId":null,"keys":[]},"id":"x-1","kinds":["sheet","timeline"]}""", ShelfKey);
+        var raw = await Post(SourceV2Urls.V2GetContent, """{"caller":{"subjects":[],"keys":[]},"id":"x-1","kinds":["sheet","timeline"]}""", ShelfKey);
         Assert.Equal(HttpStatusCode.OK, raw.StatusCode);
         using var json = JsonDocument.Parse(await raw.Content.ReadAsStringAsync());
         Assert.Equal("x-1", json.RootElement.GetProperty("id").GetString());
@@ -266,7 +281,7 @@ public sealed class RelayV2Tests : IAsyncLifetime
         // more ids than one call may ask, an id twice, an empty one: refused
         var tooMany = string.Join(',', Enumerable.Range(0, GetContentsRequest.MaxIds + 1).Select(i => $"\"g-{i}\""));
         foreach (var ids in new[] { tooMany, "\"g-1\",\"g-1\"", "\"\"" })
-            Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2GetContents, $$"""{"caller":{"accountId":null,"keys":[]},"ids":[{{ids}}],"kinds":["sheet"]}""", ShelfKey)).StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, (await Post(SourceV2Urls.V2GetContents, $$"""{"caller":{"subjects":[],"keys":[]},"ids":[{{ids}}],"kinds":["sheet"]}""", ShelfKey)).StatusCode);
     }
 
     [Fact]
@@ -284,6 +299,67 @@ public sealed class RelayV2Tests : IAsyncLifetime
         return await _http.SendAsync(request);
     }
 
+    [Fact]
+    public async Task AFileIsPassedOnAsItsSourceAnswersItWithRanges()
+    {
+        var request = GetFileRequest.Encode(new() { Caller = Caller, Id = "g-1", Name = "sound.mp3" });
+
+        HttpRequestMessage Ask(HttpMethod method, string encoded, string? range = null, string? ifRange = null)
+        {
+            var message = new HttpRequestMessage(method, $"/index/api/{SourceV2Urls.V2GetFile}");
+            message.Headers.Add("X-Internal-Key", ShelfKey);
+            message.Headers.Add(GetFileRequest.HeaderName, encoded);
+            if (range != null) message.Headers.TryAddWithoutValidation("Range", range);
+            if (ifRange != null) message.Headers.TryAddWithoutValidation("If-Range", ifRange);
+            return message;
+        }
+
+        var whole = await _http.SendAsync(Ask(HttpMethod.Get, request));
+        Assert.Equal(HttpStatusCode.OK, whole.StatusCode);
+        Assert.Equal(FileBytes, await whole.Content.ReadAsByteArrayAsync());
+        Assert.Equal("audio/mpeg", whole.Content.Headers.ContentType!.MediaType);
+        Assert.Equal("\"v1\"", whole.Headers.ETag!.Tag);
+
+        var part = await _http.SendAsync(Ask(HttpMethod.Get, request, "bytes=10-19", "\"v1\""));
+        Assert.Equal(HttpStatusCode.PartialContent, part.StatusCode);
+        Assert.Equal(FileBytes[10..20], await part.Content.ReadAsByteArrayAsync());
+        Assert.Equal($"bytes 10-19/{FileBytes.Length}", part.Content.Headers.ContentRange!.ToString());
+
+        // a range of another version of the file gets the whole of it
+        Assert.Equal(HttpStatusCode.OK, (await _http.SendAsync(Ask(HttpMethod.Get, request, "bytes=10-19", "\"v0\""))).StatusCode);
+
+        var head = await _http.SendAsync(Ask(HttpMethod.Head, request));
+        Assert.Equal((HttpStatusCode.OK, FileBytes.Length), (head.StatusCode, (int)head.Content.Headers.ContentLength!.Value));
+
+        Assert.Equal(HttpStatusCode.RequestedRangeNotSatisfiable, (await _http.SendAsync(Ask(HttpMethod.Get, request, $"bytes={FileBytes.Length}-"))).StatusCode);
+
+        // the caller reaches the source as it was sent
+        Assert.Equal(Caller.Keys, _good.Callers.Last().Keys);
+
+        // no such file, an id of no source, a source down or refusing, a request out of the contract
+        Assert.Equal(HttpStatusCode.NotFound, (await _http.SendAsync(Ask(HttpMethod.Get, GetFileRequest.Encode(new() { Caller = Caller, Id = "g-1", Name = "other" })))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _http.SendAsync(Ask(HttpMethod.Get, GetFileRequest.Encode(new() { Caller = Caller, Id = "x-1", Name = "sound.mp3" })))).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await _http.SendAsync(Ask(HttpMethod.Get, GetFileRequest.Encode(new() { Caller = Caller, Id = "d-1", Name = "sound.mp3" })))).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await _http.SendAsync(Ask(HttpMethod.Get, GetFileRequest.Encode(new() { Caller = Caller, Id = "r-1", Name = "sound.mp3" })))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _http.SendAsync(Ask(HttpMethod.Get, "not-a-request"))).StatusCode);
+    }
+
+    [Fact]
+    public async Task AFileOfASlowSourceIsCutOnlyWhileItsHeadersAreAwaited()
+    {
+        var stopwatch = Stopwatch.StartNew();
+        await Assert.ThrowsAsync<SourceUnavailableException>(() => _relay.GetFile(Caller, "s-1", "sound.mp3", null, false, null, null));
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(4), $"The slow source held the file for {stopwatch.Elapsed}.");
+
+        // through the client, the body is read after the headers came
+        using var file = await _relay.GetFile(Caller, "g-1", "sound.mp3", null, false, "bytes=0-4", null);
+        Assert.NotNull(file);
+        Assert.Equal(206, file!.StatusCode);
+        await using var body = await file.ReadBodyAsync(CancellationToken.None);
+        using var copy = new MemoryStream();
+        await body.CopyToAsync(copy);
+        Assert.Equal(FileBytes[..5], copy.ToArray());
+    }
     /// <summary>
     /// A source on a real port: it knows every id of its prefix, finds one item, resolves its own addresses.
     /// </summary>
@@ -305,6 +381,8 @@ public sealed class RelayV2Tests : IAsyncLifetime
 
         public ConcurrentQueue<IReadOnlyList<string>> ContentIdsAsked { get; } = new();
 
+        public ConcurrentQueue<Uri?> AddressesAsked { get; } = new();
+
         /// <param name="answersOutOfContract">The source answers a search with a list missing ("headers": null).</param>
         public static async Task<FakeSource> Start(string prefix, TimeSpan delay, HttpStatusCode? refuseWith, bool answersOutOfContract = false)
         {
@@ -317,7 +395,8 @@ public sealed class RelayV2Tests : IAsyncLifetime
             Header Header(string id) => new()
             {
                 Id = id,
-                Source = new() { Key = "fake", Title = "Fake", Uri = new($"https://example.com/{id}") },
+                Source = new() { Key = "fake", Title = "Fake" },
+                Address = new($"https://example.com/{id}"),
                 Title = "Title",
                 Artists = ["Artist"],
                 Kinds = [ContentKind.Sheet, ContentKind.Timeline],
@@ -362,7 +441,15 @@ public sealed class RelayV2Tests : IAsyncLifetime
                 };
             }));
             app.MapPost($"/api/{SourceV2Urls.V2GetContent}", (HttpContext c) => Serve<GetContentRequest>(c, r =>
-                new GetContentResponse { Id = r.Id, State = ItemState.Open, Header = Header(r.Id), Content = new() }));
+            {
+                source!.AddressesAsked.Enqueue(r.Address);
+                return new GetContentResponse { Id = r.Id, State = ItemState.Open, Header = Header(r.Id), Content = new() };
+            }));
+            app.MapPost($"/api/{SourceV2Urls.V2GetSources}", (HttpContext c) => Serve<GetSourcesRequest>(c, r =>
+            {
+                source!.Callers.Enqueue(r.Caller);
+                return new GetSourcesResponse { Sources = [new() { Key = prefix, Title = prefix }], Failures = [] };
+            }));
             app.MapPost($"/api/{SourceV2Urls.V2GetContents}", (HttpContext c) => Serve<GetContentsRequest>(c, r =>
             {
                 source!.ContentIdsAsked.Enqueue(r.Ids);
@@ -384,6 +471,39 @@ public sealed class RelayV2Tests : IAsyncLifetime
                         : new ResolvedUri { Uri = uri, State = ResolveState.NotResolved };
                 }).ToList(),
             }));
+
+            // a file of every id of the prefix: "sound.mp3", FileBytes long, with ranges; the caller is noted
+            app.MapMethods($"/api/{SourceV2Urls.V2GetFile}", ["GET", "HEAD"], async context =>
+            {
+                if (context.Request.Headers["X-Internal-Key"] != SourceKey)
+                {
+                    context.Response.StatusCode = 401;
+                    return;
+                }
+
+                if (refuseWith.HasValue)
+                {
+                    context.Response.StatusCode = (int)refuseWith.Value;
+                    return;
+                }
+
+                await Task.Delay(delay, context.RequestAborted);
+                var request = GetFileRequest.Decode(context.Request.Headers[GetFileRequest.HeaderName]);
+                if (request == null)
+                {
+                    context.Response.StatusCode = 400;
+                    return;
+                }
+
+                source!.Callers.Enqueue(request.Caller);
+                if (request.Name != "sound.mp3")
+                {
+                    context.Response.StatusCode = 404;
+                    return;
+                }
+
+                await Results.Bytes(FileBytes, "audio/mpeg", entityTag: new("\"v1\""), enableRangeProcessing: true).ExecuteAsync(context);
+            });
 
             app.MapPost($"/api/{SourceV2Urls.V2GetIcon}", async context =>
             {

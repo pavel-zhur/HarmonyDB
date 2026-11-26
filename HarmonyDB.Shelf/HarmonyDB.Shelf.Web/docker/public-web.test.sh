@@ -1,7 +1,7 @@
 #!/bin/sh
 # The public page's web server against a stand-in for shelf-api (run when the image is built: the Dockerfile's stage
-# public-test): each call the page makes goes on — as a guest, whatever cookies and credentials the browser sends, and
-# no cookie comes back; anything else under /api stops here with 404. Fails when the list of what goes on widens.
+# public-test): a call goes on as a guest's, whatever cookies and credentials the browser sends, and no cookie comes
+# back — a signed-in person's session never reaches the API through this page.
 #
 #   sh public-web.test.sh <public.nginx.conf>
 
@@ -30,7 +30,6 @@ nginx -t -q
 nginx
 
 token=AbCdEfGhIjKlMnOpQrStUvWx
-uuid=0be02e7c-6bd1-4ecd-939a-75a67fb4dc20
 failed=0
 
 ask() {
@@ -52,77 +51,16 @@ passes() {
     fi
 }
 
-stops() {
-    ask "$@"
-    if grep -q '^reached' "$work/body" || ! head -1 "$work/head" | grep -q ' 404' || grep -q 'no_such_link' "$work/body"; then
-        echo "FAIL: $1 $2 should stop with 404: $(head -1 "$work/head")"; failed=1
-    fi
-}
-
-# what the page makes
+# reading and asking, of any address: never with the person's cookie or key, never a cookie back
 passes GET  /api/app/configuration
-passes GET  /api/share/$token
-passes GET  "/api/share/$token/chords?kinds=sheet"
-passes POST /api/share/$token/media
 passes GET  "/api/chords/ha-153cebd750cd378cfafe36d26c4ffb83?kinds=sheet"
-passes GET  /api/chords/mj-e1e9acdf-c303-42b0-98df-0123456789ab
-passes GET  /api/chords/icons/ha-icon
-passes GET  /api/playlists/$uuid
-passes GET  "/api/playlists/$uuid/songs?sort=order&offset=0&limit=200"
-passes GET  /api/playlists/$uuid/songs/$uuid
-passes GET  /api/illustrations/images/abc123/small
-passes GET  "/api/recordings/playlists/$uuid/songs/$uuid?share=$token"
 passes POST /api/media/chords '{"id":"ha-1"}'
-passes POST /api/recordings/playlists/$uuid/songs/$uuid/media '{"service":"youtube","id":"x","kind":"audio"}'
-passes POST /api/share/$token/tracks '{"songId":"'$uuid'","service":"youtube","id":"x","kind":"audio"}'
-passes GET  /api/media/eyJLIjoiYmxvYiJ9.uwjAckjOsLC6bXANl1dlRWbB5e351L2
-
-# what it does not; a share token of another shape is no link, as the API says it, and nothing reaches the API
-says_no_link() {
-    ask "$@"
-    if grep -q '^reached' "$work/body" || ! head -1 "$work/head" | grep -q ' 404' || ! grep -q '"code":"no_such_link"' "$work/body"; then
-        echo "FAIL: $1 $2 should be answered as no link: $(head -1 "$work/head") $(head -c 200 "$work/body")"; failed=1
-    fi
-}
-says_no_link GET  /api/share/short
-says_no_link GET  /api/share/short/chords
-says_no_link POST /api/share/a-token-of-30-letters-0123456/media
-
-# what it does not
-stops GET    /api/auth/session
-stops POST   /api/auth/sign-out
-stops GET    /api/me
-stops GET    /api/app/health
-stops GET    /api/app/version
-stops POST   /api/share '{"kind":"chords"}'
-stops GET    /api/share/mine
-stops DELETE /api/share/mine
-stops DELETE /api/share/$token
-stops GET    /api/share/$token/other
-stops POST   /api/chords/headers
-stops DELETE /api/chords/ha-1
-stops GET    /api/playlists
-stops GET    /api/playlists/public
-stops POST   /api/playlists/import
-stops DELETE /api/playlists/$uuid
-stops PATCH  /api/playlists/$uuid
-stops POST   /api/playlists/$uuid/follow
-stops GET    /api/playlists/$uuid/members/$uuid
-stops POST   /api/playlists/$uuid/songs
-stops PUT    /api/playlists/$uuid/songs/$uuid/main
-stops GET    /api/playlists/invitations/$token
-stops POST   /api/media/tracks
-stops GET    /api/media/tracks
-stops GET    /api/recordings/playlists/$uuid/songs/$uuid/media
-stops GET    /api/share/$token/tracks
-stops POST   /api/recordings/playlists/$uuid/songs/$uuid/find
-stops GET    /api/media/chords
-stops POST   /api/sync
-stops GET    /api/library
-stops GET    /api/public/sitemap
-stops GET    /api/public/preview/
+passes GET  /api/media/kPUdpP5acv6jq1L0r1in2znEnsLTNPtOrB3nxmkAsk-VgnYmbws1yMyZXFup-bQp8uIImrq2mXdgk
+passes GET  /api/auth/session
+passes POST /api/auth/sign-out
+passes DELETE /api/share/$token
 
 nginx -s quit
 rm -rf "$work"
-[ "$failed" = 0 ] && echo "public-web: the list of what goes on to shelf-api is as it should be"
+[ "$failed" = 0 ] && echo "public-web: everything goes on as a guest's"
 exit "$failed"

@@ -43,9 +43,16 @@ public sealed class ChordsArea : IShelfArea
     {
         var group = endpoints.MapGroup("/api/chords").WithTags("Chords");
 
-        // The kinds are given as "sheet,timeline"; the sheet when none is given.
-        group.MapGet("/{id}", (ClaimsPrincipal user, string id, string? kinds, ChordsReader reader, CancellationToken cancellationToken)
-                => reader.GetContentAsync(user, id, ParseKinds(kinds), cancellationToken))
+        // The sources this person may see; before /{id}, which would take "sources" for an id.
+        group.MapGet("/sources", (ClaimsPrincipal user, ChordsReader reader, CancellationToken cancellationToken)
+                => reader.GetSourcesAsync(user, cancellationToken))
+            .AllowGuests()
+            .WithName("GetChordsSources");
+
+        // The kinds are given as "sheet,timeline"; the sheet when none is given. The address: the one the person came
+        // by (a link opened), when they came by one.
+        group.MapGet("/{id}", (ClaimsPrincipal user, string id, string? kinds, string? address, ChordsReader reader, CancellationToken cancellationToken)
+                => reader.GetContentAsync(user, id, ParseKinds(kinds), ParseAddress(address), cancellationToken))
             .WithName("GetChords");
 
         // A read of many items at once: a POST for the length of the list.
@@ -62,6 +69,14 @@ public sealed class ChordsArea : IShelfArea
             })
             .WithName("GetSourceIcon");
     }
+
+    /// <summary>
+    /// The address a person came by, as the browser gives it: absolute, else 400 <c>bad_request</c>; null when none.
+    /// </summary>
+    public static Uri? ParseAddress(string? address)
+        => string.IsNullOrEmpty(address) ? null
+            : Uri.TryCreate(address, UriKind.Absolute, out var uri) ? uri
+            : throw ShelfException.BadRequest();
 
     /// <summary>
     /// The kinds asked as "sheet,timeline"; the sheet when none is given. An unknown one answers 400 <c>unknown_kind</c>.
@@ -95,7 +110,7 @@ public static class ChordsReadingExtensions
         services.AddIndexClient(configuration);
         services.AddItemRows();
         services.AddShelfCommon();
-        services.AddSingleton<SourceCallers>();
+        services.AddScoped<SourceCallers>();
         services.AddScoped<ChordsReader>();
         services.AddScoped<SourceIcons>();
         return services;

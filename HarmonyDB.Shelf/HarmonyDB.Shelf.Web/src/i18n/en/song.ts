@@ -118,6 +118,7 @@ export const song = {
         share: {
             title: 'Share',
             open: 'The chords open by the link for everyone, no sign-in needed.',
+            own: 'Whoever holds this link opens these chords, in any browser, no sign-in needed. It leads to this version: after the chords are edited, give the new link.',
             qr: 'The QR code leads to these same chords.',
             pdf: 'PDF',
             pdfMaking: 'Making the PDF…',
@@ -152,6 +153,7 @@ export const song = {
             inSource: 'In the source: {{name}}',
             addedBy: 'Added by {{name}}',
             edit: 'Edit my chords',
+            notEditable: 'These chords are changed where they were written, not here.',
             link: 'Link with another song',
             linkSub: 'The same song under another name becomes a variant of this one',
             unlink: 'Separate into its own song',

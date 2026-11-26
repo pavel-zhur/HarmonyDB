@@ -126,14 +126,6 @@ public record MergeCandidate
 }
 
 /// <summary>
-/// Internal: an account's identities at one provider (their stable ids there), oldest first.
-/// </summary>
-public record AccountLoginSubjects
-{
-    public required IReadOnlyList<string> Subjects { get; init; }
-}
-
-/// <summary>
 /// Who the browser is.
 /// </summary>
 public record CurrentSession

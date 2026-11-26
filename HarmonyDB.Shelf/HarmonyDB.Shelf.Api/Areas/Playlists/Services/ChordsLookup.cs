@@ -103,6 +103,6 @@ public sealed class ChordsLookup(ShelfDbContext db, ChordsReader reader, ItemRow
     public async Task<ClaimsPrincipal> PersonAsync(Guid accountId, CancellationToken cancellationToken)
     {
         var permissions = await db.AccountPermissions.Where(x => x.AccountId == accountId).Select(x => x.Permission).ToListAsync(cancellationToken);
-        return new(ShelfIdentity.Create(nameof(ChordsLookup), accountId, permissions, null));
+        return new(ShelfIdentity.Create(nameof(ChordsLookup), accountId, await AccountSubjects.LoadAsync(db, accountId, cancellationToken), permissions, null));
     }
 }

@@ -24,6 +24,11 @@ export function useMcpOverview() {
     return useQuery({ queryKey: ['mcp'], queryFn: () => call(api.GET('/api/mcp')), enabled: signedIn });
 }
 
+/** Whether the person may let an assistant do anything (the server's word: what they may grant); a guest may not. */
+export function useAssistantsOpen(): boolean {
+    return !!useMcpOverview().data?.grantable.length;
+}
+
 export function useMcpClients() {
     const { signedIn } = useSession();
     return useQuery({ queryKey: ['mcp', 'clients'], queryFn: () => call(api.GET('/api/mcp/clients')), enabled: signedIn });

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using HarmonyDB.Shelf.Api.Clients.Audio;
-using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
@@ -12,8 +11,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// Merges a second account into the first, in one transaction, logged in the audit log:
 /// <list type="bullet">
 /// <item>everything of the second moves to the first: sign-ins, playlists (owned, and memberships), marks, keys, notes,
-/// recent, choices of variants, what the second added or made (songs, variants, links, invitations, imports, analyses,
-/// jobs);</item>
+/// recent, choices of variants, what the second added or made (songs, variants, links, invitations, imports, jobs);</item>
 /// <item>a conflict keeps the first's: the second's row is marked removed and stays with the second (both marked the
 /// same chords with the same mark; both have a key, a note, a recent row, a choice for the same thing; settings). Where
 /// both are members of one playlist, the first's membership stays with the higher of the two roles; where both have
@@ -21,7 +19,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Auth.Services;
 /// <item>permissions are united;</item>
 /// <item>a music link of the second is taken only where the first has none for that service; otherwise it is deleted
 /// and what the music service keeps under it is purged;</item>
-/// <item>the own chords the second wrote become the first's in their store, after the commit (the outbox);</item>
+/// <item>the merge is remembered (<see cref="AccountMerge"/>): the second's name stays one of the first's names to the
+/// sources, so what the second wrote there (own chords) is still the person's;</item>
 /// <item>the second's sessions, MCP grants and personal keys are revoked;</item>
 /// <item>the second account is left deleted (step one of <see cref="Account.DeletedAt"/>), empty; the purge removes it.</item>
 /// </list>
@@ -42,7 +41,7 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
         var ids = new[] { first, second }.Order().ToArray();
         var accounts = await db.Accounts.FromSql($"SELECT * FROM accounts WHERE id = ANY({ids}) ORDER BY id FOR UPDATE")
             .AsNoTracking().ToListAsync(cancellationToken);
-        if (accounts.Count != 2 || accounts.Any(x => x.DeletedAt != null || x.SystemName != null))
+        if (accounts.Count != 2 || accounts.Any(x => x.DeletedAt != null))
             throw ShelfException.Conflict();
 
         // Sign-ins and permissions.
@@ -100,8 +99,11 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
             }
         }
 
-        // The own chords the second wrote, kept by their store: moved there after this commits.
-        OwnChordsAuthorMove.Enqueue(db, second, first, now);
+        // The merge is remembered: the second's name, and the names of the accounts merged into it before, stay the
+        // first's names to the sources (what the second wrote there is still the person's), for as long as the first lives.
+        await db.AccountMerges.Where(x => x.IntoId == second)
+            .ExecuteUpdateAsync(x => x.SetProperty(m => m.IntoId, first), cancellationToken);
+        db.AccountMerges.Add(new() { MergedId = second, IntoId = first, MergedAt = now });
 
         // Revoked.
         await db.Sessions.Where(x => x.AccountId == second).ExecuteDeleteAsync(cancellationToken);
@@ -204,8 +206,6 @@ public sealed class AccountMerger(ShelfDbContext db, TimeProvider time)
             .ExecuteUpdateAsync(x => x.SetProperty(l => l.CreatedById, first), cancellationToken);
         await db.PlaylistInvitations.IgnoreQueryFilters().Where(x => x.CreatedById == second)
             .ExecuteUpdateAsync(x => x.SetProperty(i => i.CreatedById, first), cancellationToken);
-        await db.Analyses.Where(x => x.OwnerId == second)
-            .ExecuteUpdateAsync(x => x.SetProperty(a => a.OwnerId, first), cancellationToken);
         await db.Jobs.Where(x => x.AccountId == second)
             .ExecuteUpdateAsync(x => x.SetProperty(j => j.AccountId, first), cancellationToken);
 

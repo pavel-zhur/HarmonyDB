@@ -77,7 +77,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
             ChordsFailures = found?.Failures.Select(x => new SearchSourceFailure
             {
                 Source = x.Source,
-                Reason = x.Reason == HarmonyDB.Source.Api.Model.V2.Api.SearchFailureReason.Timeout ? Model.Search.SearchFailureReason.Timeout : Model.Search.SearchFailureReason.Unavailable,
+                Reason = x.Reason == HarmonyDB.Source.Api.Model.V2.Api.SourceFailureReason.Timeout ? Model.Search.SearchFailureReason.Timeout : Model.Search.SearchFailureReason.Unavailable,
             }).ToList(),
             Artists = artists,
             Recordings = tracks,
@@ -101,7 +101,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
     private async Task<ChordsFound> SearchChordsAsync(ClaimsPrincipal user, string text, CancellationToken cancellationToken)
     {
         var caller = callers.For(user);
-        var key = ("search-chords", text.ToLowerInvariant(), string.Join('\n', caller.Keys), caller.AccountId);
+        var key = ("search-chords", text.ToLowerInvariant(), string.Join('\n', caller.Keys), string.Join('\n', caller.Subjects));
         if (cache.TryGetValue(key, out ChordsFound? kept))
             return kept!;
 
@@ -113,7 +113,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
         catch (ShelfException exception) when (exception.StatusCode == StatusCodes.Status503ServiceUnavailable)
         {
             // the index is not there: the chords part failed, the others still answer
-            return new([], [new() { Source = "index", Reason = HarmonyDB.Source.Api.Model.V2.Api.SearchFailureReason.Unavailable }]);
+            return new([], [new() { Source = "index", Reason = HarmonyDB.Source.Api.Model.V2.Api.SourceFailureReason.Unavailable }]);
         }
 
         var result = new ChordsFound(response.Headers, response.Failures);
@@ -218,5 +218,5 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
             .ToListAsync(cancellationToken);
     }
 
-    private sealed record ChordsFound(IReadOnlyList<HarmonyDB.Source.Api.Model.V2.Header> Headers, IReadOnlyList<HarmonyDB.Source.Api.Model.V2.Api.SearchFailure> Failures);
+    private sealed record ChordsFound(IReadOnlyList<HarmonyDB.Source.Api.Model.V2.Header> Headers, IReadOnlyList<HarmonyDB.Source.Api.Model.V2.Api.SourceFailure> Failures);
 }

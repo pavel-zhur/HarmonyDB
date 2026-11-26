@@ -27,11 +27,6 @@ public record AdminPersonSummary
 
     public string? PictureUrl { get; init; }
 
-    /// <summary>
-    /// Set for a system account (no sign-in): its stable name.
-    /// </summary>
-    public string? SystemName { get; init; }
-
     public required DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? LastSeenAt { get; init; }

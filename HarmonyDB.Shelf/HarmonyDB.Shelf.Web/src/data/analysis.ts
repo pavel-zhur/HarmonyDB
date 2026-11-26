@@ -4,6 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api, call, type Schemas } from '../api/client';
+import { addressOf } from './address';
 
 export type Timeline = Schemas['SourceV2Timeline'];
 export type TimelineBar = Schemas['SourceV2Bar'];
@@ -30,7 +31,7 @@ export function useAnalysis(chordsId: string | null, share?: string | null) {
         queryKey: ['analysis', chordsId, share ?? null],
         queryFn: () => (share
             ? call(api.GET('/api/share/{token}/chords', { params: { path: { token: share }, query: { kinds: analysisKinds.join(',') } } }))
-            : call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: analysisKinds.join(',') } } }))),
+            : call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: analysisKinds.join(','), address: addressOf(chordsId!) } } }))),
         enabled: !!chordsId,
         // an analysis does not change while it is open
         staleTime: Infinity,

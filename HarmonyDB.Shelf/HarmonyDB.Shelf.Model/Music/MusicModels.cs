@@ -81,14 +81,11 @@ public sealed record MusicTrack
     /// <summary>Whether it is already in a playlist of this person (always false for a guest).</summary>
     public required bool InMyPlaylists { get; init; }
 
-    /// <summary>Whether there is an analysis of it (chords recognized from it), open to this person.</summary>
-    public required bool HasAnalysis { get; init; }
-
     /// <summary>
-    /// That analysis's chords, as they are opened (<c>GET /api/chords/{id}</c>): the newest, when there are several.
-    /// Given when <see cref="HasAnalysis"/> is true.
+    /// Chords made from this track (an analysis of it), as the shelf knows them — open to everyone —, to open by
+    /// <c>GET /api/chords/{id}</c>: the newest, when there are several; null when the shelf knows none.
     /// </summary>
-    public string? AnalysisChords { get; init; }
+    public string? MadeInto { get; init; }
 }
 
 public sealed record MusicPlaylist

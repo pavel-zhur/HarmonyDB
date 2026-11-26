@@ -33,5 +33,5 @@ internal static class RelayV2Function
         return await execute(request);
     }
 
-    public static bool IsComplete(Caller? caller) => caller is { Keys: not null } && caller.Keys.All(x => x != null);
+    public static bool IsComplete(Caller? caller) => Caller.IsValid(caller);
 }

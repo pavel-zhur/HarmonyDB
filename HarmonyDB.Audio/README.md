@@ -10,7 +10,7 @@ files, all kept in PostgreSQL. It is called by other HarmonyDB services, never f
 
 **An internal client's key.** Header `X-Internal-Key`: the key of a configured client. The client may use only its
 scopes: `audio.read` — navigation, links, the status, purging a subject; `audio.media` — sound, video, files by
-address, blobs. Only `/health` and `/openapi.json` need no key.
+address. Only `/health` and `/openapi.json` need no key.
 
 **How to act**, on every call to a music service (`/internal/yandex/...`, `/internal/youtube/...`,
 `/internal/playlists/by-link`):
@@ -84,9 +84,6 @@ YouTube: videoId, channel id `UC…`, album browse id `MPRE…`, playlist id).
 | `GET\|HEAD /internal/{s}/tracks/{id}/video` | YouTube: the video (mp4, up to 720p); Yandex: the track's background loop |
 | `GET /internal/{s}/tracks/{id}/audio/info`, `/internal/youtube/tracks/{id}/video/info` | the file fetched and kept (`fetch=false`: only told whether it is kept), described |
 | `GET\|HEAD /internal/files?url=` | a file the services name by address (a cover, a background video), kept, with Range; https on the services' image and video hosts only, every redirect checked, at most `AUDIO_MAX_URL_FILE_BYTES` |
-| `PUT /internal/blobs/{key}` | store the request body (at most `AUDIO_MAX_BLOB_BYTES`) under a key, its `Content-Type` kept; it replaces what was there once all of it is received |
-| `GET\|HEAD /internal/blobs/{key}` | a stored file, with Range; its SHA-256 in `Repr-Digest` (also in the PUT's answer) |
-| `DELETE /internal/blobs/{key}` | forget a stored file |
 
 A file is fetched from the service on the first request and kept; later requests are served from the store.
 
@@ -114,7 +111,7 @@ Every refusal is `{ code, message }`; the code is stable, the message is for dev
 | `MUSIC_YANDEX_SIGN_KEY`, `MUSIC_YANDEX_MP3_SALT` | the two constants of Yandex's client (lyrics signing, file addresses) |
 | `AUDIO_YANDEX_TOKEN_FILE` | optional: a file with the service account's Yandex token |
 | `AUDIO_YOUTUBE_AUTH_FILE` | optional: a file with the service account's YouTube request headers (JSON, as ytmusicapi keeps them) |
-| `AUDIO_MAX_BLOB_BYTES`, `AUDIO_MAX_URL_FILE_BYTES` | the largest blob upload; the largest file kept from an address |
+| `AUDIO_MAX_URL_FILE_BYTES` | the largest file kept from an address |
 | `InternalClients__N__Name`, `InternalClients__N__Key`, `InternalClients__N__Scopes__M` | the internal clients, in the .NET configuration shape |
 
 The service listens on port 8080 and publishes no port.
@@ -127,6 +124,6 @@ docker build --target test -t audio-api-test HarmonyDB.Audio.Api
 docker run --rm -e AUDIO_DATABASE_URL=postgresql://... audio-api-test
 ```
 
-The tests (the key check, the personal and shared cache with purges, Range serving and the replacing of files)
+The tests (the key check, the personal and shared cache with purges, the store's keeping of a file whole or not at all)
 need a PostgreSQL and reach no music service. `ytmusicapi` and `yt-dlp` follow the services' changes: they are pinned, and raised by hand when a service
 changes.

@@ -1,9 +1,7 @@
-"""What is not one service's: links, the status, the personal cache, files by address, blobs."""
+"""What is not one service's: links, the status, the personal cache, files by address."""
 from __future__ import annotations
 
-import re
-
-from fastapi import APIRouter, Depends, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, Path, Query, Request
 
 import config
 import media
@@ -12,16 +10,14 @@ import yandex as Y
 import youtube as T
 from acting import Acting, acting, playlist_acting
 from auth import MEDIA, READ, require
-from errors import BAD_REQUEST, LINK_NOT_PLAYLIST, TOO_LARGE, ApiError
-from models import Answer, BlobInfo, LinkedPlaylist, Purged, Resolved, Status
+from errors import LINK_NOT_PLAYLIST, ApiError
+from models import Answer, LinkedPlaylist, Purged, Resolved, Status
 from resolve import resolve
 from shared import SERVICE_PROBLEMS, Fresh, file_route, problems
 
 read = APIRouter(prefix="/internal", tags=["common"], dependencies=[Depends(require(READ))],
                  responses=SERVICE_PROBLEMS)
 files = APIRouter(prefix="/internal", tags=["files"], dependencies=[Depends(require(MEDIA))])
-
-BLOB_KEY = r"[A-Za-z0-9][A-Za-z0-9._/-]{0,299}"
 
 
 @read.get("/status", response_model=Status, summary="The service accounts (asked now) and what is stored")
@@ -69,41 +65,3 @@ async def purge_subject(subject: str = Path(min_length=1, max_length=200)):
             summary="A file the services name by its address (a cover, a short video), kept, with Range")
 async def file_by_url(request: Request, url: str = Query(min_length=1, max_length=2000), fresh: Fresh = False):
     return media.serve(request, await media.url_file(url, fresh))
-
-
-def _key(key: str) -> str:
-    if not re.fullmatch(BLOB_KEY, key) or ".." in key:
-        raise ApiError(400, BAD_REQUEST, f"a blob key is {BLOB_KEY} without '..'")
-    return key
-
-
-@files.put("/blobs/{key:path}", response_model=BlobInfo, responses=problems(400, 401, 403, 413),
-           summary="Store a file under a key (the request body; its Content-Type is kept), replacing what was "
-                   "there once the whole of it is received",
-           openapi_extra={"requestBody": {"required": True, "content": {
-               "application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}})
-async def put_blob(request: Request, key: str):
-    limit = config.settings().max_blob_bytes
-    length = request.headers.get("content-length")
-    if length and length.isdigit() and int(length) > limit:
-        raise ApiError(413, TOO_LARGE, f"the file is larger than {limit} bytes")
-    mime = (request.headers.get("content-type") or "application/octet-stream").split(";")[0].strip()
-    row = await media.put_blob(_key(key), mime, request.stream())
-    return {"key": key, "mime": row["mime"], "bytes": row["size"], "storedAt": row["stored"], "etag": media.etag(row),
-            "sha256": row["info"]["sha256"]}
-
-
-@file_route(files, "/blobs/{key:path}", responses=problems(400, 401, 403, 404, 416),
-            summary="A stored file, with Range; its SHA-256 in the header Repr-Digest")
-async def get_blob(request: Request, key: str):
-    row = await media.get_blob(_key(key))
-    response = media.serve(request, row)
-    response.headers.update(media.digest_header(row))
-    return response
-
-
-@files.delete("/blobs/{key:path}", status_code=204, responses=problems(400, 401, 403, 404),
-              summary="Forget a stored file")
-async def delete_blob(key: str):
-    await media.delete_blob(_key(key))
-    return Response(status_code=204)

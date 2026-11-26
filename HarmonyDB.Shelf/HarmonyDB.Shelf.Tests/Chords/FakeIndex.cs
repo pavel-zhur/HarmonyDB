@@ -4,6 +4,7 @@ using System.Text.Json;
 using HarmonyDB.Shelf.Api.Clients.Index;
 using HarmonyDB.Shelf.Tests.Api;
 using HarmonyDB.Source.Api.Model.V2;
+using HarmonyDB.Source.Api.Model.V2.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -27,6 +28,11 @@ public sealed class FakeIndex : HttpMessageHandler
     /// </summary>
     public Func<string, JsonElement, (HttpStatusCode Status, object? Body)> Answer { get; set; } = (_, _) => (HttpStatusCode.InternalServerError, null);
 
+    /// <summary>
+    /// The HTTP request and the file's request (<see cref="GetFileRequest"/>, as JSON) → the file's answer.
+    /// </summary>
+    public Func<HttpRequestMessage, JsonElement, HttpResponseMessage> FileAnswer { get; set; } = (_, _) => new(HttpStatusCode.InternalServerError);
+
     public IEnumerable<JsonElement> Callers(string operation)
         => Requests.Where(x => x.Operation == operation).Select(x => x.Body.GetProperty("caller"));
 
@@ -34,6 +40,18 @@ public sealed class FakeIndex : HttpMessageHandler
     {
         Assert.Equal(Key, request.Headers.GetValues("X-Internal-Key").Single());
         var operation = request.RequestUri!.AbsolutePath.Split('/').Last();
+        if (operation == SourceV2Urls.V2GetFile)
+        {
+            // the request travels in a header; the answer is the file's
+            var file = GetFileRequest.Decode(request.Headers.GetValues(GetFileRequest.HeaderName).Single());
+            Assert.NotNull(file);
+            var fileBody = JsonSerializer.SerializeToElement(file, SourceV2Json.Options);
+            lock (Requests)
+                Requests.Add((operation, fileBody));
+
+            return FileAnswer(request, fileBody);
+        }
+
         var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.Clone();
         lock (Requests)
             Requests.Add((operation, body));

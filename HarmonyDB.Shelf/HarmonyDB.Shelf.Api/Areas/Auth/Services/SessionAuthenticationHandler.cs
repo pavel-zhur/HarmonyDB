@@ -81,7 +81,8 @@ public sealed class SessionAuthenticationHandler(
                 .ExecuteUpdateAsync(x => x.SetProperty(a => a.LastSeenAt, now), Context.RequestAborted);
         }
 
-        var identity = ShelfIdentity.Create(SchemeName, session.AccountId, session.Permissions, null);
+        var subjects = await AccountSubjects.LoadAsync(db, session.AccountId, Context.RequestAborted);
+        var identity = ShelfIdentity.Create(SchemeName, session.AccountId, subjects, session.Permissions, null);
         identity.AddClaim(new(SessionClaimType, session.Id.ToString()));
         identity.AddClaim(new(SignedInClaimType, session.SignedInAt.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture)));
         CsrfTokens.SetSession(Context, hash);

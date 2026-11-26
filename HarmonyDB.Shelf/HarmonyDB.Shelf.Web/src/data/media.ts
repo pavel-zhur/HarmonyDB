@@ -3,6 +3,7 @@
 //
 // Asking is not a change: no toast, no sign-in — guests listen too.
 
+import { addressOf } from './address';
 import { api, call, type Schemas } from '../api/client';
 import type { MusicService } from './music';
 
@@ -38,5 +39,5 @@ export function trackMedia(service: MusicService, id: string, kind: Schemas['Med
 export function chordsMedia(chordsId: string, share?: string | null): Promise<ChordsMedia> {
     return share
         ? call(api.POST('/api/share/{token}/media', { params: { path: { token: share } } }))
-        : call(api.POST('/api/media/chords', { body: { id: chordsId } }));
+        : call(api.POST('/api/media/chords', { body: { id: chordsId, address: addressOf(chordsId) ?? null } }));
 }

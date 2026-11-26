@@ -30,13 +30,10 @@ public class SourcesSelfModule() : ApiModule("SourcesSelf")
             .Validate(x => (x.IconName == null) == (x.IconPath == null), $"{SelfV2Options.SectionName}: the icon's name and file go together.")
             .Validate(x => x.IconPath == null || File.Exists(x.IconPath), $"{SelfV2Options.SectionName}: the icon's file does not exist.")
             .Validate(x => x.IconName == null || x.IconName.StartsWith(SelfV2Source.IdPrefix, StringComparison.Ordinal), $"{SelfV2Options.SectionName}: the icon's name does not begin with {SelfV2Source.IdPrefix}.")
-            .Validate(x => (x.ShelfAccountsEndpoint == null) == string.IsNullOrEmpty(x.ShelfAccountsKey), $"{SelfV2Options.SectionName}: the shelf's accounts endpoint and key go together.")
-            .Validate(x => x.ShelfAccountsEndpoint == null || (x.ShelfAccountsEndpoint.IsAbsoluteUri && x.ShelfAccountsEndpoint.AbsolutePath.EndsWith('/')),
-                $"{SelfV2Options.SectionName}: the shelf's accounts endpoint is not an absolute address ending with a slash.")
-            .Validate(x => x.ShelfAccountsTimeout > TimeSpan.Zero && x.ShelfAccountsCacheTime > TimeSpan.Zero, $"{SelfV2Options.SectionName}: the shelf's accounts timeout or cache time is not positive.")
+            .Validate(x => x.AddressTemplate != null && SelfAddresses.IsTemplate(x.AddressTemplate),
+                $"{SelfV2Options.SectionName}: the address template is not an absolute address with {SelfV2Options.IdPlaceholder}, {SelfV2Options.CodePlaceholder} and {SelfV2Options.VersionPlaceholder} each once.")
             .ValidateOnStart();
-        builder.Services.AddMemoryCache();
-        builder.Services.AddHttpClient<ShelfAccountsClient>();
+        builder.Services.AddScoped<SelfAddresses>();
         builder.Services.AddScoped<SelfV2Source>();
     }
 }

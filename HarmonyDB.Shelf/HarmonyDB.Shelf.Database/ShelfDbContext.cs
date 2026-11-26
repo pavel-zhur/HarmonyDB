@@ -13,6 +13,7 @@ public class ShelfDbContext(DbContextOptions<ShelfDbContext> options) : DbContex
 {
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<AccountLogin> AccountLogins => Set<AccountLogin>();
+    public DbSet<AccountMerge> AccountMerges => Set<AccountMerge>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<SignInFlow> SignInFlows => Set<SignInFlow>();
     public DbSet<AccountPermission> AccountPermissions => Set<AccountPermission>();
@@ -43,10 +44,6 @@ public class ShelfDbContext(DbContextOptions<ShelfDbContext> options) : DbContex
     public DbSet<JobOutput> JobOutputs => Set<JobOutput>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
-
-    public DbSet<Analysis> Analyses => Set<Analysis>();
-    public DbSet<AnalysisContent> AnalysisContents => Set<AnalysisContent>();
-    public DbSet<AnalysisFile> AnalysisFiles => Set<AnalysisFile>();
 
     public DbSet<OAuthClient> OAuthClients => Set<OAuthClient>();
     public DbSet<OAuthGrant> OAuthGrants => Set<OAuthGrant>();

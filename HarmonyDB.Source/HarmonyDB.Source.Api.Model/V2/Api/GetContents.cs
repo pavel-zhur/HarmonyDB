@@ -27,7 +27,7 @@ public record GetContentsRequest
     /// <see cref="MaxIds"/> — and kinds.
     /// </summary>
     public static bool IsValid(GetContentsRequest request)
-        => request.Caller is { Keys: not null } && request.Caller.Keys.All(x => x != null)
+        => Caller.IsValid(request.Caller)
            && request.Ids is { Count: <= MaxIds } && request.Ids.All(x => !string.IsNullOrEmpty(x))
            && request.Ids.Distinct(StringComparer.Ordinal).Count() == request.Ids.Count
            && request.Kinds != null;

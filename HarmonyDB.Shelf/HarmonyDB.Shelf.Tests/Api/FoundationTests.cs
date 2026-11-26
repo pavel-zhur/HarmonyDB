@@ -35,6 +35,7 @@ public sealed class FoundationTests(ShelfApiFactory factory) : IClassFixture<She
         var identity = ShelfIdentity.Create(
             "client",
             Account,
+            [],
             [BuiltInPermissions.McpIndex, BuiltInPermissions.McpPdf],
             [BuiltInPermissions.McpIndex, BuiltInPermissions.McpLibraryWrite]);
 

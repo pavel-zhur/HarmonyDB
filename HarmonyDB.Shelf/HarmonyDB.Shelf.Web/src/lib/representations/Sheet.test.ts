@@ -132,9 +132,7 @@ describe('Sheet', () => {
             new NodeText('\nla la'));
 
         const html = value.asHtml(settings());
-        // the .NET expectation with its two inline styles taken out (the port leaves them out: NodeMark.ts)
-        assert.ok(html.includes('<span class=\'sheet-mark\' style=\'white-space: nowrap\' data-time=\'0\'>'.replace(' style=\'white-space: nowrap\'', '')));
-        assert.ok(!html.includes('style='));
+        assert.ok(html.includes('<span class=\'sheet-mark\' style=\'white-space: nowrap\' data-time=\'0\'>'));
         assert.ok(html.includes('data-key=\'Am\''));
         assert.ok(html.includes('aria-label=\'3/4\''));
         assert.ok(html.includes(' = 72</span>'));

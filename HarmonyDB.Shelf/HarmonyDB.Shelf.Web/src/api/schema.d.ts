@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chords/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetChordsSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/chords/{id}": {
         parameters: {
             query?: never;
@@ -1949,6 +1965,7 @@ export interface components {
         ChordsHeader: {
             id: string;
             source: components["schemas"]["ChordsSource"];
+            address?: string | null;
             title?: string | null;
             artists: string[];
             /** Format: float */
@@ -2007,6 +2024,7 @@ export interface components {
         };
         ChordsMediaRequest: {
             id: string;
+            address?: string | null;
         };
         ChordsNote: {
             chords: string;
@@ -2035,8 +2053,11 @@ export interface components {
         ChordsSource: {
             key: string;
             title: string;
-            uri?: string | null;
             iconUrl?: string | null;
+        };
+        ChordsSourcesResponse: {
+            sources: components["schemas"]["ChordsSource"][];
+            incomplete: boolean;
         };
         /** @enum {string} */
         ChordsState: "open" | "notOpen" | "unavailable";
@@ -2515,8 +2536,7 @@ export interface components {
             isVideo?: boolean | null;
             available?: boolean | null;
             inMyPlaylists: boolean;
-            hasAnalysis: boolean;
-            analysisChords?: string | null;
+            madeInto?: string | null;
         };
         MusicTrackList: {
             title?: string | null;
@@ -2655,7 +2675,7 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
-            fromOldShelf: boolean;
+            editable: boolean;
         };
         OwnChordsList: {
             items: components["schemas"]["OwnChordsItem"][];
@@ -3089,7 +3109,7 @@ export interface components {
         };
         SourceV2AudioRef: {
             track?: components["schemas"]["SourceV2MusicServiceTrack"];
-            blob?: components["schemas"]["SourceV2BlobRef"];
+            file?: components["schemas"]["SourceV2FileRef"];
         };
         SourceV2BandChart: {
             timeSignature?: string | null;
@@ -3118,10 +3138,6 @@ export interface components {
             tempo?: components["schemas"]["SourceV2Tempo"];
             key?: string | null;
             fermatas: number[];
-        };
-        SourceV2BlobRef: {
-            key: string;
-            contentType: string;
         };
         SourceV2Chart: {
             bandChart?: components["schemas"]["SourceV2BandChart"];
@@ -3156,6 +3172,10 @@ export interface components {
             drum: number;
             /** Format: int32 */
             velocity?: number | null;
+        };
+        SourceV2FileRef: {
+            name: string;
+            contentType: string;
         };
         SourceV2Fingering: {
             instrument: components["schemas"]["SourceV2FingeringInstrument"];
@@ -3207,10 +3227,8 @@ export interface components {
             /** Format: double */
             end?: number | null;
         };
-        /** @enum {string} */
-        SourceV2MusicService: "yandex" | "youtube";
         SourceV2MusicServiceTrack: {
-            service: components["schemas"]["SourceV2MusicService"];
+            service: string;
             id: string;
         };
         SourceV2Note: {
@@ -3231,7 +3249,7 @@ export interface components {
         SourceV2Notes: {
             parts: components["schemas"]["SourceV2NotesPart"][];
             drums: components["schemas"]["SourceV2DrumHit"][];
-            midi?: components["schemas"]["SourceV2BlobRef"];
+            midi?: components["schemas"]["SourceV2FileRef"];
         };
         SourceV2NotesPart: {
             name: string;
@@ -3817,10 +3835,40 @@ export interface operations {
             };
         };
     };
+    GetChordsSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChordsSourcesResponse"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     GetChords: {
         parameters: {
             query?: {
                 kinds?: string;
+                address?: string;
             };
             header?: never;
             path: {

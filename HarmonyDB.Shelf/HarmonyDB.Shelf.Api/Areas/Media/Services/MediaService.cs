@@ -1,9 +1,12 @@
 using System.Security.Claims;
+using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.Index;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Model;
 using HarmonyDB.Shelf.Model.Media;
+using HarmonyDB.Source.Api.Client.V2;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Contents;
 
@@ -11,10 +14,11 @@ namespace HarmonyDB.Shelf.Api.Areas.Media.Services;
 
 /// <summary>
 /// Gives media addresses — of a music service's track, or of the material of an item of chords as its source gives
-/// it to the asker — and streams them from the music service, always by the service account or anonymously, never
-/// with a person's own account.
+/// it to the asker — and streams them: a track from the music service, always by the service account or anonymously,
+/// never with a person's own account; a file of an item from its source through the index, for the caller the address
+/// was made for (the source decides at play time).
 /// </summary>
-public sealed class MediaService(MediaSigner signer, ChordsReader chords, SourceCallers callers, AudioMediaClient audio)
+public sealed class MediaService(MediaSigner signer, ChordsReader chords, SourceCallers callers, AudioMediaClient audio, IndexClient index)
 {
     private static readonly string[] PassedHeaders = ["Content-Range", "Accept-Ranges", "ETag", "Last-Modified"];
 
@@ -37,32 +41,42 @@ public sealed class MediaService(MediaSigner signer, ChordsReader chords, Source
     /// The addresses of the item's recording, its separate instruments and its notes file, when the item is open to
     /// the asker; not found when it is not (nothing more is said of it).
     /// </summary>
-    public Task<ChordsMedia> SignChordsAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
-        => SignChordsAsync(callers.For(user), id, cancellationToken);
+    public Task<ChordsMedia> SignChordsAsync(ClaimsPrincipal user, string id, Uri? address, CancellationToken cancellationToken)
+        => SignChordsAsync(callers.For(user), id, address, cancellationToken);
 
     /// <summary>
-    /// The same, for the caller given.
+    /// The same, for the caller given, who came by the address given: the files' addresses are played for that caller,
+    /// with that address.
     /// </summary>
-    public async Task<ChordsMedia> SignChordsAsync(Caller caller, string id, CancellationToken cancellationToken)
+    public async Task<ChordsMedia> SignChordsAsync(Caller caller, string id, Uri? address, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw ShelfException.BadRequest();
 
-        var content = await chords.GetOpenContentAsync(caller, id, [ContentKind.Recording, ContentKind.Notes], cancellationToken)
+        var content = await chords.GetOpenContentAsync(caller, id, [ContentKind.Recording, ContentKind.Notes], address, cancellationToken)
                       ?? throw ShelfException.NotFound();
-        if (content.Recording == null && content.Notes?.Midi == null)
-            throw ShelfException.NotFound(MediaErrorCodes.NoMedia);
 
         // one expiry for all, so that the parts are played together
         var expiresAt = signer.NewExpiry();
-        string Sign(AudioRef audioRef) => signer.Sign(Target(audioRef), expiresAt);
+        string? Sign(AudioRef audioRef) => Target(caller, id, address, audioRef) is { } target ? signer.Sign(target, expiresAt) : null;
+
+        var recordingUrl = content.Recording == null ? null : Sign(content.Recording.Audio);
+        var midiUrl = content.Notes?.Midi is { } midi ? Sign(new() { File = midi }) : null;
+        if (recordingUrl == null && midiUrl == null)
+            throw ShelfException.NotFound(MediaErrorCodes.NoMedia);
 
         return new()
         {
-            RecordingUrl = content.Recording == null ? null : Sign(content.Recording.Audio),
-            DurationSeconds = content.Recording?.Duration,
-            Stems = content.Recording?.Stems.Select(x => new StemMedia { Stem = Enum.Parse<MediaStem>(x.Stem.ToString()), Url = Sign(x.Audio) }).ToList() ?? [],
-            MidiUrl = content.Notes?.Midi == null ? null : signer.Sign(new() { Kind = MediaTarget.Blob, Id = content.Notes.Midi.Key }, expiresAt),
+            RecordingUrl = recordingUrl,
+            DurationSeconds = recordingUrl == null ? null : content.Recording!.Duration,
+            Stems = recordingUrl == null
+                ? []
+                : content.Recording!.Stems
+                    .Select(x => (stem: x.Stem, url: Sign(x.Audio)))
+                    .Where(x => x.url != null)
+                    .Select(x => new StemMedia { Stem = Enum.Parse<MediaStem>(x.stem.ToString()), Url = x.url! })
+                    .ToList(),
+            MidiUrl = midiUrl,
             ExpiresAt = expiresAt,
         };
     }
@@ -73,20 +87,31 @@ public sealed class MediaService(MediaSigner signer, ChordsReader chords, Source
     public async Task StreamAsync(HttpContext context, string token)
     {
         var (target, expiresAt) = signer.Verify(token);
-        var (path, acting) = target.Kind switch
-        {
-            MediaTarget.Audio or MediaTarget.Video when target.Service is "yandex" or "youtube"
-                => ($"{target.Service}/tracks/{Uri.EscapeDataString(target.Id)}/{target.Kind}", AudioActing.Service),
-            MediaTarget.Blob => ($"blobs/{string.Join('/', target.Id.Split('/').Select(Uri.EscapeDataString))}", (AudioActing?)null),
-            _ => throw ShelfException.NotFound(MediaErrorCodes.Invalid),
-        };
-
         var request = context.Request;
-        var method = HttpMethods.IsHead(request.Method) ? HttpMethod.Head : HttpMethod.Get;
+        var headersOnly = HttpMethods.IsHead(request.Method);
+        var range = request.Headers.Range.ToString();
+        var ifRange = request.Headers.IfRange.ToString();
+
+        switch (target)
+        {
+            case { Kind: MediaTarget.Audio or MediaTarget.Video, Service: "yandex" or "youtube" }:
+                await StreamTrackAsync(context, target, headersOnly, range, ifRange, expiresAt);
+                break;
+            case { Kind: MediaTarget.File, Name: not null, Caller: not null }:
+                await StreamFileAsync(context, target, headersOnly, range, ifRange, expiresAt);
+                break;
+            default:
+                throw ShelfException.NotFound(MediaErrorCodes.Invalid);
+        }
+    }
+
+    private async Task StreamTrackAsync(HttpContext context, MediaTarget target, bool headersOnly, string range, string ifRange, DateTimeOffset expiresAt)
+    {
         HttpResponseMessage answer;
         try
         {
-            answer = await audio.OpenAsync(method, path, acting, request.Headers.Range.ToString(), request.Headers.IfRange.ToString(), context.RequestAborted);
+            answer = await audio.OpenAsync(headersOnly ? HttpMethod.Head : HttpMethod.Get, $"{target.Service}/tracks/{Uri.EscapeDataString(target.Id)}/{target.Kind}",
+                AudioActing.Service, range, ifRange, context.RequestAborted);
         }
         catch (AudioException)
         {
@@ -116,11 +141,9 @@ public sealed class MediaService(MediaSigner signer, ChordsReader chords, Source
             if (answer.Content.Headers.ContentLength is { } length)
                 response.ContentLength = length;
 
-            var seconds = Math.Max(0, (long)(expiresAt - DateTimeOffset.UtcNow).TotalSeconds);
-            response.Headers.CacheControl = $"private, max-age={seconds}";
-            response.Headers.Expires = expiresAt.ToString("R");
+            Expire(response, expiresAt);
 
-            if (method == HttpMethod.Get)
+            if (!headersOnly)
             {
                 await using var body = await answer.Content.ReadAsStreamAsync(context.RequestAborted);
                 await body.CopyToAsync(response.Body, context.RequestAborted);
@@ -128,22 +151,60 @@ public sealed class MediaService(MediaSigner signer, ChordsReader chords, Source
         }
     }
 
-    private static MediaTarget Target(AudioRef audioRef) => audioRef switch
+    private async Task StreamFileAsync(HttpContext context, MediaTarget target, bool headersOnly, string range, string ifRange, DateTimeOffset expiresAt)
     {
-        { Track: { } track } => new()
+        SourceFile? file;
+        try
         {
-            Kind = MediaTarget.Audio,
-            Service = track.Service == HarmonyDB.Source.Api.Model.V2.Contents.MusicService.Yandex ? "yandex" : "youtube",
-            Id = track.Id,
-        },
-        { Blob: { } blob } => new() { Kind = MediaTarget.Blob, Id = blob.Key },
+            file = await index.Sources.GetFile(target.Caller!, target.Id, target.Name!, target.Address, headersOnly, range, ifRange, context.RequestAborted);
+        }
+        catch (SourceUnavailableException)
+        {
+            throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
+        }
+
+        if (file == null)
+            throw ShelfException.NotFound();
+
+        using (file)
+        {
+            var response = context.Response;
+            response.StatusCode = file.StatusCode;
+            foreach (var (name, values) in file.Headers)
+                response.Headers[name] = values;
+
+            Expire(response, expiresAt);
+
+            if (!headersOnly)
+            {
+                await using var body = await file.ReadBodyAsync(context.RequestAborted);
+                await body.CopyToAsync(response.Body, context.RequestAborted);
+            }
+        }
+    }
+
+    /// <summary>
+    /// What is streamed may be kept by the browser until the address expires, and by it alone.
+    /// </summary>
+    private static void Expire(HttpResponse response, DateTimeOffset expiresAt)
+    {
+        var seconds = Math.Max(0, (long)(expiresAt - DateTimeOffset.UtcNow).TotalSeconds);
+        response.Headers.CacheControl = $"private, max-age={seconds}";
+        response.Headers.Expires = expiresAt.ToString("R");
+    }
+
+    /// <summary>
+    /// What an address of this sound opens: a track of a music service the shelf plays, or a file of the item for the
+    /// caller; null for a track of a service the shelf does not know (it is passed over).
+    /// </summary>
+    private static MediaTarget? Target(Caller caller, string id, Uri? address, AudioRef audioRef) => audioRef switch
+    {
+        { Track: { Service: "yandex" or "youtube" } track } => new() { Kind = MediaTarget.Audio, Service = track.Service, Id = track.Id },
+        { Track: not null } => null,
+        { File: { } file } => new() { Kind = MediaTarget.File, Id = id, Name = file.Name, Caller = caller, Address = address },
         _ => throw new ShelfException(StatusCodes.Status502BadGateway, ErrorCodes.Unavailable),
     };
 
-    private static string ServiceName(Model.Me.MusicService service) => service switch
-    {
-        Model.Me.MusicService.Yandex => "yandex",
-        Model.Me.MusicService.Youtube => "youtube",
-        _ => throw ShelfException.BadRequest(),
-    };
+    private static string ServiceName(Model.Me.MusicService service)
+        => Enum.IsDefined(service) ? MusicServiceNames.NameOf(service) : throw ShelfException.BadRequest();
 }

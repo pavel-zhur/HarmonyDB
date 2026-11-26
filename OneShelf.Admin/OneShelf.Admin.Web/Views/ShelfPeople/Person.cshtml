@@ -58,10 +58,6 @@
     <div>
         <h2 class="m-0">
             @name
-            @if (summary.SystemName != null)
-            {
-                <span class="shelf-chip">system: @summary.SystemName</span>
-            }
             @if (deleted)
             {
                 <span class="shelf-chip removed">deleted @ShelfPermissionNames.Time(summary.DeletedAt)</span>

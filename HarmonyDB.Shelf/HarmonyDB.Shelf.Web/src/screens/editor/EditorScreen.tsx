@@ -17,7 +17,8 @@ import { useSession } from '../../data/session';
 import { forgetDraft, readDraft, writeDraft, type Draft } from './draft';
 import { createOwnChords, updateOwnChords, useOwnChordsDraft, useOwnChordsItem, useOwnChordsPreview, type OwnChordsText } from '../../data/ownChords';
 import { playlistTitle, useMyPlaylists } from '../../data/playlists';
-import { useSongPage } from '../../data/song';
+import { useChordsContent, useSongPage } from '../../data/song';
+import { LinkBox } from '../../kit/LinkBox';
 import { sheetFromApi } from '../../chords/sheet';
 import { ChordSheet } from '../../chords/ChordSheet';
 import { RepresentationSettings } from '../../lib/representations';
@@ -44,9 +45,12 @@ export function EditorScreen() {
 }
 
 function OwnLoader({ id }: { id: string }) {
+    const { t } = useTranslation();
     const item = useOwnChordsItem(id);
     const data = item.data?.item;
-    return <Loaded failed={item.error} ready={!!data} from={null} existing={data ? { id, text: data.text, version: data.version, updatedAt: data.updatedAt } : null} />;
+    // not editable here (the store's word): changed where they were written
+    if (data && !data.editable) return <p className="muted">{t('song.menu.notEditable')}</p>;
+    return <Loaded failed={item.error} ready={!!data} from={null} existing={data ? { id, chordsId: data.chordsId ?? null, text: data.text, version: data.version, updatedAt: data.updatedAt } : null} />;
 }
 
 function SongLoader({ playlistId, songId, from }: { playlistId: string; songId: string; from: string | null }) {
@@ -67,7 +71,7 @@ function Loaded({ failed, ready, from, existing = null, song = null }: {
     return <Editor existing={existing} song={song} start={draft.data ?? null} />;
 }
 
-type Existing = { id: string; text: OwnChordsText; version: number; updatedAt: string };
+type Existing = { id: string; chordsId: string | null; text: OwnChordsText; version: number; updatedAt: string };
 type SongOf = { playlistId: string; songId: string; title: string; artists: string[] };
 
 function Editor({ existing, song, start }: { existing: Existing | null; song: SongOf | null; start: OwnChordsText | null }) {
@@ -96,6 +100,8 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
     const edit = (patch: Partial<Draft>) => {
         setForm(f => ({ ...f, ...patch }));
         setDirty(true);
+        // a new change: the next saving is to come (and says again what it does to the link)
+        if (update.isSuccess) update.reset();
     };
     // every keystroke is kept at once: leaving the page, or reloading it, right after typing loses nothing
     useEffect(() => {
@@ -147,6 +153,8 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
         },
     });
     const update = useMutation({ mutationFn: updateOwnChords, onSuccess: saved });
+    // kept to their link: each saving gives them a new link, and the one given out before stops opening
+    const byLink = existing?.text.visibility === 'private';
     const save = () => {
         if (existing) update.mutate({ id: existing.id, text: text() });
         else create.mutate({ text: text(), playlistId: song?.playlistId ?? null, songId: song?.songId ?? null, alsoInPlaylists: also });
@@ -223,8 +231,22 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
             </section>
 
             {(create.isError || update.isError) && <p className="failed">{errorText(create.error ?? update.error)}</p>}
+            {byLink && !update.isSuccess && <p className="muted small">{t('editor.newLink')}</p>}
             <div><button type="button" className="btn pri" disabled={busy || !title.trim() || !contents.trim()} onClick={save}><Icon name="check" />{t('editor.save')}</button></div>
+            {byLink && update.isSuccess && existing?.chordsId && <NewLink chordsId={existing.chordsId} />}
         </div>
+    );
+}
+
+/** After saving chords kept to their link: their new link, to give out in place of the old one. */
+function NewLink({ chordsId }: { chordsId: string }) {
+    const { t } = useTranslation();
+    const address = useChordsContent(chordsId).data?.header?.address ?? null;
+    return (
+        <section>
+            <p className="muted small">{t('editor.newLinkDone')}</p>
+            {address ? <LinkBox link={address} /> : <p className="loading">{t('common.loading')}</p>}
+        </section>
     );
 }
 

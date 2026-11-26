@@ -519,6 +519,36 @@
         }
       }
     },
+    "/api/chords/sources": {
+      "get": {
+        "tags": [
+          "Chords"
+        ],
+        "operationId": "GetChordsSources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChordsSourcesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/chords/{id}": {
       "get": {
         "tags": [
@@ -536,6 +566,13 @@
           },
           {
             "name": "kinds",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "address",
             "in": "query",
             "schema": {
               "type": "string"
@@ -6303,6 +6340,10 @@
           "source": {
             "$ref": "#/components/schemas/ChordsSource"
           },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
           "title": {
             "type": "string",
             "nullable": true
@@ -6533,6 +6574,10 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6649,13 +6694,28 @@
           "title": {
             "type": "string"
           },
-          "uri": {
-            "type": "string",
-            "nullable": true
-          },
           "iconUrl": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChordsSourcesResponse": {
+        "required": [
+          "incomplete",
+          "sources"
+        ],
+        "type": "object",
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChordsSource"
+            }
+          },
+          "incomplete": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8438,7 +8498,6 @@
       "MusicTrack": {
         "required": [
           "artists",
-          "hasAnalysis",
           "id",
           "inMyPlaylists",
           "service"
@@ -8488,10 +8547,7 @@
           "inMyPlaylists": {
             "type": "boolean"
           },
-          "hasAnalysis": {
-            "type": "boolean"
-          },
-          "analysisChords": {
+          "madeInto": {
             "type": "string",
             "nullable": true
           }
@@ -8970,7 +9026,7 @@
       "OwnChordsItem": {
         "required": [
           "createdAt",
-          "fromOldShelf",
+          "editable",
           "id",
           "text",
           "updatedAt",
@@ -9001,7 +9057,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "fromOldShelf": {
+          "editable": {
             "type": "boolean"
           }
         },
@@ -10600,8 +10656,8 @@
           "track": {
             "$ref": "#/components/schemas/SourceV2MusicServiceTrack"
           },
-          "blob": {
-            "$ref": "#/components/schemas/SourceV2BlobRef"
+          "file": {
+            "$ref": "#/components/schemas/SourceV2FileRef"
           }
         },
         "additionalProperties": false
@@ -10721,22 +10777,6 @@
         },
         "additionalProperties": false
       },
-      "SourceV2BlobRef": {
-        "required": [
-          "contentType",
-          "key"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "contentType": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
       "SourceV2Chart": {
         "type": "object",
         "properties": {
@@ -10841,6 +10881,22 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceV2FileRef": {
+        "required": [
+          "contentType",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -11033,13 +11089,6 @@
         },
         "additionalProperties": false
       },
-      "SourceV2MusicService": {
-        "enum": [
-          "yandex",
-          "youtube"
-        ],
-        "type": "string"
-      },
       "SourceV2MusicServiceTrack": {
         "required": [
           "id",
@@ -11048,7 +11097,7 @@
         "type": "object",
         "properties": {
           "service": {
-            "$ref": "#/components/schemas/SourceV2MusicService"
+            "type": "string"
           },
           "id": {
             "type": "string"
@@ -11121,7 +11170,7 @@
             }
           },
           "midi": {
-            "$ref": "#/components/schemas/SourceV2BlobRef"
+            "$ref": "#/components/schemas/SourceV2FileRef"
           }
         },
         "additionalProperties": false

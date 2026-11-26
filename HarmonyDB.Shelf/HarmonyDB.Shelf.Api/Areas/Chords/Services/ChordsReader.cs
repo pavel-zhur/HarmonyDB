@@ -16,11 +16,12 @@ using Microsoft.Extensions.Caching.Memory;
 namespace HarmonyDB.Shelf.Api.Areas.Chords.Services;
 
 /// <summary>
-/// Items of chords as the sources give them to a person, through the index's relay, with the person's account and
-/// keys. What the source answers is carried through as it is: open, not open, unavailable.
-/// The answer for an item (its state, and its header with the source's label) is kept for a while per item, set of
-/// keys and account — a source decides by the keys and may decide by the account — so it never passes from one person
-/// to another. An item that did not answer is not kept. With the items come the person's own marks, keys and notes on
+/// Items of chords as the sources give them to a person, through the index's relay, with the person's names and keys,
+/// and the address the person came by where there is one. What the source answers is carried through as it is: open,
+/// not open, unavailable.
+/// The answer for an item (its state, and its header with the source's label) is kept for a while per item, names, keys
+/// and address — a source decides by all of them — so it never passes from one person to another, nor from one who came
+/// by a link to one who came by the id. An item that did not answer is not kept. With the items come the person's own marks, keys and notes on
 /// them (<see cref="ChordsAnnotations"/>).
 /// </summary>
 public sealed class ChordsReader(
@@ -76,7 +77,7 @@ public sealed class ChordsReader(
         var caller = callers.For(user);
         var answer = (await GetAnswersAsync(caller, [id], cancellationToken)).Single();
         return answer.State == ItemState.Open
-            ? (ChordsState.Open, await rows.GetOrCreateChordsAsync(id, answer.Header, IsAnonymous(caller), cancellationToken), answer.Header)
+            ? (ChordsState.Open, await rows.GetOrCreateChordsAsync(id, answer.Header, IsAnonymous(caller, null), cancellationToken), answer.Header)
             : (ToState(answer.State), null, null);
     }
 
@@ -87,16 +88,16 @@ public sealed class ChordsReader(
         => GetAnswersAsync(callers.For(user), ids, cancellationToken);
 
     /// <summary>
-    /// Whether the caller has no keys and no account: only such a caller's header is kept in a row.
+    /// Whether the caller has no keys and no names, and came by no address: only such a caller's header is kept in a row.
     /// </summary>
-    public static bool IsAnonymous(Caller caller) => caller.Keys.Count == 0 && caller.AccountId == null;
+    public static bool IsAnonymous(Caller caller, Uri? address) => caller.Keys.Count == 0 && caller.Subjects.Count == 0 && address == null;
 
     private async Task<IReadOnlyList<HeaderAnswer>> GetAnswersAsync(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {
         var known = new Dictionary<string, HeaderAnswer>(StringComparer.Ordinal);
         foreach (var id in ids.Distinct(StringComparer.Ordinal))
         {
-            if (cache.TryGetValue(CacheKey(caller, id), out HeaderAnswer? answer))
+            if (cache.TryGetValue(CacheKey(caller, id, null), out HeaderAnswer? answer))
                 known[id] = answer!;
         }
 
@@ -107,7 +108,7 @@ public sealed class ChordsReader(
             foreach (var answer in response.Headers)
             {
                 known[answer.Id] = answer;
-                Remember(caller, answer);
+                Remember(caller, null, answer);
             }
         }
 
@@ -115,23 +116,24 @@ public sealed class ChordsReader(
     }
 
     /// <summary>
-    /// The item for the person with the kinds asked; when it is open, its local row is made or refreshed.
+    /// The item for the person with the kinds asked, who came by the address given (null: by the id); when it is open,
+    /// its local row is made or refreshed.
     /// </summary>
-    public Task<ChordsContentResponse> GetContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
-        => GetContentAsync(callers.For(user), user.GetAccountId(), id, kinds, cancellationToken);
+    public Task<ChordsContentResponse> GetContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
+        => GetContentAsync(callers.For(user), user.GetAccountId(), id, kinds, address, cancellationToken);
 
     /// <summary>
     /// The item for the caller given with the kinds asked, with the marks, keys and notes <paramref name="viewer"/> sees
     /// on it; when it is open, its local row is made or refreshed.
     /// </summary>
-    public async Task<ChordsContentResponse> GetContentAsync(Caller caller, Guid? viewer, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public async Task<ChordsContentResponse> GetContentAsync(Caller caller, Guid? viewer, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
-        var response = await index.Sources.GetContent(caller, id, kinds, cancellationToken);
-        Remember(caller, new() { Id = id, State = response.State, Header = response.Header });
+        var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
+        Remember(caller, address, new() { Id = id, State = response.State, Header = response.Header });
         if (response.State != ItemState.Open)
             return new() { Id = id, State = ToState(response.State), Marks = [], Keys = [], MyNotes = [] };
 
-        var row = await rows.GetOrCreateChordsAsync(id, response.Header, IsAnonymous(caller), cancellationToken);
+        var row = await rows.GetOrCreateChordsAsync(id, response.Header, IsAnonymous(caller, address), cancellationToken);
         var seen = await annotations.ReadAsync(viewer, [row.Id], null, null, cancellationToken);
         return new()
         {
@@ -151,22 +153,35 @@ public sealed class ChordsReader(
     /// themselves (the media of a recording). Null when the item is not open to the person.
     /// </summary>
     /// <exception cref="ShelfException">503 <c>unavailable</c>: its source did not answer.</exception>
-    public Task<Content?> GetOpenContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
-        => GetOpenContentAsync(callers.For(user), id, kinds, cancellationToken);
+    public Task<Content?> GetOpenContentAsync(ClaimsPrincipal user, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
+        => GetOpenContentAsync(callers.For(user), id, kinds, address, cancellationToken);
 
     /// <summary>
     /// The item's content for the caller given; null when it is not open to them.
     /// </summary>
     /// <exception cref="ShelfException">503 <c>unavailable</c>: its source did not answer.</exception>
-    public async Task<Content?> GetOpenContentAsync(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public async Task<Content?> GetOpenContentAsync(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
-        var response = await index.Sources.GetContent(caller, id, kinds, cancellationToken);
-        Remember(caller, new() { Id = id, State = response.State, Header = response.Header });
+        var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
+        Remember(caller, address, new() { Id = id, State = response.State, Header = response.Header });
         return response.State switch
         {
             ItemState.Open => response.Content,
             ItemState.NotOpen => null,
             _ => throw new ShelfException(StatusCodes.Status503ServiceUnavailable, Model.ErrorCodes.Unavailable),
+        };
+    }
+
+    /// <summary>
+    /// The sources the person may see, as their labels show them.
+    /// </summary>
+    public async Task<ChordsSourcesResponse> GetSourcesAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        var response = await index.Sources.GetSources(callers.For(user), cancellationToken);
+        return new()
+        {
+            Sources = response.Sources.Select(ToSource).ToList(),
+            Incomplete = response.Failures.Count > 0,
         };
     }
 
@@ -188,13 +203,8 @@ public sealed class ChordsReader(
     public static ChordsHeader ToHeader(Header header) => new()
     {
         Id = header.Id,
-        Source = new()
-        {
-            Key = header.Source.Key,
-            Title = header.Source.Title,
-            Uri = header.Source.Uri?.ToString(),
-            IconUrl = header.Source.Icon == null ? null : IconUrl(header.Source.Icon),
-        },
+        Source = ToSource(header.Source),
+        Address = header.Address?.ToString(),
         Title = header.Title,
         Artists = header.Artists,
         Rating = header.Rating,
@@ -210,18 +220,25 @@ public sealed class ChordsReader(
         IsPublic = header.IsPublic,
     };
 
+    public static ChordsSource ToSource(SourceLabel label) => new()
+    {
+        Key = label.Key,
+        Title = label.Title,
+        IconUrl = label.Icon == null ? null : IconUrl(label.Icon),
+    };
+
     public static string IconUrl(string name) => $"/api/chords/icons/{Uri.EscapeDataString(name)}";
 
     public static ChordsKind ToKind(ContentKind kind) => Enum.Parse<ChordsKind>(kind.ToString());
 
     public static ContentKind ToContentKind(ChordsKind kind) => Enum.Parse<ContentKind>(kind.ToString());
 
-    private void Remember(Caller caller, HeaderAnswer answer)
+    private void Remember(Caller caller, Uri? address, HeaderAnswer answer)
     {
         if (answer.State != ItemState.Unavailable)
-            cache.Set(CacheKey(caller, answer.Id), answer, Keep);
+            cache.Set(CacheKey(caller, answer.Id, address), answer, Keep);
     }
 
-    private static (string, string, string, Guid?) CacheKey(Caller caller, string id)
-        => ("chords-header", id, string.Join('\n', caller.Keys), caller.AccountId);
+    private static (string, string, string, string, string?) CacheKey(Caller caller, string id, Uri? address)
+        => ("chords-header", id, string.Join('\n', caller.Keys), string.Join('\n', caller.Subjects), address?.AbsoluteUri);
 }

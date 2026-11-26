@@ -1,7 +1,7 @@
 """Internal clients: every request carries X-Internal-Key, the key of one configured client, and
 may use only the areas (scopes) that client has.
 
-Scopes: `audio.read` - navigation and the cache of answers; `audio.media` - sound, video, files and blobs.
+Scopes: `audio.read` - navigation and the cache of answers; `audio.media` - sound, video and files.
 """
 from __future__ import annotations
 

@@ -71,7 +71,7 @@ public static class IndexTools
                     throw ShelfException.BadRequest();
 
                 var asked = kind ?? ChordsKind.Sheet;
-                var answer = await reader.GetContentAsync(user, chordsId, [ChordsReader.ToContentKind(asked)], cancellationToken);
+                var answer = await reader.GetContentAsync(user, chordsId, [ChordsReader.ToContentKind(asked)], null, cancellationToken);
                 if (answer.State != ChordsState.Open)
                     return (object)new { chordsId, state = answer.State };
 
@@ -167,7 +167,7 @@ public static class IndexTools
             McpToolEffect.Read,
             async (ClaimsPrincipal user, MediaService media, McpAddresses addresses, string chordsId, CancellationToken cancellationToken = default) =>
             {
-                var signed = await media.SignChordsAsync(user, chordsId, cancellationToken);
+                var signed = await media.SignChordsAsync(user, chordsId, null, cancellationToken);
                 return signed with
                 {
                     RecordingUrl = signed.RecordingUrl == null ? null : addresses.Url(signed.RecordingUrl),

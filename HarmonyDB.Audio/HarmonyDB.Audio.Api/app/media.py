@@ -10,7 +10,6 @@ whole file asks for it. A preview never replaces a whole file.
 from __future__ import annotations
 
 import asyncio
-import base64
 import hashlib
 import re
 from typing import AsyncIterator, Awaitable, Callable
@@ -141,45 +140,6 @@ async def url_file(url: str, fresh: bool) -> dict:
     async def fetch(row: dict | None) -> Got:
         return await _from_url(url, limit)
     return await _ensure("url:" + hashlib.sha256(url.encode()).hexdigest(), fetch, fresh, limit)
-
-
-# ---------------------------------------------------------------- others' files
-
-def _blob_id(key: str) -> str:
-    return "ext:" + key
-
-
-async def put_blob(key: str, mime: str, pieces: AsyncIterator[bytes]) -> dict:
-    lock = _locks.setdefault(_blob_id(key), asyncio.Lock())
-    async with lock:
-        return await store.write_blob(_blob_id(key), mime, {}, pieces, config.settings().max_blob_bytes)
-
-
-async def get_blob(key: str) -> dict:
-    """A stored file, with its SHA-256 (worked out once, and noted, for a file kept before versions noted theirs)."""
-    row = await store.blob(_blob_id(key))
-    if not row:
-        raise ApiError(404, NOT_FOUND, "no such blob")
-    if "sha256" not in (row["info"] or {}):
-        digest = hashlib.sha256()
-        if row["size"]:
-            async for piece in store.read_blob(row["version"], 0, row["size"] - 1):
-                digest.update(piece)
-        await store.set_sha256(row["version"], digest.hexdigest())
-        row["info"] = {**(row["info"] or {}), "sha256": digest.hexdigest()}
-    return row
-
-
-async def delete_blob(key: str) -> None:
-    lock = _locks.setdefault(_blob_id(key), asyncio.Lock())
-    async with lock:
-        if not await store.delete_blob(_blob_id(key)):
-            raise ApiError(404, NOT_FOUND, "no such blob")
-
-
-def digest_header(row: dict) -> dict:
-    """The file's SHA-256 as the Repr-Digest header gives it (RFC 9530)."""
-    return {"Repr-Digest": f"sha-256=:{base64.b64encode(bytes.fromhex(row['info']['sha256'])).decode()}:"}
 
 
 # ---------------------------------------------------------------- serving

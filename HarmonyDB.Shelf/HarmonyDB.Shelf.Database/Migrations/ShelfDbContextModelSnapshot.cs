@@ -55,16 +55,8 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("picture_url");
 
-                    b.Property<string>("SystemName")
-                        .HasColumnType("text")
-                        .HasColumnName("system_name");
-
                     b.HasKey("Id")
                         .HasName("pk_accounts");
-
-                    b.HasIndex("SystemName")
-                        .IsUnique()
-                        .HasDatabaseName("ix_accounts_system_name");
 
                     b.ToTable("accounts", (string)null);
                 });
@@ -125,6 +117,30 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasDatabaseName("ix_account_logins_provider_subject");
 
                     b.ToTable("account_logins", (string)null);
+                });
+
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AccountMerge", b =>
+                {
+                    b.Property<Guid>("MergedId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_id");
+
+                    b.Property<Guid>("IntoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("into_id");
+
+                    b.Property<DateTimeOffset>("MergedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("merged_at");
+
+                    b.HasKey("MergedId")
+                        .HasName("pk_account_merges");
+
+                    b.HasIndex("IntoId")
+                        .HasDatabaseName("ix_account_merges_into_id");
+
+                    b.ToTable("account_merges", (string)null);
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AccountPermission", b =>
@@ -205,128 +221,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.Analysis", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<List<string>>("Artists")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("artists");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<double?>("DurationSeconds")
-                        .HasColumnType("double precision")
-                        .HasColumnName("duration_seconds");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("owner_id");
-
-                    b.Property<Guid?>("RecordingId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("recording_id");
-
-                    b.Property<string>("SourceId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_analyses");
-
-                    b.HasIndex("OwnerId")
-                        .HasDatabaseName("ix_analyses_owner_id");
-
-                    b.HasIndex("RecordingId")
-                        .HasDatabaseName("ix_analyses_recording_id");
-
-                    b.HasIndex("SourceId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_analyses_source_id");
-
-                    b.ToTable("analyses", (string)null);
-                });
-
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AnalysisContent", b =>
-                {
-                    b.Property<Guid>("AnalysisId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("analysis_id");
-
-                    b.Property<string>("Kind")
-                        .HasColumnType("text")
-                        .HasColumnName("kind");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("content");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("AnalysisId", "Kind")
-                        .HasName("pk_analysis_contents");
-
-                    b.ToTable("analysis_contents", (string)null);
-                });
-
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AnalysisFile", b =>
-                {
-                    b.Property<Guid>("AnalysisId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("analysis_id");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("BlobKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("blob_key");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("content_type");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint")
-                        .HasColumnName("size");
-
-                    b.HasKey("AnalysisId", "Name")
-                        .HasName("pk_analysis_files");
-
-                    b.ToTable("analysis_files", (string)null);
-                });
-
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AuditEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -392,6 +286,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("kinds");
 
+                    b.Property<Guid?>("MadeFromRecordingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("made_from_recording_id");
+
                     b.Property<DateTimeOffset?>("RecordingsSearchedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("recordings_searched_at");
@@ -423,6 +321,9 @@ namespace HarmonyDB.Shelf.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_chords");
+
+                    b.HasIndex("MadeFromRecordingId")
+                        .HasDatabaseName("ix_chords_made_from_recording_id");
 
                     b.HasIndex("SourceId")
                         .IsUnique()
@@ -1983,6 +1884,16 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AccountMerge", b =>
+                {
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Account", null)
+                        .WithMany()
+                        .HasForeignKey("IntoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_account_merges_accounts_into_id");
+                });
+
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AccountPermission", b =>
                 {
                     b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Account")
@@ -2007,47 +1918,15 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.Analysis", b =>
+            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.ChordsItem", b =>
                 {
-                    b.HasOne("HarmonyDB.Shelf.Database.Model.Account", "Owner")
+                    b.HasOne("HarmonyDB.Shelf.Database.Model.Recording", "MadeFromRecording")
                         .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_analyses_accounts_owner_id");
+                        .HasForeignKey("MadeFromRecordingId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_chords_recordings_made_from_recording_id");
 
-                    b.HasOne("HarmonyDB.Shelf.Database.Model.Recording", "Recording")
-                        .WithMany()
-                        .HasForeignKey("RecordingId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_analyses_recordings_recording_id");
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("Recording");
-                });
-
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AnalysisContent", b =>
-                {
-                    b.HasOne("HarmonyDB.Shelf.Database.Model.Analysis", "Analysis")
-                        .WithMany("Contents")
-                        .HasForeignKey("AnalysisId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_analysis_contents_analyses_analysis_id");
-
-                    b.Navigation("Analysis");
-                });
-
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.AnalysisFile", b =>
-                {
-                    b.HasOne("HarmonyDB.Shelf.Database.Model.Analysis", "Analysis")
-                        .WithMany("Files")
-                        .HasForeignKey("AnalysisId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_analysis_files_analyses_analysis_id");
-
-                    b.Navigation("Analysis");
+                    b.Navigation("MadeFromRecording");
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.ChordsRecording", b =>
@@ -2552,13 +2431,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Navigation("Permissions");
 
                     b.Navigation("Settings");
-                });
-
-            modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.Analysis", b =>
-                {
-                    b.Navigation("Contents");
-
-                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("HarmonyDB.Shelf.Database.Model.Job", b =>

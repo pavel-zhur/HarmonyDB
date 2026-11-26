@@ -1,3 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.TestHost;
+using HarmonyDB.Shelf.Tests.Api;
+using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Database;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -95,10 +99,14 @@ public sealed class AuthApiFactory(string? connectionString, string environment 
             ["SignIn:RateLimitPermits"] = "100000",
             // the local stack's plain http in Development; https elsewhere
             ["SignIn:PublicOrigin"] = environment == "Development" ? "http://localhost" : "https://shelf.example",
-            ["InternalClients:0:Name"] = "accounts-reader",
+            // a known internal client of some other scope
+            ["InternalClients:0:Name"] = "other",
             ["InternalClients:0:Key"] = InternalKey,
-            ["InternalClients:0:Scopes:0"] = "shelf.accounts",
+            ["InternalClients:0:Scopes:0"] = "shelf.other",
+            ["Clients:OwnChords:Endpoint"] = NoOwnChords.Endpoint,
+            ["Clients:OwnChords:Key"] = NoOwnChords.Key,
         }));
+        builder.ConfigureTestServices(services => services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => new NoOwnChords()));
         if (settings != null)
             builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(settings));
     }

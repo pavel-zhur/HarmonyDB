@@ -81,10 +81,6 @@
             </td>
             <td>
                 <a asp-action="Person" asp-route-id="@person.Id">@(string.IsNullOrEmpty(person.DisplayName) ? "(no name)" : person.DisplayName)</a>
-                @if (person.SystemName != null)
-                {
-                    <span class="shelf-chip">system</span>
-                }
                 <div class="shelf-muted">since @ShelfPermissionNames.Time(person.CreatedAt)</div>
             </td>
             <td>

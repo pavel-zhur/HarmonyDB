@@ -79,10 +79,12 @@ public record OwnChordsItem
 
     public required DateTimeOffset UpdatedAt { get; init; }
 
+
     /// <summary>
-    /// Written in the old shelf (by the person's Telegram account).
+    /// Whether they can be changed and deleted here. Those written in the old shelf are only read here: they are changed
+    /// in the old shelf.
     /// </summary>
-    public required bool FromOldShelf { get; init; }
+    public required bool Editable { get; init; }
 }
 
 public record OwnChordsList
@@ -188,4 +190,7 @@ public static class OwnChordsErrorCodes
 
     /// <summary>400: a song is given without its playlist, or the other way round.</summary>
     public const string SongNeedsPlaylist = "song_needs_playlist";
+
+    /// <summary>409: these own chords are not changed or deleted here (<see cref="OwnChordsItem.Editable"/>).</summary>
+    public const string NotEditable = "own_chords_not_editable";
 }

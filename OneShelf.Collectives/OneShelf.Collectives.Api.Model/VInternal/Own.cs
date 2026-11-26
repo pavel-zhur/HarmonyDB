@@ -3,20 +3,16 @@ using OneShelf.Collectives.Api.Model.V2.Sub;
 namespace OneShelf.Collectives.Api.Model.VInternal;
 
 /// <summary>
-/// Who acts on own chords: an account of the new shelf, and the Telegram users it is (its Telegram sign-ins), as the
-/// calling service tells. The chords written by that account, and those written by those Telegram users in the old
-/// shelf, are theirs.
+/// Who acts on own chords: opaque names of one person, as the calling service gives them, each once. The first is the
+/// person's name now: what they write is authored by it. Own chords are theirs when any of the names is their author.
+/// Chords written in the old shelf are authored by <c>telegram:</c> and the Telegram user's id.
 /// </summary>
 public class OwnChordsAuthor
 {
-    public required Guid AccountId { get; set; }
-
-    public required List<long> TelegramUserIds { get; set; }
+    public required List<string> Subjects { get; set; }
 }
-
 /// <summary>
-/// Own chords: the latest version, and who wrote them (a Telegram user, for those written in the old shelf, or an
-/// account of the new shelf).
+/// Own chords: the latest version, and who wrote them.
 /// </summary>
 public class OwnCollective
 {
@@ -34,9 +30,15 @@ public class OwnCollective
 
     public required Uri Uri { get; set; }
 
-    public long? AuthorTelegramUserId { get; set; }
+    /// <summary>
+    /// Who wrote them: an opaque name (see <see cref="OwnChordsAuthor"/>).
+    /// </summary>
+    public required string Author { get; set; }
 
-    public Guid? AuthorAccountId { get; set; }
+    /// <summary>
+    /// Whether they can be changed and deleted here. Those written in the old shelf cannot: they are changed there.
+    /// </summary>
+    public required bool Editable { get; set; }
 
     /// <summary>
     /// Every version, the first first; given by <see cref="CollectivesApiUrls.OwnGet"/> only.
@@ -75,7 +77,10 @@ public class OwnGetRequest
 
 public class OwnInsertRequest
 {
-    public required Guid AccountId { get; set; }
+    /// <summary>
+    /// The writer: the first of the names is the author.
+    /// </summary>
+    public required OwnChordsAuthor Author { get; set; }
 
     public required Collective Collective { get; set; }
 }
@@ -97,13 +102,21 @@ public class OwnDeleteRequest
 }
 
 /// <summary>
-/// The own chords one account wrote become another's (the first is merged into the second).
+/// Removes for good, every version with its text, the private own chords written here by any of the names: those
+/// private now and those deleted while private. Others (club, public, written in the old shelf) stay. Done again, it
+/// removes what is left.
 /// </summary>
-public class OwnMoveRequest
+public class OwnRemovePrivateRequest
 {
-    public required Guid FromAccountId { get; set; }
+    public required OwnChordsAuthor Author { get; set; }
+}
 
-    public required Guid ToAccountId { get; set; }
+public class OwnRemovePrivateResponse
+{
+    /// <summary>
+    /// How many were removed now.
+    /// </summary>
+    public required int Removed { get; set; }
 }
 
 public class ItemsRequest

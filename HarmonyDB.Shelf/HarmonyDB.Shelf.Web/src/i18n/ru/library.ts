@@ -38,6 +38,7 @@ export const library = {
         foundInPlaylists: 'Нашлось в моих плейлистах',
         foundInOpen: 'Нашлось в открытых плейлистах',
         fromSources: 'Аккорды',
+        sources: 'Ищутся в:',
         sourcesFailed: 'Не все источники ответили; попробуйте позже.',
         notOpen: 'вам недоступны',
         unavailable: 'сейчас не отвечают',

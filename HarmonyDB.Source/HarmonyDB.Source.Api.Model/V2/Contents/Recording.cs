@@ -39,19 +39,25 @@ public enum Stem
 }
 
 /// <summary>
-/// Sound playable through the music service: a track of a music service, or a file in its store. Exactly one of the two
-/// is given.
+/// Sound: a track of a music service, or a file of the item. Exactly one of the two is given.
 /// </summary>
 public record AudioRef
 {
     public MusicServiceTrack? Track { get; init; }
 
-    public BlobRef? Blob { get; init; }
+    public FileRef? File { get; init; }
 }
 
+/// <summary>
+/// A track of a music service: a fact about the world, stated by the source.
+/// </summary>
 public record MusicServiceTrack
 {
-    public required MusicService Service { get; init; }
+    /// <summary>
+    /// The music service, in lower case ("yandex", "youtube", or any other). A reader plays the services it knows and
+    /// passes over the rest.
+    /// </summary>
+    public required string Service { get; init; }
 
     /// <summary>
     /// The track's id on the service.
@@ -59,18 +65,16 @@ public record MusicServiceTrack
     public required string Id { get; init; }
 }
 
-public enum MusicService
-{
-    Yandex,
-    Youtube,
-}
-
 /// <summary>
-/// A file in the music service's store.
+/// A file of the item, given by its source (<see cref="SourceV2Urls.V2GetFile"/>) to whom the item is open, while the
+/// item's content names it.
 /// </summary>
-public record BlobRef
+public record FileRef
 {
-    public required string Key { get; init; }
+    /// <summary>
+    /// Its name: opaque to all but the source, unique within its item.
+    /// </summary>
+    public required string Name { get; init; }
 
     public required string ContentType { get; init; }
 }

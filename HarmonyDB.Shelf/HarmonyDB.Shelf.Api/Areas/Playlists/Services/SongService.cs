@@ -73,9 +73,9 @@ public sealed class SongService(
         }
 
         db.PlaylistSongs.Add(song);
-        var token = await undo.SaveAsync(me, cancellationToken);
         if (db.PlaylistSongItems.Local.Any(x => x.SongId == song.Id && x.ChordsId != null))
             await FindRecordingsAsync(me, playlistId, song.Id, cancellationToken);
+        var token = await undo.SaveAsync(me, cancellationToken);
         var added = Views.Song(song, await views.PeopleAsync([me], cancellationToken));
         return new() { Value = new M.AddedSong(added) { LeftOut = leftOut }, Undo = token };
     }
@@ -116,8 +116,8 @@ public sealed class SongService(
         var (chords, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
         await RequireNotInPlaylistAsync(playlistId, [chords.Id], [], cancellationToken);
         db.PlaylistSongItems.Add(NewItem(songId, chords.Id, null, await NextItemPositionAsync(songId, cancellationToken), me, time.GetUtcNow()));
-        var token = await undo.SaveAsync(me, cancellationToken);
         await FindRecordingsAsync(me, playlistId, songId, cancellationToken);
+        var token = await undo.SaveAsync(me, cancellationToken);
         return new() { Value = Views.Song(song, await views.PeopleAsync(song.AddedById is { } by ? [by] : [], cancellationToken)), Undo = token };
     }
 
@@ -344,13 +344,14 @@ public sealed class SongService(
     public static bool Keeps(IEnumerable<PlaylistSongItem> remaining) => remaining.Any(x => x.ChordsId != null || x.AddedById != null);
 
     /// <summary>
-    /// Queues the finding of recordings for a song that got chords, done with the adder's account and keys (the job of
-    /// the recordings' area; queued here directly, as that area's service stands on this one).
+    /// Queues, with the act about to be saved, the finding of recordings for a song that got chords: a follow-up of the
+    /// shelf's, done with the adder's account and keys (the job of the recordings' area; queued here directly, as that
+    /// area's service stands on this one). One already waiting for the song does it.
     /// </summary>
     private async Task FindRecordingsAsync(Guid me, Guid playlistId, Guid songId, CancellationToken cancellationToken)
     {
         var caller = callers.For(await chordsRows.PersonAsync(me, cancellationToken));
-        await jobs.EnqueueAsync(me, SongRecordingsJob.Kind, songId.ToString(), new SongRecordingsJob.Input(playlistId, songId, caller.Keys), cancellationToken);
+        await jobs.QueueFollowUp(me, SongRecordingsJob.Kind, songId.ToString(), new SongRecordingsJob.Input(playlistId, songId, caller.Keys), cancellationToken);
     }
 
     private async Task RequireNotInPlaylistAsync(Guid playlistId, IReadOnlyList<Guid> chordsIds, IReadOnlyList<Guid> recordingIds, CancellationToken cancellationToken)

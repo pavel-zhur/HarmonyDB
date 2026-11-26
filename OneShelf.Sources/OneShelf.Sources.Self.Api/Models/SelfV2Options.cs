@@ -18,6 +18,10 @@ public class SelfV2Options
     /// </summary>
     public const string PreviewScope = "preview";
 
+    public const string IdPlaceholder = "{id}";
+    public const string CodePlaceholder = "{code}";
+    public const string VersionPlaceholder = "{version}";
+
     /// <summary>
     /// The opaque name of the source's picture, given in the source label, and the file of the picture. Both or neither.
     /// The name begins with the prefix of this source's ids, so that the index routes it here.
@@ -27,18 +31,10 @@ public class SelfV2Options
     public string? IconPath { get; set; }
 
     /// <summary>
-    /// Where the shelf tells which Telegram identities are linked to an account (see
-    /// <see cref="Services.V2.ShelfAccountsClient"/>), and this source's internal key there. Without them the private
-    /// chords cannot be opened to anyone: a call made for a person that needs them answers "unavailable".
+    /// The address of own chords this source gives (their public page), of the same three parts as the store's own
+    /// address: <see cref="IdPlaceholder"/> (the item's id), <see cref="CodePlaceholder"/> (the six-digit code) and
+    /// <see cref="VersionPlaceholder"/> (the version's number), each once. The store's address is not changed: it is
+    /// the old shelf's, and changing it would change every item's current address.
     /// </summary>
-    public Uri? ShelfAccountsEndpoint { get; set; }
-
-    public string? ShelfAccountsKey { get; set; }
-
-    public TimeSpan ShelfAccountsTimeout { get; set; } = TimeSpan.FromSeconds(5);
-
-    /// <summary>
-    /// How long the shelf's answer for an account is kept: a sign-in linked or unlinked shows after this time at most.
-    /// </summary>
-    public TimeSpan ShelfAccountsCacheTime { get; set; } = TimeSpan.FromMinutes(1);
+    public string? AddressTemplate { get; set; }
 }

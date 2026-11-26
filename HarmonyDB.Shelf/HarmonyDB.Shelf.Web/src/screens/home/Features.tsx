@@ -5,6 +5,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useConfiguration, useSession } from '../../data/session';
+import { useAssistantsOpen } from '../../data/mcp';
 import { Visual, type Card } from './GuestHome';
 import './home.css';
 
@@ -12,6 +13,7 @@ export function Features() {
     const { t } = useTranslation();
     const { session } = useSession();
     const configuration = useConfiguration();
+    const assistants = useAssistantsOpen();
     const permissions = session?.permissions ?? [];
     const showcase = configuration.data?.showcasePlaylistId ?? null;
     const cards: { key: Card; to: string }[] = [
@@ -20,7 +22,7 @@ export function Features() {
         { key: 'import', to: '/import' },
         { key: 'fingerings', to: '/fingerings' },
         ...(permissions.includes('pdf') ? [{ key: 'book' as const, to: '/playlists' }] : []),
-        ...(permissions.some(p => p.startsWith('mcp.')) ? [{ key: 'ai' as const, to: '/ai' }] : []),
+        ...(assistants ? [{ key: 'ai' as const, to: '/ai' }] : []),
     ];
     return (
         <>

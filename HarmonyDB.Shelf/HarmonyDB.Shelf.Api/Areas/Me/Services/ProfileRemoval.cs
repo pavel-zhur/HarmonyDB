@@ -1,4 +1,5 @@
 using HarmonyDB.Shelf.Api.Clients.Audio;
+using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Database;
 using HarmonyDB.Shelf.Database.Model;
@@ -12,13 +13,20 @@ namespace HarmonyDB.Shelf.Api.Areas.Me.Services;
 /// <para>
 /// Both: the person leaves every playlist; a playlist they own passes to its longest-standing admin, else member,
 /// and one with nobody else in it is marked removed; their marks, keys, notes and recent are marked removed and their
-/// choices of variants cleared; the share links into what is removed, their jobs and the analyses of their own files
-/// are deleted. Wiping keeps the system playlists (their songs are marked removed), the sign-ins, the
+/// choices of variants cleared; the share links into what is removed and their jobs are deleted. Wiping keeps the system playlists (their songs are marked removed), the sign-ins, the
 /// sessions, the settings and the music links. Deleting removes those too and clears the name and the picture. What
 /// the person added to others' playlists stays there.
 /// </para>
+/// <para>
+/// Deleting first removes for good, in the own chords' store, the person's private own chords written in this shelf (by
+/// the account or one merged into it), every version with its text: their private writing goes with them. Their public
+/// and club own chords stay — others' playlists hold them —, and so does what they wrote in the old shelf, whose
+/// account lives on. The store is asked first because its removal is harmless alone and repeats safely: when it does
+/// not answer, nothing is deleted (503 <c>unavailable</c>); when the shelf's part fails after it, deleting again
+/// finishes.
+/// </para>
 /// </summary>
-public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
+public sealed class ProfileRemoval(ShelfDbContext db, OwnChordsClient ownChords, TimeProvider time)
 {
     public const string WipedAction = "profile_wiped";
     public const string DeletedAction = "profile_deleted";
@@ -42,6 +50,8 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
 
     public async Task DeleteAsync(Guid accountId, CancellationToken cancellationToken)
     {
+        await DeletePrivateOwnChordsAsync(accountId, cancellationToken);
+
         var now = time.GetUtcNow();
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await LockAsync(accountId, cancellationToken);
@@ -123,7 +133,7 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
     /// <summary>
     /// What nothing needs any more, removed at once rather than by the purge: the share links into the playlists
     /// removed or emptied now (others' links into playlists that stay are kept) and the person's links that carry their
-    /// access, the person's jobs, and the analyses of the person's own files.
+    /// access, and the person's jobs.
     /// </summary>
     private async Task RemoveWhatNobodyNeedsAsync(Guid accountId, List<Guid> playlists, CancellationToken cancellationToken)
     {
@@ -132,8 +142,14 @@ public sealed class ProfileRemoval(ShelfDbContext db, TimeProvider time)
                         || (x.CarriedKeys != null && x.CreatedById == accountId))
             .ExecuteDeleteAsync(cancellationToken);
         await db.Jobs.Where(x => x.AccountId == accountId).ExecuteDeleteAsync(cancellationToken);
-        await HarmonyDB.Shelf.Api.Areas.Analyses.Services.AnalysisStore.RemoveOwnedAsync(db, accountId, time.GetUtcNow(), cancellationToken);
     }
+
+    /// <summary>
+    /// The private own chords written in this shelf by the account's names (its own, and those of the accounts merged
+    /// into it); not by a Telegram sign-in: those are the old shelf's.
+    /// </summary>
+    private async Task DeletePrivateOwnChordsAsync(Guid accountId, CancellationToken cancellationToken)
+        => await ownChords.RemovePrivateAsync(new(await AccountSubjects.LoadAsync(db, accountId, cancellationToken)), cancellationToken);
 
     /// <summary>
     /// The account's row locked for the transaction: a merge or another removal of it waits.

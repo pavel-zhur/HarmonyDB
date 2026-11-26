@@ -24,6 +24,7 @@ import { ToTop } from '../../app/ToTop';
 import { ChordsView } from './ChordsView';
 import { SongRecordings } from '../recordings/SongRecordings';
 import { SongPlayer } from '../../player/SongPlayer';
+import { isAnalysis } from '../../data/analysis';
 import { VariantMenu } from './Actions';
 import { Illustrations } from './Illustrations';
 import { SignInOffer } from '../home/GuestHome';
@@ -142,9 +143,9 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
             <div className="hero">
                 <Hero title={page.song.title} artists={page.song.artists} context={context} cover={cover} closeTo={closeTo} />
                 <div className="vers">
-                    <SongRecordings song={{ playlistId, songId, share }} analysed={variants.some(v => !!v.chords.header?.kinds.includes('timeline'))}
+                    <SongRecordings song={{ playlistId, songId, share }} analysed={variants.some(v => isAnalysis(v.chords.header?.kinds))}
                         anyOpen={variants.some(v => v.chords.state === 'open')}
-                        analysisId={variant?.chords.header?.kinds.includes('timeline') ? variant.chords.id : null} />
+                        analysisId={variant && isAnalysis(variant.chords.header?.kinds) ? variant.chords.id : null} />
                     <div className="vlab">{t('song.chordsLabel')}</div>
                     {cut && w0 > 0 && <button type="button" className="lnk more" onClick={() => setAll(true)}><Icon name="up" />{t('song.moreAbove', { count: w0 })}</button>}
                     {variants.map((v, i) => (cut && (i < w0 || i >= w0 + 5)) ? null : (
@@ -173,7 +174,7 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
                     onClose={() => setOpen(null)} onSwipe={go} />
             )}
             {!variant && open !== 'illustrations' && !signedIn && known && <div className="guestinv"><Features /><SignInOffer /></div>}
-            <SongFoot><SongPlayer song={{ playlistId, songId, share }} analysisId={variant?.chords.header?.kinds.includes('timeline') ? variant.chords.id : null} /></SongFoot>
+            <SongFoot><SongPlayer song={{ playlistId, songId, share }} analysisId={variant && isAnalysis(variant.chords.header?.kinds) ? variant.chords.id : null} /></SongFoot>
         </div>
     );
 }
@@ -302,7 +303,7 @@ function ChordsAlone({ chordsId, closeTo }: { chordsId: string; closeTo: string 
                     onSwipe={direction => { const to = direction < 0 ? pager?.prev : pager?.next; if (to) navigate(to); }} />
             )}
             {!open && !signedIn && <div className="guestinv"><Features /><SignInOffer /></div>}
-            <SongFoot><SongPlayer song={null} analysisId={header?.kinds.includes('timeline') ? chordsId : null} /></SongFoot>
+            <SongFoot><SongPlayer song={null} analysisId={isAnalysis(header?.kinds) ? chordsId : null} /></SongFoot>
         </div>
     );
 }

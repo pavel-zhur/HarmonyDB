@@ -27,8 +27,9 @@ def test_key_is_required_and_checked(client):
 
 
 def test_media_scope(client):
-    assert code(client.get("/internal/blobs/nothing-here", headers=READER)) == (403, "scope_missing")
-    assert code(client.get("/internal/blobs/nothing-here", headers=MEDIA)) == (404, "not_found")
+    url = "/internal/files?url=https://example.com/a.jpg"
+    assert code(client.get(url, headers=READER)) == (403, "scope_missing")
+    assert code(client.get(url, headers=MEDIA)) == (400, "host_not_allowed")
 
 
 def test_every_service_call_says_its_mode(client):

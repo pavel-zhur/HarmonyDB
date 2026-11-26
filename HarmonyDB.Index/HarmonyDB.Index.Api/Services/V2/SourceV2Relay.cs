@@ -9,7 +9,7 @@ namespace HarmonyDB.Index.Api.Services.V2;
 
 /// <summary>
 /// Relays the source contract, version 2, to the configured sources (<see cref="RelayV2Options"/>). An id, and an
-/// icon's name, go to the source whose prefix they have; a search and an address go to every source. The caller is passed on as it came, and
+/// icon's name, go to the source whose prefix they have (a file goes by its item's id); a search and an address go to every source. The caller is passed on as it came, and
 /// the answers as the sources gave them: the relay knows no source beyond its configuration.
 /// </summary>
 public class SourceV2Relay
@@ -45,7 +45,7 @@ public class SourceV2Relay
         var answers = await Task.WhenAll(_sources.Select(x => x.client.Search(caller, query, cancellationToken)));
 
         var headers = new List<Header>();
-        var failures = new List<SearchFailure>();
+        var failures = new List<SourceFailure>();
         for (var i = 0; i < _sources.Count; i++)
         {
             var answer = answers[i];
@@ -57,7 +57,7 @@ public class SourceV2Relay
                 failures.Add(new()
                 {
                     Source = _sources[i].options.Name,
-                    Reason = SearchFailureReason.Unavailable,
+                    Reason = SourceFailureReason.Unavailable,
                 });
                 continue;
             }
@@ -70,6 +70,20 @@ public class SourceV2Relay
         {
             Headers = headers,
             Failures = failures,
+        };
+    }
+
+    /// <summary>
+    /// Asks every source at once for the labels this caller may see; they come in the order of the sources, and a
+    /// source that did not answer is in the failures.
+    /// </summary>
+    public async Task<GetSourcesResponse> GetSources(Caller caller, CancellationToken cancellationToken)
+    {
+        var answers = await Task.WhenAll(_sources.Select(x => x.client.GetSources(caller, cancellationToken)));
+        return new()
+        {
+            Sources = answers.SelectMany(x => x.Sources).ToList(),
+            Failures = answers.SelectMany(x => x.Failures).ToList(),
         };
     }
 
@@ -112,7 +126,7 @@ public class SourceV2Relay
         };
     }
 
-    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, CancellationToken cancellationToken)
+    public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var source = Route(id);
         if (source == null)
@@ -124,7 +138,7 @@ public class SourceV2Relay
             };
         }
 
-        return await _sources[source.Value].client.GetContent(caller, id, kinds, cancellationToken);
+        return await _sources[source.Value].client.GetContent(caller, id, kinds, address, cancellationToken);
     }
 
     /// <summary>
@@ -192,6 +206,17 @@ public class SourceV2Relay
             }).ToList(),
         };
     }
+
+    /// <summary>
+    /// A file of an item, from the source its id routes to.
+    /// </summary>
+    /// <returns>The file's answer, to be disposed; null when the id is of no source, or its source has no such file
+    /// open to the caller.</returns>
+    /// <exception cref="SourceUnavailableException">Its source did not answer.</exception>
+    public async Task<SourceFile?> GetFile(GetFileRequest request, bool headersOnly, string? range, string? ifRange, CancellationToken cancellationToken)
+        => Route(request.Id) is { } source
+            ? await _sources[source].client.GetFile(request.Caller, request.Id, request.Name, request.Address, headersOnly, range, ifRange, cancellationToken)
+            : null;
 
     /// <summary>
     /// The picture of this name, from the source it routes to: an icon's name begins with one of its source's id

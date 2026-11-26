@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The analyses as a source: a module of the common application (OneShelf.Api). -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HarmonyDB.Analyses.Database\HarmonyDB.Analyses.Database.csproj" />
+    <ProjectReference Include="..\..\OneShelf.Common\OneShelf.Common.Api\OneShelf.Common.Api.csproj" />
+    <ProjectReference Include="..\..\HarmonyDB.Source\HarmonyDB.Source.Api.Model\HarmonyDB.Source.Api.Model.csproj" />
+  </ItemGroup>
+
+</Project>

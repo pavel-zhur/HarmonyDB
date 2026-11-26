@@ -169,7 +169,7 @@ public sealed class FakeIllustrations : HttpMessageHandler
     public List<StoredIllustration> Images { get; init; } = [];
 
     public static System.Security.Claims.ClaimsPrincipal Person(Guid account)
-        => new(HarmonyDB.Shelf.Api.Foundation.Permissions.ShelfIdentity.Create("test", account, ["illustrations.generate"], null));
+        => new(HarmonyDB.Shelf.Api.Foundation.Permissions.ShelfIdentity.Create("test", account, [HarmonyDB.Shelf.Database.AccountSubjects.Of(account)], ["illustrations.generate"], null));
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {

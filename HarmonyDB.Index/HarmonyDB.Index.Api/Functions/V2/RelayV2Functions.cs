@@ -30,8 +30,8 @@ public class RelayV2Functions(SourceV2Relay relay)
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
         => RelayV2Function.Handle<GetContentRequest, GetContentResponse>(req,
-            r => RelayV2Function.IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null,
-            r => relay.GetContent(r.Caller, r.Id, r.Kinds, cancellationToken));
+            r => RelayV2Function.IsComplete(r.Caller) && !string.IsNullOrEmpty(r.Id) && r.Kinds != null && r.Address is null or { IsAbsoluteUri: true },
+            r => relay.GetContent(r.Caller, r.Id, r.Kinds, r.Address, cancellationToken));
 
     [Function(SourceV2Urls.V2GetContents, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetContents(HttpRequest req, CancellationToken cancellationToken)
@@ -39,11 +39,58 @@ public class RelayV2Functions(SourceV2Relay relay)
             GetContentsRequest.IsValid,
             r => relay.GetContents(r.Caller, r.Ids, r.Kinds, cancellationToken));
 
+    [Function(SourceV2Urls.V2GetSources, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
+    public Task<IActionResult> GetSources(HttpRequest req, CancellationToken cancellationToken)
+        => RelayV2Function.Handle<GetSourcesRequest, GetSourcesResponse>(req,
+            r => RelayV2Function.IsComplete(r.Caller),
+            r => relay.GetSources(r.Caller, cancellationToken));
+
     [Function(SourceV2Urls.V2Resolve, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> Resolve(HttpRequest req, CancellationToken cancellationToken)
         => RelayV2Function.Handle<ResolveRequest, ResolveResponse>(req,
             r => RelayV2Function.IsComplete(r.Caller) && r.Uris != null && r.Uris.All(x => x is { IsAbsoluteUri: true }),
             r => relay.Resolve(r.Caller, r.Uris, cancellationToken));
+
+    /// <summary>
+    /// A file from the source its id routes to, passed on as that source answers it: the status, the headers of
+    /// <see cref="SourceFile.PassedHeaders"/>, and the body streamed for as long as it is read. 404 when the id is of no
+    /// source or its source has no such file open to the caller, 503 when the source did not answer, 400 when the
+    /// request is not one the contract takes.
+    /// </summary>
+    [Function(SourceV2Urls.V2GetFile, AuthorizationLevel.Internal, "get", "head", InternalScope = IndexInternalScopes.Index)]
+    public async Task<IActionResult> GetFile(HttpRequest req, CancellationToken cancellationToken)
+    {
+        if (GetFileRequest.Decode(req.Headers[GetFileRequest.HeaderName].ToString()) is not { } request)
+            return new BadRequestResult();
+
+        SourceFile? file;
+        try
+        {
+            file = await relay.GetFile(request, HttpMethods.IsHead(req.Method), req.Headers.Range.ToString(), req.Headers.IfRange.ToString(), cancellationToken);
+        }
+        catch (SourceUnavailableException)
+        {
+            return new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);
+        }
+
+        if (file == null) return new NotFoundResult();
+
+        using (file)
+        {
+            var response = req.HttpContext.Response;
+            response.StatusCode = file.StatusCode;
+            foreach (var (name, values) in file.Headers)
+                response.Headers[name] = values;
+
+            if (!HttpMethods.IsHead(req.Method))
+            {
+                await using var body = await file.ReadBodyAsync(cancellationToken);
+                await body.CopyToAsync(response.Body, cancellationToken);
+            }
+        }
+
+        return new EmptyResult();
+    }
 
     /// <summary>
     /// The picture from the source its name routes to; 404 when the name is of no source or the source has no such

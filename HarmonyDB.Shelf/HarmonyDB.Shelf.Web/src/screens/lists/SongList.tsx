@@ -6,13 +6,13 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../data/session';
-import { rowId, useSearch, useSongList, type SongRow as Row, type SongSource } from '../../data/songs';
+import { rowId, useChordsSources, useSearch, useSongList, type SongRow as Row, type SongSource } from '../../data/songs';
 import { useMarkKinds, useMarkSign } from '../../data/marks';
 import { errorText } from '../../api/errors';
 import { Chip, SearchField } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
-import { SongRow, Highlight } from '../../kit/SongRow';
+import { SongRow, Highlight, SourceIcon } from '../../kit/SongRow';
 import { scrollerOf } from '../../app/layout';
 import { setLastOpened, useLastOpened } from '../../app/lastOpened';
 import { myMarksOn, useLocalView } from '../../local';
@@ -223,6 +223,7 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
             ))}
             <MusicSearch q={q} />
             <div className="sec"><Icon name="frets" />{t('library.fromSources')} · {chords.length}</div>
+            <SourcesRibbon />
             {chords.map(header => (
                 <SongRow noMarks key={'c' + header.id} to={href(p.chordsHref(header.id))} lit={lit === header.id} q={q}
                     title={header.title ?? ''} artists={header.artists}
@@ -236,6 +237,19 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
                 </p>
             )}
         </>
+    );
+}
+
+/** Where the chords are looked for: the sources this person may see, by their icons and names. */
+function SourcesRibbon() {
+    const { t } = useTranslation();
+    const sources = useChordsSources().data?.sources ?? [];
+    if (!sources.length) return null;
+    return (
+        <p className="srcribbon">
+            <span className="lab">{t('library.sources')}</span>
+            {sources.map(source => <span key={source.key}>{source.iconUrl && <SourceIcon source={source} />}{source.title}</span>)}
+        </p>
     );
 }
 

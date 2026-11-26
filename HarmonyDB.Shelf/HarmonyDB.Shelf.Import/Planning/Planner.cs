@@ -119,6 +119,7 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
             if (tenant.ArePdfsAllowed) permissions.Add(ShelfPermissions.Pdf);
             if (user.IllustrationsAllowed) permissions.Add(ShelfPermissions.IllustrationsGenerate);
             permissions.AddRange(tenant.Tags.SelectMany(tag => options.PermissionsByTenantTag.GetValueOrDefault(tag) ?? []));
+            permissions.AddRange(options.PermissionsForEveryone);
             return new PersonPlan(user.Id, user.Title, OldRules.Time(user.CreatedOn), permissions.Distinct().ToList());
         }).ToList();
 

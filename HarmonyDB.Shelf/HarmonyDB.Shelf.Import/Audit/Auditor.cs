@@ -100,6 +100,7 @@ public sealed class Auditor(OldShelf old, ImportOptions options, ShelfDbContext 
             if (tenant.ArePdfsAllowed) hadPermissions.Add(ShelfPermissions.Pdf);
             if (person.IllustrationsAllowed) hadPermissions.Add(ShelfPermissions.IllustrationsGenerate);
             hadPermissions.AddRange(tenant.Tags.SelectMany(t => options.PermissionsByTenantTag.GetValueOrDefault(t) ?? []));
+            hadPermissions.AddRange(options.PermissionsForEveryone);
             var missingPermissions = hadPermissions.Except(permissions[account]).ToList();
             line.Add($"permissions {hadPermissions.Count - missingPermissions.Count}/{hadPermissions.Count}");
             if (missingPermissions.Count > 0) Fail($"{p}: permissions missing: {missingPermissions.Count}");

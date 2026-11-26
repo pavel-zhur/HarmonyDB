@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { serviceWorker } from './build/serviceWorker.ts';
 import { fingerings as fingeringsPieces } from './build/fingerings.ts';
-import { engraverStyles } from './build/engraverStyles.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 
@@ -15,9 +14,7 @@ const fingerings = process.env.SHELF_FINGERINGS
 
 export default defineConfig({
     root,
-    plugins: [react(), fingeringsPieces(fingerings), serviceWorker(), engraverStyles()],
-    // the score's engraver is patched where it is bundled (build/engraverStyles.ts): in the dev server's pre-bundling too
-    optimizeDeps: { rolldownOptions: { plugins: [engraverStyles()] } },
+    plugins: [react(), fingeringsPieces(fingerings), serviceWorker()],
     build: {
         // every file a file of its own (no data: addresses: the page's content policy allows the app's own files only)
         assetsInlineLimit: 0,

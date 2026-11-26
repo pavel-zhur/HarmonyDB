@@ -18,7 +18,7 @@ public record Notes
     /// <summary>
     /// The same notes as a MIDI file, when there is one.
     /// </summary>
-    public BlobRef? Midi { get; init; }
+    public FileRef? Midi { get; init; }
 }
 
 public record NotesPart

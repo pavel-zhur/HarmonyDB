@@ -77,28 +77,10 @@ services:
       Media__SigningKey: ${SHELF_MEDIA_SIGNING_KEY}
       # the reverse proxy in front (this project's own network): its X-Forwarded-For gives the client's address
       Shelf__Proxy__TrustedNetworks__0: ${SHELF_TRUSTED_PROXY_NETWORK}
-      # the shelf's own analyses as a source (HarmonyDB.Shelf.Api, Areas/Analyses): its label and picture, and the
-      # internal clients that read it as a source (the index) and put analyses in
-      Analyses__SourceKey: ${SHELF_ANALYSES_SOURCE_KEY}
-      Analyses__SourceTitle: ${SHELF_ANALYSES_SOURCE_TITLE}
-      Analyses__IconName: ha-icon
-      Analyses__IconFile: /app/config/analyses-icon.svg
-      # an analysis's address on the public page, with {id} where its id goes (empty: no address)
-      Analyses__PublicUriTemplate: ${SHELF_ANALYSES_PUBLIC_URI_TEMPLATE}
-      InternalClients__0__Name: index
-      InternalClients__0__Key: ${WAVE2_SHELF_INDEX_KEY}
-      InternalClients__0__Scopes__0: shelf.source
-      InternalClients__1__Name: analyses
-      InternalClients__1__Key: ${WAVE2_SHELF_ANALYSES_KEY}
-      InternalClients__1__Scopes__0: shelf.analyses.write
       # the admin site (wave2-admin): the people and their permissions
-      InternalClients__2__Name: admin
-      InternalClients__2__Key: ${WAVE2_SHELF_ADMIN_KEY}
-      InternalClients__2__Scopes__0: shelf.admin
-      # the own chords' source (wave2-api) asks which Telegram users an account is
-      InternalClients__3__Name: own-chords
-      InternalClients__3__Key: ${WAVE2_SHELF_SELF_KEY}
-      InternalClients__3__Scopes__0: shelf.accounts
+      InternalClients__0__Name: admin
+      InternalClients__0__Key: ${WAVE2_SHELF_ADMIN_KEY}
+      InternalClients__0__Scopes__0: shelf.admin
       # the custom permissions, with their labels for the admin site: taken from .env as they are, when set there
       # (up to four; more need more lines here)
       Permissions__Custom__0__Key:
@@ -109,8 +91,12 @@ services:
       Permissions__Custom__2__Label:
       Permissions__Custom__3__Key:
       Permissions__Custom__3__Label:
-    volumes:
-      - ./analyses-icon.svg:/app/config/analyses-icon.svg:ro
+      # what a new person gets: permissions by their names, custom ones by their keys; taken from .env as they are, when
+      # set there (up to four)
+      Permissions__Defaults__NewAccount__0:
+      Permissions__Defaults__NewAccount__1:
+      Permissions__Defaults__NewAccount__2:
+      Permissions__Defaults__NewAccount__3:
     ports:
       # for debugging; the app reaches it through its own web server
       - "127.0.0.1:14101:80"
@@ -170,7 +156,6 @@ services:
       MUSIC_YANDEX_MP3_SALT: ${MUSIC_YANDEX_MP3_SALT}
       AUDIO_YANDEX_TOKEN_FILE: /secrets/yandex-token
       AUDIO_YOUTUBE_AUTH_FILE: /secrets/youtube-auth.json
-      AUDIO_MAX_BLOB_BYTES: ${AUDIO_MAX_BLOB_BYTES}
       AUDIO_MAX_URL_FILE_BYTES: ${AUDIO_MAX_URL_FILE_BYTES}
       InternalClients__0__Name: shelf
       InternalClients__0__Key: ${WAVE2_AUDIO_SHELF_KEY}
@@ -188,8 +173,8 @@ services:
 
   # This branch's build of the API (OneShelf.Api: every module of the old services, each under its own path base,
   # http://wave2-api/<module>/api/...) on the old databases, as the shared stack's "api" runs them. Here it gives the new
-  # shelf the index (the relay of the source contract, version 2, and the analysis tools), the own chords and the
-  # illustrations, to internal clients with their keys. The bots get no tokens and no schedules here: they live on
+  # shelf the index (the relay of the source contract, version 2, and the analysis tools), the own chords, the analyses
+  # and the illustrations, to internal clients with their keys. The bots get no tokens and no schedules here: they live on
   # production. The index reads the shared stack's cache files through a read-only view of their volume.
   wave2-api:
     build:
@@ -209,6 +194,7 @@ services:
       ConnectionStrings__CollectivesDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_COLLECTIVES};Password=${PG_PASSWORD_COLLECTIVES}"
       ConnectionStrings__IllustrationsDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_ILLUSTRATIONS};Password=${PG_PASSWORD_ILLUSTRATIONS}"
       ConnectionStrings__FrontendDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_FRONTEND};Password=${PG_PASSWORD_FRONTEND}"
+      ConnectionStrings__AnalysesDatabase: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_ANALYSES:?};Password=${PG_PASSWORD_ANALYSES:?}"
       # the illustrations' generators
       OpenAiOptions__OpenAiApiKey: ${OPENAI_API_KEY}
       OpenAiOptions__GoogleServiceAccountJson: ${GOOGLE_SERVICE_ACCOUNT_JSON}
@@ -249,9 +235,24 @@ services:
       SourcesSelf__InternalClients__1__Name: shelf
       SourcesSelf__InternalClients__1__Key: ${WAVE2_SELF_SHELF_KEY}
       SourcesSelf__InternalClients__1__Scopes__0: preview
-      # who a person is: the shelf tells which Telegram users an account is
-      SourcesSelf__SelfV2__ShelfAccountsEndpoint: http://shelf-api/internal/
-      SourcesSelf__SelfV2__ShelfAccountsKey: ${WAVE2_SHELF_SELF_KEY}
+      # the address of own chords it gives (their public page), with {id}, {code} and {version}
+      SourcesSelf__SelfV2__AddressTemplate: ${SELF_ADDRESS_TEMPLATE:?}
+
+      # ---------- Analyses: the analyses as a source ----------
+      # its label and picture, its items' address (the public page, with {id} where the id goes), and its folder of files
+      Analyses__AnalysesOptions__SourceKey: ${ANALYSES_SOURCE_KEY:?}
+      Analyses__AnalysesOptions__SourceTitle: ${ANALYSES_SOURCE_TITLE:?}
+      Analyses__AnalysesOptions__IconName: ha-icon
+      Analyses__AnalysesOptions__IconFile: /app/config/analyses-icon.svg
+      Analyses__AnalysesOptions__PublicUriTemplate: ${ANALYSES_PUBLIC_URI_TEMPLATE:?}
+      Analyses__AnalysesOptions__FilesFolder: /analyses-files
+      # the index reads it as a source; the client "analyses" puts analyses in
+      Analyses__InternalClients__0__Name: index
+      Analyses__InternalClients__0__Key: ${WAVE2_ANALYSES_INDEX_KEY:?}
+      Analyses__InternalClients__0__Scopes__0: source
+      Analyses__InternalClients__1__Name: analyses
+      Analyses__InternalClients__1__Key: ${WAVE2_ANALYSES_WRITE_KEY:?}
+      Analyses__InternalClients__1__Scopes__0: analyses.write
 
       # ---------- Index ----------
       Index__AuthorizationApiClientOptions__CheckIdentityEndpoint: http://wave2-api/authorization/api/CheckIdentity?code=${FUNCTIONS_KEY}
@@ -276,10 +277,10 @@ services:
       Index__RelayV2__Sources__0__Endpoint: http://wave2-api/sourcesself/api/
       Index__RelayV2__Sources__0__Key: ${WAVE2_SELF_INDEX_KEY}
       Index__RelayV2__Sources__0__IdPrefixes__0: ${SELF_EXTERNAL_ID_PREFIX}
-      # the new shelf's own analyses
-      Index__RelayV2__Sources__2__Name: shelf-analyses
-      Index__RelayV2__Sources__2__Endpoint: http://shelf-api/internal/source/
-      Index__RelayV2__Sources__2__Key: ${WAVE2_SHELF_INDEX_KEY}
+      # the analyses
+      Index__RelayV2__Sources__2__Name: analyses
+      Index__RelayV2__Sources__2__Endpoint: http://wave2-api/analyses/api/
+      Index__RelayV2__Sources__2__Key: ${WAVE2_ANALYSES_INDEX_KEY:?}
       Index__RelayV2__Sources__2__IdPrefixes__0: ha-
       # the new shelf calls the relay and the analysis tools
       Index__InternalClients__0__Name: shelf
@@ -289,10 +290,6 @@ services:
       Index__InternalClients__1__Name: import
       Index__InternalClients__1__Key: ${WAVE2_INDEX_IMPORT_KEY}
       Index__InternalClients__1__Scopes__0: index
-      # one more internal client of the index
-      Index__InternalClients__2__Name: tools
-      Index__InternalClients__2__Key: ${WAVE2_INDEX_TOOLS_KEY}
-      Index__InternalClients__2__Scopes__0: index
 
       # ---------- Illustrations ----------
       Illustrations__IllustrationsApiOptions__PublicEndpoint: ${ILLUSTRATIONS_PUBLIC_ENDPOINT}
@@ -316,6 +313,8 @@ services:
       - "127.0.0.1:14102:80"
     volumes:
       - index-cache:/cache:ro
+      - analyses-files:/analyses-files
+      - ./analyses-icon.svg:/app/config/analyses-icon.svg:ro
     networks:
       - default
       - pg
@@ -405,6 +404,8 @@ networks:
     external: true
 
 volumes:
+  # The analyses' files, kept by wave2-api's analyses module.
+  analyses-files:
   # The shared stack's index cache files, mounted read-only by wave2-api.
   index-cache:
     name: harmonydb-pg_index-cache

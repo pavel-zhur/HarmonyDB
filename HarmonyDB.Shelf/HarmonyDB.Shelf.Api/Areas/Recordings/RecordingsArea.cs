@@ -26,7 +26,7 @@ public sealed class RecordingsArea : IShelfArea
         services.AddScoped<RecordingFinder>();
         services.AddScoped<ChordsRecordingsReader>();
         services.AddScoped<SongRecordingsService>();
-        services.AddJobHandler<SongRecordingsJob>(configuration, SongRecordingsJob.Kind);
+        services.AddFollowUpJobHandler<SongRecordingsJob>(configuration, SongRecordingsJob.Kind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

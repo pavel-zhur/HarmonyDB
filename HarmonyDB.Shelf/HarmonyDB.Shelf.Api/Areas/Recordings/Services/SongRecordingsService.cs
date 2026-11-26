@@ -220,7 +220,7 @@ public sealed class SongRecordingsJob(ShelfDbContext db, IndexClient index, Reco
         if (chords.Count == 0)
             return new(null);
 
-        var caller = new Caller { AccountId = run.AccountId, Keys = input.Keys };
+        var caller = new Caller { Subjects = await AccountSubjects.LoadAsync(db, run.AccountId, cancellationToken), Keys = input.Keys };
         var answers = (await index.Sources.GetHeaders(caller, chords.Select(x => x.SourceId).ToList(), cancellationToken)).Headers;
         var open = chords.Zip(answers).Where(x => x.Second.State == ItemState.Open).ToList();
         foreach (var (row, answer) in open)

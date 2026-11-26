@@ -87,7 +87,7 @@ before authorization. See
 - Joining a playlist is only by an invitation (`playlist_invitations`); a playlist of `link` access is only looked at
   by its link. `share_links` are for a song or chords; a link of chords may carry its sharer's custom keys
   (`carried_keys`), one per sharer and chords.
-- The source contract's models are stored (`analysis_contents`) and sent with `SourceV2Json.Options` only.
+- The source contract's models are read, kept and sent with `SourceV2Json.Options` only.
 - The model is changed only together with the orchestrator. A migration:
 
   ```
@@ -119,9 +119,8 @@ before authorization. See
 | `Clients:Illustrations:Endpoint`, `…:Key` | The illustrations service (`…/illustrations/api/`); not set: 503 `unavailable` |
 | `Clients:Pdfs:Endpoint`, `…:Key` | The PDF service (`…/pdfs/api/`); not set: 503 `unavailable` |
 | `Clients:Index:Endpoint`, `…:Key`, `…:Timeout` | The index (`…/index/api/`): the source contract's relay and the analysis tools, with the shelf's key; not set: 503 `unavailable` (the search marks its chords part failed) |
-| `Media:SigningKey`, `Media:AddressLifetime`, `Media:RateLimitPermits`, `Media:RateLimitWindow` | Media addresses: their signing key (32 random bytes, base64; not set: 503 `unavailable`), how long one works (15 minutes), how many new ones one client address may ask for (60 a minute) |
+| `Media:SigningKey`, `Media:AddressLifetime`, `Media:RateLimitPermits`, `Media:RateLimitWindow` | Media addresses: the key they are sealed with (32 random bytes, base64; not set: 503 `unavailable`), how long one works (15 minutes), how many new ones one client address may ask for (60 a minute) |
 | `App:ShowcasePlaylistId` | The playlist the public page shows as its showcase (`showcasePlaylistId` of the public configuration); not set: none. Not required to exist at start |
-| `Analyses:PublicUriTemplate` | An analysis's address on the public page, with `{id}` where its id goes: its items' "link to the source"; not set: none |
 | `PublicPage:Origin`, `…:DefaultImagePath`, `…:Keep` | The public page's address (the previews of its addresses and its sitemap are written for it; not set: none), its own picture (`/icon-512.png`), how long a preview not of a link is kept (5 minutes) |
 | `Illustrations:DailyImageLimit` | How many pictures a person may have drawn in a day (42) |
 | `Jobs:Concurrency`, `Jobs:Lease`, `Jobs:MaxAttempts`, `Jobs:Poll`, `Jobs:RecentTime`, `Jobs:ListLimit`, `Jobs:FileLifetime`, `Jobs:Retention` | The background jobs (`Common/Jobs/JobsOptions.cs`); each has a default |
@@ -132,7 +131,8 @@ The settings are checked at start; a wrong one stops the app with the reason.
 
 Sound and video are played from short-lived addresses (`/api/media/…`, with Range), asked for with
 `POST /api/media/tracks` (a music service's track) or `POST /api/media/chords` (the recording, separate instruments and
-notes file of an item of chords). Each answer gives the address(es) and their `expiresAt`: ask for new ones before then
+notes file of an item of chords; a file of the item is read from its source through the index, for the person the address
+was made for, and the address carries that sealed). Each answer gives the address(es) and their `expiresAt`: ask for new ones before then
 (a player that seeks later than that gets 410 `media_expired`; ask again and go on from the same place).
 
 ## Links and the public page

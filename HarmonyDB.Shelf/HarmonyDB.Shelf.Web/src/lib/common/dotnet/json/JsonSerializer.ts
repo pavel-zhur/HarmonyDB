@@ -13,7 +13,6 @@ import { DateTime } from '../DateTime';
 import { tryParseGuidD, type Guid } from '../Guid';
 import { parseSingle } from '../Numbers';
 import { isUpper, toLowerInvariantChar } from '../text';
-import { Uri, UriKind } from '../Uri';
 import { JsonElement, JsonValueKind, parseJson, type JsonNode } from './JsonNode';
 import { writeJsonDouble, writeJsonNode, writeJsonSingle, writeJsonString } from './JsonWriter';
 
@@ -143,13 +142,6 @@ export const jsonGuid: JsonContract<Guid> = valueType('System.Guid', n => n.kind
 
 /** Written as Utf8JsonWriter.WriteStringValue(DateTime) writes it: formatted directly, without escaping (a "+" stays). */
 export const jsonDateTime: JsonContract<DateTime> = valueType('System.DateTime', n => n.kind === JsonValueKind.String ? DateTime.parseJson(n.value) ?? undefined : undefined, v => `"${v.toJson()}"`);
-
-/**
- * System.Uri, as System.Text.Json's UriConverter: read with Uri.TryCreate(text, UriKind.RelativeOrAbsolute) (a string
- * it rejects is a JsonException), written as its OriginalString.
- */
-export const jsonUri: JsonContract<Uri> = referenceType('System.Uri', n => n.kind === JsonValueKind.String ? Uri.tryCreate(n.value, UriKind.RelativeOrAbsolute) ?? undefined : undefined,
-    v => writeJsonString(v.originalString));
 
 /** byte[]: base64. */
 export const jsonBytes: JsonContract<Uint8Array> = referenceType('System.Byte[]', n => {

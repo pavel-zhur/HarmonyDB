@@ -10,12 +10,19 @@ public sealed class JobsOptions
     public const string SectionName = "Jobs";
 
     /// <summary>
-    /// How many jobs one copy of the app runs at once.
+    /// How many of the people's jobs one copy of the app runs at once.
     /// </summary>
     public int Concurrency { get; set; } = 4;
 
     /// <summary>
-    /// How many jobs of one kind a person may have queued or running at once: one person does not fill the queue.
+    /// How many of the shelf's own follow-ups (<see cref="JobLane.FollowUp"/>) one copy of the app runs at once, beside
+    /// the people's jobs.
+    /// </summary>
+    public int FollowUpConcurrency { get; set; } = 1;
+
+    /// <summary>
+    /// How many jobs of one kind a person may have started and not yet ended: one person does not fill the queue. The
+    /// shelf's follow-ups are not the person's and do not count.
     /// </summary>
     public int MaxActivePerPerson { get; set; } = 3;
 
@@ -66,6 +73,8 @@ internal sealed class JobsOptionsValidator : IValidateOptions<JobsOptions>
 
         if (options.Concurrency < 1)
             failures.Add($"{section}:{nameof(JobsOptions.Concurrency)} is less than 1.");
+        if (options.FollowUpConcurrency < 1)
+            failures.Add($"{section}:{nameof(JobsOptions.FollowUpConcurrency)} is less than 1.");
         if (options.MaxActivePerPerson < 1)
             failures.Add($"{section}:{nameof(JobsOptions.MaxActivePerPerson)} is less than 1.");
         if (options.MaxAttempts < 1)

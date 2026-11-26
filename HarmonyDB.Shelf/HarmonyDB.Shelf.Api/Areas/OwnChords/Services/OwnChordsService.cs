@@ -21,9 +21,8 @@ using PlaylistModels = HarmonyDB.Shelf.Model.Playlists;
 namespace HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 
 /// <summary>
-/// A person's own chords, kept by the own chords' store with their versions. Those written here belong to the
-/// person's account; those written in the old shelf belong to its Telegram user, and are the person's here when their
-/// account has that Telegram sign-in. As chords (in playlists, on their page, marked …) they are the own chords'
+/// A person's own chords, kept by the own chords' store with their versions: the person's when one of the names they
+/// are known by (<see cref="HarmonyDB.Shelf.Database.AccountSubjects"/>) is their author. As chords (in playlists, on their page, marked …) they are the own chords'
 /// source's items: their id there is asked of the sources by their address, the shelf knows nothing of its form. New own
 /// chords go to the person's playlist of own chords, and, if asked, become a variant of a song or new songs elsewhere.
 /// </summary>
@@ -79,7 +78,7 @@ public sealed class OwnChordsService(
         foreach (var playlistId in (request.AlsoInPlaylists ?? []).Distinct())
             (await gate.ForChangeAsync(me, playlistId, cancellationToken)).RequireAdd();
 
-        var stored = await store.InsertAsync(me, ToStored(text), cancellationToken);
+        var stored = await store.InsertAsync(await AuthorAsync(me, cancellationToken), ToStored(text), cancellationToken);
         var placing = new Placing(stored.Uri, callers.For(user).Keys, text.Title, text.Artists, request.PlaylistId, request.SongId, request.AlsoInPlaylists ?? []);
         var chordsId = (await ChordsIdsAsync(callers.For(user), [stored.Uri], cancellationToken)).Single();
         if (chordsId == null)
@@ -139,7 +138,7 @@ public sealed class OwnChordsService(
         IReadOnlyList<Guid> AlsoInPlaylists);
 
     /// <summary>
-    /// A new version.
+    /// A new version, of own chords written here (<see cref="OwnChordsItem.Editable"/>).
     /// </summary>
     public async Task<OwnChordsDetails> UpdateAsync(ClaimsPrincipal user, Guid id, UpdateOwnChordsRequest request, CancellationToken cancellationToken)
     {
@@ -150,18 +149,21 @@ public sealed class OwnChordsService(
     }
 
     /// <summary>
-    /// Deletes them; they leave the person's playlist of own chords. Elsewhere they stay as chords no longer open.
+    /// Deletes own chords written here; they leave the person's playlist of own chords. Elsewhere they stay as chords no
+    /// longer open.
     /// </summary>
     public async Task DeleteAsync(ClaimsPrincipal user, Guid id, CancellationToken cancellationToken)
     {
         var author = await AuthorAsync(user, cancellationToken);
         var stored = await store.GetAsync(author, id, cancellationToken) ?? throw ShelfException.NotFound(OwnChordsErrorCodes.NoSuchOwnChords);
+        if (!stored.Editable)
+            throw ShelfException.Conflict(OwnChordsErrorCodes.NotEditable);
         var chordsId = (await ChordsIdsAsync(callers.For(user), [stored.Uri], cancellationToken)).Single()
                        ?? throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
         if (!await store.DeleteAsync(author, id, cancellationToken))
             throw ShelfException.NotFound(OwnChordsErrorCodes.NoSuchOwnChords);
 
-        var me = author.AccountId;
+        var me = user.GetAccountId()!.Value;
         var variants = await db.PlaylistSongItems
             .Where(x => x.Chords!.SourceId == chordsId
                         && x.Song.Playlist.OwnerId == me
@@ -192,7 +194,7 @@ public sealed class OwnChordsService(
     /// </summary>
     public async Task<OwnChordsText> DraftAsync(ClaimsPrincipal user, string chordsId, CancellationToken cancellationToken)
     {
-        var response = await index.Sources.GetContent(callers.For(user), chordsId, [ContentKind.Sheet], cancellationToken);
+        var response = await index.Sources.GetContent(callers.For(user), chordsId, [ContentKind.Sheet], null, cancellationToken);
         switch (response.State)
         {
             case ItemState.NotOpen:
@@ -215,19 +217,13 @@ public sealed class OwnChordsService(
     }
 
     /// <summary>
-    /// The person as an author of own chords: their account and the Telegram users their Telegram sign-ins are.
+    /// The person as an author of own chords: the names they are known by.
     /// </summary>
     private Task<OwnChordsAuthor> AuthorAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
         => AuthorAsync(user.GetAccountId()!.Value, cancellationToken);
 
     private async Task<OwnChordsAuthor> AuthorAsync(Guid accountId, CancellationToken cancellationToken)
-    {
-        var subjects = await db.AccountLogins.Where(x => x.AccountId == accountId && x.Provider == TelegramProvider)
-            .Select(x => x.Subject).ToListAsync(cancellationToken);
-        return new(accountId, subjects.Select(x => long.Parse(x, CultureInfo.InvariantCulture)).ToList());
-    }
-
-    private const string TelegramProvider = "telegram";
+        => new(await AccountSubjects.LoadAsync(db, accountId, cancellationToken));
 
     /// <summary>
     /// The chords' ids of own chords by their addresses, asked of the sources as the person: null for one whose source
@@ -264,7 +260,8 @@ public sealed class OwnChordsService(
         Version = stored.VersionNumber,
         CreatedAt = stored.CreatedOn,
         UpdatedAt = stored.UpdatedOn,
-        FromOldShelf = stored.AuthorTelegramUserId != null,
+
+        Editable = stored.Editable,
     };
 
     private static PlaylistModels.AddSongRequest NewSong(string chordsId, (string Title, IReadOnlyList<string> Artists) text) => new()

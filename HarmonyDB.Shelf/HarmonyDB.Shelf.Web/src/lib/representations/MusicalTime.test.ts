@@ -1,6 +1,5 @@
 // Musical time in the sheet (bars, places, the metre of a bar), as HarmonyDB.Common.Representations.OneShelf.Tests/
-// MusicalTimeTests.cs checks it on the .NET side: the same cases, the same expectations — but for the mark's inline
-// style, which the port leaves out (NodeMark.ts), taken out of the .NET expectation where it appears.
+// MusicalTimeTests.cs checks it on the .NET side: the same cases, the same expectations.
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,8 +23,6 @@ const chord = (text: string, place: SheetPlace | null = null, time: number | nul
 const sheet = (sheetTimes: SheetTimes | null, ...nodes: NodeBase[]) => new NodeHtml({ name: 'pre', times: sheetTimes, children: nodes.map(x => x.asChild()) });
 
 const settings = (transpose = 0) => new RepresentationSettings({ transpose });
-
-const dotnet = (expected: string) => expected.replace(' style=\'white-space: nowrap\'', '');
 
 describe('Musical time', () => {
     const moments: [number, number, string | null, number][] = [
@@ -112,7 +109,7 @@ describe('Musical time', () => {
             new NodeText('world', 7.4));
 
         const html = value.asHtml(settings());
-        assert.ok(html.includes(dotnet('<span class=\'sheet-mark\' style=\'white-space: nowrap\' data-time=\'1\'>')));
+        assert.ok(html.includes('<span class=\'sheet-mark\' style=\'white-space: nowrap\' data-time=\'1\'>'));
         assert.ok(html.includes('chord-data=\'[!0!]m\' data-time=\'1\'>'));
         assert.ok(html.includes('data-time=\'7.5\'>E'));
         assert.ok(html.includes('<span data-time=\'1.1\'>hello </span>'));

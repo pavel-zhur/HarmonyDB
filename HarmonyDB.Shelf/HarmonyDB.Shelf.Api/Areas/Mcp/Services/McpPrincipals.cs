@@ -45,7 +45,7 @@ public sealed class McpPrincipals(ShelfDbContext db, PermissionCatalog permissio
             .Where(x => grantIds.Contains(x.Id) && x.Account.DeletedAt == null)
             .Select(x => new { x.Id, x.ClientId, x.AccountId, x.Permissions, x.LastUsedAt, Given = x.Account.Permissions.Select(p => p.Permission).ToList() })
             .SingleOrDefaultAsync(cancellationToken);
-        return grant == null ? null : new(Create(grant.AccountId, grant.Given, grant.Permissions, $"grant:{grant.Id}"), grant.Id, grant.ClientId, null, grant.LastUsedAt);
+        return grant == null ? null : new(await CreateAsync(grant.AccountId, grant.Given, grant.Permissions, $"grant:{grant.Id}", cancellationToken), grant.Id, grant.ClientId, null, grant.LastUsedAt);
     }
 
     public async Task<Found?> ByKeyAsync(IQueryable<Guid> keyIds, CancellationToken cancellationToken)
@@ -54,7 +54,7 @@ public sealed class McpPrincipals(ShelfDbContext db, PermissionCatalog permissio
             .Where(x => keyIds.Contains(x.Id) && x.Account.DeletedAt == null)
             .Select(x => new { x.Id, x.AccountId, x.Permissions, x.LastUsedAt, Given = x.Account.Permissions.Select(p => p.Permission).ToList() })
             .SingleOrDefaultAsync(cancellationToken);
-        return key == null ? null : new(Create(key.AccountId, key.Given, key.Permissions, $"key:{key.Id}"), null, null, key.Id, key.LastUsedAt);
+        return key == null ? null : new(await CreateAsync(key.AccountId, key.Given, key.Permissions, $"key:{key.Id}", cancellationToken), null, null, key.Id, key.LastUsedAt);
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public sealed class McpPrincipals(ShelfDbContext db, PermissionCatalog permissio
         await db.OAuthClients.Where(x => x.ClientId == found.ClientId).ExecuteUpdateAsync(x => x.SetProperty(c => c.LastUsedAt, now), cancellationToken);
     }
 
-    private ClaimsPrincipal Create(Guid accountId, IReadOnlyList<string> given, IReadOnlyList<string> allowed, string client)
+    private async Task<ClaimsPrincipal> CreateAsync(Guid accountId, IReadOnlyList<string> given, IReadOnlyList<string> allowed, string client, CancellationToken cancellationToken)
     {
-        var identity = ShelfIdentity.Create(SchemeName, accountId, given, McpPermissions.AllowedToClient(allowed, permissions));
+        var identity = ShelfIdentity.Create(SchemeName, accountId, await AccountSubjects.LoadAsync(db, accountId, cancellationToken), given, McpPermissions.AllowedToClient(allowed, permissions));
         identity.AddClaim(new(ClientClaimType, client));
         return new(identity);
     }

@@ -4,7 +4,7 @@
               subject '' is the shared answer, for every caller; a personal answer is kept under
               the subject the caller gave, and given back to that subject only. A purge of a
               subject is remembered, so that an answer asked before it is not kept after it.
-  * blobs   - files: sound, video, pictures, and files others keep here. A blob's content is one
+  * blobs   - files: sound, video and pictures. A blob's content is one
               version, kept in chunks of 1 MiB, so that a part of a file (an HTTP Range) is read
               without reading the whole of it. A new content is written as a new version and takes
               the old one's place only when it is whole; the version is the file's validator (ETag).
@@ -165,22 +165,6 @@ async def write_blob(blob_id: str, mime: str, info: dict, pieces: AsyncIterator[
         await pool.execute("delete from blob_versions where version=$1", version)
         raise
     return await blob(blob_id)
-
-
-async def delete_blob(blob_id: str) -> bool:
-    """Forgets a kept file. Answers whether there was one."""
-    async with pool.acquire() as conn, conn.transaction():
-        version = await conn.fetchval("delete from blobs where id=$1 returning version", blob_id)
-        if version is None:
-            return False
-        await conn.execute("delete from blob_versions where version=$1", version)
-    return True
-
-
-async def set_sha256(version: uuid.UUID, sha256: str) -> None:
-    """Notes the SHA-256 of a version kept before versions noted theirs."""
-    await pool.execute("update blob_versions set info = info || jsonb_build_object('sha256', $2::text) where version=$1",
-                       version, sha256)
 
 
 async def read_blob(version: uuid.UUID, start: int, end: int) -> AsyncIterator[bytes]:

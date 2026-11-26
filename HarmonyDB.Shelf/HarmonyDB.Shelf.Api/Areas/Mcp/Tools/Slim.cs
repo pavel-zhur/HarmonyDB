@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
+using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Model.Chords;
 using HarmonyDB.Shelf.Model.Music;
 using HarmonyDB.Shelf.Model.Playlists;
@@ -65,13 +68,22 @@ public static class Slim
         invitations = x.Invitations.Where(i => i.RevokedAt == null).Take(10).Select(i => new { i.Token, i.Role, i.ExpiresAt, i.Uses, i.MaxUses }).ToList(),
     };
 
-    public static object Song(SongRow x) => new
+    /// <summary>
+    /// A page of songs, each with the chords of the person's main variant (of chords alone: those chords).
+    /// </summary>
+    public static async Task<Page<object>> SongsAsync(ClaimsPrincipal user, Views views, SongList list, CancellationToken cancellationToken)
+    {
+        var main = await views.MainChordsAsync(user.GetAccountId(), list.Rows.Where(x => x.SongId != null).Select(x => x.SongId!.Value).ToList(), cancellationToken);
+        return new(list.Total, list.Offset, list.Rows.Select(x => Song(x, x.SongId is { } song ? main.GetValueOrDefault(song) : x.Chords?.Id)).ToList());
+    }
+
+    public static object Song(SongRow x, string? chordsId) => new
     {
         songId = x.SongId,
         playlistId = x.PlaylistId,
         x.Title,
         artists = string.Join(", ", x.Artists),
-        chordsId = x.Chords?.Id,
+        chordsId,
         myMarks = x.MyMarks.Count > 0 ? x.MyMarks : null,
         othersMarked = x.OtherPeople > 0 ? x.OtherPeople : (int?)null,
         variants = x.ChordsCount,

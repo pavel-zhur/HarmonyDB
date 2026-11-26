@@ -53,7 +53,7 @@ public sealed class ShareAccessTests(LibraryFixture fixture) : IClassFixture<Lib
         // read by Ann's keys alone, never as her account
         var caller = fixture.Index.Callers("V2GetContent").Last();
         Assert.Equal([LibraryFixture.Key], caller.GetProperty("keys").EnumerateArray().Select(x => x.GetString()));
-        Assert.True(!caller.TryGetProperty("accountId", out var account) || account.ValueKind == System.Text.Json.JsonValueKind.Null);
+        Assert.Equal(0, caller.GetProperty("subjects").GetArrayLength());
 
         // the ordinary link still opens nothing to the guest
         Assert.Equal(ChordsState.NotOpen, (await Ok<ChordsContentResponse>(guest, HttpMethod.Get, $"/api/share/{ordinary.Token}/chords")).State);

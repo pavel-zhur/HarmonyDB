@@ -49,6 +49,10 @@
 .row .oth i { font-style: normal; color: var(--muted); font-size: 11px; margin-left: 2px; }
 .sec { margin: 22px 0 4px; padding: 0 8px; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .sec svg.ic { width: 15px; height: 15px; }
+/* the sources the chords are looked for in, quiet under their section's label */
+.srcribbon { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0 8px 6px; font-size: 12px; color: var(--muted); }
+.srcribbon > span { display: inline-flex; align-items: center; gap: 5px; }
+.srcribbon .slogo { width: 14px; height: 14px; border-radius: 3px; }
 .more-rows { display: flex; justify-content: center; padding: 14px 0 0; }
 
 /* playlists: one row each, the "in my library" switch on the right */

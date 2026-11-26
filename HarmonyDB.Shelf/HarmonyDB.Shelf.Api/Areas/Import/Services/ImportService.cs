@@ -64,7 +64,7 @@ public sealed class ImportJob(ShelfDbContext db, IndexClient index, SystemPlayli
     public async Task<JobCompletion> RunAsync(JobRun run, CancellationToken cancellationToken)
     {
         var input = run.Input<ImportService.ImportInput>();
-        var caller = new Caller { AccountId = run.AccountId, Keys = input.Keys };
+        var caller = new Caller { Subjects = await AccountSubjects.LoadAsync(db, run.AccountId, cancellationToken), Keys = input.Keys };
 
         var states = new Dictionary<string, (ImportLinkState State, string? ChordsId)>(StringComparer.Ordinal);
         var uris = new List<(string Link, Uri Uri)>();

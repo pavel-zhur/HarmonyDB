@@ -12,6 +12,12 @@ public record Header
 
     public required SourceLabel Source { get; init; }
 
+    /// <summary>
+    /// The item's address at its source (its page), when it is given to this caller. A source may open the item to
+    /// whoever holds it (<see cref="Api.GetContentRequest.Address"/>).
+    /// </summary>
+    public Uri? Address { get; init; }
+
     public string? Title { get; init; }
 
     public required IReadOnlyList<string> Artists { get; init; }
@@ -32,6 +38,12 @@ public record Header
     public required IReadOnlyList<ContentKind> Kinds { get; init; }
 
     public required HeaderAttributes Attributes { get; init; }
+
+    /// <summary>
+    /// The recording the item was made from, when it was made from a track of a music service: a fact about the item,
+    /// stated by its source.
+    /// </summary>
+    public Contents.MusicServiceTrack? MadeFrom { get; init; }
 
     /// <summary>
     /// Whether the item may be shown on public pages.

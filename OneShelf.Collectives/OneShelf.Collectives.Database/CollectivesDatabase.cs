@@ -15,26 +15,25 @@ public class CollectivesDatabase(DbContextOptions<CollectivesDatabase> options) 
     public required DbSet<Collective> Collectives { get; set; }
 
     /// <summary>
-    /// The own chords of the new shelf's accounts.
+    /// The own chords authored by an opaque name of a person.
     /// </summary>
-    public required DbSet<AccountCollective> AccountCollectives { get; set; }
+    public required DbSet<AuthoredCollective> AuthoredCollectives { get; set; }
 
-    public async Task<List<AccountCollective>> GetAccountCollectives(Guid accountId)
-        => await AccountCollectives.AsNoTracking().Where(x => x.AccountId == accountId).ToListAsync();
+    public async Task<List<AuthoredCollective>> GetAuthoredCollectives(IReadOnlyCollection<string> authors)
+        => await AuthoredCollectives.AsNoTracking().Where(x => authors.Contains(x.Author)).ToListAsync();
 
     /// <param name="ids">The ids to read; null for all.</param>
-    public async Task<List<AccountCollective>> GetAccountCollectives(IReadOnlyCollection<Guid>? ids)
-        => await (ids == null ? AccountCollectives.AsNoTracking() : AccountCollectives.AsNoTracking().Where(x => ids.Contains(x.Id))).ToListAsync();
+    public async Task<List<AuthoredCollective>> GetAuthoredCollectives(IReadOnlyCollection<Guid>? ids)
+        => await (ids == null ? AuthoredCollectives.AsNoTracking() : AuthoredCollectives.AsNoTracking().Where(x => ids.Contains(x.Id))).ToListAsync();
 
-    public async Task<AccountCollective?> GetAccountCollective(Guid id)
-        => await AccountCollectives.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
+    public async Task<AuthoredCollective?> GetAuthoredCollective(Guid id)
+        => await AuthoredCollectives.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
 
-    /// <returns>How many were moved.</returns>
-    public async Task<int> MoveAccountCollectives(Guid fromAccountId, Guid toAccountId)
-        => await AccountCollectives.Where(x => x.AccountId == fromAccountId)
-            .ExecuteUpdateAsync(x => x.SetProperty(c => c.AccountId, toAccountId));
+    /// <returns>How many were removed.</returns>
+    public async Task<int> RemoveAuthoredCollectives(IReadOnlyCollection<Guid> ids)
+        => await AuthoredCollectives.Where(x => ids.Contains(x.Id)).ExecuteDeleteAsync();
 
-    public async Task UpsertAccountCollective(AccountCollective collective)
+    public async Task UpsertAuthoredCollective(AuthoredCollective collective)
     {
         Validator.ValidateObject(collective, new(collective));
         await this.UpsertAsync(collective);
@@ -72,11 +71,11 @@ public class CollectivesDatabase(DbContextOptions<CollectivesDatabase> options) 
             x.HasIndex(x => x.LatestVisibility);
         });
 
-        modelBuilder.Entity<AccountCollective>(x =>
+        modelBuilder.Entity<AuthoredCollective>(x =>
         {
             x.Property(x => x.Id).ValueGeneratedNever();
             x.Property(x => x.Versions).HasJsonbConversion();
-            x.HasIndex(x => x.AccountId);
+            x.HasIndex(x => x.Author);
             x.HasIndex(x => x.LatestVisibility);
         });
 

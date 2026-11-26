@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, api, call, type Schemas } from '../api/client';
 import { errorText } from '../api/errors';
 import { isAnalysis } from '../data/analysis';
+import { addressOf, cameBy } from '../data/address';
 import { RepresentationSettings, SimplificationMode } from '../lib/representations';
 import { sheetFromApi } from '../chords/sheet';
 import { ChordSheet } from '../chords/ChordSheet';
@@ -32,7 +33,10 @@ type SongPage = Schemas['SongPage'];
 
 export function ChordsPage() {
     const { chordsId } = useParams() as { chordsId: string };
-    return <Chords chordsId={chordsId} inApp={`/chords/${encodeURIComponent(chordsId)}`} />;
+    // this page is the item's own link: its address is passed on (data/address.ts), to the app too
+    const address = location.origin + location.pathname + location.search;
+    cameBy(chordsId, address);
+    return <Chords chordsId={chordsId} inApp={`/chords/${encodeURIComponent(chordsId)}?address=${encodeURIComponent(address)}`} />;
 }
 
 export function ShowcaseSongPage() {
@@ -110,7 +114,7 @@ function Chords({ chordsId, share, inApp, title, artists }: { chordsId: string; 
         queryKey: ['chords', chordsId, share ?? null],
         queryFn: () => (share
             ? call(api.GET('/api/share/{token}/chords', { params: { path: { token: share }, query: { kinds: 'sheet' } } }))
-            : call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId }, query: { kinds: 'sheet' } } }))),
+            : call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId }, query: { kinds: 'sheet', address: addressOf(chordsId) } } }))),
         staleTime: 5 * 60_000,
     });
     const header = content.data?.header;

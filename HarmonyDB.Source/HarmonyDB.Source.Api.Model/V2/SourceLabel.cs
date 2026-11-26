@@ -1,8 +1,9 @@
 namespace HarmonyDB.Source.Api.Model.V2;
 
 /// <summary>
-/// Where an item comes from, exactly as the source gives it for this caller. It may differ between callers, so it is
-/// never kept as a fact about the item.
+/// A source as it is shown to this caller: of an item (where it comes from), or in the list of the sources the caller
+/// may see (<see cref="SourceV2Urls.V2GetSources"/>). It says nothing of one item, and may differ between callers, so it
+/// is never kept as a fact about an item.
 /// </summary>
 public record SourceLabel
 {
@@ -15,11 +16,6 @@ public record SourceLabel
     /// The name to show.
     /// </summary>
     public required string Title { get; init; }
-
-    /// <summary>
-    /// The address of this item at the source, when it is given to this caller.
-    /// </summary>
-    public Uri? Uri { get; init; }
 
     /// <summary>
     /// An opaque name of the source's picture, fetched by <see cref="SourceV2Urls.V2GetIcon"/>.

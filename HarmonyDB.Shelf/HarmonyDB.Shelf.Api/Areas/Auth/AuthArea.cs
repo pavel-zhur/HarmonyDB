@@ -120,28 +120,6 @@ public sealed class AuthArea : IShelfArea
             .WithMetadata(new RequireCsrfAttribute())
             .AllowGuests()
             .WithName("SignOut");
-
-        // Internal: the identities of an account at a provider (for a service whose own records name people by them).
-        endpoints.MapGet("/internal/accounts/{accountId:guid}/logins/{provider}", GetLoginSubjects)
-            .RequireInternalScope(AccountsScope)
-            .WithTags("Internal")
-            .WithName("GetAccountLoginSubjects");
-    }
-
-    /// <summary>
-    /// The internal scope of reading accounts' sign-ins.
-    /// </summary>
-    public const string AccountsScope = "shelf.accounts";
-
-    private static async Task<Results<Ok<AccountLoginSubjects>, NotFound>> GetLoginSubjects(
-        Guid accountId, string provider, ShelfDbContext db, CancellationToken cancellationToken)
-    {
-        if (!await db.Accounts.AnyAsync(x => x.Id == accountId, cancellationToken))
-            return TypedResults.NotFound();
-
-        var subjects = await db.AccountLogins.Where(x => x.AccountId == accountId && x.Provider == provider)
-            .OrderBy(x => x.CreatedAt).Select(x => x.Subject).ToListAsync(cancellationToken);
-        return TypedResults.Ok(new AccountLoginSubjects { Subjects = subjects });
     }
 
     private static Ok<CurrentSession> GetSession(ClaimsPrincipal user, PermissionCatalog permissions)

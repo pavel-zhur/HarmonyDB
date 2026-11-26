@@ -1,5 +1,5 @@
-// The pieces of the music pages: a track's line (its cover, title, artists and album, whether it is in my playlists and
-// whether it has an analysis, its length), tiles of artists, albums, playlists, genres and moods, the way back, and the
+// The pieces of the music pages: a track's line (its cover, title, artists and album, whether it is in my playlists,
+// whether the shelf made an analysis of it, its length), tiles of artists, albums, playlists, genres and moods, the way back, and the
 // addresses of the pages.
 
 import type { ReactNode } from 'react';
@@ -96,7 +96,7 @@ export function TrackRow({ track, n }: { track: MusicTrack; n?: number }) {
                 {sub && <span>{sub}</span>}
             </span>
             {track.inMyPlaylists && <span className="tin" title={t('music.inMyPlaylists')} aria-label={t('music.inMyPlaylists')}><Icon name="pls" /></span>}
-            {track.hasAnalysis && <span className="tin" title={t('music.hasAnalysis')} aria-label={t('music.hasAnalysis')}><Icon name="ai" /></span>}
+            {track.madeInto && <span className="tin" title={t('music.analysed')} aria-label={t('music.analysed')}><Icon name="ai" /></span>}
             {track.isVideo && <span className="tin q" title={t('music.video')} aria-label={t('music.video')}><Icon name="yt" /></span>}
             {track.durationMs ? <span className="d">{clock(track.durationMs / 1000)}</span> : null}
         </Link>
