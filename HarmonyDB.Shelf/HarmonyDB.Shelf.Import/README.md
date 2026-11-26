@@ -8,9 +8,9 @@ again at the deploy).
 On the local stack, as the compose service `shelf-import` (profile `import`, never started by `up`):
 
 ```
-docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --build --no-deps shelf-import dry-run
-docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --no-deps shelf-import run
-docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --no-deps shelf-import audit
+docker compose -f docker/docker-compose.yml --profile import run --rm --build --no-deps shelf-import dry-run
+docker compose -f docker/docker-compose.yml --profile import run --rm --no-deps shelf-import run
+docker compose -f docker/docker-compose.yml --profile import run --rm --no-deps shelf-import audit
 ```
 
 - `dry-run` (the default): does everything in a transaction and rolls it back; the report says what would be done.
@@ -20,7 +20,7 @@ docker compose -f docker/wave2/docker-compose.yml --profile import run --rm --no
   with 1 when something differs.
 - `second-pass`: **it reaches outside the stand. Run it
   only on the owner's word, at the pace he sets; never as a part of testing or "once more".** It is started by hand:
-  `docker compose -f docker/wave2/docker-compose.yml --profile import run -d --no-deps --name shelf-import-second-pass shelf-import second-pass`.
+  `docker compose -f docker/docker-compose.yml --profile import run -d --no-deps --name shelf-import-second-pass shelf-import second-pass`.
   For the addresses the relay did not resolve from what is stored, it asks again one address at a time,
   with a pause between (`Relay:SecondPassPause`), with the keys under which a source may go out for an address it
   does not have (`Relay:SecondPassCallerKeys`). Every answer is kept at once: it stops cleanly (Ctrl+C, `docker stop`)
@@ -44,9 +44,9 @@ not resolve it) are taken by a later run.
 | `Relay:CallerKeys` | The keys the import calls with: those under which every stored item is open and nothing is fetched from outside |
 | `Relay:SecondPassCallerKeys`, `Relay:SecondPassPause`, `Relay:SecondPassSiteFailures` | The second pass: its keys, the pause between two addresses (`00:00:20`), and after how many failures in a row a site is left alone |
 | `Illustrations:Endpoint`, `Illustrations:Key` | The illustrations service and the import's internal key there (scope `illustrations.aliases`) |
-| `Import:*` | Who is who in the old data — see `ImportOptions` and `docker/wave2/import.example.json` |
+| `Import:*` | Who is who in the old data — see `ImportOptions` and `docker/import.example.json` |
 
-On the local stack the `Import` and `Relay:CallerKeys` settings are in the git-ignored `docker/wave2/import.json`.
+On the local stack the `Import` and `Relay:CallerKeys` settings are in the git-ignored `docker/import.json`.
 
 ## What becomes what
 

@@ -41,11 +41,12 @@ docker/               the image: the build, served by nginx (security headers, C
 
 ## Running it and looking
 
-On the stand (compose project `harmonydb-wave2`, file `docker/wave2/docker-compose.yml`), the app is the service
-`shelf-web` at **http://localhost:14100** (its API too: the backend's cookies are for that origin):
+On the stand (the repository's `docker/docker-compose.yml`, its project name and ports from `docker/.env`; see
+`HarmonyDB.Shelf/README.md`, "Running"), the app is the service `shelf-web` at **http://localhost:14100** (its API too:
+the backend's cookies are for that origin). From the repository's root:
 
 ```
-docker compose -f docker/wave2/docker-compose.yml up -d --build --no-deps shelf-web
+docker compose -f docker/docker-compose.yml up -d --build --no-deps shelf-web
 ```
 
 While working, the dev server with hot reload, the API through the stand:
@@ -226,5 +227,5 @@ do is the API's to decide; tested when the image is built, `docker/public-web.te
   invites). Read in `src/public/site.ts`.
 
 ```
-docker compose -f docker/wave2/docker-compose.yml up -d --build --no-deps public-web
+docker compose -f docker/docker-compose.yml up -d --build --no-deps public-web
 ```

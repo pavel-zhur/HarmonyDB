@@ -28,7 +28,7 @@ export default defineConfig({
         },
     },
     server: {
-        // `npm run dev`: the stand's web server (docker/wave2, shelf-web) answers the server's addresses
+        // `npm run dev`: the stand's web server (docker/docker-compose.yml, shelf-web) answers the server's addresses
         proxy: {
             '/api': 'http://localhost:14100',
             '/mcp': 'http://localhost:14100',

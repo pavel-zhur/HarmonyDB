@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-# The .NET 8 applications of this repository: the API (all the services, see OneShelf.Api), the web sites, the poller.
+# The .NET 8 applications of this repository: the API (all the services, see OneShelf.Api), the new shelf's API and its
+# import, the web sites, the poller.
 # Build context: the repository root.
 #   --target app --build-arg PROJECT=<project name>   an ASP.NET or worker app
 #   --target transfer                                 the tool that fills PostgreSQL from SQL Server
@@ -14,6 +15,8 @@ RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
     for project in \
         HarmonyDB.Index/HarmonyDB.Index.LongBalancer \
         HarmonyDB.Playground/HarmonyDB.Playground.Web \
+        HarmonyDB.Shelf/HarmonyDB.Shelf.Api \
+        HarmonyDB.Shelf/HarmonyDB.Shelf.Import \
         OneShelf.Admin/OneShelf.Admin.Web \
         OneShelf.Api/OneShelf.Api \
         OneShelf.Telegram/OneShelf.Telegram.Polling \

@@ -12,7 +12,7 @@ The backend of the new shelf: a chord library of people and playlists.
 | `HarmonyDB.Shelf.Tests` | Tests (xUnit) |
 | `../HarmonyDB.Common/HarmonyDB.Common.ServiceAuth` | Internal clients with keys and scopes, for any ASP.NET Core service |
 | `../HarmonyDB.Source/HarmonyDB.Source.Api.Model/V2` | The source contract, version 2 |
-| `../docker/wave2` | The compose project `harmonydb-wave2` |
+| `../docker` | The services, the shelf among them (`docker-compose.yml`) |
 
 Inside `HarmonyDB.Shelf.Api`:
 
@@ -223,22 +223,22 @@ Several developers work in this one working tree at once. Build and test in Dock
 nobody's `bin`/`obj` collide with another's, and copy back only what a tool generated (a migration, `openapi.json`):
 
 ```
-docker run --rm -v "<the tree>:/src" -v harmonydb-wave2-nuget:/root/.nuget/packages mcr.microsoft.com/dotnet/sdk:8.0 bash -c '
+docker run --rm -v "<the tree>:/src" -v harmonydb-nuget:/root/.nuget/packages mcr.microsoft.com/dotnet/sdk:8.0 bash -c '
   mkdir /work && cd /src && tar --exclude=./.git --exclude="*/bin" --exclude="*/obj" --exclude="*/node_modules" -cf - . | tar -xf - -C /work
   cd /work && dotnet test HarmonyDB.Shelf/HarmonyDB.Shelf.Tests'
 ```
 
 ## Running
 
-The compose project runs beside the shared stack and uses its PostgreSQL:
+The shelf runs with the other services from `docker/docker-compose.yml`, on their one PostgreSQL. Its database and the music service's, each with
+its own role, are made once by hand with `OneShelf.Common/OneShelf.Common.Database/CreateServiceDatabase.sql`
+(`name=shelf`, `name=audio`); `shelf-api` then starts and migrates.
 
 ```
-cp docker/wave2/.env.example docker/wave2/.env    # and fill it in
-docker compose -f docker/wave2/docker-compose.yml up -d --build
+cp docker/.env.example docker/.env    # and fill it in
+docker compose -f docker/docker-compose.yml up -d --build shelf-api shelf-web public-web audio-api
 curl localhost:14101/api/app/health
 ```
-
-`db-init` creates the databases `shelf` and `audio` with their roles; `shelf-api` then starts and migrates.
 
 ## Testing
 

@@ -1,9 +1,14 @@
-# The services of this repository on one PostgreSQL. The project name, the ports, secrets and local choices come from
-# .env (see .env.example); settings that are not secret are here.
+# The services of this repository on one PostgreSQL: the old shelf (its site, its public page, its bots) and the new
+# shelf (HarmonyDB.Shelf: its API, its app, its public page, the music service), on the same API and data. The project
+# name, the ports, secrets and local choices come from .env (see .env.example); settings that are not secret are here.
 #
 # The API (OneShelf.Api) runs all the services, each a module under its own path base: http://api/<module>/api/...
 # A module's settings are the API's settings with the section named after the module laid over them, so a setting
 # Index__X is the setting X of the Index alone, and a setting X without a section is every module's.
+#
+# The databases and roles are made once, by hand, before the first start: each old service's role and schema in the
+# one database (OneShelf.Common/OneShelf.Common.Database/CreateServiceRole.sql), and the new shelf's and the music
+# service's own databases (CreateServiceDatabase.sql beside it).
 
 x-app-build: &app-build
   context: ..
@@ -73,21 +78,30 @@ services:
       # (the songs database only)
 
       # ---------- Analyses: the analyses as a source ----------
-      # its label, its items' address (the public page, with {id} where the id goes),
-      # its folder of files, and the client that puts analyses in
+      # its label and picture, its items' address (the public page, with {id} where the id goes), and its folder of files
       Analyses__AnalysesOptions__SourceKey: ${ANALYSES_SOURCE_KEY:?}
       Analyses__AnalysesOptions__SourceTitle: ${ANALYSES_SOURCE_TITLE:?}
+      Analyses__AnalysesOptions__IconName: ha-icon
+      Analyses__AnalysesOptions__IconFile: /app/config/analyses-icon.svg
       Analyses__AnalysesOptions__PublicUriTemplate: ${ANALYSES_PUBLIC_URI_TEMPLATE:?}
       Analyses__AnalysesOptions__FilesFolder: /analyses-files
-      Analyses__InternalClients__0__Name: analyses
-      Analyses__InternalClients__0__Key: ${ANALYSES_WRITE_KEY:?}
-      Analyses__InternalClients__0__Scopes__0: analyses.write
+      # the index reads it as a source; the client "analyses" puts analyses in
+      Analyses__InternalClients__0__Name: index
+      Analyses__InternalClients__0__Key: ${ANALYSES_INDEX_KEY:?}
+      Analyses__InternalClients__0__Scopes__0: source
+      Analyses__InternalClients__1__Name: analyses
+      Analyses__InternalClients__1__Key: ${ANALYSES_WRITE_KEY:?}
+      Analyses__InternalClients__1__Scopes__0: analyses.write
 
       # ---------- Collectives (the songs people add themselves) ----------
       Collectives__CollectivesOptions__UrlTemplate: ${COLLECTIVES_URL_TEMPLATE}
       Collectives__CollectivesOptions__UrlIdPattern: ${COLLECTIVES_URL_ID_PATTERN}
       Collectives__AuthorizationApiClientOptions__CheckIdentityEndpoint: &check-identity http://api/authorization/api/CheckIdentity?code=${FUNCTIONS_KEY}
       Collectives__AuthorizationApiClientOptions__PingEndpoint: &authorization-ping http://api/authorization/api/Ping
+      # the new shelf writes and reads its people's own chords here
+      Collectives__InternalClients__0__Name: shelf
+      Collectives__InternalClients__0__Key: ${COLLECTIVES_SHELF_KEY}
+      Collectives__InternalClients__0__Scopes__0: collectives
 
       # ---------- SourcesSelf: the source of the songs people add themselves ----------
       # the address of own chords the source contract, version 2, gives (their public page), with {id}, {code}, {version}
@@ -101,6 +115,14 @@ services:
       SourcesSelf__AuthorizationApiClientOptions__PingEndpoint: *authorization-ping
       # the Index asks this source as the service when it shows a public link
       SourcesSelf__AuthorizationApiClientOptions__ServiceCode: ${SERVICE_CODE}
+      # the index calls the source contract, version 2, here
+      SourcesSelf__InternalClients__0__Name: index
+      SourcesSelf__InternalClients__0__Key: ${SELF_INDEX_KEY}
+      SourcesSelf__InternalClients__0__Scopes__0: source
+      # the new shelf's editor of own chords sees here how a text will look
+      SourcesSelf__InternalClients__1__Name: shelf
+      SourcesSelf__InternalClients__1__Key: ${SELF_SHELF_KEY}
+      SourcesSelf__InternalClients__1__Scopes__0: preview
 
       # ---------- Index ----------
       # Its downstream sources are a list ordered by their numbers; this file gives it the collectives as number 9,
@@ -121,6 +143,23 @@ services:
       Index__DownstreamApiClientOptions__DownstreamSources__9__MasterCode: *functions-key
       Index__DownstreamApiClientOptions__DownstreamSources__9__ServiceCode: ${SERVICE_CODE}
       Index__DownstreamApiClientOptions__DownstreamSources__9__IsSearchSupported: "false"
+      # the sources of the source contract, version 2 (number 1 is left free)
+      Index__RelayV2__Sources__0__Name: own-chords
+      Index__RelayV2__Sources__0__Endpoint: http://api/sourcesself/api/
+      Index__RelayV2__Sources__0__Key: ${SELF_INDEX_KEY}
+      Index__RelayV2__Sources__0__IdPrefixes__0: ${SELF_EXTERNAL_ID_PREFIX}
+      Index__RelayV2__Sources__2__Name: analyses
+      Index__RelayV2__Sources__2__Endpoint: http://api/analyses/api/
+      Index__RelayV2__Sources__2__Key: ${ANALYSES_INDEX_KEY:?}
+      Index__RelayV2__Sources__2__IdPrefixes__0: ha-
+      # the new shelf calls the relay and the analysis tools
+      Index__InternalClients__0__Name: shelf
+      Index__InternalClients__0__Key: ${INDEX_SHELF_KEY}
+      Index__InternalClients__0__Scopes__0: index
+      # the import from the old shelf (HarmonyDB.Shelf.Import) resolves the old addresses at the relay
+      Index__InternalClients__1__Name: import
+      Index__InternalClients__1__Key: ${INDEX_IMPORT_KEY}
+      Index__InternalClients__1__Scopes__0: index
 
       # ---------- Illustrations ----------
       # the address of this module as browsers reach it: the pictures are shown from it
@@ -129,6 +168,13 @@ services:
       Illustrations__BillingApiClientOptions__MasterCode: *functions-key
       Illustrations__IndexApiClientOptions__Endpoint: &index-endpoint http://api/index/api/
       Illustrations__IndexApiClientOptions__MasterCode: *functions-key
+      Illustrations__InternalClients__0__Name: shelf
+      Illustrations__InternalClients__0__Key: ${ILLUSTRATIONS_SHELF_KEY}
+      Illustrations__InternalClients__0__Scopes__0: illustrations
+      # the import from the old shelf gives the old illustrations' addresses their chords ids (aliases)
+      Illustrations__InternalClients__1__Name: import
+      Illustrations__InternalClients__1__Key: ${ILLUSTRATIONS_IMPORT_KEY}
+      Illustrations__InternalClients__1__Scopes__0: illustrations.aliases
 
       # ---------- Frontend: the API of the site ----------
       Frontend__AuthorizationApiClientOptions__CheckIdentityEndpoint: *check-identity
@@ -191,6 +237,7 @@ services:
     volumes:
       - index-cache:/cache
       - analyses-files:/analyses-files
+      - ./analyses-icon.svg:/app/config/analyses-icon.svg:ro
     depends_on:
       - postgres
       - pdfs-api
@@ -240,11 +287,15 @@ services:
       BillingApiClientOptions__Endpoint: *billing-endpoint
       BillingApiClientOptions__MasterCode: *functions-key
       AdminOptions__TenantId: ${ADMIN_TENANT_ID}
+      # the pages of the new shelf's people, through shelf-api's internal API
+      ShelfAdmin__BaseUrl: http://shelf-api/
+      ShelfAdmin__Key: ${SHELF_ADMIN_KEY}
     ports:
       - "${ADMIN_WEB_PORT}:80"
     depends_on:
       - postgres
       - api
+      - shelf-api
 
   playground-web:
     build:
@@ -272,6 +323,10 @@ services:
       ASPNETCORE_HTTP_PORTS: "80"
       FunctionKeys__0: *functions-key
       Pdfs__SyncFusionLicenseKey: ${SYNCFUSION_LICENSE_KEY}
+      # the new shelf's books, as its internal client
+      Pdfs__InternalClients__0__Name: shelf
+      Pdfs__InternalClients__0__Key: ${PDFS_SHELF_KEY}
+      Pdfs__InternalClients__0__Scopes__0: pdf
     ports:
       - "${PDFS_API_PORT}:80"
 
@@ -312,6 +367,172 @@ services:
     depends_on:
       - api
 
+  # The new shelf's backend (HarmonyDB.Shelf.Api). It applies its database's migrations when it starts.
+  shelf-api:
+    build:
+      <<: *app-build
+      args:
+        PROJECT: HarmonyDB.Shelf.Api
+    environment:
+      ASPNETCORE_HTTP_PORTS: "80"
+      ConnectionStrings__Shelf: "Host=postgres;Database=shelf;Username=shelf;Password=${SHELF_DB_PASSWORD}"
+      Shelf__Database__MigrateOnStart: "true"
+      Shelf__Secrets__Key: ${SHELF_SECRETS_KEY}
+      # Development only for the local stack: it allows the dev sign-in and the plain http origin
+      ASPNETCORE_ENVIRONMENT: ${SHELF_ENVIRONMENT:-Production}
+      # signing in (HarmonyDB.Shelf/README.md, "Signing in")
+      SignIn__PublicOrigin: ${SHELF_PUBLIC_ORIGIN}
+      SignIn__Dev__Enabled: ${SHELF_SIGNIN_DEV:-false}
+      SignIn__Telegram__Enabled: ${SHELF_SIGNIN_TELEGRAM:-false}
+      SignIn__Telegram__ClientId: ${SHELF_TELEGRAM_CLIENT_ID}
+      SignIn__Telegram__ClientSecret: ${SHELF_TELEGRAM_CLIENT_SECRET}
+      SignIn__Google__Enabled: ${SHELF_SIGNIN_GOOGLE:-false}
+      SignIn__Google__ClientId: ${SHELF_GOOGLE_CLIENT_ID}
+      SignIn__Google__ClientSecret: ${SHELF_GOOGLE_CLIENT_SECRET}
+      SignIn__Yandex__Enabled: ${SHELF_SIGNIN_YANDEX:-false}
+      SignIn__Yandex__ClientId: ${SHELF_YANDEX_CLIENT_ID}
+      SignIn__Yandex__ClientSecret: ${SHELF_YANDEX_CLIENT_SECRET}
+      # the music service, as the internal client "shelf"
+      Clients__Audio__BaseUrl: http://audio-api:8080
+      Clients__Audio__Key: ${AUDIO_SHELF_KEY}
+      # the index (the source contract's relay and the analysis tools), as the internal client "shelf"
+      Clients__Index__Endpoint: http://api/index/api/
+      Clients__Index__Key: ${INDEX_SHELF_KEY}
+      # the own chords' store and its editor's preview, the illustrations, the PDF service: as the internal client
+      # "shelf" of each
+      Clients__OwnChords__Endpoint: http://api/collectives/api/
+      Clients__OwnChords__Key: ${COLLECTIVES_SHELF_KEY}
+      Clients__OwnChords__PreviewEndpoint: http://api/sourcesself/api/
+      Clients__OwnChords__PreviewKey: ${SELF_SHELF_KEY}
+      Clients__Illustrations__Endpoint: http://api/illustrations/api/
+      Clients__Illustrations__Key: ${ILLUSTRATIONS_SHELF_KEY}
+      Clients__Pdfs__Endpoint: http://pdfs-api/pdfs/api/
+      Clients__Pdfs__Key: ${PDFS_SHELF_KEY}
+      # the playlist the public page shows as its showcase: its id (empty: none)
+      App__ShowcasePlaylistId: ${SHELF_SHOWCASE_PLAYLIST_ID}
+      # the public page's address: the previews of its addresses and its sitemap are written for it
+      PublicPage__Origin: ${SHELF_SITE_ORIGIN}
+      # the key the media addresses are signed with
+      Media__SigningKey: ${SHELF_MEDIA_SIGNING_KEY}
+      # the web servers in front (the network "shelf-web"): their X-Forwarded-For gives the client's address
+      Shelf__Proxy__TrustedNetworks__0: ${SHELF_WEB_SUBNET}
+      # the admin site (admin-web): the people and their permissions
+      InternalClients__0__Name: admin
+      InternalClients__0__Key: ${SHELF_ADMIN_KEY}
+      InternalClients__0__Scopes__0: shelf.admin
+      # the custom permissions, with their labels for the admin site: taken from .env as they are, when set there
+      # (up to four; more need more lines here)
+      Permissions__Custom__0__Key:
+      Permissions__Custom__0__Label:
+      Permissions__Custom__1__Key:
+      Permissions__Custom__1__Label:
+      Permissions__Custom__2__Key:
+      Permissions__Custom__2__Label:
+      Permissions__Custom__3__Key:
+      Permissions__Custom__3__Label:
+      # what a new person gets: permissions by their names, custom ones by their keys; taken from .env as they are, when
+      # set there (up to four)
+      Permissions__Defaults__NewAccount__0:
+      Permissions__Defaults__NewAccount__1:
+      Permissions__Defaults__NewAccount__2:
+      Permissions__Defaults__NewAccount__3:
+    ports:
+      # for debugging; the app reaches it through its own web server
+      - "${SHELF_API_PORT}:80"
+    depends_on:
+      - postgres
+    networks:
+      - default
+      - shelf-web
+
+  # The new shelf's app (HarmonyDB.Shelf.Web) and its API on one origin: nginx serves the app's build and passes /api,
+  # /mcp and /.well-known on to shelf-api, telling it the client's address. Its address is SHELF_PUBLIC_ORIGIN.
+  shelf-web:
+    build:
+      context: ../HarmonyDB.Shelf/HarmonyDB.Shelf.Web
+      dockerfile: docker/Dockerfile
+      # the fingerings' model the app is built with (one file: fingerings.json)
+      additional_contexts:
+        fingerings: ../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
+    ports:
+      - "${SHELF_WEB_PORT}:80"
+    depends_on:
+      - shelf-api
+    networks:
+      - shelf-web
+
+  # The new shelf's public page (HarmonyDB.Shelf.Web, public.html): where a link shared outside leads — an analysis with
+  # its player, the open playlist of analyses, own chords. The same build as the app's, its own nginx with the same
+  # content policy; only the guest's reading of the API goes on to shelf-api. Its address is SHELF_SITE_ORIGIN; it
+  # invites into the app at SHELF_PUBLIC_ORIGIN.
+  public-web:
+    build:
+      context: ../HarmonyDB.Shelf/HarmonyDB.Shelf.Web
+      dockerfile: docker/Dockerfile
+      target: public
+      additional_contexts:
+        fingerings: ../OneShelf.Frontend/OneShelf.Frontend.WebTs/src/resources
+    environment:
+      SHELF_SITE_ORIGIN: ${SHELF_SITE_ORIGIN}
+      SHELF_APP_ORIGIN: ${SHELF_PUBLIC_ORIGIN}
+    ports:
+      - "${PUBLIC_WEB_PORT}:80"
+    depends_on:
+      - shelf-api
+    networks:
+      - shelf-web
+
+  # The music service (HarmonyDB.Audio), for the new shelf: internal only, no port published. Its service accounts' files
+  # are mounted read-only from a folder outside the repository.
+  audio-api:
+    build:
+      context: ../HarmonyDB.Audio/HarmonyDB.Audio.Api
+    environment:
+      AUDIO_DATABASE_URL: "postgresql://audio:${AUDIO_DB_PASSWORD}@postgres:5432/audio"
+      MUSIC_YANDEX_SIGN_KEY: ${MUSIC_YANDEX_SIGN_KEY}
+      MUSIC_YANDEX_MP3_SALT: ${MUSIC_YANDEX_MP3_SALT}
+      AUDIO_YANDEX_TOKEN_FILE: /secrets/yandex-token
+      AUDIO_YOUTUBE_AUTH_FILE: /secrets/youtube-auth.json
+      AUDIO_MAX_URL_FILE_BYTES: ${AUDIO_MAX_URL_FILE_BYTES}
+      InternalClients__0__Name: shelf
+      InternalClients__0__Key: ${AUDIO_SHELF_KEY}
+      InternalClients__0__Scopes__0: audio.read
+      InternalClients__0__Scopes__1: audio.media
+    volumes:
+      - ${AUDIO_SECRETS_DIR}/yandex-token:/secrets/yandex-token:ro
+      - ${AUDIO_SECRETS_DIR}/youtube-auth.json:/secrets/youtube-auth.json:ro
+    depends_on:
+      - postgres
+
+  # The one-off import of the old shelf's data into the new one (HarmonyDB.Shelf.Import), run by hand, never started by
+  # "up" (see its README). Who is who in the old data and the keys it calls the relay with are in the git-ignored
+  # import.json beside this file (see import.example.json).
+  shelf-import:
+    profiles: ["import"]
+    build:
+      <<: *app-build
+      args:
+        PROJECT: HarmonyDB.Shelf.Import
+    environment:
+      ConnectionStrings__Shelf: "Host=postgres;Database=shelf;Username=shelf;Password=${SHELF_DB_PASSWORD}"
+      ConnectionStrings__OldShelf: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_SONGS};Password=${PG_PASSWORD_SONGS}"
+      ConnectionStrings__OldOwnChords: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_COLLECTIVES};Password=${PG_PASSWORD_COLLECTIVES}"
+      ConnectionStrings__OldIllustrations: "Host=postgres;Database=${PG_DATABASE};Username=${PG_ROLE_ILLUSTRATIONS};Password=${PG_PASSWORD_ILLUSTRATIONS}"
+      Relay__Endpoint: http://api/index/api/
+      Relay__Key: ${INDEX_IMPORT_KEY}
+      Illustrations__Endpoint: http://api/illustrations/api/
+      Illustrations__Key: ${ILLUSTRATIONS_IMPORT_KEY}
+    volumes:
+      - ./import.json:/app/appsettings.json:ro
+
+networks:
+  # The new shelf's web servers and its API, on a subnet of their own that does not move when the network is made anew:
+  # shelf-api believes the X-Forwarded-For of what comes from it.
+  shelf-web:
+    ipam:
+      config:
+        - subnet: ${SHELF_WEB_SUBNET}
+
 configs:
   frontend-web-settings:
     content: |
@@ -328,5 +549,5 @@ volumes:
   postgres-data:
   # the Index's cache files
   index-cache:
-  # the analyses' files
+  # the analyses' files, kept by the API's analyses module
   analyses-files:
