@@ -1,4 +1,4 @@
-using HarmonyDB.Shelf.Model.Jobs;
+using System.Diagnostics.CodeAnalysis;
 using HarmonyDB.Source.Api.Model.V2;
 
 namespace HarmonyDB.Shelf.Model.OwnChords;
@@ -112,20 +112,29 @@ public record OwnChordsDetails
     public required OwnChordsItem Item { get; init; }
 
     public required IReadOnlyList<OwnChordsVersion> History { get; init; }
-
-    /// <summary>
-    /// New own chords saved while the sources did not answer: the job that places them in the playlists once they do
-    /// (<c>/api/jobs/{id}</c>, its result <see cref="OwnChordsPlacingResult"/>).
-    /// </summary>
-    public Guid? PlacingJobId { get; init; }
 }
 
 /// <summary>
-/// What a job of the kind "own_chords_placing" ends with.
+/// New own chords just saved, and whether they were put in the playlists.
 /// </summary>
-public record OwnChordsPlacingResult : JobResult
+public record CreatedOwnChords : OwnChordsDetails
 {
-    public required string ChordsId { get; init; }
+    public CreatedOwnChords()
+    {
+    }
+
+    [SetsRequiredMembers]
+    public CreatedOwnChords(OwnChordsDetails details)
+        : base(details)
+    {
+    }
+
+    /// <summary>
+    /// True: they are in the person's playlist of own chords, and where else they were asked to go. False: the sources
+    /// did not answer when they were saved, so they are saved among the person's own chords (<c>GET /api/own-chords</c>)
+    /// and are in no playlist; from there they are put in playlists as any chords are, by their id.
+    /// </summary>
+    public bool Placed { get; init; }
 }
 
 /// <summary>

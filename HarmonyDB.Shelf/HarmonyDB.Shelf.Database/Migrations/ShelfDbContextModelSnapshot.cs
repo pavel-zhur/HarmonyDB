@@ -400,10 +400,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("locked_until");
 
-                    b.Property<DateTimeOffset?>("NotBefore")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("not_before");
-
                     b.Property<double?>("Progress")
                         .HasColumnType("double precision")
                         .HasColumnName("progress");
@@ -431,10 +427,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_jobs");
-
-                    b.HasIndex("NotBefore")
-                        .HasDatabaseName("ix_jobs_not_before")
-                        .HasFilter("state = 'queued' AND not_before IS NOT NULL");
 
                     b.HasIndex("AccountId", "CreatedAt")
                         .HasDatabaseName("ix_jobs_account_id_created_at");

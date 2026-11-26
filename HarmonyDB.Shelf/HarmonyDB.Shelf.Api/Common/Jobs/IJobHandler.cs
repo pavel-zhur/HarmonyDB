@@ -13,22 +13,9 @@ public interface IJobHandler
 }
 
 /// <summary>
-/// What a handler ended with: its result (written as JSON), and the file it made, if any; or, made by <see cref="Again"/>,
-/// that it is to be run again later.
+/// What a handler ended with: its result (written as JSON), and the file it made, if any.
 /// </summary>
-public sealed record JobCompletion(JobResult? Result, JobFile? File = null)
-{
-    /// <summary>
-    /// When set, the job is not over: it goes back to the queue and is run again from the start, not before this time.
-    /// </summary>
-    public DateTimeOffset? RunAgainNotBefore { get; private init; }
-
-    /// <summary>
-    /// The job is to be run again, from the start, not before the time (it waits for something; it holds no worker
-    /// meanwhile). Such a run does not count as a start (<see cref="JobsOptions.MaxAttempts"/>).
-    /// </summary>
-    public static JobCompletion Again(DateTimeOffset notBefore) => new((JobResult?)null) { RunAgainNotBefore = notBefore };
-}
+public sealed record JobCompletion(JobResult? Result, JobFile? File = null);
 
 /// <summary>
 /// A file a job made (a PDF …): kept with the job until it expires.

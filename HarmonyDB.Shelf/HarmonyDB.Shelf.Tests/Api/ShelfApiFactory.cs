@@ -29,7 +29,7 @@ public sealed class ShelfApiFactory : WebApplicationFactory<Program>
     public const string PermissionsHeader = "X-Test-Permissions";
     public const string ClientAllowedHeader = "X-Test-Client-Allowed";
 
-    public Dictionary<string, string?> Settings { get; } = new()
+    public Dictionary<string, string?> Settings { get; } = new(TestClients.Settings)
     {
         ["ConnectionStrings:Shelf"] = "Host=localhost;Database=shelf-tests",
         ["Shelf:Secrets:Key"] = Convert.ToBase64String(new byte[32]),

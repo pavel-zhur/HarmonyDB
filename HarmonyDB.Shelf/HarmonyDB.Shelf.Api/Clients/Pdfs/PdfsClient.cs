@@ -11,7 +11,7 @@ namespace HarmonyDB.Shelf.Api.Clients.Pdfs;
 
 /// <summary>
 /// The PDF service, called as an internal client with the shelf's key: an HTML page into a PDF, and PDFs of songs into
-/// a book. Not configured, or not answering: 503 <c>unavailable</c>.
+/// a book. Not answering: 503 <c>unavailable</c>.
 /// </summary>
 public sealed partial class PdfsClient(HttpClient http, IOptions<PdfsClientOptions> options)
 {
@@ -41,8 +41,6 @@ public sealed partial class PdfsClient(HttpClient http, IOptions<PdfsClientOptio
 
     private async Task<MadePdf> PostAsync(string operation, HttpContent content, CancellationToken cancellationToken)
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(_options.Timeout);
         try
@@ -94,8 +92,6 @@ public sealed class PdfsClientOptions
     /// How long one conversion, or putting a book together, may take.
     /// </summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(2);
-
-    public bool IsConfigured => Endpoint != null;
 }
 
 internal sealed class PdfsClientOptionsValidator : IValidateOptions<PdfsClientOptions>
@@ -105,8 +101,6 @@ internal sealed class PdfsClientOptionsValidator : IValidateOptions<PdfsClientOp
         var section = PdfsClientOptions.SectionName;
         if (options.Timeout <= TimeSpan.Zero)
             return ValidateOptionsResult.Fail($"{section}:Timeout is not positive.");
-        if (options.Endpoint == null && string.IsNullOrEmpty(options.Key))
-            return ValidateOptionsResult.Success;
         if (options.Endpoint is not { IsAbsoluteUri: true } || !options.Endpoint.AbsolutePath.EndsWith('/'))
             return ValidateOptionsResult.Fail($"{section}:Endpoint is not an absolute address ending with a slash.");
 

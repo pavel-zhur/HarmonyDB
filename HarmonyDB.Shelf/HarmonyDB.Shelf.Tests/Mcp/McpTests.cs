@@ -8,6 +8,7 @@ using HarmonyDB.Shelf.Api.Areas.Auth.Services;
 using HarmonyDB.Shelf.Api.Areas.OAuth.Services;
 using HarmonyDB.Shelf.Api.Clients.Index;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
+using HarmonyDB.Shelf.Tests.Api;
 using HarmonyDB.Shelf.Tests.Chords;
 using HarmonyDB.Source.Api.Model.V2;
 using HarmonyDB.Source.Api.Model.V2.Api;
@@ -831,7 +832,7 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>
+            builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>(TestClients.Settings)
             {
                 ["ConnectionStrings:Shelf"] = connectionString,
                 ["Shelf:Secrets:Key"] = Convert.ToBase64String(new byte[32]),
@@ -841,9 +842,15 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
                 ["OAuth:RateLimitPermits"] = "100000",
                 ["Mcp:RateLimitPermits"] = "100000",
                 ["Mcp:RefusedPerAddress"] = "100000",
-                ["Clients:Index:Endpoint"] = index == null ? null : FakeIndex.Endpoint,
-                ["Clients:Index:Key"] = index == null ? null : FakeIndex.Key,
             }));
+            if (index != null)
+            {
+                builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Clients:Index:Endpoint"] = FakeIndex.Endpoint,
+                    ["Clients:Index:Key"] = FakeIndex.Key,
+                }));
+            }
             if (settings != null)
                 builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(settings));
             builder.ConfigureTestServices(services =>

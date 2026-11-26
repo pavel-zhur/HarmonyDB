@@ -221,28 +221,13 @@ public sealed class RelayV2Tests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task WithoutItsSectionTheRelayIsNotThere()
+    public async Task WithoutSourcesTheIndexDoesNotStart()
     {
         await using var host = BuildIndexAlone(new()
         {
             ["Index:InternalClients:0:Name"] = "shelf",
             ["Index:InternalClients:0:Key"] = ShelfKey,
             ["Index:InternalClients:0:Scopes:0"] = "index",
-        });
-        await host.StartAsync();
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/index/api/{SourceV2Urls.V2Search}");
-        request.Content = new StringContent("""{"caller":{"keys":[]},"query":"x"}""", Encoding.UTF8, "application/json");
-        request.Headers.Add("X-Internal-Key", ShelfKey);
-        Assert.Equal(HttpStatusCode.NotFound, (await host.GetTestClient().SendAsync(request)).StatusCode);
-    }
-
-    [Fact]
-    public async Task WithItsSectionButNoSourcesTheRelayDoesNotStart()
-    {
-        await using var host = BuildIndexAlone(new()
-        {
-            ["Index:RelayV2:Timeout"] = "00:00:05",
         });
 
         await Assert.ThrowsAsync<Microsoft.Extensions.Options.OptionsValidationException>(() => host.StartAsync());

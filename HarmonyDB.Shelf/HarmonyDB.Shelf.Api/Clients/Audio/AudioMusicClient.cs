@@ -39,8 +39,6 @@ public sealed class AudioMusicClient(HttpClient http, IOptionsMonitor<AudioClien
     private async Task<T> SendAsync<T>(HttpMethod method, string path, HttpContent? content, AudioActing acting, CancellationToken cancellationToken)
     {
         var settings = options.CurrentValue;
-        if (!settings.IsConfigured)
-            throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
 
         using var request = new HttpRequestMessage(method, new Uri(new Uri(settings.BaseUrl!.TrimEnd('/') + "/"), "internal/" + path));
         request.Headers.Add(InternalKeyDefaults.HeaderName, settings.Key);

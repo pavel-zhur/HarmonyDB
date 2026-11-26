@@ -113,17 +113,12 @@ public sealed class MediaSigner(IOptionsMonitor<MediaOptions> options, TimeProvi
     /// The key the addresses are sealed with: derived from the configured one, for this use only.
     /// </summary>
     private byte[] Key()
-    {
-        var key = options.CurrentValue.SigningKey;
-        return string.IsNullOrEmpty(key)
-            ? throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable)
-            : HKDF.DeriveKey(HashAlgorithmName.SHA256, Convert.FromBase64String(key), 32, info: "shelf media addresses"u8.ToArray());
-    }
+        => HKDF.DeriveKey(HashAlgorithmName.SHA256, Convert.FromBase64String(options.CurrentValue.SigningKey!), 32, info: "shelf media addresses"u8.ToArray());
 
     private sealed record Payload(string K, string? S, string I, string? N, Caller? C, Uri? A, long E);
 }
 /// <summary>
-/// The configuration section <c>Media</c>. With no signing key, media addresses are not given (503 <c>unavailable</c>).
+/// The configuration section <c>Media</c>.
 /// </summary>
 public sealed class MediaOptions
 {
@@ -152,7 +147,9 @@ internal sealed class MediaOptionsValidator : IValidateOptions<MediaOptions>
     public ValidateOptionsResult Validate(string? name, MediaOptions options)
     {
         var failures = new List<string>();
-        if (!string.IsNullOrEmpty(options.SigningKey))
+        if (string.IsNullOrEmpty(options.SigningKey))
+            failures.Add("Media:SigningKey is not set.");
+        else
         {
             try
             {

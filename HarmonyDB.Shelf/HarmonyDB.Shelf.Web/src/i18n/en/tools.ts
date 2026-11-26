@@ -2,6 +2,18 @@
 // the versions.
 export const toolScreens = {
     editor: {
+        own: {
+            title: 'Chords I wrote',
+            new: 'Write new chords',
+            empty: 'You have written no chords yet.',
+            edit: 'Edit',
+            inNone: 'In none of your playlists yet',
+            notReachable: 'In none of your playlists, and cannot be put in one just now. Try again a little later.',
+            putIn: 'Put in a playlist',
+            putInTitle: 'Put them in',
+            put: 'Put in the playlist',
+            notPlaced: 'Saved, but could not be put in a playlist just now. They are in the list of chords you wrote: put them in a playlist from there.',
+        },
         newTitle: 'My chords',
         myVariant: 'My variant',
         variantTitle: 'My variant: {{title}}',

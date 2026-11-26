@@ -58,7 +58,6 @@ public sealed class WorkFixture : IAsyncLifetime
                 ["ConnectionStrings:Shelf"] = ConnectionString,
                 ["Jobs:Poll"] = "00:00:00.100",
                 ["Jobs:Lease"] = "00:00:03",
-                ["OwnChords:Placing:Pause"] = "00:00:01",
                 ["Clients:OwnChords:Endpoint"] = FakeService.Endpoint,
                 ["Clients:OwnChords:Key"] = FakeService.Key,
                 ["Clients:Illustrations:Endpoint"] = FakeService.Endpoint,

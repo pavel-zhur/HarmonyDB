@@ -105,17 +105,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
         if (cache.TryGetValue(key, out ChordsFound? kept))
             return kept!;
 
-        HarmonyDB.Source.Api.Model.V2.Api.SearchResponse response;
-        try
-        {
-            response = await index.Sources.Search(caller, text, cancellationToken);
-        }
-        catch (ShelfException exception) when (exception.StatusCode == StatusCodes.Status503ServiceUnavailable)
-        {
-            // the index is not there: the chords part failed, the others still answer
-            return new([], [new() { Source = "index", Reason = HarmonyDB.Source.Api.Model.V2.Api.SourceFailureReason.Unavailable }]);
-        }
-
+        var response = await index.Sources.Search(caller, text, cancellationToken);
         var result = new ChordsFound(response.Headers, response.Failures);
 
         // a search with a source missing is asked again next time

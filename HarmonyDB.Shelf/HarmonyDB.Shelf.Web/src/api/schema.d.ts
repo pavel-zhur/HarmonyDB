@@ -2131,6 +2131,11 @@ export interface components {
             share?: string | null;
             carriesAccess: boolean;
         };
+        CreatedOwnChords: {
+            item: components["schemas"]["OwnChordsItem"];
+            history: components["schemas"]["OwnChordsVersion"][];
+            placed: boolean;
+        };
         CreatedPersonalKey: {
             key: string;
             item: components["schemas"]["PersonalKeyItem"];
@@ -2288,7 +2293,7 @@ export interface components {
             startedAt?: string | null;
             /** Format: date-time */
             finishedAt?: string | null;
-            result?: (components["schemas"]["PlaylistSyncResult"] | components["schemas"]["OwnChordsPlacingResult"] | components["schemas"]["IllustrationsJobResult"] | components["schemas"]["BookPagesResult"] | components["schemas"]["BookResult"] | components["schemas"]["ImportResult"]) | null;
+            result?: (components["schemas"]["PlaylistSyncResult"] | components["schemas"]["IllustrationsJobResult"] | components["schemas"]["BookPagesResult"] | components["schemas"]["BookResult"] | components["schemas"]["ImportResult"]) | null;
             file?: components["schemas"]["JobFileInfo"];
         };
         JobResult: {
@@ -2661,8 +2666,6 @@ export interface components {
         OwnChordsDetails: {
             item: components["schemas"]["OwnChordsItem"];
             history: components["schemas"]["OwnChordsVersion"][];
-            /** Format: uuid */
-            placingJobId?: string | null;
         };
         OwnChordsItem: {
             /** Format: uuid */
@@ -2680,17 +2683,6 @@ export interface components {
         OwnChordsList: {
             items: components["schemas"]["OwnChordsItem"][];
         };
-        OwnChordsPlacingResult: {
-            chordsId: string;
-            /** @enum {string} */
-            kind: "own_chords_placing";
-        } & (Omit<WithRequired<components["schemas"]["JobResult"], "kind">, "kind"> & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "own_chords_placing";
-        });
         OwnChordsPreview: {
             content: components["schemas"]["SourceV2Content"];
         };
@@ -2830,7 +2822,7 @@ export interface components {
             markKinds: components["schemas"]["MarkKind"][];
             /** Format: uuid */
             showcasePlaylistId?: string | null;
-            publicPageOrigin?: string | null;
+            publicPageOrigin: string;
         };
         PutMusicLinkRequest: {
             credentials: string;
@@ -2932,7 +2924,7 @@ export interface components {
             token: string;
             kind: components["schemas"]["ShareKind"];
             carriesAccess: boolean;
-            publicAddress?: string | null;
+            publicAddress: string;
         };
         ShareView: {
             kind: components["schemas"]["ShareKind"];
@@ -5854,7 +5846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OwnChordsDetails"];
+                    "application/json": components["schemas"]["CreatedOwnChords"];
                 };
             };
             /** @description An error. */

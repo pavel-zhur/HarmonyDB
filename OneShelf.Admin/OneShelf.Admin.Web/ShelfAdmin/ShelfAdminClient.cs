@@ -17,11 +17,6 @@ public sealed class ShelfAdminClient(HttpClient http, IOptions<ShelfAdminOptions
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    /// <summary>
-    /// Whether the site is configured to reach the shelf; the pages of the shelf's people say so when it is not.
-    /// </summary>
-    public bool IsConfigured => options.Value.IsConfigured;
-
     public Task<AdminPeoplePage> ListPeopleAsync(string? search, string? permission, bool anyPermission, int skip, int take, CancellationToken cancellationToken)
         => SendAsync<AdminPeoplePage>(HttpMethod.Get, $"people?search={Uri.EscapeDataString(search ?? string.Empty)}&permission={Uri.EscapeDataString(permission ?? string.Empty)}&anyPermission={(anyPermission ? "true" : "false")}&skip={skip}&take={take}", null, cancellationToken);
 
@@ -39,9 +34,6 @@ public sealed class ShelfAdminClient(HttpClient http, IOptions<ShelfAdminOptions
 
     private async Task<T> SendAsync<T>(HttpMethod method, string path, object? body, CancellationToken cancellationToken)
     {
-        if (!IsConfigured)
-            throw new InvalidOperationException("The shelf's admin API is not configured (ShelfAdmin:BaseUrl, ShelfAdmin:Key).");
-
         using var request = new HttpRequestMessage(method, new Uri(new Uri(options.Value.BaseUrl!), "internal/admin/" + path));
         request.Headers.Add(KeyHeader, options.Value.Key);
         if (body != null)
@@ -89,15 +81,16 @@ public sealed class ShelfAdminOptions
     public string? BaseUrl { get; set; }
 
     public string? Key { get; set; }
-
-    public bool IsConfigured => !string.IsNullOrEmpty(BaseUrl) && !string.IsNullOrEmpty(Key);
 }
 
 public static class ShelfAdminServiceCollectionExtensions
 {
     public static IServiceCollection AddShelfAdminClient(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<ShelfAdminOptions>(configuration.GetSection(ShelfAdminOptions.SectionName));
+        services.AddOptions<ShelfAdminOptions>().Bind(configuration.GetSection(ShelfAdminOptions.SectionName))
+            .Validate(x => Uri.TryCreate(x.BaseUrl, UriKind.Absolute, out _) && !string.IsNullOrEmpty(x.Key),
+                $"{ShelfAdminOptions.SectionName}: BaseUrl is not an absolute address, or Key is not set.")
+            .ValidateOnStart();
         services.AddHttpClient<ShelfAdminClient>();
         return services;
     }

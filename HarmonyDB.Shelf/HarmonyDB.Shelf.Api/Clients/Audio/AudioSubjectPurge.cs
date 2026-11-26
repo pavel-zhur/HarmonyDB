@@ -54,11 +54,10 @@ public static class AudioClientExtensions
 /// <summary>
 /// Sends the outbox's purges of music service subjects, oldest first, each until it succeeds (with a growing pause
 /// after a failure). Several copies of the app may run it at once: a message is taken under a row lock that the others
-/// skip. Idle while the music service is not configured.
+/// skip.
 /// </summary>
 internal sealed class AudioSubjectPurgeWorker(
     IServiceScopeFactory scopes,
-    IOptionsMonitor<AudioClientOptions> options,
     TimeProvider time,
     ILogger<AudioSubjectPurgeWorker> logger) : BackgroundService
 {
@@ -68,18 +67,15 @@ internal sealed class AudioSubjectPurgeWorker(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (options.CurrentValue.IsConfigured)
+            try
             {
-                try
+                while (await SendOneAsync(stoppingToken))
                 {
-                    while (await SendOneAsync(stoppingToken))
-                    {
-                    }
                 }
-                catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
-                {
-                    logger.LogError(exception, "The purges of the music service's subjects failed to run.");
-                }
+            }
+            catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogError(exception, "The purges of the music service's subjects failed to run.");
             }
 
             try

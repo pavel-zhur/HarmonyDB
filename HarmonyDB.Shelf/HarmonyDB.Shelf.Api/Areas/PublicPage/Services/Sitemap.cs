@@ -18,12 +18,12 @@ public sealed class Sitemap(ShelfDbContext db, PlaylistGate gate, IOptionsMonito
     private const string Namespace = "http://www.sitemaps.org/schemas/sitemap/0.9";
 
     /// <summary>
-    /// The sitemap's XML (UTF-8); null when there is no showcase (or the page is not configured).
+    /// The sitemap's XML (UTF-8); null when there is no showcase.
     /// </summary>
     public async Task<byte[]?> GetAsync(CancellationToken cancellationToken)
     {
-        var origin = options.CurrentValue.Origin;
-        if (origin == null || app.CurrentValue.ShowcasePlaylist is not { } playlistId)
+        var origin = options.CurrentValue.Origin!;
+        if (app.CurrentValue.ShowcasePlaylist is not { } playlistId)
             return null;
 
         try

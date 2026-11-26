@@ -151,7 +151,7 @@ internal sealed class JobWorker(
             .FromSql($"""
                       SELECT * FROM jobs
                       WHERE kind = ANY({kinds})
-                        AND ((state = 'queued' AND (not_before IS NULL OR not_before <= {now})) OR (state = 'running' AND locked_until < {now}))
+                        AND (state = 'queued' OR (state = 'running' AND locked_until < {now}))
                       ORDER BY created_at
                       LIMIT 1
                       FOR UPDATE SKIP LOCKED
@@ -194,10 +194,7 @@ internal sealed class JobWorker(
                 completion = await handler.RunAsync(new(job, scopes), stop.Token);
             }
 
-            if (completion.RunAgainNotBefore is { } notBefore)
-                await RequeueAsync(job, notBefore);
-            else
-                await FinishAsync(job, JobState.Succeeded, completion, null);
+            await FinishAsync(job, JobState.Succeeded, completion, null);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -299,31 +296,6 @@ internal sealed class JobWorker(
         catch (Exception exception)
         {
             logger.LogError(exception, "How the job {JobId} ended could not be written.", job.Id);
-        }
-    }
-
-    /// <summary>
-    /// Puts a job that asked to be run again later back to the queue, not to be taken before the time; the start does not
-    /// count.
-    /// </summary>
-    private async Task RequeueAsync(Job job, DateTimeOffset notBefore)
-    {
-        try
-        {
-            await using var scope = scopes.CreateAsyncScope();
-            var db = scope.ServiceProvider.GetRequiredService<ShelfDbContext>();
-            await db.Jobs
-                .Where(x => x.Id == job.Id && x.State == JobState.Running && x.Attempts == job.Attempts)
-                .ExecuteUpdateAsync(x => x
-                    .SetProperty(j => j.State, JobState.Queued)
-                    .SetProperty(j => j.Attempts, j => j.Attempts - 1)
-                    .SetProperty(j => j.NotBefore, notBefore)
-                    .SetProperty(j => j.LockedUntil, (DateTimeOffset?)null));
-        }
-        catch (Exception exception)
-        {
-            // its lease runs out and it is taken again then
-            logger.LogError(exception, "The job {JobId} could not be put back to the queue for later.", job.Id);
         }
     }
 

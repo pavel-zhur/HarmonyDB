@@ -6,7 +6,6 @@ using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Clients.Index;
 using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Common;
-using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Database;
@@ -33,8 +32,7 @@ public sealed class OwnChordsService(
     SourceCallers callers,
     SystemPlaylists systemPlaylists,
     SongService songs,
-    PlaylistGate gate,
-    JobQueue jobs)
+    PlaylistGate gate)
 {
     public const int MaxTitle = 300;
     public const int MaxArtists = 20;
@@ -64,7 +62,11 @@ public sealed class OwnChordsService(
         return await DetailsAsync(user, stored, cancellationToken);
     }
 
-    public async Task<OwnChordsDetails> CreateAsync(ClaimsPrincipal user, CreateOwnChordsRequest request, CancellationToken cancellationToken)
+    /// <summary>
+    /// Saves new own chords and puts them in the playlists. When the sources do not answer after the store saved them,
+    /// they stay saved and are put in no playlist (<see cref="CreatedOwnChords.Placed"/>).
+    /// </summary>
+    public async Task<CreatedOwnChords> CreateAsync(ClaimsPrincipal user, CreateOwnChordsRequest request, CancellationToken cancellationToken)
     {
         var text = Normalize(request.Text);
         if ((request.PlaylistId == null) != (request.SongId == null))
@@ -79,33 +81,25 @@ public sealed class OwnChordsService(
             (await gate.ForChangeAsync(me, playlistId, cancellationToken)).RequireAdd();
 
         var stored = await store.InsertAsync(await AuthorAsync(me, cancellationToken), ToStored(text), cancellationToken);
-        var placing = new Placing(stored.Uri, callers.For(user).Keys, text.Title, text.Artists, request.PlaylistId, request.SongId, request.AlsoInPlaylists ?? []);
         var chordsId = (await ChordsIdsAsync(callers.For(user), [stored.Uri], cancellationToken)).Single();
         if (chordsId == null)
-        {
-            // the sources did not answer now: the chords are placed by a job that asks them again
-            var job = await jobs.EnqueueAsync(me, PlacingJobKind, stored.CollectiveId.ToString(), placing, cancellationToken);
-            return Details(stored, null) with { PlacingJobId = job.Id };
-        }
+            return new(Details(stored, null)) { Placed = false };
 
-        await PlaceAsync(me, chordsId, placing, cancellationToken);
-        return Details(stored, chordsId);
+        await PlaceAsync(me, chordsId, text, request, cancellationToken);
+        return new(Details(stored, chordsId)) { Placed = true };
     }
-
-    public const string PlacingJobKind = "own_chords_placing";
 
     /// <summary>
     /// Puts new own chords into the person's playlist of own chords, and where else they were asked to go. Where they are
-    /// already (a placing done again after it was interrupted), nothing is added.
+    /// already (asked to go as a new song to the playlist they became a variant in), nothing is added.
     /// </summary>
-    internal async Task PlaceAsync(Guid me, string chordsId, Placing placing, CancellationToken cancellationToken)
+    private async Task PlaceAsync(Guid me, string chordsId, OwnChordsText text, CreateOwnChordsRequest request, CancellationToken cancellationToken)
     {
-        var text = (placing.Title, placing.Artists);
         var mine = await systemPlaylists.GetOrCreateAsync(me, PlaylistSystemKind.OwnChords, cancellationToken);
         await UnlessThereAsync(() => songs.AddAsync(me, mine.Id, NewSong(chordsId, text), cancellationToken));
-        if (placing is { PlaylistId: { } songPlaylistId, SongId: { } songId })
+        if (request is { PlaylistId: { } songPlaylistId, SongId: { } songId })
             await UnlessThereAsync(() => songs.AddVariantAsync(me, songPlaylistId, songId, new() { Chords = chordsId }, cancellationToken));
-        foreach (var playlistId in placing.AlsoInPlaylists.Distinct().Where(x => x != mine.Id))
+        foreach (var playlistId in (request.AlsoInPlaylists ?? []).Distinct().Where(x => x != mine.Id))
             await UnlessThereAsync(() => songs.AddAsync(me, playlistId, NewSong(chordsId, text), cancellationToken));
     }
 
@@ -119,23 +113,6 @@ public sealed class OwnChordsService(
         {
         }
     }
-
-    /// <summary>
-    /// The chords' id of own chords by their address, asked of the sources for the caller; null when they did not answer.
-    /// </summary>
-    internal async Task<string?> ChordsIdAsync(Caller caller, Uri uri, CancellationToken cancellationToken)
-        => (await ChordsIdsAsync(caller, [uri], cancellationToken)).Single();
-
-    /// <param name="Uri">The address of the own chords.</param>
-    /// <param name="Keys">The person's custom keys when they saved them.</param>
-    internal sealed record Placing(
-        Uri Uri,
-        IReadOnlyList<string> Keys,
-        string Title,
-        IReadOnlyList<string> Artists,
-        Guid? PlaylistId,
-        Guid? SongId,
-        IReadOnlyList<Guid> AlsoInPlaylists);
 
     /// <summary>
     /// A new version, of own chords written here (<see cref="OwnChordsItem.Editable"/>).
@@ -264,7 +241,7 @@ public sealed class OwnChordsService(
         Editable = stored.Editable,
     };
 
-    private static PlaylistModels.AddSongRequest NewSong(string chordsId, (string Title, IReadOnlyList<string> Artists) text) => new()
+    private static PlaylistModels.AddSongRequest NewSong(string chordsId, OwnChordsText text) => new()
     {
         Chords = chordsId,
         Title = text.Title,

@@ -173,12 +173,12 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
     }
 
     [Fact]
-    public async Task WithoutTheIndexItIsUnavailable()
+    public async Task WhenTheIndexDoesNotAnswerItIsUnavailable()
     {
         using var api = new ShelfApiFactory();
         using var client = api.CreateClient();
-        var response = await client.GetAsync("/api/chords/x");
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        // the item is said to be unavailable, as when its source does not answer
+        Assert.Equal(ChordsState.Unavailable, (await ReadAsync<ChordsContentResponse>(await client.GetAsync("/api/chords/x"))).State);
 
         // the search marks its chords part failed and answers
         var search = await ReadAsync<Model.Search.SearchResponse>(await client.GetAsync("/api/search?q=abc&parts=chords"));

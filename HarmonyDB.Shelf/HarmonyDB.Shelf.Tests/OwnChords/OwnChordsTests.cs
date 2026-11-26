@@ -116,7 +116,7 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
     }
 
     [DatabaseFact]
-    public async Task NewOwnChordsSavedWhileTheSourcesDoNotAnswerArePlacedWhenTheyDo()
+    public async Task NewOwnChordsArePlacedWhenTheSourcesAnswerAndOnlySavedWhenTheyDoNot()
     {
         var me = await fixture.AccountAsync();
         var collectiveId = Guid.NewGuid();
@@ -126,15 +126,15 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
             ? (HttpStatusCode.OK, new StoredOwnChords(collectiveId, new(["Somebody"], "A song", "words", StoredVisibility.Club, null, null, null, null),
                 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Uri(uri), $"account:{me:D}", true, []))
             : (HttpStatusCode.InternalServerError, null);
-        var resolves = 0;
+        var answering = false;
         fixture.Index.Answer = (operation, body) => operation == "V2Resolve"
             ? (HttpStatusCode.OK, new ResolveResponse
             {
                 Items =
                 [
-                    Interlocked.Increment(ref resolves) <= 2
-                        ? new ResolvedUri { Uri = new(uri), State = ResolveState.Unavailable }
-                        : new ResolvedUri { Uri = new(uri), State = ResolveState.Resolved, Id = chordsId },
+                    answering
+                        ? new ResolvedUri { Uri = new(uri), State = ResolveState.Resolved, Id = chordsId }
+                        : new ResolvedUri { Uri = new(uri), State = ResolveState.Unavailable },
                 ],
             })
             : operation == "V2GetHeaders"
@@ -145,38 +145,35 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
                         .ToList(),
                 })
                 : (HttpStatusCode.InternalServerError, null);
-
         using var client = fixture.Api.CreateClient();
-        var saved = await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/own-chords", me, body: new CreateOwnChordsRequest { Text = Text() }));
-        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
-        var details = System.Text.Json.JsonSerializer.Deserialize<OwnChordsDetails>(await saved.Content.ReadAsStringAsync(), Browser.Json)!;
-        Assert.Null(details.Item.ChordsId);
-        Assert.NotNull(details.PlacingJobId);
 
-        // while the sources do not answer, it waits in the queue for its time, holding no worker
-        var waited = false;
-        for (var i = 0; i < 100 && !waited; i++)
+        async Task<CreatedOwnChords> SaveAsync()
         {
-            await using (var waiting = fixture.CreateContext())
-                waited = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(
-                    waiting.Jobs.Where(x => x.Id == details.PlacingJobId && x.State == HarmonyDB.Shelf.Database.Model.JobState.Queued && x.NotBefore > DateTimeOffset.UtcNow && x.Attempts == 0));
-            await Task.Delay(50);
+            var saved = await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/own-chords", me, body: new CreateOwnChordsRequest { Text = Text() }));
+            Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+            return System.Text.Json.JsonSerializer.Deserialize<CreatedOwnChords>(await saved.Content.ReadAsStringAsync(), Browser.Json)!;
         }
 
-        await using (var seen = fixture.CreateContext())
+        async Task<List<HarmonyDB.Shelf.Database.Model.PlaylistSong>> PlacedAsync()
         {
-            var row = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AsNoTracking(seen.Jobs).Single(x => x.Id == details.PlacingJobId);
-            Assert.True(waited, $"{row.State} {row.Attempts} {row.NotBefore:O} {row.ErrorCode} resolves={resolves}");
+            await using var db = fixture.CreateContext();
+            return await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                db.PlaylistSongItems.Where(x => x.Chords!.SourceId == chordsId).Select(x => x.Song));
         }
 
-        var job = await fixture.FinishedAsync(me, details.PlacingJobId!.Value);
-        Assert.True(job.Status == Model.Jobs.JobStatus.Succeeded, job.ErrorCode);
-        Assert.Equal(chordsId, Assert.IsType<OwnChordsPlacingResult>(job.Result).ChordsId);
+        // the sources do not answer: saved, the answer says so, and in no playlist
+        var unanswered = await SaveAsync();
+        Assert.Equal((false, null, collectiveId), (unanswered.Placed, unanswered.Item.ChordsId, unanswered.Item.Id));
+        Assert.Empty(await PlacedAsync());
 
-        await using var db = fixture.CreateContext();
-        var placed = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.PlaylistSongItems.Where(x => x.Chords!.SourceId == chordsId).Select(x => x.Song));
+        // they answer: placed in the person's playlist of own chords
+        answering = true;
+        var answered = await SaveAsync();
+        Assert.Equal((true, chordsId), (answered.Placed, answered.Item.ChordsId));
+        var placed = Assert.Single(await PlacedAsync());
         Assert.Equal("A song", placed.Title);
-        Assert.Equal(HarmonyDB.Shelf.Database.Model.PlaylistSystemKind.OwnChords, db.Playlists.Single(x => x.Id == placed.PlaylistId).SystemKind);
+        await using var check = fixture.CreateContext();
+        Assert.Equal(HarmonyDB.Shelf.Database.Model.PlaylistSystemKind.OwnChords, check.Playlists.Single(x => x.Id == placed.PlaylistId).SystemKind);
     }
 
     [Fact]

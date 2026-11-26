@@ -3,7 +3,6 @@ using HarmonyDB.Shelf.Api.Areas.Chords;
 using HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 using HarmonyDB.Shelf.Api.Clients.OwnChords;
 using HarmonyDB.Shelf.Api.Common;
-using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Api.Foundation.Areas;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Model.OwnChords;
@@ -24,10 +23,6 @@ public sealed class OwnChordsArea : IShelfArea
         services.AddChordsReading(configuration);
         services.AddShelfCommon();
         services.AddScoped<OwnChordsService>();
-        services.AddOptions<OwnChordsPlacingOptions>().Bind(configuration.GetSection(OwnChordsPlacingOptions.SectionName))
-            .Validate(x => x.Pause > TimeSpan.Zero && x.GiveUpAfter > TimeSpan.Zero, $"{OwnChordsPlacingOptions.SectionName}: the pause or the time to give up after is not positive.")
-            .ValidateOnStart();
-        services.AddJobHandler<OwnChordsPlacingJob, OwnChordsPlacingResult>(configuration, OwnChordsService.PlacingJobKind);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

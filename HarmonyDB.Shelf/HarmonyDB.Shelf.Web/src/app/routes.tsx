@@ -28,6 +28,7 @@ import { DeletedScreen } from '../screens/profile/DeletedScreen';
 import { AiScreen } from '../screens/ai/AiScreen';
 import { ConsentScreen } from '../screens/ai/ConsentScreen';
 import { EditorScreen } from '../screens/editor/EditorScreen';
+import { OwnChordsScreen } from '../screens/editor/OwnChordsScreen';
 import { ImportScreen } from '../screens/importing/ImportScreen';
 import { BookScreen } from '../screens/book/BookScreen';
 import { AboutScreen } from '../screens/about/AboutScreen';
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
             // the tools and the rest
             { path: '/import', element: <SignedIn><ImportScreen /></SignedIn> },
             { path: '/editor', element: <SignedIn><EditorScreen /></SignedIn> },
+            { path: '/own-chords', element: <SignedIn><OwnChordsScreen /></SignedIn> },
             { path: '/illustrations', element: <SignedIn><IllustrationsScreen /></SignedIn> },
             { path: '/fingerings', element: <FingeringsScreen /> },
             { path: '/tuner', element: <TunerScreen /> },

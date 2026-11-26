@@ -66,7 +66,7 @@ public sealed class PagePreviews(
     public async Task<string?> GetAsync(string path, CancellationToken cancellationToken)
     {
         var settings = options.CurrentValue;
-        if (!settings.IsConfigured || path.Length > MaxPathLength)
+        if (path.Length > MaxPathLength)
             return null;
 
         // kept: the addresses of the page that are not links; anything else is not kept at all

@@ -10,8 +10,7 @@ namespace HarmonyDB.Shelf.Api.Clients.Illustrations;
 
 /// <summary>
 /// The illustrations service, called as an internal client with the shelf's key: its presets, the illustrations kept for
-/// a key (the chords' id), drawing a preset for a key, and the images' copies. Not configured, or not answering: 503
-/// <c>unavailable</c>.
+/// a key (the chords' id), drawing a preset for a key, and the images' copies. Not answering: 503 <c>unavailable</c>.
 /// </summary>
 public sealed partial class IllustrationsClient(HttpClient http, IOptions<IllustrationsClientOptions> options)
 {
@@ -37,8 +36,6 @@ public sealed partial class IllustrationsClient(HttpClient http, IOptions<Illust
     /// </summary>
     public async Task<byte[]?> GetImageAsync(Guid id, int size, CancellationToken cancellationToken)
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var response = await SendAsync(HttpMethod.Get, new Uri(_options.Endpoint!, $"images/{id}/{size}"), null, _options.Timeout, cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         if (!response.IsSuccessStatusCode) throw Unavailable();
@@ -47,8 +44,6 @@ public sealed partial class IllustrationsClient(HttpClient http, IOptions<Illust
 
     private async Task<T> PostAsync<T>(string operation, object request, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var response = await SendAsync(HttpMethod.Post, new Uri(_options.Endpoint!, operation), JsonContent.Create(request, options: Json), timeout, cancellationToken);
         if (!response.IsSuccessStatusCode) throw Unavailable();
         try
@@ -123,8 +118,6 @@ public sealed class IllustrationsClientOptions
     /// How long drawing a preset may take.
     /// </summary>
     public TimeSpan GenerationTimeout { get; set; } = TimeSpan.FromMinutes(5);
-
-    public bool IsConfigured => Endpoint != null;
 }
 
 internal sealed class IllustrationsClientOptionsValidator : IValidateOptions<IllustrationsClientOptions>
@@ -134,8 +127,6 @@ internal sealed class IllustrationsClientOptionsValidator : IValidateOptions<Ill
         var section = IllustrationsClientOptions.SectionName;
         if (options.Timeout <= TimeSpan.Zero || options.GenerationTimeout <= TimeSpan.Zero)
             return ValidateOptionsResult.Fail($"{section}: the timeouts are not positive.");
-        if (options.Endpoint == null && string.IsNullOrEmpty(options.Key))
-            return ValidateOptionsResult.Success;
         if (options.Endpoint is not { IsAbsoluteUri: true } || !options.Endpoint.AbsolutePath.EndsWith('/'))
             return ValidateOptionsResult.Fail($"{section}:Endpoint is not an absolute address ending with a slash.");
 

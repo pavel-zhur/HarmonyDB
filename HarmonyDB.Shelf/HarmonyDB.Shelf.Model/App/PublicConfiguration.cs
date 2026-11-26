@@ -34,10 +34,9 @@ public record PublicConfiguration
     public Guid? ShowcasePlaylistId { get; init; }
 
     /// <summary>
-    /// The public page's origin (<c>https://…</c>, no slash at the end); null when there is none, and no link to it is
-    /// offered.
+    /// The public page's origin (<c>https://…</c>, no slash at the end).
     /// </summary>
-    public string? PublicPageOrigin { get; init; }
+    public required string PublicPageOrigin { get; init; }
 }
 
 public record SignInProviderInfo

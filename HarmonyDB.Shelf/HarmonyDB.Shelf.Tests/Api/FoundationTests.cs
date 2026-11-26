@@ -86,14 +86,14 @@ public sealed class FoundationTests(ShelfApiFactory factory) : IClassFixture<She
     {
         var none = await factory.CreateClient().GetFromJsonAsync<PublicConfiguration>("/api/app/configuration", JsonOptions());
         Assert.Null(none!.ShowcasePlaylistId);
-        Assert.Null(none.PublicPageOrigin);
+        Assert.Equal("https://site.example", none.PublicPageOrigin);
 
         var id = Guid.NewGuid();
         using var configured = new ShelfApiFactory();
         configured.Settings["App:ShowcasePlaylistId"] = id.ToString();
-        configured.Settings["PublicPage:Origin"] = "https://site.example/";
+        configured.Settings["PublicPage:Origin"] = "https://other.example/";
         var both = await configured.CreateClient().GetFromJsonAsync<PublicConfiguration>("/api/app/configuration", JsonOptions());
-        Assert.Equal((id, "https://site.example"), (both!.ShowcasePlaylistId, both.PublicPageOrigin));
+        Assert.Equal((id, "https://other.example"), (both!.ShowcasePlaylistId, both.PublicPageOrigin));
 
         using var bad = new ShelfApiFactory();
         bad.Settings["App:ShowcasePlaylistId"] = "not-a-playlist";
@@ -119,6 +119,22 @@ public sealed class FoundationTests(ShelfApiFactory factory) : IClassFixture<She
     {
         using var bad = new ShelfApiFactory();
         bad.Settings[key] = value;
+        Assert.Throws<OptionsValidationException>(() => bad.CreateClient());
+    }
+
+    [Theory]
+    [InlineData("Clients:Audio:BaseUrl")]
+    [InlineData("Clients:Index:Endpoint")]
+    [InlineData("Clients:OwnChords:Endpoint")]
+    [InlineData("Clients:OwnChords:PreviewEndpoint")]
+    [InlineData("Clients:Illustrations:Endpoint")]
+    [InlineData("Clients:Pdfs:Endpoint")]
+    [InlineData("Media:SigningKey")]
+    [InlineData("PublicPage:Origin")]
+    public void WithoutWhatItNeedsTheAppDoesNotStart(string key)
+    {
+        using var bad = new ShelfApiFactory();
+        Assert.True(bad.Settings.Remove(key));
         Assert.Throws<OptionsValidationException>(() => bad.CreateClient());
     }
 

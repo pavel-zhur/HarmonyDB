@@ -19,6 +19,7 @@ import { createOwnChords, updateOwnChords, useOwnChordsDraft, useOwnChordsItem, 
 import { playlistTitle, useMyPlaylists } from '../../data/playlists';
 import { useChordsContent, useSongPage } from '../../data/song';
 import { LinkBox } from '../../kit/LinkBox';
+import { toast } from '../../app/toasts';
 import { sheetFromApi } from '../../chords/sheet';
 import { ChordSheet } from '../../chords/ChordSheet';
 import { RepresentationSettings } from '../../lib/representations';
@@ -147,7 +148,11 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
         mutationFn: createOwnChords,
         onSuccess: r => {
             saved();
-            if (song) navigate(`/playlists/${song.playlistId}/songs/${song.songId}`);
+            if (!r.placed) {
+                // saved, but in no playlist: said, and the list where they are put in one
+                toast(t('editor.own.notPlaced'), { stays: true });
+                navigate('/own-chords');
+            } else if (song) navigate(`/playlists/${song.playlistId}/songs/${song.songId}`);
             else if (r.item.chordsId) navigate(`/chords/${encodeURIComponent(r.item.chordsId)}`);
             else navigate(`/editor?own=${r.item.id}`, { replace: true });
         },

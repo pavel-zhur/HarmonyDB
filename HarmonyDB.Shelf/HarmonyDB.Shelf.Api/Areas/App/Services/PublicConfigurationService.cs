@@ -40,7 +40,7 @@ public sealed class PublicConfigurationService(IOptionsMonitor<SignInOptions> si
             DefaultLocale = Locales[0],
             MarkKinds = Model.Marks.MarkKinds.All,
             ShowcasePlaylistId = app.CurrentValue.ShowcasePlaylist,
-            PublicPageOrigin = publicPage.CurrentValue.Origin,
+            PublicPageOrigin = publicPage.CurrentValue.Origin!,
         };
     }
 }

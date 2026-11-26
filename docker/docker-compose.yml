@@ -117,7 +117,7 @@ services:
       SourcesSelf__AuthorizationApiClientOptions__ServiceCode: ${SERVICE_CODE}
       # the index calls the source contract, version 2, here
       SourcesSelf__InternalClients__0__Name: index
-      SourcesSelf__InternalClients__0__Key: ${SELF_INDEX_KEY}
+      SourcesSelf__InternalClients__0__Key: ${SELF_INDEX_KEY:?}
       SourcesSelf__InternalClients__0__Scopes__0: source
       # the new shelf's editor of own chords sees here how a text will look
       SourcesSelf__InternalClients__1__Name: shelf
@@ -146,7 +146,7 @@ services:
       # the sources of the source contract, version 2 (number 1 is left free)
       Index__RelayV2__Sources__0__Name: own-chords
       Index__RelayV2__Sources__0__Endpoint: http://api/sourcesself/api/
-      Index__RelayV2__Sources__0__Key: ${SELF_INDEX_KEY}
+      Index__RelayV2__Sources__0__Key: ${SELF_INDEX_KEY:?}
       Index__RelayV2__Sources__0__IdPrefixes__0: ${SELF_EXTERNAL_ID_PREFIX}
       Index__RelayV2__Sources__2__Name: analyses
       Index__RelayV2__Sources__2__Endpoint: http://api/analyses/api/
@@ -289,7 +289,7 @@ services:
       AdminOptions__TenantId: ${ADMIN_TENANT_ID}
       # the pages of the new shelf's people, through shelf-api's internal API
       ShelfAdmin__BaseUrl: http://shelf-api/
-      ShelfAdmin__Key: ${SHELF_ADMIN_KEY}
+      ShelfAdmin__Key: ${SHELF_ADMIN_KEY:?}
     ports:
       - "${ADMIN_WEB_PORT}:80"
     depends_on:
@@ -394,31 +394,31 @@ services:
       SignIn__Yandex__ClientSecret: ${SHELF_YANDEX_CLIENT_SECRET}
       # the music service, as the internal client "shelf"
       Clients__Audio__BaseUrl: http://audio-api:8080
-      Clients__Audio__Key: ${AUDIO_SHELF_KEY}
+      Clients__Audio__Key: ${AUDIO_SHELF_KEY:?}
       # the index (the source contract's relay and the analysis tools), as the internal client "shelf"
       Clients__Index__Endpoint: http://api/index/api/
-      Clients__Index__Key: ${INDEX_SHELF_KEY}
+      Clients__Index__Key: ${INDEX_SHELF_KEY:?}
       # the own chords' store and its editor's preview, the illustrations, the PDF service: as the internal client
       # "shelf" of each
       Clients__OwnChords__Endpoint: http://api/collectives/api/
-      Clients__OwnChords__Key: ${COLLECTIVES_SHELF_KEY}
+      Clients__OwnChords__Key: ${COLLECTIVES_SHELF_KEY:?}
       Clients__OwnChords__PreviewEndpoint: http://api/sourcesself/api/
-      Clients__OwnChords__PreviewKey: ${SELF_SHELF_KEY}
+      Clients__OwnChords__PreviewKey: ${SELF_SHELF_KEY:?}
       Clients__Illustrations__Endpoint: http://api/illustrations/api/
-      Clients__Illustrations__Key: ${ILLUSTRATIONS_SHELF_KEY}
+      Clients__Illustrations__Key: ${ILLUSTRATIONS_SHELF_KEY:?}
       Clients__Pdfs__Endpoint: http://pdfs-api/pdfs/api/
-      Clients__Pdfs__Key: ${PDFS_SHELF_KEY}
+      Clients__Pdfs__Key: ${PDFS_SHELF_KEY:?}
       # the playlist the public page shows as its showcase: its id (empty: none)
       App__ShowcasePlaylistId: ${SHELF_SHOWCASE_PLAYLIST_ID}
       # the public page's address: the previews of its addresses and its sitemap are written for it
-      PublicPage__Origin: ${SHELF_SITE_ORIGIN}
+      PublicPage__Origin: ${SHELF_SITE_ORIGIN:?}
       # the key the media addresses are signed with
-      Media__SigningKey: ${SHELF_MEDIA_SIGNING_KEY}
+      Media__SigningKey: ${SHELF_MEDIA_SIGNING_KEY:?}
       # the web servers in front (the network "shelf-web"): their X-Forwarded-For gives the client's address
       Shelf__Proxy__TrustedNetworks__0: ${SHELF_WEB_SUBNET}
       # the admin site (admin-web): the people and their permissions
       InternalClients__0__Name: admin
-      InternalClients__0__Key: ${SHELF_ADMIN_KEY}
+      InternalClients__0__Key: ${SHELF_ADMIN_KEY:?}
       InternalClients__0__Scopes__0: shelf.admin
       # the custom permissions, with their labels for the admin site: taken from .env as they are, when set there
       # (up to four; more need more lines here)

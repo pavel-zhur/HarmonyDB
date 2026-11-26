@@ -11,7 +11,6 @@ namespace HarmonyDB.Shelf.Api.Clients.Index;
 /// <summary>
 /// The index, called as an internal client with the shelf's key: the source contract, version 2, which it relays to
 /// the sources (<see cref="Sources"/>), and its analysis tools for an item by its id (the same ids).
-/// Not configured: what needs it answers 503 <c>unavailable</c>.
 /// </summary>
 public sealed class IndexClient
 {
@@ -21,28 +20,24 @@ public sealed class IndexClient
 
     private readonly HttpClient _http;
     private readonly IndexClientOptions _options;
-    private readonly SourceV2Client? _sources;
 
     public IndexClient(HttpClient http, IOptions<IndexClientOptions> options, ILogger<SourceV2Client> logger)
     {
         _http = http;
         _options = options.Value;
-        if (_options.IsConfigured)
+        Sources = new(http, new()
         {
-            _sources = new(http, new()
-            {
-                Name = "index",
-                Endpoint = _options.Endpoint,
-                Key = _options.Key!,
-                Timeout = _options.Timeout,
-            }, logger);
-        }
+            Name = "index",
+            Endpoint = _options.Endpoint,
+            Key = _options.Key!,
+            Timeout = _options.Timeout,
+        }, logger);
     }
 
     /// <summary>
     /// The source contract, version 2, through the index's relay.
     /// </summary>
-    public SourceV2Client Sources => _sources ?? throw Unavailable();
+    public SourceV2Client Sources { get; }
 
     /// <summary>
     /// The index's analysis of an item: its detected keys, its loops. Null when the index does not know the item.
@@ -65,8 +60,6 @@ public sealed class IndexClient
     private async Task<T?> PostAsync<T>(string operation, object request, CancellationToken cancellationToken)
         where T : class
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(_options.Timeout);
         try
@@ -110,17 +103,12 @@ public sealed class IndexClientOptions
     /// How long an operation may take.
     /// </summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(15);
-
-    public bool IsConfigured => Endpoint != null;
 }
 
 internal sealed class IndexClientOptionsValidator : IValidateOptions<IndexClientOptions>
 {
     public ValidateOptionsResult Validate(string? name, IndexClientOptions options)
     {
-        if (options.Endpoint == null && string.IsNullOrWhiteSpace(options.Key))
-            return ValidateOptionsResult.Success;
-
         if (options.Endpoint is not { IsAbsoluteUri: true } || !options.Endpoint.AbsolutePath.EndsWith('/'))
             return ValidateOptionsResult.Fail("Clients:Index:Endpoint is not an absolute address ending with a slash.");
 

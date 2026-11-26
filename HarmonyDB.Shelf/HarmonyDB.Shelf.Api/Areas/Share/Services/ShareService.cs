@@ -280,7 +280,7 @@ public sealed class ShareService(
         Token = token,
         Kind = kind,
         CarriesAccess = carriesAccess,
-        PublicAddress = publicPage.CurrentValue.Origin is { } origin ? $"{origin}/s/{token}" : null,
+        PublicAddress = $"{publicPage.CurrentValue.Origin}/s/{token}",
     };
 
     private static string NewToken() => WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(18));

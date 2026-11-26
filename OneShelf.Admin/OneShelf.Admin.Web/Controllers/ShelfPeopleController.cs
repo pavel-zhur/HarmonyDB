@@ -24,9 +24,6 @@ public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
     /// <param name="has">Only who has this permission; <see cref="AnyPermission"/>: who has some.</param>
     public async Task<IActionResult> Index(string? q, string? has, int skip = 0, CancellationToken cancellationToken = default)
     {
-        if (!shelf.IsConfigured)
-            return View("NotConfigured");
-
         skip = Math.Max(skip, 0);
         var permission = has is null or AnyPermission ? null : has;
         var page = await shelf.ListPeopleAsync(q, permission, has == AnyPermission, skip, PageSize, cancellationToken);
@@ -41,9 +38,6 @@ public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
 
     public async Task<IActionResult> Person(Guid id, CancellationToken cancellationToken)
     {
-        if (!shelf.IsConfigured)
-            return View("NotConfigured");
-
         AdminPerson person;
         try
         {
@@ -65,9 +59,6 @@ public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Person(Guid id, string[]? p, string[]? expected, CancellationToken cancellationToken)
     {
-        if (!shelf.IsConfigured)
-            return View("NotConfigured");
-
         try
         {
             var change = await shelf.SetPermissionsAsync(id, new() { Permissions = p ?? [], Expected = expected ?? [] }, cancellationToken);
@@ -97,9 +88,6 @@ public class ShelfPeopleController(ShelfAdminClient shelf) : Controller
 
     public async Task<IActionResult> Changes(CancellationToken cancellationToken)
     {
-        if (!shelf.IsConfigured)
-            return View("NotConfigured");
-
         var changes = await shelf.GetPermissionChangesAsync(null, 200, cancellationToken);
         var catalog = await shelf.GetPermissionCatalogAsync(cancellationToken);
         return View(new ShelfChangesModel(changes, catalog));

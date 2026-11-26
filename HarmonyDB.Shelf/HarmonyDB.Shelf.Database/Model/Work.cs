@@ -65,11 +65,6 @@ public class Job
 
     public DateTimeOffset? LockedUntil { get; set; }
 
-    /// <summary>
-    /// A queued job is not taken before this time (its handler asked to be run again later); null: at once.
-    /// </summary>
-    public DateTimeOffset? NotBefore { get; set; }
-
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? StartedAt { get; set; }
@@ -169,7 +164,6 @@ internal sealed class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.HasIndex(x => new { x.AccountId, x.CreatedAt });
         builder.HasIndex(x => new { x.Kind, x.SubjectId });
         builder.HasIndex(x => new { x.State, x.CreatedAt }).HasFilter("state IN ('queued', 'running')");
-        builder.HasIndex(x => x.NotBefore).HasFilter("state = 'queued' AND not_before IS NOT NULL");
         builder.HasOne(x => x.Account).WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.Output).WithOne(x => x.Job).HasForeignKey<JobOutput>(x => x.JobId).OnDelete(DeleteBehavior.Cascade);
     }

@@ -89,7 +89,7 @@ public sealed class AuthApiFactory(string? connectionString, string environment 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment);
-        builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>
+        builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>(TestClients.Settings)
         {
             ["ConnectionStrings:Shelf"] = connectionString ?? "Host=localhost;Database=shelf-tests",
             ["Shelf:Secrets:Key"] = Convert.ToBase64String(new byte[32]),

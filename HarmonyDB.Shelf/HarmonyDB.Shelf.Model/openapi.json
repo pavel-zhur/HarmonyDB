@@ -3165,7 +3165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OwnChordsDetails"
+                  "$ref": "#/components/schemas/CreatedOwnChords"
                 }
               }
             }
@@ -6975,6 +6975,29 @@
         },
         "additionalProperties": false
       },
+      "CreatedOwnChords": {
+        "required": [
+          "history",
+          "item",
+          "placed"
+        ],
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/OwnChordsItem"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnChordsVersion"
+            }
+          },
+          "placed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreatedPersonalKey": {
         "required": [
           "item",
@@ -7502,9 +7525,6 @@
                 "$ref": "#/components/schemas/PlaylistSyncResult"
               },
               {
-                "$ref": "#/components/schemas/OwnChordsPlacingResult"
-              },
-              {
                 "$ref": "#/components/schemas/IllustrationsJobResult"
               },
               {
@@ -7540,7 +7560,6 @@
           "propertyName": "kind",
           "mapping": {
             "playlist_sync": "#/components/schemas/PlaylistSyncResult",
-            "own_chords_placing": "#/components/schemas/OwnChordsPlacingResult",
             "illustrations": "#/components/schemas/IllustrationsJobResult",
             "book_pages": "#/components/schemas/BookPagesResult",
             "book": "#/components/schemas/BookResult",
@@ -9014,11 +9033,6 @@
             "items": {
               "$ref": "#/components/schemas/OwnChordsVersion"
             }
-          },
-          "placingJobId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9074,30 +9088,6 @@
             "items": {
               "$ref": "#/components/schemas/OwnChordsItem"
             }
-          }
-        },
-        "additionalProperties": false
-      },
-      "OwnChordsPlacingResult": {
-        "required": [
-          "chordsId",
-          "kind"
-        ],
-        "type": "object",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/JobResult"
-          }
-        ],
-        "properties": {
-          "chordsId": {
-            "type": "string"
-          },
-          "kind": {
-            "enum": [
-              "own_chords_placing"
-            ],
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -9578,6 +9568,7 @@
           "defaultLocale",
           "locales",
           "markKinds",
+          "publicPageOrigin",
           "signInProviders"
         ],
         "type": "object",
@@ -9609,8 +9600,7 @@
             "nullable": true
           },
           "publicPageOrigin": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -9977,6 +9967,7 @@
         "required": [
           "carriesAccess",
           "kind",
+          "publicAddress",
           "token"
         ],
         "type": "object",
@@ -9991,8 +9982,7 @@
             "type": "boolean"
           },
           "publicAddress": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false

@@ -1,8 +1,4 @@
-using System.Reflection;
 using HarmonyDB.Index.Api.Client;
-using HarmonyDB.Index.Api.Functions.V2;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Controllers;
 using HarmonyDB.Index.Api.Models;
 using HarmonyDB.Index.Api.Services;
 using HarmonyDB.Index.Api.Services.V2;
@@ -36,41 +32,15 @@ public class IndexModule() : ApiModule("Index")
             .AddSecurityContext()
             .Configure<IndexApiOptions>(o => builder.Configuration.GetSection(nameof(IndexApiOptions)).Bind(o));
 
-        AddRelayV2(builder.Services, builder.Configuration);
-    }
-
-    /// <summary>
-    /// The relay of the source contract, version 2 (see <see cref="SourceV2Relay"/>), when the configuration has its
-    /// section. Without the section the relay is not there: its functions are not mapped, and a call to them is 404.
-    /// With the section, it must name at least one source.
-    /// </summary>
-    public static void AddRelayV2(IServiceCollection services, IConfiguration configuration)
-    {
-        if (!configuration.GetSection(RelayV2Options.SectionName).Exists())
-        {
-            services.AddMvcCore().ConfigureApplicationPartManager(manager => manager.FeatureProviders.Add(new WithoutRelayV2FeatureProvider()));
-            return;
-        }
-
-        services
+        // the relay of the source contract, version 2 (SourceV2Relay): it must name at least one source
+        builder.Services
             .AddOptions<RelayV2Options>()
-            .Bind(configuration.GetSection(RelayV2Options.SectionName))
+            .Bind(builder.Configuration.GetSection(RelayV2Options.SectionName))
             .ValidateOnStart();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<RelayV2Options>, RelayV2OptionsValidator>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<RelayV2Options>, RelayV2OptionsValidator>());
 
         // the relay keeps its own timeout per source
-        services.AddHttpClient(nameof(SourceV2Relay), client => client.Timeout = Timeout.InfiniteTimeSpan);
-        services.AddScoped<SourceV2Relay>();
-    }
-
-    /// <summary>
-    /// Leaves the relay's functions out of the module's endpoints.
-    /// </summary>
-    private sealed class WithoutRelayV2FeatureProvider : IApplicationFeatureProvider<ControllerFeature>
-    {
-        public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
-        {
-            feature.Controllers.Remove(typeof(RelayV2Functions).GetTypeInfo());
-        }
+        builder.Services.AddHttpClient(nameof(SourceV2Relay), client => client.Timeout = Timeout.InfiniteTimeSpan);
+        builder.Services.AddScoped<SourceV2Relay>();
     }
 }

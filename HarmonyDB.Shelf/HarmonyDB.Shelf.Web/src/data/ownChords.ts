@@ -1,6 +1,8 @@
 // The person's own chords, written in the editor: one with its versions, a new one (a new song, or a variant of a song
-// in its playlist; always also in the playlist "My chords"), a new version, how a text will look (the preview), and
-// the text of other chords to start from. The list of them is data/song.ts's useOwnChords.
+// in its playlist; always also in the playlist "My chords" — unless, saved, they could not be put in a playlist just
+// then: `placed: false`, they are in none, and the person puts them in one from the list of their chords),
+// a new version, how a text will look (the preview), and the text of other chords to start from. The list of them is
+// data/song.ts's useOwnChords.
 
 import { useQuery } from '@tanstack/react-query';
 import { api, call, type Schemas } from '../api/client';
@@ -50,7 +52,14 @@ const placed = () => [['own-chords'], ['playlists'], ['playlist'], ['songs'], ['
 
 export const createOwnChords = action('createOwnChords', 'change',
     (body: Schemas['CreateOwnChordsRequest']) => call(api.POST('/api/own-chords', { body })),
-    { done: () => t('editor.saved'), invalidate: placed });
+    // saved but in no playlist: the editor says so and leads to the list of own chords
+    { done: r => (r.placed ? t('editor.saved') : null), invalidate: placed });
+
+/** Own chords put in a playlist by hand (they were saved in none): a new song of them there. */
+export const placeOwnChords = action('placeOwnChords', 'change',
+    ({ playlistId, chords, title, artists }: { playlistId: string; chords: string; title: string; artists: string[] }) =>
+        call(api.POST('/api/playlists/{id}/songs', { params: { path: { id: playlistId } }, body: { chords, title, artists } })),
+    { done: () => t('editor.own.put'), undo: r => r.undo, invalidate: placed });
 
 export const updateOwnChords = action('updateOwnChords', 'change',
     ({ id, text }: { id: string; text: OwnChordsText }) => call(api.PUT('/api/own-chords/{id}', { params: { path: { id } }, body: { text } })),

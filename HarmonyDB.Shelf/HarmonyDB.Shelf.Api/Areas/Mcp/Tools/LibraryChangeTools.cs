@@ -328,7 +328,8 @@ public static class LibraryChangeTools
             "Write own chords of this person's: new ones (no ownChordsId; they go to their own-chords playlist, and to " +
             "playlistId+songId as a variant or alsoInPlaylists as new songs), or a new version of theirs (ownChordsId: the " +
             "whole text and fields as they should be; visibility stays unless given). " + IndexTools.SheetFormat +
-            " Returns ownChordsId, chordsId, version.",
+            " Returns ownChordsId, chordsId, version; new ones also placed (false: saved but put in no playlist, as the " +
+            "sources did not answer; chordsId is then null — list_my_own_chords later gives it, to add them to playlists).",
             McpToolEffect.Set,
             async (
                 ClaimsPrincipal user, OwnChordsService ownChords,
@@ -347,13 +348,16 @@ public static class LibraryChangeTools
                 CancellationToken cancellationToken = default) =>
             {
                 if (ownChordsId is not { } id)
-                    return OwnChords(await ownChords.CreateAsync(user, new()
+                {
+                    var created = await ownChords.CreateAsync(user, new()
                     {
                         Text = Text(title, artists, text, key, bpm, description, visibility ?? OwnChordsVisibility.Private, null),
                         PlaylistId = playlistId,
                         SongId = songId,
                         AlsoInPlaylists = alsoInPlaylists,
-                    }, cancellationToken));
+                    }, cancellationToken);
+                    return new { ownChordsId = created.Item.Id, created.Item.ChordsId, created.Item.Version, created.Placed };
+                }
 
                 if (playlistId != null || songId != null || alsoInPlaylists != null)
                     throw ShelfException.BadRequest();
@@ -413,7 +417,7 @@ public static class LibraryChangeTools
         where T : SongRef
         => new { songId = changed.Value.Id, changed.Value.PlaylistId, changed.Value.Title, artists = string.Join(", ", changed.Value.Artists), changed.Undo };
 
-    private static object OwnChords(OwnChordsDetails details) => new { ownChordsId = details.Item.Id, details.Item.ChordsId, details.Item.Version, placingJobId = details.PlacingJobId };
+    private static object OwnChords(OwnChordsDetails details) => new { ownChordsId = details.Item.Id, details.Item.ChordsId, details.Item.Version };
 
     /// <summary>
     /// A small change (a mark, a key, a note), made as the app makes it: one change of the sync, answered with its undo.

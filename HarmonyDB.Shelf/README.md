@@ -112,16 +112,16 @@ before authorization. See
 | `SignIn:Sessions:IdleTimeout`, `SignIn:Sessions:AbsoluteLifetime` | When a browser session ends: unused for (default 30 days), or after its sign-in (default 180 days) |
 | `SignIn:FlowLifetime`, `SignIn:FreshSignIn` | How long a sign-in at a provider may take; how recent a sign-in must be to add or remove a sign-in or to merge accounts (10 minutes each) |
 | `SignIn:RateLimitPermits`, `SignIn:RateLimitWindow` | How many sign-ins one client address may start or finish in a window (30 in 5 minutes) |
-| `Shelf:Proxy:TrustedNetworks` | The reverse proxies' networks (CIDR) whose `X-Forwarded-For` gives the client's address; none by default. **Set it whenever a proxy stands in front** (in the compose project: `SHELF_TRUSTED_PROXY_NETWORK`, its own network), or every client has the proxy's address and shares every rate limit |
-| `Clients:Audio:BaseUrl`, `Clients:Audio:Key` | The music service and the shelf's key there; not set: what needs it answers 503 `unavailable` |
+| `Shelf:Proxy:TrustedNetworks` | The reverse proxies' networks (CIDR) whose `X-Forwarded-For` gives the client's address; none by default. **Set it whenever a proxy stands in front** (in the compose project: `SHELF_WEB_SUBNET`, its own network), or every client has the proxy's address and shares every rate limit |
+| `Clients:Audio:BaseUrl`, `Clients:Audio:Key` | The music service and the shelf's key there |
 | `Playlists:LibraryShowLimit` | A playlist of more songs than this, joined, starts out of the person's library (2000) |
-| `Clients:OwnChords:Endpoint`, `…:Key`, `…:PreviewEndpoint`, `…:PreviewKey` | The own chords' store (`…/collectives/api/`) and their editor's preview (`…/sourcesself/api/`), with the shelf's keys; not set: 503 `unavailable` |
-| `Clients:Illustrations:Endpoint`, `…:Key` | The illustrations service (`…/illustrations/api/`); not set: 503 `unavailable` |
-| `Clients:Pdfs:Endpoint`, `…:Key` | The PDF service (`…/pdfs/api/`); not set: 503 `unavailable` |
-| `Clients:Index:Endpoint`, `…:Key`, `…:Timeout` | The index (`…/index/api/`): the source contract's relay and the analysis tools, with the shelf's key; not set: 503 `unavailable` (the search marks its chords part failed) |
-| `Media:SigningKey`, `Media:AddressLifetime`, `Media:RateLimitPermits`, `Media:RateLimitWindow` | Media addresses: the key they are sealed with (32 random bytes, base64; not set: 503 `unavailable`), how long one works (15 minutes), how many new ones one client address may ask for (60 a minute) |
+| `Clients:OwnChords:Endpoint`, `…:Key`, `…:PreviewEndpoint`, `…:PreviewKey` | The own chords' store (`…/collectives/api/`) and their editor's preview (`…/sourcesself/api/`), with the shelf's keys |
+| `Clients:Illustrations:Endpoint`, `…:Key` | The illustrations service (`…/illustrations/api/`) |
+| `Clients:Pdfs:Endpoint`, `…:Key` | The PDF service (`…/pdfs/api/`) |
+| `Clients:Index:Endpoint`, `…:Key`, `…:Timeout` | The index (`…/index/api/`): the source contract's relay and the analysis tools, with the shelf's key |
+| `Media:SigningKey`, `Media:AddressLifetime`, `Media:RateLimitPermits`, `Media:RateLimitWindow` | Media addresses: the key they are sealed with (32 random bytes, base64), how long one works (15 minutes), how many new ones one client address may ask for (60 a minute) |
 | `App:ShowcasePlaylistId` | The playlist the public page shows as its showcase (`showcasePlaylistId` of the public configuration); not set: none. Not required to exist at start |
-| `PublicPage:Origin`, `…:DefaultImagePath`, `…:Keep` | The public page's address (the previews of its addresses and its sitemap are written for it; not set: none), its own picture (`/icon-512.png`), how long a preview not of a link is kept (5 minutes) |
+| `PublicPage:Origin`, `…:DefaultImagePath`, `…:Keep` | The public page's address (the previews of its addresses and its sitemap are written for it), its own picture (`/icon-512.png`), how long a preview not of a link is kept (5 minutes) |
 | `Illustrations:DailyImageLimit` | How many pictures a person may have drawn in a day (42) |
 | `Jobs:Concurrency`, `Jobs:Lease`, `Jobs:MaxAttempts`, `Jobs:Poll`, `Jobs:RecentTime`, `Jobs:ListLimit`, `Jobs:FileLifetime`, `Jobs:Retention` | The background jobs (`Common/Jobs/JobsOptions.cs`); each has a default |
 

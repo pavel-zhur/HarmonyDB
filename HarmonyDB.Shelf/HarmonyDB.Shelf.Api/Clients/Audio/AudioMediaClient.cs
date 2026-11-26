@@ -22,8 +22,6 @@ public sealed class AudioMediaClient(HttpClient http, IOptionsMonitor<AudioClien
             throw new InvalidOperationException("Sound and video are never fetched with a person's credentials.");
 
         var settings = options.CurrentValue;
-        if (!settings.IsConfigured)
-            throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
 
         var request = new HttpRequestMessage(method, new Uri(new Uri(settings.BaseUrl!.TrimEnd('/') + "/"), "internal/" + path));
         request.Headers.Add(InternalKeyDefaults.HeaderName, settings.Key);

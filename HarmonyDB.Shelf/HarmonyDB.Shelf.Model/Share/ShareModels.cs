@@ -57,9 +57,9 @@ public record ShareLinkItem
     public bool CarriesAccess { get; init; }
 
     /// <summary>
-    /// The link's full address on the public page (<c>&lt;its origin&gt;/s/{token}</c>); null when there is no public page.
+    /// The link's full address on the public page (<c>&lt;its origin&gt;/s/{token}</c>).
     /// </summary>
-    public string? PublicAddress { get; init; }
+    public required string PublicAddress { get; init; }
 }
 
 /// <summary>

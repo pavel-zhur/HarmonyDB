@@ -102,7 +102,6 @@ public sealed class Browser(HttpClient client)
             (global::HarmonyDB.Shelf.Api.Areas.Book.Services.BookService.BookJobKind, typeof(Model.Book.BookResult)),
             (global::HarmonyDB.Shelf.Api.Areas.Illustrations.Services.IllustrationsService.JobKind, typeof(Model.Illustrations.IllustrationsJobResult)),
             (global::HarmonyDB.Shelf.Api.Areas.Import.Services.ImportService.JobKind, typeof(Model.Import.ImportResult)),
-            (global::HarmonyDB.Shelf.Api.Areas.OwnChords.Services.OwnChordsService.PlacingJobKind, typeof(Model.OwnChords.OwnChordsPlacingResult)),
             (global::HarmonyDB.Shelf.Api.Areas.Playlists.Services.PlaylistService.SyncJobKind, typeof(Model.Playlists.PlaylistSyncResult)),
             (Jobs.TestJobs.Succeeding.Kind, typeof(Jobs.TestJobs.Echo)),
         }.Select(x => new JobHandlerRegistration(x.Kind, typeof(object), x.Result))).Configure(options);

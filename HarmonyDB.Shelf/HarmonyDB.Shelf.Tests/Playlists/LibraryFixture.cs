@@ -143,7 +143,7 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>
+        builder.ConfigureAppConfiguration(x => x.AddInMemoryCollection(new Dictionary<string, string?>(TestClients.Settings)
         {
             ["ConnectionStrings:Shelf"] = connectionString,
             ["Shelf:Secrets:Key"] = Convert.ToBase64String(new byte[32]),

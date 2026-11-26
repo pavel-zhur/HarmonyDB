@@ -42,6 +42,8 @@ public sealed class OpenApiDocumentTests
     {
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
+            foreach (var (key, value) in TestClients.Settings)
+                builder.UseSetting(key, value);
             builder.UseSetting("ConnectionStrings:Shelf", "Host=localhost;Database=shelf-tests");
             builder.UseSetting("Shelf:Secrets:Key", Convert.ToBase64String(new byte[32]));
         }

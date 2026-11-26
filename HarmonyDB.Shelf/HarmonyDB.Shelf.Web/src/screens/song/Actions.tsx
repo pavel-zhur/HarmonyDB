@@ -25,9 +25,9 @@ export type ShareTarget = { kind: 'song'; playlistId: string; songId: string; sh
 
 /** Whether chords are of our own sources: their own address is on the public page (it opens in any browser). */
 function useOurs(address: string | null): boolean {
-    const { data: configuration } = useConfiguration();
-    const origin = configuration?.publicPageOrigin ?? null;
-    return origin !== null && address !== null && address.startsWith(origin + '/');
+    // (false until the configuration is read)
+    const origin = useConfiguration().data?.publicPageOrigin;
+    return origin !== undefined && address !== null && address.startsWith(origin + '/');
 }
 
 /**
@@ -121,10 +121,10 @@ function Pdf({ chordsId }: { chordsId: string }) {
 function StaticLink({ chords }: { chords: { id: string; address: string | null } }) {
     const { t } = useTranslation();
     const { signedIn } = useSession();
-    const { data: configuration } = useConfiguration();
-    const origin = configuration?.publicPageOrigin ?? null;
+    // offered once it is known whether the chords are of our own sources
+    const known = useConfiguration().data !== undefined;
     const ours = useOurs(chords.address);
-    const offered = signedIn && origin !== null && !ours;
+    const offered = signedIn && known && !ours;
     const mine = useStaticLink(offered ? chords.id : null);
     const make = useMutation({ mutationFn: makeStaticLink });
     const remove = useMutation({ mutationFn: removeStaticLink });
@@ -140,9 +140,9 @@ function StaticLink({ chords }: { chords: { id: string; address: string | null }
             <div className="muted small">{t('song.share.static.note')}</div>
             {mine.isPending && <p className="loading">{t('common.loading')}</p>}
             {mine.isError && <p className="failed">{errorText(mine.error)}</p>}
-            {mine.isSuccess && link?.publicAddress && (
+            {mine.isSuccess && link && (
                 <>
-                    <div className="linkbox"><code>{link.publicAddress}</code><button type="button" className="btn" onClick={() => void copy(link.publicAddress!)}>{t('common.copy')}</button></div>
+                    <div className="linkbox"><code>{link.publicAddress}</code><button type="button" className="btn" onClick={() => void copy(link.publicAddress)}>{t('common.copy')}</button></div>
                     <p><button type="button" className="btn dan sm" disabled={remove.isPending} onClick={() => remove.mutate({ token: link.token, chords: chords.id })}>{t('song.share.static.remove')}</button></p>
                 </>
             )}

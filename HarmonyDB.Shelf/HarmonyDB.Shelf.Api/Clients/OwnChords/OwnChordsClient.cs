@@ -14,7 +14,7 @@ namespace HarmonyDB.Shelf.Api.Clients.OwnChords;
 /// The store of own chords (the old services' collectives) and its editor's preview, called as an internal client with
 /// the shelf's keys. Own chords are the person's when one of the names the person is known by is their author
 /// (<see cref="OwnChordsAuthor"/>).
-/// Not configured, or not answering: 503 <c>unavailable</c>.
+/// Not answering: 503 <c>unavailable</c>.
 /// </summary>
 public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOptions> options)
 {
@@ -42,8 +42,6 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
     /// <exception cref="ShelfException">409 when they are not deleted here (<see cref="StoredOwnChords.Editable"/>).</exception>
     public async Task<bool> DeleteAsync(OwnChordsAuthor author, Guid collectiveId, CancellationToken cancellationToken)
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var response = await SendAsync(new Uri(_options.Endpoint!, "OwnDelete"), _options.Key!, JsonContent.Create(new { author, collectiveId }, options: Json), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound) return false;
         if (response.StatusCode == HttpStatusCode.Conflict) throw NotEditable();
@@ -63,8 +61,6 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
     /// </summary>
     public async Task<SheetContent> PreviewAsync(string contents, CancellationToken cancellationToken)
     {
-        if (!_options.IsPreviewConfigured) throw Unavailable();
-
         using var response = await SendAsync(new Uri(_options.PreviewEndpoint!, "V2Preview"), _options.PreviewKey!,
             JsonContent.Create(new { contents }, options: SourceV2Json.Options), cancellationToken);
         return await ReadAsync<SheetContent>(response, SourceV2Json.Options, cancellationToken);
@@ -73,8 +69,6 @@ public sealed class OwnChordsClient(HttpClient http, IOptions<OwnChordsClientOpt
     private async Task<TResult?> PostAsync<TAnswer, TResult>(string operation, object request, Func<TAnswer, TResult> result, CancellationToken cancellationToken)
         where TResult : class
     {
-        if (!_options.IsConfigured) throw Unavailable();
-
         using var response = await SendAsync(new Uri(_options.Endpoint!, operation), _options.Key!, JsonContent.Create(request, options: Json), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         if (response.StatusCode == HttpStatusCode.BadRequest) throw ShelfException.BadRequest(OwnChordsClientErrors.Refused);
@@ -191,10 +185,6 @@ public sealed class OwnChordsClientOptions
     public string? PreviewKey { get; set; }
 
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(15);
-
-    public bool IsConfigured => Endpoint != null;
-
-    public bool IsPreviewConfigured => PreviewEndpoint != null;
 }
 
 internal sealed class OwnChordsClientOptionsValidator : IValidateOptions<OwnChordsClientOptions>
@@ -212,8 +202,6 @@ internal sealed class OwnChordsClientOptionsValidator : IValidateOptions<OwnChor
 
         void Check(Uri? endpoint, string? key, string endpointName, string keyName)
         {
-            if (endpoint == null && string.IsNullOrEmpty(key))
-                return;
             if (endpoint is not { IsAbsoluteUri: true } || !endpoint.AbsolutePath.EndsWith('/'))
                 failures.Add($"{section}:{endpointName} is not an absolute address ending with a slash.");
             if (string.IsNullOrEmpty(key) || key.Length < InternalClientsOptions.MinimumKeyLength)

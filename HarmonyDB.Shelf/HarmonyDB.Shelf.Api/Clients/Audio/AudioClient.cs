@@ -33,11 +33,6 @@ public sealed partial class AudioClient(HttpClient http, IOptionsMonitor<AudioCl
         => SendAsync<AudioPurged>(HttpMethod.Delete, $"internal/subjects/{Uri.EscapeDataString(subject)}", null, cancellationToken);
 
     /// <summary>
-    /// Whether the music service is configured here.
-    /// </summary>
-    public bool IsConfigured => options.CurrentValue.IsConfigured;
-
-    /// <summary>
     /// How long a call may take, unless it says otherwise.
     /// </summary>
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
@@ -48,8 +43,6 @@ public sealed partial class AudioClient(HttpClient http, IOptionsMonitor<AudioCl
     private async Task<T> SendAsync<T>(HttpMethod method, string path, AudioActing? acting, TimeSpan timeout, CancellationToken cancellationToken)
     {
         var settings = options.CurrentValue;
-        if (!settings.IsConfigured)
-            throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
 
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         limit.CancelAfter(timeout);
@@ -191,8 +184,7 @@ public sealed record AudioPurged
 }
 
 /// <summary>
-/// The configuration section <c>Clients:Audio</c>. Not set: the music service is not there, and what needs it answers
-/// 503 <c>unavailable</c>.
+/// The configuration section <c>Clients:Audio</c>.
 /// </summary>
 public sealed class AudioClientOptions
 {
@@ -207,17 +199,12 @@ public sealed class AudioClientOptions
     /// The shelf's internal key at the music service. Secret.
     /// </summary>
     public string? Key { get; set; }
-
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(BaseUrl);
 }
 
 internal sealed class AudioClientOptionsValidator : IValidateOptions<AudioClientOptions>
 {
     public ValidateOptionsResult Validate(string? name, AudioClientOptions options)
     {
-        if (string.IsNullOrWhiteSpace(options.BaseUrl) && string.IsNullOrWhiteSpace(options.Key))
-            return ValidateOptionsResult.Success;
-
         if (!Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out _))
             return ValidateOptionsResult.Fail("Clients:Audio:BaseUrl is not an absolute address.");
 

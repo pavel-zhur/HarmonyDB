@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using HarmonyDB.Shelf.Api.Areas.Illustrations.Services;
-using HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 using HarmonyDB.Shelf.Api.Clients.Illustrations;
 using HarmonyDB.Shelf.Api.Common.Jobs;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
@@ -17,8 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HarmonyDB.Shelf.Tests.Jobs;
 
 /// <summary>
-/// What bounds a person's work: the jobs of a kind going at once, the pictures of a day, one batch of chords at a time;
-/// and a placing done again adds nothing twice.
+/// What bounds a person's work: the jobs of a kind going at once, the pictures of a day, one batch of chords at a time.
 /// </summary>
 public sealed class LimitsTests(WorkFixture fixture) : IClassFixture<WorkFixture>
 {
@@ -134,30 +132,6 @@ public sealed class LimitsTests(WorkFixture fixture) : IClassFixture<WorkFixture
 
         await using var db = fixture.CreateContext();
         Assert.Single(await db.Jobs.Where(x => x.SubjectId == chords).ToListAsync());
-    }
-
-    [DatabaseFact]
-    public async Task APlacingDoneAgainAddsNothingTwice()
-    {
-        var me = await fixture.AccountAsync();
-        var chordsId = $"own-{Guid.NewGuid():N}";
-        fixture.Index.Answer = (operation, body) => operation == "V2GetHeaders"
-            ? (HttpStatusCode.OK, new GetHeadersResponse
-            {
-                Headers = body.GetProperty("ids").EnumerateArray()
-                    .Select(x => new HeaderAnswer { Id = x.GetString()!, State = ItemState.Open, Header = FakeIndex.Header(x.GetString()!, "Own") }).ToList(),
-            })
-            : (HttpStatusCode.InternalServerError, null);
-
-        var placing = new OwnChordsService.Placing(new("https://own.example/1"), [], "A song", ["Somebody"], null, null, []);
-        for (var i = 0; i < 2; i++)
-        {
-            await using var scope = fixture.Api.Services.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<OwnChordsService>().PlaceAsync(me, chordsId, placing, CancellationToken.None);
-        }
-
-        await using var db = fixture.CreateContext();
-        Assert.Single(await db.PlaylistSongItems.Where(x => x.Chords!.SourceId == chordsId).ToListAsync());
     }
 }
 
