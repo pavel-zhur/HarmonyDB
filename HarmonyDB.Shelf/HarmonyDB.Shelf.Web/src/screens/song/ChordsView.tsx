@@ -10,7 +10,7 @@ import { errorText } from '../../api/errors';
 import { playlistTitle } from '../../data/playlists';
 import { useProfile, useSession } from '../../data/session';
 import { useSettings } from '../../data/settings';
-import { useChordsAnalysis, useChordsContent, useChordsPlaces, useSimilarChords, type ChordsVariant, type PersonRef, type SongPage } from '../../data/song';
+import { useChordsAnalysis, useChordsContent, useChordsPlaces, useOwnChords, useSimilarChords, type ChordsVariant, type PersonRef, type SongPage } from '../../data/song';
 import { useMarkKinds, useMarkSign } from '../../data/marks';
 import { local, useLocalView, useMyKey, useMyMarks, useMyNote } from '../../local';
 import { Avatar } from '../../kit/controls';
@@ -138,6 +138,9 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     const places = useChordsPlaces(state === 'open' ? chordsId : null);
     const inMine = new Set((places.data?.places ?? []).filter(x => x.chords === chordsId).map(x => x.playlistId)).size;
     const authorComment = answer?.content?.sheet?.authorComment;
+    // chords I wrote, editable here: edited from their header
+    const own = useOwnChords();
+    const mineToEdit = own.data?.items.find(x => x.chordsId === chordsId && x.editable) ?? null;
 
     return (
         <section className="vview" onTouchStart={start} onTouchEnd={end} onTouchCancel={() => { touch.current = null; }}>
@@ -155,6 +158,11 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
                         <span className="on">{place.pager.index + 1}/{place.pager.count}</span>
                         {place.pager.next ? <Link to={place.pager.next} aria-label={t('song.chords.next')} title={t('song.chords.next')}><Icon name="right" /></Link> : <span className="off"><Icon name="right" /></span>}
                     </span>
+                )}
+                {mineToEdit && (
+                    <Link className="xbtn" to={`/editor?own=${encodeURIComponent(mineToEdit.id)}`} aria-label={t('song.menu.edit')} title={t('song.menu.edit')}>
+                        <Icon name="pen" />
+                    </Link>
                 )}
                 {state === 'open' && (
                     <>
@@ -363,7 +371,8 @@ function KeyRow({ chordsId, playlistId, member, transpose, remembered, shown, on
     const remember = () => {
         if (playlistId && here !== null) local.key(chordsId, transpose, playlistId);
         else local.key(chordsId, transpose);
-        onShow(null);
+        // a guest is asked to sign in first: the key stays shown meanwhile, and is the remembered one after
+        if (signedIn) onShow(null);
     };
     return (
         <>
@@ -395,7 +404,7 @@ function KeyRow({ chordsId, playlistId, member, transpose, remembered, shown, on
                     {signedIn && member && playlistId && here === null && (
                         <button type="button" className="kchip add" aria-label={t('song.key.hereAdd')} title={t('song.key.hereAdd')}
                             onClick={() => { local.key(chordsId, transpose, playlistId); onShow(null); }}>
-                            <Icon name="plus" />{changed ? t('song.key.onlyHere') : ''}
+                            <Icon name="plus" />{changed ? t('song.key.onlyHere') : t('song.key.forHere')}
                         </button>
                     )}
                     {changed && <button type="button" className="kchip back" title={t('song.key.backSub')} onClick={() => onShow(null)}>{t('song.key.back', { key: keyText(remembered) })}</button>}

@@ -66,14 +66,12 @@ public sealed class McpImportTests(LibraryFixture fixture) : IClassFixture<Libra
         Assert.Equal("person", fixture.Audio.PlaylistModes[^1]);
 
         // a track of the service may be added with its anonymous permission: the call passes to the service's catalog
-        // (which the tests do not serve)
         var song = (await browser.GetAsync<SongList>($"/api/playlists/{playlistId}/songs")).Rows[0];
         var added = await client.CallToolAsync("add_recording_to_song", new Dictionary<string, object?>
         {
-            ["playlistId"] = playlistId, ["songId"] = song.SongId, ["service"] = "youtube", ["trackId"] = "unknown-track",
+            ["playlistId"] = playlistId, ["songId"] = song.SongId, ["service"] = "youtube", ["trackId"] = "any-track",
         });
-        Assert.True(added.IsError);
-        Assert.Equal("unavailable", Json(added).GetProperty("error").GetString());
+        Assert.NotEqual(true, added.IsError);
     }
 
     [DatabaseFact]

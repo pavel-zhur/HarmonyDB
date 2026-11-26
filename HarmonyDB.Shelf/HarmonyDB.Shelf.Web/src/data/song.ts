@@ -97,6 +97,19 @@ export function useOwnChords() {
 // a song's page, the lists, and its recordings (a linked or separated song takes its recordings with it)
 const songKeys = (playlistId: string) => [['song', playlistId], ['songs'], ['playlist', playlistId], ['library'], ['recordings', playlistId]];
 
+/** The top of a playlist, for `after` (the API's empty id). */
+export const atTheTop = '00000000-0000-0000-0000-000000000000';
+
+/** A song renamed in its playlist (title, artists), or moved right after another (`after`; atTheTop: first). */
+export const updateSong = action('updateSong', 'change',
+    ({ playlistId, songId, title, artists, after }: { playlistId: string; songId: string; title?: string; artists?: string[]; after?: string }) =>
+        call(api.PATCH('/api/playlists/{id}/songs/{songId}', { params: { path: { id: playlistId, songId } }, body: { title, artists, after } })),
+    {
+        done: (_, { after }) => (after ? null : t('song.renamed')),
+        undo: r => r.undo,
+        invalidate: (_, { playlistId }) => songKeys(playlistId),
+    });
+
 export const setMainVariant = action('setMainVariant', 'change',
     ({ playlistId, songId, itemId }: { playlistId: string; songId: string; itemId: string | null }) =>
         call(api.PUT('/api/playlists/{id}/songs/{songId}/main', { params: { path: { id: playlistId, songId } }, body: { itemId } })),

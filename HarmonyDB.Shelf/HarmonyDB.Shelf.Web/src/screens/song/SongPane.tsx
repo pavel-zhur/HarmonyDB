@@ -146,6 +146,7 @@ function SongInPlaylist({ playlistId, songId, share, closeTo }: { playlistId: st
                 <div className="vers">
                     <SongRecordings song={{ playlistId, songId, share }} analysed={variants.some(v => isAnalysis(v.chords.header?.kinds))}
                         anyOpen={variants.some(v => v.chords.state === 'open')}
+                        lookFor={[...page.song.artists, page.song.title].join(' ')}
                         analysisId={variant && isAnalysis(variant.chords.header?.kinds) ? variant.chords.id : null} />
                     <div className="vlab">{t('song.chordsLabel')}</div>
                     {cut && w0 > 0 && <button type="button" className="lnk more" onClick={() => setAll(true)}><Icon name="up" />{t('song.moreAbove', { count: w0 })}</button>}

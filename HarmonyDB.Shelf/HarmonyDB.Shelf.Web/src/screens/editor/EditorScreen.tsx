@@ -84,7 +84,8 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
     const fresh: Draft = {
         title: song?.title ?? first?.title ?? '',
         artists: (song?.artists ?? first?.artists ?? []).join(', '),
-        contents: first?.contents ?? t('editor.sample'),
+        // a new text starts empty; the example of the markup is its placeholder
+        contents: first?.contents ?? '',
         description: existing?.text.description ?? '',
         key: existing?.text.key ?? start?.key ?? '',
         bpm: existing?.text.bpm?.toString() ?? start?.bpm?.toString() ?? '',
@@ -205,7 +206,7 @@ function Editor({ existing, song, start }: { existing: Existing | null; song: So
 
             <div className="ed-grid">
                 <div><span className="lab">{t('editor.write')}</span>
-                    <textarea className="field ed-text" value={contents} spellCheck={false} onChange={e => setContents(e.target.value)} aria-label={t('editor.write')} /></div>
+                    <textarea className="field ed-text" value={contents} spellCheck={false} onChange={e => setContents(e.target.value)} aria-label={t('editor.write')} placeholder={t('editor.sample')} /></div>
                 <div><span className="lab">{t('editor.preview')}</span><Preview contents={contents} /></div>
             </div>
 

@@ -201,3 +201,9 @@ button.plb:hover, .plb.on { color: var(--accent); }
 .il-links .lnk { color: var(--muted); font-size: 12.5px; padding: 5px 0; font-weight: 400; }
 .il-links .lnk:hover { color: var(--accent); }
 .il-links .lnk svg.ic { width: 14px; height: 14px; }
+
+/* the song renamed in its playlist, in place in the menu (Actions.tsx Rename) */
+.it.rename { display: grid; align-items: stretch; gap: 8px; padding: 8px 12px 10px; }
+.it.rename label { display: grid; gap: 3px; }
+.it.rename .field { width: 100%; }
+.it.rename .btn { justify-self: start; }

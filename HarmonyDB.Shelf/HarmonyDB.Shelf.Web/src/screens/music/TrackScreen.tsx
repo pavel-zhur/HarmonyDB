@@ -9,10 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { ToTop } from '../../app/ToTop';
 import { createPlaylist, playlistTitle, useMyPlaylists, type PlaylistSummary } from '../../data/playlists';
 import { useMusicLyrics, useMusicTrack, type MusicTrack } from '../../data/music';
-import { addRecordingSong } from '../../data/recordings';
+import { addRecording, addRecordingSong } from '../../data/recordings';
+import { useSongList } from '../../data/songs';
 import { useSession } from '../../data/session';
 import { offerSignIn } from '../../data/signInOffer';
-import { Soon } from '../../kit/controls';
+import { SearchField, Soon } from '../../kit/controls';
 import { Icon } from '../../kit/Icon';
 import { MenuItem, MenuTitle, Popover } from '../../kit/Popover';
 import { ClipBox, PlayerBar } from '../../player/PlayerBar';
@@ -104,7 +105,26 @@ function AddToPlaylist({ track }: { track: MusicTrack }) {
     const playlists = useMyPlaylists();
     const add = useMutation({ mutationFn: addRecordingSong });
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+    // a playlist chosen: then a new song of the recording there, or the recording added to a song of it
+    const [into, setInto] = useState<PlaylistSummary | null>(null);
     const mine = (playlists.data ?? []).filter(canAddTo);
+    const close = () => {
+        setAnchor(null);
+        setInto(null);
+    };
+    if (into && anchor) {
+        return (
+            <>
+                <button type="button" className="btn pri"><Icon name="addpl" />{t('music.addToPlaylist')}</button>
+                <Popover anchor={anchor} onClose={close} label={t('music.addToPlaylist')} width={340}>
+                    <IntoPlaylist track={track} playlist={into} onDone={close} onNewSong={() => {
+                        close();
+                        add.mutate({ playlistId: into.id, service: track.service, trackId: track.id });
+                    }} />
+                </Popover>
+            </>
+        );
+    }
     return (
         <>
             <button type="button" className="btn pri" disabled={add.isPending}
@@ -121,10 +141,7 @@ function AddToPlaylist({ track }: { track: MusicTrack }) {
                             navigate(`/playlists/${p.id}/songs/${there.songId}`);
                         }}>{playlistTitle(p)}</MenuItem>
                     ) : (
-                        <MenuItem key={p.id} onClick={() => {
-                            setAnchor(null);
-                            add.mutate({ playlistId: p.id, service: track.service, trackId: track.id });
-                        }}>{playlistTitle(p)}</MenuItem>
+                        <MenuItem key={p.id} onClick={() => setInto(p)}>{playlistTitle(p)}</MenuItem>
                     );
                 })}
                 {!mine.length && !playlists.isPending && (
@@ -138,6 +155,40 @@ function AddToPlaylist({ track }: { track: MusicTrack }) {
                 )}
                 <p className="note">{t('music.addNote')}</p>
             </Popover>
+        </>
+    );
+}
+
+/**
+ * The recording into a chosen playlist: as a new song of it there, or added to a song the playlist has (found by its
+ * title, the track's to start with) — the song then plays it and keeps its chords.
+ */
+function IntoPlaylist({ track, playlist, onDone, onNewSong }: { track: MusicTrack; playlist: PlaylistSummary; onDone: () => void; onNewSong: () => void }) {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [q, setQ] = useState(track.title ?? '');
+    const songs = useSongList({ kind: 'playlist', id: playlist.id }, { q, sort: 'popular', who: null, mark: null }, q.trim().length > 0);
+    const rows = (songs.data?.pages[0]?.rows ?? []).filter(row => row.songId).slice(0, 8);
+    const add = useMutation({
+        mutationFn: addRecording,
+        onSuccess: (_, { song }) => {
+            onDone();
+            navigate(`/playlists/${song.playlistId}/songs/${song.songId}`);
+        },
+    });
+    return (
+        <>
+            <MenuTitle>{playlistTitle(playlist)}</MenuTitle>
+            <MenuItem sub={t('music.newSongSub')} onClick={onNewSong}>{t('music.newSong')}</MenuItem>
+            <hr />
+            <MenuTitle>{t('music.toSong')}</MenuTitle>
+            <div className="it"><SearchField value={q} onChange={setQ} placeholder={t('music.toSongSearch')} autoFocus /></div>
+            {rows.map(row => (
+                <MenuItem key={row.songId} onClick={() => add.mutate({ song: { playlistId: playlist.id, songId: row.songId! }, service: track.service, trackId: track.id })}>
+                    {[row.artists.join(', '), row.title].filter(Boolean).join(' — ')}
+                </MenuItem>
+            ))}
+            {songs.isSuccess && !rows.length && q.trim() && <p className="note">{t('music.toSongNone')}</p>}
         </>
     );
 }

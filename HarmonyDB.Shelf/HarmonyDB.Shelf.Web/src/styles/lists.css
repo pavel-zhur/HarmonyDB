@@ -87,3 +87,12 @@
 .cmp { padding: 0 8px 6px 28px; line-height: 1.9; color: var(--muted); }
 .cmp a { color: var(--ink); font-weight: 600; margin-right: 10px; }
 .cmp a.last { background: var(--last); border-radius: 6px; padding: 0 4px; }
+
+/* a song moved up and down in its playlist's order (SongList's Mover) */
+/* at the end of the row's text, the same place on every row */
+.mover { display: inline-flex; gap: 2px; float: right; margin-left: 8px; }
+.mover .flip { transform: rotate(180deg); }
+.mover button { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); }
+.mover button:hover:not(:disabled) { background: var(--surface2); color: var(--ink); }
+.mover button:disabled { opacity: .3; }
+.mover svg.ic { width: 16px; height: 16px; }

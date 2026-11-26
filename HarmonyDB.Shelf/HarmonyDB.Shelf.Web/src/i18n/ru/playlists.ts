@@ -121,7 +121,6 @@ export const playlists = {
         as: 'как {{role}}',
         until: 'Приглашение действует до {{date}}',
         accept: 'Вступить',
-        alreadyMember: 'Вы уже участник.',
         joined: 'Вы вступили в «{{title}}»',
     },
     importPlaylist: {

@@ -24,8 +24,16 @@ export function RecentScreen() {
     );
 }
 
-export function RecentList({ entries }: { entries: Entry[] }) {
-    return <div className="recent lines">{entries.map(entry => <RecentRow key={(entry.song?.id ?? '') + (entry.chords?.id ?? '')} entry={entry} />)}</div>;
+/** The same chords opened alone and as a song (or in two places) are one line: the latest. `limit`: lines at most. */
+export function RecentList({ entries, limit }: { entries: Entry[]; limit?: number }) {
+    const seen = new Set<string>();
+    const lines = entries.filter(entry => {
+        const id = entry.chords?.id ?? entry.song?.id;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    }).slice(0, limit);
+    return <div className="recent lines">{lines.map(entry => <RecentRow key={(entry.song?.id ?? '') + (entry.chords?.id ?? '')} entry={entry} />)}</div>;
 }
 
 function RecentRow({ entry }: { entry: Entry }) {

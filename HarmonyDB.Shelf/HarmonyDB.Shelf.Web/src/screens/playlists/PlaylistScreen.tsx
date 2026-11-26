@@ -48,7 +48,8 @@ export function PlaylistScreen() {
                 songHref={(p, s) => (p === id ? `/playlists/${id}/songs/${s}` : `/playlists/${p}/songs/${s}`)}
                 chordsHref={c => `/library/chords/${c}`}
                 head={details ? <Head details={details} share={share} /> : <p className="loading">{t('common.loading')}</p>}
-                scope={signedIn && details ? <ScopeChip current={{ id, title: playlistTitle(details.playlist) }} /> : undefined} />
+                scope={signedIn && details ? <ScopeChip current={{ id, title: playlistTitle(details.playlist) }} /> : undefined}
+                movable={!!details?.canAdminister} />
         } />
     );
 }

@@ -42,10 +42,12 @@ export function PlayerBar({ source, piece }: { source: PlayerSource | null; piec
 
     const fill = useRef<HTMLElement>(null);
     const time = useRef<HTMLSpanElement>(null);
+    const total = useRef<HTMLSpanElement>(null);
     const onTime = useCallback((position: number) => {
         const duration = player.getState().duration;
         if (fill.current) fill.current.style.width = duration ? `${Math.min(100, position / duration * 100)}%` : '0';
-        if (time.current) time.current.textContent = `${clock(position)} / ${clock(duration)}`;
+        if (time.current) time.current.textContent = clock(position);
+        if (total.current) total.current.textContent = ` / ${clock(duration)}`;
     }, []);
     useClock(onTime);
 
@@ -85,7 +87,7 @@ export function PlayerBar({ source, piece }: { source: PlayerSource | null; piec
                     <b>{title}</b>
                     <span>{state.status === 'loading' ? t('player.loading') : state.status === 'failed' ? state.error : state.counting ? t('player.counting') : sub}</span>
                 </span>
-                <span className="pl-time" ref={time} />
+                <span className="pl-time"><span ref={time} /><span className="pl-total" ref={total} /></span>
                 <button type="button" className={state.loop ? 'pl-btn on' : 'pl-btn'} disabled={!ready} aria-pressed={!!state.loop}
                     title={t(state.loop ? 'player.loopOff' : 'player.loop')} aria-label={t('player.loop')} onClick={() => player.toggleLoop()}>
                     <Icon name="loop" />

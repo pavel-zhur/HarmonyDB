@@ -32,6 +32,7 @@ export const library = {
             resetMark: 'Any mark',
         },
         empty: 'Nothing here yet.',
+        emptyPlaylist: 'No songs here yet. Find chords by the search on the home page and press “To a playlist” beside them.',
         emptySearch: 'Nothing found.',
         otherPlaylists: 'In my other playlists',
         foundInPlaylists: 'Found in my playlists',

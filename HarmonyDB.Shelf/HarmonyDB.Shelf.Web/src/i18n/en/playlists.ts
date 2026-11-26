@@ -113,7 +113,6 @@ export const playlists = {
         as: 'as {{role}}',
         until: 'The invitation works until {{date}}.',
         accept: 'Join',
-        alreadyMember: 'You are already a member.',
         joined: 'You joined «{{title}}»',
     },
     importPlaylist: {

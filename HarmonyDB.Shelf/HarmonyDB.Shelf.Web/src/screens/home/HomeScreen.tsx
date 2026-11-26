@@ -44,7 +44,8 @@ export function HomeScreen() {
 
 function PersonHome() {
     const { t } = useTranslation();
-    const recent = useRecent(4);
+    // more than shown: the same chords opened twice are one line
+    const recent = useRecent(12);
     const playlists = useMyPlaylists();
     // the playlists in my library; the system ones once they hold something
     const shown = playlists.data?.filter(p => (p.showInLibrary || p.following) && (p.systemKind === 'none' || p.songCount > 0)) ?? [];
@@ -53,7 +54,7 @@ function PersonHome() {
             {!!recent.data?.length && (
                 <>
                     <h2><Link className="h2l" to="/recent">{t('home.continue')}<Icon name="right" /></Link></h2>
-                    <RecentList entries={recent.data} />
+                    <RecentList entries={recent.data} limit={4} />
                 </>
             )}
             {playlists.data && shown.length === 0 && (

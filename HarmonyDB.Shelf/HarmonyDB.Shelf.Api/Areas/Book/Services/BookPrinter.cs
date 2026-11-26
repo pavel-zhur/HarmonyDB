@@ -141,6 +141,8 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
         {
             ShowDegrees = item.Settings.ShowDegrees,
             ChordSuperscripts = item.Settings.ChordSuperscripts,
+            // as the app shows them: with neither sharps nor flats asked for, the notes as they are written (E#, not F)
+            ShowNotesAsWritten = item.Settings.Alteration == null,
         };
 
         var notes = new List<string> { E(item.Header!.Source.Title) };
@@ -221,7 +223,25 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
             white-space: nowrap;
         }
 
+        /* a chord's superscripts, subscripts and degree take no height of their own, as in the app: a taller chord's
+           white background would cover the tops of the words under it */
+        div.chords-block .chord sub, div.chords-block .chord sup {
+            position: relative;
+            font-size: .75em;
+            line-height: 0;
+            vertical-align: baseline;
+        }
+
+        div.chords-block .chord sub {
+            bottom: -.25em;
+        }
+
+        div.chords-block .chord sup {
+            top: -.5em;
+        }
+
         div.chords-block .chord-degree {
+            margin-left: .25em;
             font-weight: normal;
             color: #666;
         }

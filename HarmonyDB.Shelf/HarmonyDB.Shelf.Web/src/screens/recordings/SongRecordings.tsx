@@ -7,10 +7,13 @@
 //   analysisId: the analysis open on the page — its recording is one of the song's: listed (its own row, or the row of
 //   the same recording on its service), and lit while it plays. A tap on a row plays that recording.
 //   readOnly: only the recordings, to listen to (the public page): nothing to find, add or analyse
+//   lookFor: the song's artists and title — a recording not found here is looked for in the search, opened, and put
+//   into this song from its page ("To a playlist")
 //   anyOpen: whether any chords of the song are open to the person — recordings are looked for by open chords' titles
 //   only, so with none open and none kept there is nothing to say (not "none found")
 
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { errorText } from '../../api/errors';
@@ -32,7 +35,7 @@ type SongPath = { playlistId: string; songId: string; share?: string | null };
 /** How many recordings are shown before "more". */
 const shownFirst = 3;
 
-type Props = { song: SongPath; analysed: boolean; analysisId?: string | null; readOnly?: boolean; anyOpen?: boolean };
+type Props = { song: SongPath; analysed: boolean; analysisId?: string | null; readOnly?: boolean; anyOpen?: boolean; lookFor?: string };
 
 export function SongRecordings(props: Props) {
     // (read-only — the public page, always a guest — asks for no session)
@@ -44,7 +47,7 @@ function RecordingsOfPerson(props: Props) {
     return <Recordings {...props} signedIn={signedIn} />;
 }
 
-function Recordings({ song, analysed, analysisId = null, readOnly = false, anyOpen = true, signedIn }: Props & { signedIn: boolean }) {
+function Recordings({ song, analysed, analysisId = null, readOnly = false, anyOpen = true, lookFor = '', signedIn }: Props & { signedIn: boolean }) {
     const { t } = useTranslation();
     const recordings = useSongRecordings(song);
     const chosen = useChosenRecording(recordings.data);
@@ -113,7 +116,7 @@ function Recordings({ song, analysed, analysisId = null, readOnly = false, anyOp
             </div>}
             {!readOnly && (
                 <Popover anchor={anchor} onClose={() => setAnchor(null)} width={380} label={find}>
-                    <FindAnother song={song} data={data} />
+                    <FindAnother song={song} data={data} lookFor={lookFor} />
                 </Popover>
             )}
         </div>
@@ -136,7 +139,7 @@ function RecordingLine({ track, analysed = false }: { track: MusicTrack; analyse
 }
 
 /** The song's recordings and the candidates found: remove the wrong, add the missing; look again on the services. */
-function FindAnother({ song, data }: { song: SongPath; data: Recordings }) {
+function FindAnother({ song, data, lookFor }: { song: SongPath; data: Recordings; lookFor: string }) {
     const { t } = useTranslation();
     const { signedIn } = useSession();
     const find = useMutation({ mutationFn: findRecordings });
@@ -171,6 +174,7 @@ function FindAnother({ song, data }: { song: SongPath; data: Recordings }) {
                 </>
             )}
             <p className="note">{t('recordings.guesses')} {t(data.canAdd ? 'recordings.hereOnly' : 'recordings.inYourPlaylist')}</p>
+            {data.canAdd && lookFor && <p className="note"><Link className="lnk" to={`/?q=${encodeURIComponent(lookFor)}`}><Icon name="search" />{t('recordings.yourself')}</Link></p>}
             {signedIn && data.canAdd && (
                 <p className="note">
                     <button type="button" className="lnk" disabled={find.isPending} onClick={() => find.mutate(song)}>

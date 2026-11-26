@@ -169,6 +169,7 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
         builder.ConfigureTestServices(services =>
         {
             services.AddHttpClient<AudioClient>().ConfigurePrimaryHttpMessageHandler(() => audio);
+            services.AddHttpClient<AudioMusicClient>().ConfigurePrimaryHttpMessageHandler(() => audio);
             services.AddHttpClient<IndexClient>().ConfigurePrimaryHttpMessageHandler(() => index);
             services.AddHttpClient<IllustrationsClient>().ConfigurePrimaryHttpMessageHandler(() => illustrations);
             services.AddHttpClient<OwnChordsClient>().ConfigurePrimaryHttpMessageHandler(() => new NoOwnChords());
@@ -180,7 +181,7 @@ public sealed class LibraryApiFactory(string connectionString, FakeAudio audio, 
 
 /// <summary>
 /// The music service as the tests set it: a link resolves to the YouTube playlist <c>PL1</c>, whose tracks are
-/// <see cref="Tracks"/>; any credentials of YouTube are an account. While <see cref="PlaylistPrivate"/>, the playlist
+/// <see cref="Tracks"/>; any YouTube track's page is there; any credentials of YouTube are an account. While <see cref="PlaylistPrivate"/>, the playlist
 /// opens only to an account (anonymously it is not found, as the service answers of a private one).
 /// </summary>
 public sealed class FakeAudio : HttpMessageHandler
@@ -220,6 +221,17 @@ public sealed class FakeAudio : HttpMessageHandler
         {
             "/internal/resolve" => new { service = "youtube", type = "playlist", id = "PL1" },
             "/internal/youtube/me" => new { authed = true, account = "Someone there" },
+            _ when path.StartsWith("/internal/youtube/tracks/", StringComparison.Ordinal) && path.Count(x => x == '/') == 4 => new
+            {
+                data = new
+                {
+                    id = path["/internal/youtube/tracks/".Length..],
+                    title = $"Track {path["/internal/youtube/tracks/".Length..]}",
+                    artists = new[] { new { name = "Somebody" } },
+                    durationMs = 200000,
+                    lyricsAvailable = false,
+                },
+            },
             "/internal/youtube/playlists/PL1" => new
             {
                 storedAt = DateTimeOffset.UtcNow,

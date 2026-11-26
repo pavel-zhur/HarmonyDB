@@ -33,11 +33,14 @@ export function usePublicPlaylists(q: string, limit = 100) {
     });
 }
 
-export function usePlaylist(id: string, share?: string | null) {
+/** A playlist's details; `live`: read anew whenever the page is opened or comes back into view (its members, its
+ * invitations change by others' steps — the settings screen). */
+export function usePlaylist(id: string, share?: string | null, live = false) {
     return useQuery({
         queryKey: ['playlist', id, share ?? null],
         queryFn: () => readThrough(keys.playlist(id), () => call(api.GET('/api/playlists/{id}', { params: { path: { id }, query: { share: share ?? undefined } } }))),
         networkMode: 'always',
+        ...(live ? { staleTime: 0, refetchOnWindowFocus: true } : {}),
     });
 }
 

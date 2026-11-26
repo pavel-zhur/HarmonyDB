@@ -24,7 +24,7 @@ import { personName } from '../../kit/person';
 export function PlaylistSettingsScreen() {
     const { t } = useTranslation();
     const { id } = useParams() as { id: string };
-    const playlist = usePlaylist(id);
+    const playlist = usePlaylist(id, null, true);
     return (
         <Page>
             <p><Link className="btn" to={`/playlists/${id}`}><Icon name="left" />{t('playlist.toPlaylist')}</Link></p>

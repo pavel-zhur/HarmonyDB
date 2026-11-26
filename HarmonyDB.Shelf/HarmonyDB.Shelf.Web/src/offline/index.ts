@@ -239,7 +239,8 @@ export async function readThrough<T>(key: string, run: () => Promise<T>): Promis
 }
 
 /**
- * A page of a list: the server's; with no connection, from the rows kept (or `offline_unanswerable`) — a song whose
+ * A page of a list: the server's; with no connection, from the rows kept (or `offline_unanswerable`; with no copy kept,
+ * `list_not_kept`) — a song whose
  * page is not kept opens as its chords kept, a row with nothing kept is marked (notOnDevice).
  */
 export async function readList(key: string, query: ListQuery, run: () => Promise<SongList>): Promise<SongList> {
@@ -248,7 +249,9 @@ export async function readList(key: string, query: ListQuery, run: () => Promise
     } catch (error) {
         await attaching;
         if (copy && isRefused(error)) await drop(copy, [key]).catch(() => undefined);
-        if (!isOffline(error) || !copy || !copyState.enabled) throw error;
+        if (!isOffline(error)) throw error;
+        // no copy on the device: said at once, not tried again and again
+        if (!copy || !copyState.enabled) throw new ApiError(0, 'list_not_kept');
         const kept = await copy.get<KeptList>(key);
         if (!kept) throw new ApiError(0, 'not_downloaded');
         served(kept.at);

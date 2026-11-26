@@ -19,6 +19,7 @@ import { myMarksOn, useLocalView } from '../../local';
 import { serverParams, useListState, type ListSort } from './listParams';
 import { LinkBar, LinkPick } from '../song/linking';
 import { MusicSearch } from '../music/MusicSearch';
+import { atTheTop, updateSong } from '../../data/song';
 import { notOnDevice } from '../../offline';
 import { personName } from '../../kit/person';
 
@@ -40,6 +41,8 @@ export interface SongListProps {
     searchOnly?: { placeholder: string };
     /** after the list, in the same column (the home under its search) */
     children?: ReactNode;
+    /** the songs may be moved (a playlist the person administers): in its own order, unfiltered, each row moves */
+    movable?: boolean;
 }
 
 const sortLabels: Record<ListSort, [string, string]> = {
@@ -94,6 +97,8 @@ export function SongList(p: SongListProps) {
     };
 
     const href = (path: string) => (query ? `${path}?${query}` : path);
+    // moving shows the order as it is: in the playlist's order, nothing searched or filtered
+    const moving = !!p.movable && p.source.kind === 'playlist' && sort === 'order' && !searching && state.who === 'me' && !state.mark;
     const open = (row: Row) => setLastOpened(p.listKey, rowId(row));
 
     return (
@@ -113,11 +118,12 @@ export function SongList(p: SongListProps) {
                 <div className="rows">
                     {list.isError && <p className="failed">{errorText(list.error)}</p>}
                     {list.isPending && list.fetchStatus !== 'idle' && <p className="loading">{t('common.loading')}</p>}
-                    {list.isSuccess && rows.length === 0 && !searching && <p className="empty">{t('library.empty')}</p>}
+                    {list.isSuccess && rows.length === 0 && !searching && !state.mark && state.who === 'me' && <p className="empty">{t(p.source.kind === 'playlist' ? 'library.emptyPlaylist' : 'library.empty')}</p>}
+                    {list.isSuccess && rows.length === 0 && !searching && (state.mark || state.who !== 'me') && <p className="empty">{t('library.empty')}</p>}
                     {p.searchOnly && list.isSuccess && rows.length > 0 && <p className="muted small" style={{ padding: '10px 8px 0', margin: 0 }}>{t('home.inMyPlaylists', { count: total })}</p>}
                     {sort === 'compact'
                         ? <Compact rows={rows} q={state.q} lit={lit} href={row => rowHref(row, p, href)} onOpen={open} />
-                        : rows.map(row => {
+                        : rows.map((row, i) => {
                             const id = rowId(row);
                             return (
                                 <SongRow key={id} to={rowHref(row, p, href)} lit={lit === id} q={state.q} title={row.title} artists={row.artists}
@@ -125,7 +131,12 @@ export function SongList(p: SongListProps) {
                                     sources={row.sources} moreSources={Math.max(0, row.chordsCount - row.sources.length)}
                                     extra={notOnDevice(row) ? <span className="na muted">{t('offline.notKept')}</span>
                                         : row.chords && row.chords.state !== 'open' ? <span className="na muted">{t(row.chords.state === 'notOpen' ? 'library.notOpen' : 'library.unavailable')}</span>
-                                        : p.source.kind === 'playlist' ? <LinkPick playlistId={p.source.id} songId={row.songId} /> : undefined}
+                                        : p.source.kind === 'playlist' ? (
+                                            <>
+                                                <LinkPick playlistId={p.source.id} songId={row.songId} />
+                                                {moving && row.songId && <Mover playlistId={p.source.id} songId={row.songId} up={i === 0 ? null : (rows[i - 2]?.songId ?? atTheTop)} down={rows[i + 1]?.songId ?? null} />}
+                                            </>
+                                        ) : undefined}
                                     onOpen={() => open(row)} />
                             );
                         })}
@@ -223,14 +234,19 @@ function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: st
                     extra={<span className="in">{song.playlistTitle}</span>} />
             ))}
             <MusicSearch q={q} />
-            <div className="sec"><Icon name="frets" />{t('library.fromSources')} · {chords.length}</div>
-            <SourcesRibbon />
+            {/* chords of the songs found above are not repeated here: with none besides them, no section saying "none" */}
+            {(chords.length > 0 || (rows.length === 0 && songs.length === 0)) && (
+                <>
+                    <div className="sec"><Icon name="frets" />{t('library.fromSources')} · {chords.length}</div>
+                    <SourcesRibbon />
+                </>
+            )}
             {chords.map(header => (
                 <SongRow noMarks key={'c' + header.id} to={href(p.chordsHref(header.id))} lit={lit === header.id} q={q}
                     title={header.title ?? ''} artists={header.artists}
                     sources={[header.source]} />
             ))}
-            {chords.length === 0 && <p className="empty">{t('library.emptySearch')}</p>}
+            {chords.length === 0 && rows.length === 0 && songs.length === 0 && <p className="empty">{t('library.emptySearch')}</p>}
             {!!search.data.chordsFailures?.length && (
                 <p className="muted small" style={{ padding: '6px 8px' }}>
                     {t('library.sourcesFailed')}{' '}
@@ -251,6 +267,22 @@ function SourcesRibbon() {
             <span className="lab">{t('library.sources')}</span>
             {sources.map(source => <span key={source.key}>{source.iconUrl && <SourceIcon source={source} />}{source.title}</span>)}
         </p>
+    );
+}
+
+/** Up and down by one in the playlist's order (`up`/`down`: the song to go after; null: it is at that end). */
+function Mover({ playlistId, songId, up, down }: { playlistId: string; songId: string; up: string | null; down: string | null }) {
+    const { t } = useTranslation();
+    const move = (e: React.SyntheticEvent, after: string | null) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (after) void updateSong({ playlistId, songId, after }).catch(() => undefined);
+    };
+    return (
+        <span className="mover">
+            <button type="button" disabled={!up} aria-label={t('song.moveUp')} title={t('song.moveUp')} onClick={e => move(e, up)}><Icon name="down" className="flip" /></button>
+            <button type="button" disabled={!down} aria-label={t('song.moveDown')} title={t('song.moveDown')} onClick={e => move(e, down)}><Icon name="down" /></button>
+        </span>
     );
 }
 

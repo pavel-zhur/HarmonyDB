@@ -11,6 +11,7 @@ import { playlistTitle, useJob } from '../../data/playlists';
 import { jobFileUrl, makeBook, resultOf } from '../../data/jobs';
 import { useConfiguration, useSession } from '../../data/session';
 import { toast } from '../../app/toasts';
+import { updateSong } from '../../data/song';
 import { addToPlaylist, makeStaticLink, removeStaticLink, removeVariant, useChordsPlaces, useStaticLink, setMainVariant, shareLink, unlinkVariant, useOwnChords, type ChordsVariant, type SongPage } from '../../data/song';
 import { offerSignIn } from '../../data/signInOffer';
 import { Soon } from '../../kit/controls';
@@ -198,6 +199,26 @@ export function AddPop({ anchor, onClose, chordsId }: { anchor: HTMLElement | nu
     );
 }
 
+/** The song's name in this playlist (its title and artists here), changed in place. */
+function Rename({ page, onDone }: { page: SongPage; onDone: () => void }) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState(page.song.title);
+    const [artists, setArtists] = useState(page.song.artists.join(', '));
+    const save = useMutation({ mutationFn: updateSong, onSuccess: onDone });
+    if (!open) return <MenuItem sub={t('song.menu.renameSub')} onClick={() => setOpen(true)}>{t('song.menu.rename')}</MenuItem>;
+    return (
+        <form className="it rename" onSubmit={e => {
+            e.preventDefault();
+            if (title.trim()) save.mutate({ playlistId: page.song.playlistId, songId: page.song.id, title: title.trim(), artists: artists.split(',').map(x => x.trim()).filter(Boolean) });
+        }}>
+            <label><span className="small muted">{t('song.link.songTitle')}</span><input className="field" value={title} onChange={e => setTitle(e.target.value)} autoFocus /></label>
+            <label><span className="small muted">{t('song.link.artists')}</span><input className="field" value={artists} onChange={e => setArtists(e.target.value)} /></label>
+            <button type="submit" className="btn pri sm" disabled={!title.trim() || save.isPending}>{t('common.save')}</button>
+        </form>
+    );
+}
+
 /** The variant's menu: what is rare is here, not on view. */
 export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLElement | null; onClose: () => void; page: SongPage; variant: ChordsVariant }) {
     const { t } = useTranslation();
@@ -229,7 +250,7 @@ export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLEl
                     {variant.addedBy && t('song.menu.addedBy', { name: personName(variant.addedBy) })}
                 </p>
             )}
-            {ownItem?.editable && <MenuItem onClick={() => { onClose(); navigate(`/editor?own=${encodeURIComponent(ownItem.id)}`); }}>{t('song.menu.edit')}</MenuItem>}
+            {page.canEdit && <Rename page={page} onDone={onClose} />}
             {ownItem && !ownItem.editable && <p className="note">{t('song.menu.notEditable')}</p>}
             {page.canAdd && (
                 <>
