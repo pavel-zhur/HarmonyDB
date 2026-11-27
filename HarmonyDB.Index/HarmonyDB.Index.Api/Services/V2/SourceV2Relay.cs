@@ -126,6 +126,27 @@ public class SourceV2Relay
         };
     }
 
+    /// <summary>
+    /// Asks each source for the labels of its ids at once, and gives them in the order asked; an id of no source, or
+    /// one its source did not label, is left out.
+    /// </summary>
+    public async Task<GetLabelsResponse> GetLabels(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    {
+        var bySource = ids
+            .Select(id => (id, source: Route(id)))
+            .Where(x => x.source != null)
+            .GroupBy(x => x.source!.Value, x => x.id);
+
+        var labels = (await Task.WhenAll(bySource.Select(x => _sources[x.Key].client.GetLabels(caller, x.ToList(), cancellationToken))))
+            .SelectMany(x => x.Labels)
+            .ToDictionary(x => x.Id, StringComparer.Ordinal);
+
+        return new()
+        {
+            Labels = ids.Where(labels.ContainsKey).Select(x => labels[x]).ToList(),
+        };
+    }
+
     public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var source = Route(id);

@@ -26,6 +26,11 @@ public class RelayV2Functions(SourceV2Relay relay)
         => SourceV2Requests.Handle<GetHeadersRequest, GetHeadersResponse>(req, GetHeadersRequest.IsValid,
             r => relay.GetHeaders(r.Caller, r.Ids, cancellationToken));
 
+    [Function(SourceV2Urls.V2GetLabels, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
+    public Task<IActionResult> GetLabels(HttpRequest req, CancellationToken cancellationToken)
+        => SourceV2Requests.Handle<GetLabelsRequest, GetLabelsResponse>(req, GetLabelsRequest.IsValid,
+            r => relay.GetLabels(r.Caller, r.Ids, cancellationToken));
+
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = IndexInternalScopes.Index)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
         => SourceV2Requests.Handle<GetContentRequest, GetContentResponse>(req, GetContentRequest.IsValid,

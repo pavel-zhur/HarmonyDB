@@ -116,6 +116,32 @@ public class SourceV2Client
         }
     }
 
+    /// <summary>
+    /// The labels of the items for this caller; a server that did not answer gives none.
+    /// </summary>
+    public async Task<GetLabelsResponse> GetLabels(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await PostJson<GetLabelsRequest, GetLabelsResponse>(SourceV2Urls.V2GetLabels, new()
+            {
+                Caller = caller,
+                Ids = ids,
+            }, response =>
+            {
+                Check(response.Labels != null, "a labels' answer has no list");
+                var asked = ids.ToHashSet(StringComparer.Ordinal);
+                Check(response.Labels!.All(x => x != null && x.Id != null && asked.Contains(x.Id)), "a label is of an id not asked");
+                Check(response.Labels!.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count() == response.Labels!.Count, "an id is labelled twice");
+                Check(response.Labels!.All(x => x.Source is { Key: not null, Title: not null }), "a source's label is empty");
+            }, cancellationToken);
+        }
+        catch (CallFailedException)
+        {
+            return new() { Labels = [] };
+        }
+    }
+
     /// <param name="address">The address the person came by, when they came by one.</param>
     public async Task<GetContentResponse> GetContent(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken = default)
     {

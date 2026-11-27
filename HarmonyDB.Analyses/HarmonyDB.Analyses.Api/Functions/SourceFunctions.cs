@@ -27,6 +27,17 @@ public class SourceFunctions(AnalysesSource source)
         => SourceV2Requests.Handle<GetHeadersRequest, GetHeadersResponse>(req, GetHeadersRequest.IsValid,
             r => source.GetHeadersAsync(r.Ids, cancellationToken));
 
+    /// <summary>
+    /// The one label of the source for every id of its form: nothing is read.
+    /// </summary>
+    [Function(SourceV2Urls.V2GetLabels, AuthorizationLevel.Internal, "post", InternalScope = AnalysesOptions.SourceScope)]
+    public Task<IActionResult> GetLabels(HttpRequest req, CancellationToken cancellationToken)
+        => SourceV2Requests.Handle<GetLabelsRequest, GetLabelsResponse>(req, GetLabelsRequest.IsValid,
+            r => Task.FromResult(new GetLabelsResponse
+            {
+                Labels = r.Ids.Where(x => x.StartsWith(AnalysisStore.IdPrefix, StringComparison.Ordinal)).Select(x => new ItemLabel { Id = x, Source = source.Label }).ToList(),
+            }));
+
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = AnalysesOptions.SourceScope)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
         => SourceV2Requests.Handle<GetContentRequest, GetContentResponse>(req, GetContentRequest.IsValid,

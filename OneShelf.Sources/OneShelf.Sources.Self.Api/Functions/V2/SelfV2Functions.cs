@@ -26,6 +26,17 @@ public class SelfV2Functions(SelfV2Source source)
         => SourceV2Requests.Handle<GetHeadersRequest, GetHeadersResponse>(req, GetHeadersRequest.IsValid,
             r => source.GetHeaders(r.Caller, r.Ids, cancellationToken));
 
+    /// <summary>
+    /// The source's one label for every id of its form: nothing is read.
+    /// </summary>
+    [Function(SourceV2Urls.V2GetLabels, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
+    public Task<IActionResult> GetLabels(HttpRequest req, CancellationToken cancellationToken)
+        => SourceV2Requests.Handle<GetLabelsRequest, GetLabelsResponse>(req, GetLabelsRequest.IsValid,
+            r => Task.FromResult(new GetLabelsResponse
+            {
+                Labels = r.Ids.Where(x => SelfV2Source.FromId(x) != null).Select(x => new ItemLabel { Id = x, Source = source.Label }).ToList(),
+            }));
+
     [Function(SourceV2Urls.V2GetContent, AuthorizationLevel.Internal, "post", InternalScope = SelfV2Options.InternalScope)]
     public Task<IActionResult> GetContent(HttpRequest req, CancellationToken cancellationToken)
         => SourceV2Requests.Handle<GetContentRequest, GetContentResponse>(req, GetContentRequest.IsValid,

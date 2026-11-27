@@ -153,6 +153,15 @@ public sealed class RelayV2Tests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LabelsAreRoutedByPrefixWhatIsNotKnownOrNotAnsweredLeftOut()
+    {
+        var response = await _relay.GetLabels(Caller, ["s-1", "g-2", "x-1", "d-1", "g-gone", "g-3"]);
+
+        Assert.Equal(["g-2", "g-3"], response.Labels.Select(x => x.Id));
+        Assert.All(response.Labels, x => Assert.Equal("g-", x.Source.Key));
+        Assert.Equal(Caller.Subjects, _good.Callers.Last().Subjects);
+    }
+    [Fact]
     public async Task TheSourcesAreAskedAllAndTheirLabelsComeInTheOrderOfTheSources()
     {
         var response = await _relay.GetSources(Caller);
@@ -425,7 +434,15 @@ public sealed class RelayV2Tests : IAsyncLifetime
                     Headers = r.Ids.Select(id => new HeaderAnswer { Id = id, State = ItemState.Open, Header = Header(id) }).ToList(),
                 };
             }));
-            app.MapPost($"/api/{SourceV2Urls.V2GetContent}", (HttpContext c) => Serve<GetContentRequest>(c, r =>
+            app.MapPost($"/api/{SourceV2Urls.V2GetLabels}", (HttpContext c) => Serve<GetLabelsRequest>(c, r =>
+            {
+                source!.Callers.Enqueue(r.Caller);
+                // an item of the prefix with "gone" in it is not known
+                return new GetLabelsResponse
+                {
+                    Labels = r.Ids.Where(id => id.StartsWith(prefix) && !id.Contains("gone")).Select(id => new ItemLabel { Id = id, Source = new() { Key = prefix, Title = prefix } }).ToList(),
+                };
+            }));            app.MapPost($"/api/{SourceV2Urls.V2GetContent}", (HttpContext c) => Serve<GetContentRequest>(c, r =>
             {
                 source!.AddressesAsked.Enqueue(r.Address);
                 return new GetContentResponse { Id = r.Id, State = ItemState.Open, Header = Header(r.Id), Content = new() };
