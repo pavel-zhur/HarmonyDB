@@ -22,7 +22,7 @@ export function SongLinks({ page, from, share, illustrated, onIllustrations }: {
     const recordings = useSongRecordings({ playlistId: song.playlistId, songId: song.id, share });
     const chosen = recordings.data?.recordings.find(x => x.itemId === recordings.data?.myChoice) ?? recordings.data?.recordings[0] ?? null;
     const variant = page.canAdd;
-    const order = !illustrated && !!session?.permissions.includes(drawPermission) && page.variants.some(v => v.chords.state === 'open');
+    const order = !illustrated && !!session?.permissions.includes(drawPermission) && page.variants.length > 0;
     const artist = song.artists[0] ?? null;
     const everywhere = [song.artists.join(' '), song.title].filter(Boolean).join(' ');
     return (

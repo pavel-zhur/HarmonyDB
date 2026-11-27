@@ -518,6 +518,32 @@ public sealed class McpTests(ShelfDatabaseFixture database) : IClassFixture<Shel
     }
 
     [DatabaseFact]
+    public async Task APersonsOwnMarksAreReadFromTheShelfAlone()
+    {
+        var index = new FakeIndex();
+        await _api.DisposeAsync();
+        _api = new McpApiFactory(database.ConnectionString, index: index);
+
+        var (browser, accountId) = await PersonAsync("mcp-marks", BuiltInPermissions.McpLibraryRead);
+        var chordsId = $"marked-{Guid.NewGuid():N}";
+        await using (var db = database.CreateContext())
+        {
+            var chords = new ChordsItem { Id = Guid.NewGuid(), SourceId = chordsId, CreatedAt = DateTimeOffset.UtcNow };
+            db.Chords.Add(chords);
+            db.Marks.Add(new() { Id = Guid.NewGuid(), AccountId = accountId, ChordsId = chords.Id, Kind = "star", CreatedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+        }
+
+        var clientId = await RegisterAsync(refresh: false);
+        var (requestId, verifier) = await AuthorizeAsync(clientId, null);
+        var access = (await ApproveAndRedeemAsync(browser, clientId, requestId, verifier, ["mcp.library.read"])).GetProperty("access_token").GetString()!;
+        await using var client = await ConnectAsync(access);
+        var answer = Json(await client.CallToolAsync("get_my_marks_keys_notes", new Dictionary<string, object?> { ["chordsIds"] = new[] { chordsId } }));
+        Assert.Equal("star", answer.GetProperty("marks")[0].GetProperty("kind").GetString());
+        Assert.Empty(index.Requests);
+    }
+
+    [DatabaseFact]
     public async Task ASheetItsSourceDoesNotVouchForComesAsItsMessageAndPageWithoutItsText()
     {
         var index = new FakeIndex

@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Api.Areas.Chords;
+using HarmonyDB.Shelf.Api.Areas.Book.Services;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
@@ -14,21 +16,23 @@ using M = HarmonyDB.Shelf.Model.Playlists;
 namespace HarmonyDB.Shelf.Api.Areas.Library.Services;
 
 /// <summary>
-/// The person's library for a device that keeps it, to open it without a connection: the ids of the library's chords,
-/// read again only when something that makes up the library changed (by the versions the sync's watermark is of), and
-/// their content, many at once, as the sources give it to the person (the source contract's batch read). Only the
-/// library's chords are read: the batch is not open to any other id.
+/// The person's library for their device, which keeps it always: the library's chords with the address each is read by,
+/// told again only when something that makes up the library changed (by the versions the sync's watermark is of), and
+/// their content, a page at a time, as the sources give it to the person. Only the library's chords are read: the page
+/// is not open to any other id.
 /// <para>
-/// A change of an item's content: the sources give no version or time of an item's content, so the shelf cannot tell
-/// that one changed. What the device keeps of an item is what it was given last; it is had anew when the person opens
-/// the item online, or when the device reads its whole library again (<c>since</c> left out, and the contents of all).
-/// What changes the library itself — an item added or removed, a playlist joined, left, followed or hidden, the
-/// person's marks, keys and notes — is told by <see cref="ListAsync"/>; an item no longer open to the person is told by
-/// the content read (<see cref="M.OfflineContentState.NotOpen"/>).
+/// What the device keeps of an item is never read again: the sources give no version or time of an item's content, and
+/// the device keeps what it was given until the person clears it — as the old shelf kept chords on its device. Own
+/// chords their author edited come with a new address: to the device they are new, and taken anew.
 /// </para>
 /// </summary>
 public sealed class OfflineService(ShelfDbContext db, SongLists lists, IndexClient index, SourceCallers callers)
 {
+    /// <summary>
+    /// How many items of a page are read at once.
+    /// </summary>
+    private const int Parallelism = 4;
+
     public async Task<M.OfflineChordsList> ListAsync(ClaimsPrincipal user, long? since, CancellationToken cancellationToken)
     {
         var me = user.GetAccountId()!.Value;
@@ -42,10 +46,17 @@ public sealed class OfflineService(ShelfDbContext db, SongLists lists, IndexClie
         {
             Watermark = watermark,
             Changed = true,
-            Chords = (await lists.LibraryChordsAsync(me, cancellationToken)).Select(x => x.SourceId).Order(StringComparer.Ordinal).ToList(),
+            Chords = (await lists.LibraryChordsAsync(me, cancellationToken))
+                .Select(x => new M.OfflineChords { Id = x.Chords.SourceId, Address = x.Address })
+                .OrderBy(x => x.Id, StringComparer.Ordinal)
+                .ToList(),
         };
     }
 
+    /// <summary>
+    /// The content of chords of the library, each read by the address the library keeps for it: one by one, a few at
+    /// once (a source's batch read takes no addresses).
+    /// </summary>
     public async Task<M.OfflineContents> GetContentsAsync(ClaimsPrincipal user, M.OfflineContentsRequest request, CancellationToken cancellationToken)
     {
         var ids = request.Chords;
@@ -56,31 +67,31 @@ public sealed class OfflineService(ShelfDbContext db, SongLists lists, IndexClie
         if (kinds.Any(x => !M.OfflineContentsRequest.KeptKinds.Contains(x)))
             throw ShelfException.BadRequest();
 
-        var library = (await lists.LibraryChordsAsync(user.GetAccountId()!.Value, cancellationToken)).Select(x => x.SourceId).ToHashSet(StringComparer.Ordinal);
-        var inLibrary = ids.Where(library.Contains).ToList();
-        var answers = inLibrary.Count == 0
-            ? []
-            : (await index.Sources.GetContents(callers.For(user), inLibrary, kinds.Select(x => Enum.Parse<ContentKind>(x.ToString())).ToList(), cancellationToken))
-            .Items.ToDictionary(x => x.Id, StringComparer.Ordinal);
-
-        return new()
+        var library = (await lists.LibraryChordsAsync(user.GetAccountId()!.Value, cancellationToken))
+            .ToDictionary(x => x.Chords.SourceId, x => x.Address, StringComparer.Ordinal);
+        var caller = callers.For(user);
+        var contentKinds = kinds.Select(x => Enum.Parse<ContentKind>(x.ToString())).ToList();
+        var items = await BookPrinter.ForEachAsync(ids, async (id, token) =>
         {
-            Items = ids.Select(id => answers.TryGetValue(id, out var answer)
-                    ? new M.OfflineContent
-                    {
-                        Chords = id,
-                        State = answer.State switch
-                        {
-                            ItemState.Open => M.OfflineContentState.Open,
-                            ItemState.NotOpen => M.OfflineContentState.NotOpen,
-                            _ => M.OfflineContentState.Unavailable,
-                        },
-                        Header = answer.Header == null ? null : ChordsReader.ToHeader(answer.Header),
-                        Content = answer.Content,
-                    }
-                    : new M.OfflineContent { Chords = id, State = M.OfflineContentState.NotInLibrary })
-                .ToList(),
-        };
+            if (!library.TryGetValue(id, out var address))
+                return new M.OfflineContent { Chords = id, State = M.OfflineContentState.NotInLibrary };
+
+            var answer = await index.Sources.GetContent(caller, id, contentKinds, ChordsArea.ParseAddress(address), token);
+            return new M.OfflineContent
+            {
+                Chords = id,
+                State = answer.State switch
+                {
+                    ItemState.Open => M.OfflineContentState.Open,
+                    ItemState.NotOpen => M.OfflineContentState.NotOpen,
+                    _ => M.OfflineContentState.Unavailable,
+                },
+                Header = answer.Header == null ? null : ChordsReader.ToHeader(answer.Header),
+                Content = answer.Content,
+            };
+        }, Parallelism, cancellationToken);
+
+        return new() { Items = items };
     }
 
     /// <summary>

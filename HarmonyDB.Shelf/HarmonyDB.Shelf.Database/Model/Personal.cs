@@ -113,6 +113,20 @@ public class RecentItem : IVersioned, ITombstoned
 
     public DateTimeOffset OpenedAt { get; set; }
 
+    /// <summary>
+    /// The chords' title, artists and source as the person was shown them when they opened them; null for a row made
+    /// before these were kept.
+    /// </summary>
+    public string? Title { get; set; }
+
+    public List<string>? Artists { get; set; }
+
+    public string? SourceKey { get; set; }
+
+    public string? SourceTitle { get; set; }
+
+    public string? SourceIconUrl { get; set; }
+
     public long Version { get; set; }
 
     public DateTimeOffset? DeletedAt { get; set; }

@@ -20,8 +20,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Search.Services;
 /// Chords are never grouped into songs: a found item stands on its own, unless it is already in a song of a playlist
 /// the person sees — then that song stands in its place.
 /// It is asked as one types, so it does not go out to the slow searches without need: those parts wait for a few
-/// characters, what was found is kept for a few minutes, and a request the app gives up on (a newer one replaced it)
-/// stops its searches.
+/// characters, the music services' finds are kept for a while (the chords found are not: the device keeps a search
+/// while its page lives), and a request the app gives up on (a newer one replaced it) stops its searches.
 /// </summary>
 public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCallers callers, MusicCatalog music, IMemoryCache cache)
 {
@@ -33,7 +33,6 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
     private const int TracksPerService = 10;
     private const int ArtistsPerService = 5;
 
-    private static readonly TimeSpan KeepChords = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan KeepMusic = TimeSpan.FromMinutes(30);
 
     public async Task<SearchResponse> SearchAsync(ClaimsPrincipal user, string? query, IReadOnlySet<SearchPart> parts, CancellationToken cancellationToken)
@@ -100,19 +99,8 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
 
     private async Task<ChordsFound> SearchChordsAsync(ClaimsPrincipal user, string text, CancellationToken cancellationToken)
     {
-        var caller = callers.For(user);
-        var key = ("search-chords", text.ToLowerInvariant(), string.Join('\n', caller.Keys), string.Join('\n', caller.Subjects));
-        if (cache.TryGetValue(key, out ChordsFound? kept))
-            return kept!;
-
-        var response = await index.Sources.Search(caller, text, cancellationToken);
-        var result = new ChordsFound(response.Headers, response.Failures);
-
-        // a search with a source missing is asked again next time
-        if (response.Failures.Count == 0)
-            cache.Set(key, result, KeepChords);
-
-        return result;
+        var response = await index.Sources.Search(callers.For(user), text, cancellationToken);
+        return new ChordsFound(response.Headers, response.Failures);
     }
 
     private async Task<(IReadOnlyList<MusicTrack>?, IReadOnlyList<MusicArtist>?, IReadOnlyList<MusicService>?)> SearchMusicAsync(
@@ -151,7 +139,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
             return [];
 
         var playlists = SearchedPlaylists(db, accountId);
-        var rows = await db.PlaylistSongItems.AsNoTracking()
+        var rows = await db.PlaylistSongItems.SeenBy(accountId).AsNoTracking()
             .Where(i => i.Chords != null && found.Contains(i.Chords.SourceId) && playlists.Contains(i.Song.PlaylistId))
             .Select(i => new
             {
@@ -185,7 +173,7 @@ public sealed class SearchService(ShelfDbContext db, IndexClient index, SourceCa
     private async Task<List<SearchSong>> SongsByTitleAsync(Guid? accountId, string text, CancellationToken cancellationToken)
     {
         var playlists = SearchedPlaylists(db, accountId);
-        var songs = db.PlaylistSongs.AsNoTracking().Where(s => playlists.Contains(s.PlaylistId));
+        var songs = db.PlaylistSongs.SeenBy(accountId).AsNoTracking().Where(s => playlists.Contains(s.PlaylistId));
         foreach (var word in text.Split(' ').Take(8))
         {
             var pattern = $"%{word.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_")}%";

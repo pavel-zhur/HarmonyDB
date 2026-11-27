@@ -33,9 +33,7 @@ export const song = {
             close: 'Close the chords',
             notOpen: 'These chords could not be loaded.',
             notOpenAt: 'Their page at the source:',
-            notOpenShort: 'not loaded',
             unavailable: 'The source did not answer. Try again later.',
-            unavailableShort: 'the source did not answer',
             noSheet: 'These chords have no text with chords.',
         },
         source: {

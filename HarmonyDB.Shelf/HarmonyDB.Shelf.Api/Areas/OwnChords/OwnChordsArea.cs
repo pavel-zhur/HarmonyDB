@@ -1,3 +1,5 @@
+using HarmonyDB.Common.ServiceAuth;
+using HarmonyDB.Shelf.Api.Areas.Admin;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords;
 using HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
@@ -54,5 +56,12 @@ public sealed class OwnChordsArea : IShelfArea
         // the text of these chords to start own chords from
         group.MapGet("/draft/{chordsId}", (ClaimsPrincipal user, string chordsId, OwnChordsService service, CancellationToken cancellationToken)
             => service.DraftAsync(user, chordsId, cancellationToken)).WithName("GetOwnChordsDraft");
+
+        // once, after the entries got their address and privacy: the own chords' entries holding none get theirs
+        endpoints.MapPost("/internal/own-chords/fill-entries", async (OwnChordsService service, CancellationToken cancellationToken)
+                => new { Filled = await service.FillEntriesAsync(cancellationToken) })
+            .RequireInternalScope(AdminArea.Scope)
+            .WithTags("OwnChords")
+            .WithName("FillOwnChordsEntries");
     }
 }

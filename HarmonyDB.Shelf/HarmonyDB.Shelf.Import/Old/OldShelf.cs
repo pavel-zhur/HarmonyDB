@@ -78,7 +78,8 @@ public sealed record OldComment(int Id, long UserId, int SongId, int? VersionId,
 /// <summary>
 /// Chords a person opened: by address, or, when the visit kept no address, by the id it was opened by.
 /// </summary>
-public sealed record OldVisit(long UserId, string? Uri, string? ExternalId, DateTime LastViewedOn);
+/// <param name="Title">The latest row's title, artists and source: what the person was shown.</param>
+public sealed record OldVisit(long UserId, string? Uri, string? ExternalId, DateTime LastViewedOn, string Title = "", IReadOnlyList<string>? Artists = null, string? Source = null);
 
 /// <summary>
 /// Own chords: written by a person (<see cref="AuthorUserId"/>), with the title and authors of their latest version.

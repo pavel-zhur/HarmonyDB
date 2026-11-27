@@ -37,15 +37,14 @@ public sealed class SongService(
         var position = await NextSongPositionAsync(playlistId, cancellationToken);
 
         PlaylistSong song;
-        var leftOut = 0;
         if (request.Chords != null)
         {
-            // only chords open to the person are put into a playlist by them
-            var (chords, header) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
+            // only chords open to the person are put into a playlist by them, with the address they came by
+            var (chords, header, address) = await chordsRows.GetOrCreateAsync(me, request.Chords, request.Address, true, cancellationToken);
             await RequireNotInPlaylistAsync(playlistId, [chords.Id], [], cancellationToken);
             // named, unless the person names it, as its source has just told this person
             song = NewSong(playlistId, Title(request.Title ?? header!.Title), Artists(request.Artists ?? header!.Artists), position, me, now);
-            db.PlaylistSongItems.Add(NewItem(song.Id, chords.Id, null, 0, me, now));
+            db.PlaylistSongItems.Add(NewItem(song.Id, chords.Id, null, 0, me, now, address, await PrivateOwnAsync(me, chords.Id, cancellationToken)));
         }
         else
         {
@@ -53,14 +52,11 @@ public sealed class SongService(
                          ?? throw ShelfException.NotFound(M.PlaylistErrorCodes.NoSuchSong);
             await gate.ReadSongAsync(me, source.PlaylistId, source.Id, request.Share, cancellationToken);
 
-            // a copy takes the variants open to the person (and the recordings); one left with none is not made
-            var items = await db.PlaylistSongItems.Where(x => x.SongId == source.Id).Include(x => x.Chords)
+            // a copy takes the variants the person sees (and the recordings), with the addresses they are read by
+            var taken = await db.PlaylistSongItems.SeenBy(me).Where(x => x.SongId == source.Id)
                 .OrderBy(x => x.Position).ThenBy(x => x.Id).ToListAsync(cancellationToken);
-            var open = await chordsRows.OpenAsync(me, items.Where(x => x.Chords != null).Select(x => x.Chords!.SourceId).ToList(), cancellationToken);
-            var taken = items.Where(x => x.Chords == null || open.Contains(x.Chords.SourceId)).ToList();
-            leftOut = items.Count - taken.Count;
             if (taken.Count == 0)
-                throw new ShelfException(StatusCodes.Status403Forbidden, M.PlaylistErrorCodes.ChordsNotOpen, new Dictionary<string, string> { ["leftOut"] = leftOut.ToString() });
+                throw ShelfException.NotFound(M.PlaylistErrorCodes.NoSuchSong);
 
             await RequireNotInPlaylistAsync(playlistId,
                 taken.Where(x => x.ChordsId != null).Select(x => x.ChordsId!.Value).ToList(),
@@ -69,7 +65,7 @@ public sealed class SongService(
             song = NewSong(playlistId, source.Title, source.Artists.ToList(), position, me, now);
             var i = 0;
             foreach (var item in taken)
-                db.PlaylistSongItems.Add(NewItem(song.Id, item.ChordsId, item.RecordingId, i++, me, now));
+                db.PlaylistSongItems.Add(NewItem(song.Id, item.ChordsId, item.RecordingId, i++, me, now, item.Address, item.Private));
         }
 
         db.PlaylistSongs.Add(song);
@@ -77,7 +73,7 @@ public sealed class SongService(
             await FindRecordingsAsync(me, playlistId, song.Id, cancellationToken);
         var token = await undo.SaveAsync(me, cancellationToken);
         var added = Views.Song(song, await views.PeopleAsync([me], cancellationToken));
-        return new() { Value = new M.AddedSong(added) { LeftOut = leftOut }, Undo = token };
+        return new() { Value = new M.AddedSong(added), Undo = token };
     }
 
     /// <summary>
@@ -113,9 +109,10 @@ public sealed class SongService(
     {
         var (view, song) = await gate.SongForChangeAsync(me, playlistId, songId, cancellationToken);
         view.RequireAdd();
-        var (chords, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
+        var (chords, _, address) = await chordsRows.GetOrCreateAsync(me, request.Chords, request.Address, true, cancellationToken);
         await RequireNotInPlaylistAsync(playlistId, [chords.Id], [], cancellationToken);
-        db.PlaylistSongItems.Add(NewItem(songId, chords.Id, null, await NextItemPositionAsync(songId, cancellationToken), me, time.GetUtcNow()));
+        db.PlaylistSongItems.Add(NewItem(songId, chords.Id, null, await NextItemPositionAsync(songId, cancellationToken), me, time.GetUtcNow(), address,
+            await PrivateOwnAsync(me, chords.Id, cancellationToken)));
         await FindRecordingsAsync(me, playlistId, songId, cancellationToken);
         var token = await undo.SaveAsync(me, cancellationToken);
         return new() { Value = Views.Song(song, await views.PeopleAsync(song.AddedById is { } by ? [by] : [], cancellationToken)), Undo = token };
@@ -211,7 +208,7 @@ public sealed class SongService(
                     continue;
                 }
 
-                var copy = NewItem(songId, item.ChordsId, item.RecordingId, position++, item.AddedById, item.AddedAt);
+                var copy = NewItem(songId, item.ChordsId, item.RecordingId, position++, item.AddedById, item.AddedAt, item.Address, item.Private);
                 db.PlaylistSongItems.Add(copy);
                 items.Add(copy);
                 moved[item.Id] = copy.Id;
@@ -239,20 +236,19 @@ public sealed class SongService(
         if (item.ChordsId == null || !Keeps(items.Where(x => x.Id != itemId)))
             throw ShelfException.BadRequest();
 
-        // named as its source tells the person unlinking; when not open to them, as this song
-        var sourceId = await db.Chords.Where(x => x.Id == item.ChordsId).Select(x => x.SourceId).SingleAsync(cancellationToken);
-        var header = await chordsRows.HeaderAsync(me, sourceId, cancellationToken);
+        // named as the shelf keeps its chords; when they have no name yet, as this song
+        var chords = await db.Chords.Where(x => x.Id == item.ChordsId).SingleAsync(cancellationToken);
         var now = time.GetUtcNow();
         var created = NewSong(
             playlistId,
-            header?.Title ?? song.Title,
-            header != null ? header.Artists.ToList() : song.Artists.ToList(),
+            chords.Title ?? song.Title,
+            chords.Title != null ? chords.Artists.ToList() : song.Artists.ToList(),
             await PositionAfterAsync(playlistId, null, songId, cancellationToken),
             me,
             now);
         db.PlaylistSongs.Add(created);
         item.DeletedAt = now;
-        var copy = NewItem(created.Id, item.ChordsId, null, 0, item.AddedById, item.AddedAt);
+        var copy = NewItem(created.Id, item.ChordsId, null, 0, item.AddedById, item.AddedAt, item.Address, item.Private);
         db.PlaylistSongItems.Add(copy);
         await CarryPreferencesAsync([songId], created.Id, new() { [item.Id] = copy.Id }, cancellationToken);
         var token = await undo.SaveAsync(me, cancellationToken);
@@ -395,8 +391,16 @@ public sealed class SongService(
     private static PlaylistSong NewSong(Guid playlistId, string title, List<string> artists, double position, Guid? by, DateTimeOffset at)
         => new() { Id = Guid.NewGuid(), PlaylistId = playlistId, Title = title, Artists = artists, Position = position, AddedById = by, AddedAt = at };
 
-    private static PlaylistSongItem NewItem(Guid songId, Guid? chordsId, Guid? recordingId, double position, Guid? by, DateTimeOffset at)
-        => new() { Id = Guid.NewGuid(), SongId = songId, ChordsId = chordsId, RecordingId = recordingId, Position = position, AddedById = by, AddedAt = at };
+    /// <summary>
+    /// Whether the person adding these chords is their author and they are private: the author's playlist of own chords
+    /// holds them as private. Such an entry is the author's alone, as the old shelf showed an author's private own chords.
+    /// </summary>
+    private Task<bool> PrivateOwnAsync(Guid me, Guid chordsId, CancellationToken cancellationToken)
+        => db.PlaylistSongItems.AnyAsync(x => x.ChordsId == chordsId && x.Private && x.AddedById == me
+                                              && x.Song.Playlist.SystemKind == PlaylistSystemKind.OwnChords && x.Song.Playlist.OwnerId == me, cancellationToken);
+
+    private static PlaylistSongItem NewItem(Guid songId, Guid? chordsId, Guid? recordingId, double position, Guid? by, DateTimeOffset at, string? address = null, bool isPrivate = false)
+        => new() { Id = Guid.NewGuid(), SongId = songId, ChordsId = chordsId, RecordingId = recordingId, Position = position, AddedById = by, AddedAt = at, Address = address, Private = isPrivate };
 
     public static string Title(string? title) => PlaylistService.Title(title);
 

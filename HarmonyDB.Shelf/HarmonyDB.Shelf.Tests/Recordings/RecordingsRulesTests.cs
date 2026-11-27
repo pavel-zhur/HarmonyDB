@@ -12,13 +12,13 @@ using Microsoft.EntityFrameworkCore;
 namespace HarmonyDB.Shelf.Tests.Recordings;
 
 /// <summary>
-/// A song's recordings in a playlist over a real database: reading only reads, the candidates are only those found
-/// for chords open to the reader, and who sees and who may change goes by the playlist's rules.
+/// A song's recordings in a playlist over a real database: reading only reads (no source is asked), the candidates are
+/// those found for the song's chords the reader sees, and who sees and who may change goes by the playlist's rules.
 /// </summary>
 public sealed class RecordingsRulesTests(ShelfDatabaseFixture database) : IClassFixture<ShelfDatabaseFixture>
 {
     [DatabaseFact]
-    public async Task ReadingOnlyReadsAndShowsOnlyWhatIsOpen()
+    public async Task ReadingOnlyReadsAndAsksNoSource()
     {
         var (owner, playlistId, songId) = await SeedAsync();
         var index = new FakeIndex
@@ -38,7 +38,8 @@ public sealed class RecordingsRulesTests(ShelfDatabaseFixture database) : IClass
         Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
         var recordings = (await mine.Content.ReadFromJsonAsync<SongRecordings>(Browser.Json))!;
         Assert.Empty(recordings.Recordings);
-        Assert.Equal(["open-track"], recordings.Candidates.Select(x => x.Id));
+        Assert.Equal(["closed-track", "open-track"], recordings.Candidates.Select(x => x.Id).Order(StringComparer.Ordinal));
+        Assert.Empty(index.Requests);
         Assert.True(recordings.CanAdd);
 
         await using (var db = database.CreateContext())

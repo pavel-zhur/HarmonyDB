@@ -3,13 +3,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Schemas } from '../api/client';
-import { applyContents, backoff, chunks, keptChords, missing } from './plan.ts';
+import { applyContents, backoff, chunks, keptChords, toTake } from './plan.ts';
 
 test('only what the copy lacks is taken, in the library’s order — a taking stopped goes on, never from zero', () => {
     const held = new Set(['b', 'd']);
-    assert.deepEqual(missing(['a', 'b', 'c', 'd'], id => held.has(id)), ['a', 'c']);
-    assert.deepEqual(missing(['a', 'b'], () => true), []);
-    assert.deepEqual(missing(['a', 'b', 'c'], () => false, new Set(['b'])), ['a', 'c']);
+    assert.deepEqual(toTake(['a', 'b', 'c', 'd'], id => held.has(id), {}, {}), ['a', 'c']);
+    assert.deepEqual(toTake(['a', 'b'], () => true, {}, {}), []);
+    assert.deepEqual(toTake(['a', 'b', 'c'], () => false, {}, {}, new Set(['b'])), ['a', 'c']);
+});
+
+test('chords held by another address than the library’s now (their author edited them) are new: taken; the rest never again', () => {
+    const keptBy = { own: 'https://own.example/?v=1', other: 'https://site.example/1' };
+    const now = { own: 'https://own.example/?v=2', other: 'https://site.example/1' };
+    assert.deepEqual(toTake(['own', 'other'], () => true, keptBy, now), ['own']);
+    assert.deepEqual(toTake(['own', 'other'], () => true, keptBy, keptBy), []);
 });
 
 test('pages of the server’s size', () => {

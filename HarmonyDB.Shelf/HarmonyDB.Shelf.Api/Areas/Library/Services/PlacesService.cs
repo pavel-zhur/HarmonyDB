@@ -35,7 +35,7 @@ public sealed class PlacesService(ShelfDbContext db, SystemPlaylists systemPlayl
             })
             .ToListAsync(cancellationToken);
 
-        var places = await db.PlaylistSongItems
+        var places = await db.PlaylistSongItems.SeenBy(me)
             .Where(i => i.Chords != null && ids.Contains(i.Chords.SourceId) && i.Song.DeletedAt == null && i.Song.Playlist.DeletedAt == null
                         && i.Song.Playlist.Members.Any(m => m.AccountId == me && m.DeletedAt == null))
             .Select(i => new M.ChordsPlace { Chords = i.Chords!.SourceId, PlaylistId = i.Song.PlaylistId, SongId = i.SongId })

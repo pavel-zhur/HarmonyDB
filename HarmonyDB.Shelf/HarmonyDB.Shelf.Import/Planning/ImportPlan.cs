@@ -78,7 +78,9 @@ public sealed record SongPlan(string Key, string Title, IReadOnlyList<string> Ar
 /// <summary>
 /// A chords variant of a song, in the order of the variants (letters A, B, C …).
 /// </summary>
-public sealed record ItemPlan(string SourceId, long? AddedBy, DateTimeOffset? AddedAt);
+/// <param name="Address">The old version's address: what the entry reads its chords by.</param>
+/// <param name="Private">An author's private own chords: the entry is seen by whoever added it alone.</param>
+public sealed record ItemPlan(string SourceId, long? AddedBy, DateTimeOffset? AddedAt, string? Address = null, bool Private = false);
 
 /// <param name="At">When the person liked it in the old shelf, when known.</param>
 public sealed record MarkPlan(long TelegramId, string SourceId, string Kind, DateTimeOffset? At);
@@ -107,7 +109,8 @@ public sealed record NotePlan(long TelegramId, string? PlaylistKey, string? Song
 /// </summary>
 public sealed record NotePart(string Text, string? SourceId, DateTimeOffset? At);
 
-public sealed record RecentPlan(long TelegramId, string SourceId, DateTimeOffset OpenedAt);
+/// <param name="Title">What the person was shown when they opened it (the old shelf kept it with the visit).</param>
+public sealed record RecentPlan(long TelegramId, string SourceId, DateTimeOffset OpenedAt, string? Title = null, IReadOnlyList<string>? Artists = null, string? Source = null);
 
 /// <summary>
 /// The variant a song of several opened at for a person in the old shelf: their main variant, where it is not the song's
@@ -124,7 +127,6 @@ public sealed record Unmapped(string Kind, long? TelegramId, string What, string
 public static class UnmappedReasons
 {
     public const string AddressNotResolved = "address not resolved";
-    public const string IdNotOpen = "the id it was opened by is not known";
     public const string SongNotShown = "the song was archived or postponed";
     public const string SongWithoutVersions = "the song has no chords";
     public const string NoVersionNoLevel = "a like of a song with no version and no level";

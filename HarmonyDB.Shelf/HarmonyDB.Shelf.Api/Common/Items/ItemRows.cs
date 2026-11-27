@@ -11,24 +11,20 @@ namespace HarmonyDB.Shelf.Api.Common.Items;
 /// music service's track. Got or made at once, safe when two requests make the same row together. Shared by the areas
 /// that reference chords or recordings.
 /// <para>
-/// A <c>chords</c> row is seen by everyone, so it keeps <b>only what a caller with no keys and no account gets</b>: the
-/// header (title, artists, kinds, the source's label) of an anonymous caller, and nothing a person with keys or an
-/// account was given. An item not open to an anonymous caller keeps no title at all. What a person sees of an item —
-/// its title included — comes from the header that person has just been given by the source, never from the row.
+/// A <c>chords</c> row keeps what the source gave of the item on its last reading by id — the title, artists, kinds and
+/// the track it was made from: by an id a source gives an item to everyone alike. It keeps no source's label: that is
+/// each person's own (their device asks it of the source).
 /// </para>
 /// </summary>
 public sealed class ItemRows(ShelfDbContext db, TimeProvider time)
 {
-    private static readonly TimeSpan HeaderRefresh = TimeSpan.FromHours(1);
-
     /// <summary>
     /// The local row of the source's item, made when there is none.
     /// </summary>
     /// <param name="sourceId">The source's opaque id (source contract, version 2).</param>
-    /// <param name="header">The item's header as a caller just got it; null to leave the row's as it is.</param>
-    /// <param name="anonymous">Whether that caller had no keys and no account. Only then is the header kept in the row;
-    /// any other caller's header is not written. An empty title never replaces a title.</param>
-    public async Task<ChordsItem> GetOrCreateChordsAsync(string sourceId, Header? header, bool anonymous, CancellationToken cancellationToken)
+    /// <param name="header">The item's header as a caller just got it; null to leave the row's as it is. An empty title
+    /// never replaces a title.</param>
+    public async Task<ChordsItem> GetOrCreateChordsAsync(string sourceId, Header? header, CancellationToken cancellationToken)
     {
         var row = await db.Chords.SingleOrDefaultAsync(x => x.SourceId == sourceId, cancellationToken);
         if (row == null)
@@ -40,8 +36,7 @@ public sealed class ItemRows(ShelfDbContext db, TimeProvider time)
             row = await db.Chords.SingleAsync(x => x.SourceId == sourceId, cancellationToken);
         }
 
-        // an anonymous caller's header, refreshed now and then, not at every reading
-        if (anonymous && header != null && (row.HeaderUpdatedAt == null || row.HeaderUpdatedAt < time.GetUtcNow() - HeaderRefresh))
+        if (header != null)
         {
             if (!string.IsNullOrWhiteSpace(header.Title))
             {
@@ -50,20 +45,15 @@ public sealed class ItemRows(ShelfDbContext db, TimeProvider time)
             }
 
             row.Kinds = header.Kinds.Select(KindName).ToList();
-            row.SourceKey = header.Source.Key;
-            row.SourceTitle = header.Source.Title;
-            row.SourceUri = header.Address?.ToString();
-            row.SourceIcon = header.Source.Icon;
-            row.MadeFromRecordingId = header.MadeFrom is { } track && MusicServiceNames.StoredOf(track.Service) is { } service
+            // what it was made from is told to everyone (the music pages): kept only of an item that may be shown publicly
+            row.MadeFromRecordingId = header.IsPublic && header.MadeFrom is { } track && MusicServiceNames.StoredOf(track.Service) is { } service
                 ? (await GetOrCreateRecordingAsync(service, track.Id, null, cancellationToken)).Id
                 : null;
-            row.HeaderUpdatedAt = time.GetUtcNow();
             await db.SaveChangesAsync(cancellationToken);
         }
 
         return row;
     }
-
 
     /// <summary>
     /// The local row of the music service's track, made when there is none; its cached description refreshed when one

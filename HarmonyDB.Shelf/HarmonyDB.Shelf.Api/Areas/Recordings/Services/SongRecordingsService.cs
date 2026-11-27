@@ -59,7 +59,11 @@ public sealed class SongRecordingsService(
             .ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
-        var openChords = (await OpenChordsAsync(user, song.Id, cancellationToken)).Select(x => x.Row.Id).ToList();
+        // the recordings found for the song's chords the person sees: the shelf's own rows, no source asked
+        var openChords = await db.PlaylistSongItems.SeenBy(user.GetAccountId())
+            .Where(x => x.SongId == song.Id && x.ChordsId != null)
+            .Select(x => x.ChordsId!.Value)
+            .ToListAsync(cancellationToken);
         var held = items.Select(x => x.RecordingId!.Value).ToHashSet();
         var candidates = await db.ChordsRecordings.AsNoTracking()
             .Where(r => openChords.Contains(r.ChordsId) && !held.Contains(r.RecordingId))
@@ -166,11 +170,12 @@ public sealed class SongRecordingsService(
     }
 
     /// <summary>
-    /// The song's chords that are open to the person, with their rows and the headers the person was given.
+    /// The song's chords that are open to the person, with their rows and the headers the person was given: for looking
+    /// for recordings, which reads what the chords were made from.
     /// </summary>
     private async Task<IReadOnlyList<(ChordsItem Row, Header Header)>> OpenChordsAsync(ClaimsPrincipal user, Guid songId, CancellationToken cancellationToken)
     {
-        var chords = await db.PlaylistSongItems
+        var chords = await db.PlaylistSongItems.SeenBy(user.GetAccountId())
             .Where(x => x.SongId == songId && x.ChordsId != null)
             .OrderBy(x => x.Position)
             .Select(x => x.Chords!)

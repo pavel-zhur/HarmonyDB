@@ -643,6 +643,46 @@
         }
       }
     },
+    "/api/chords/labels": {
+      "post": {
+        "tags": [
+          "Chords"
+        ],
+        "operationId": "GetChordsLabels",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChordsLabelsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChordsLabelsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/chords/icons/{name}": {
       "get": {
         "tags": [
@@ -5746,6 +5786,10 @@
             },
             "nullable": true
           },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
           "fromSongId": {
             "type": "string",
             "format": "uuid",
@@ -5766,6 +5810,10 @@
         "properties": {
           "chords": {
             "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5775,7 +5823,6 @@
           "addedAt",
           "artists",
           "id",
-          "leftOut",
           "playlistId",
           "position",
           "title"
@@ -5809,10 +5856,6 @@
           "addedAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "leftOut": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -6153,6 +6196,20 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "source": {
+            "$ref": "#/components/schemas/ChordsSource"
           }
         },
         "additionalProperties": false
@@ -6498,6 +6555,52 @@
         ],
         "type": "string"
       },
+      "ChordsLabel": {
+        "required": [
+          "id",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ChordsSource"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChordsLabelsRequest": {
+        "required": [
+          "ids"
+        ],
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChordsLabelsResponse": {
+        "required": [
+          "labels"
+        ],
+        "type": "object",
+        "properties": {
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChordsLabel"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "ChordsLoop": {
         "required": [
           "coverage",
@@ -6714,6 +6817,40 @@
         },
         "additionalProperties": false
       },
+      "ChordsRef": {
+        "required": [
+          "artists",
+          "id",
+          "kinds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChordsKind"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "ChordsSource": {
         "required": [
           "key",
@@ -6780,7 +6917,7 @@
             "format": "int32"
           },
           "chords": {
-            "$ref": "#/components/schemas/ChordsAnswer"
+            "$ref": "#/components/schemas/ChordsRef"
           },
           "addedBy": {
             "$ref": "#/components/schemas/PersonRef"
@@ -9004,6 +9141,22 @@
         ],
         "type": "string"
       },
+      "OfflineChords": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "OfflineChordsList": {
         "required": [
           "changed",
@@ -9022,7 +9175,7 @@
           "chords": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/OfflineChords"
             }
           }
         },
@@ -9703,7 +9856,7 @@
         "type": "object",
         "properties": {
           "chords": {
-            "$ref": "#/components/schemas/ChordsAnswer"
+            "$ref": "#/components/schemas/ChordsRef"
           },
           "song": {
             "$ref": "#/components/schemas/SongRef"
@@ -9717,6 +9870,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "source": {
+            "$ref": "#/components/schemas/ChordsSource"
           },
           "cover": {
             "type": "string",
@@ -10636,7 +10792,6 @@
           "otherMarks",
           "otherPeople",
           "recordingsCount",
-          "sources",
           "title"
         ],
         "type": "object",
@@ -10660,7 +10815,7 @@
             "nullable": true
           },
           "chords": {
-            "$ref": "#/components/schemas/ChordsAnswer"
+            "$ref": "#/components/schemas/ChordsRef"
           },
           "title": {
             "type": "string"
@@ -10686,12 +10841,6 @@
           "otherPeople": {
             "type": "integer",
             "format": "int32"
-          },
-          "sources": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChordsSource"
-            }
           },
           "chordsCount": {
             "type": "integer",

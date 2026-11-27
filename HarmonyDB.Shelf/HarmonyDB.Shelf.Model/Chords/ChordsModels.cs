@@ -128,6 +128,52 @@ public sealed record ChordsHeader
 }
 
 /// <summary>
+/// Chords as the shelf keeps them, without asking their source: the id, the address they are read by, and what their
+/// source last gave of them on a reading by id (the same for everyone). The source's label is the person's own: the
+/// device keeps it (<c>POST /api/chords/labels</c>).
+/// </summary>
+public sealed record ChordsRef
+{
+    public required string Id { get; init; }
+
+    /// <summary>
+    /// The address the chords were added by, passed on with every reading of them (<c>GET /api/chords/{id}?address=</c>).
+    /// </summary>
+    public string? Address { get; init; }
+
+    public string? Title { get; init; }
+
+    public required IReadOnlyList<string> Artists { get; init; }
+
+    /// <summary>The kinds of content they have, as last read; empty when never read.</summary>
+    public required IReadOnlyList<ChordsKind> Kinds { get; init; }
+}
+
+public sealed record ChordsLabelsRequest
+{
+    /// <summary>
+    /// The items' ids at their sources, each once, at most 1000.
+    /// </summary>
+    public required IReadOnlyList<string> Ids { get; init; }
+}
+
+public sealed record ChordsLabel
+{
+    public required string Id { get; init; }
+
+    public required ChordsSource Source { get; init; }
+}
+
+public sealed record ChordsLabelsResponse
+{
+    /// <summary>
+    /// The source of every id its source knows, as shown to this person, in the order asked; an id no source knows, or
+    /// whose source did not answer, is left out.
+    /// </summary>
+    public required IReadOnlyList<ChordsLabel> Labels { get; init; }
+}
+
+/// <summary>
 /// One item asked: its state for this person, and its header when it is open.
 /// </summary>
 public sealed record ChordsAnswer

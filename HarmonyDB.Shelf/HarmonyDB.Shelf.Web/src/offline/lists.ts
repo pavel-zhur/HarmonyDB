@@ -89,7 +89,7 @@ export function deviceRows(rows: readonly SongRow[], hasSong: (key: string) => b
     const out = rows.map(row => {
         if (row.songId && row.playlistId && hasSong(keys.song(row.playlistId, row.songId))) return row;
         const kept = [row.chords?.id, ...row.chordsIds].find((id): id is string => !!id && hasChords(id));
-        if (kept) return { ...row, songId: null, playlistId: null, chords: { id: kept, state: 'open' as const } };
+        if (kept) return { ...row, songId: null, playlistId: null, chords: { id: kept, artists: row.artists, kinds: [] } };
         notKept.push(row);
         return row;
     });

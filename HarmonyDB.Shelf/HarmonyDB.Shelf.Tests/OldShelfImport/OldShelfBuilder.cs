@@ -96,7 +96,16 @@ internal sealed class OldShelfBuilder
 
     public OldShelfBuilder Visit(long user, string name)
     {
-        _visits.Add(new(user, Uri(name), null, new DateTime(2024, 4, 1)));
+        _visits.Add(new(user, Uri(name), null, new DateTime(2024, 4, 1), $"Title of {name}", ["An artist"], "A source"));
+        return this;
+    }
+
+    /// <summary>
+    /// A visit kept by the id the person opened (a search's result), not by an address.
+    /// </summary>
+    public OldShelfBuilder VisitById(long user, string id, string title)
+    {
+        _visits.Add(new(user, null, id, new DateTime(2024, 4, 2), title, ["Someone"], "Local"));
         return this;
     }
 
@@ -126,10 +135,9 @@ internal sealed class OldShelfBuilder
     };
 
     public Resolution Resolution()
-        => new(_versions.Select(x => x.Uri).Concat(_visits.Select(x => x.Uri!)).Distinct().ToDictionary(
+        => new(_versions.Select(x => x.Uri).Concat(_visits.Where(x => x.Uri != null).Select(x => x.Uri!)).Distinct().ToDictionary(
                 x => x,
-                x => _unresolved.Contains(x) ? new ResolvedAddress(null, "notResolved") : new ResolvedAddress($"id:{x.Split('/')[^1]}", "resolved")),
-            new Dictionary<string, ResolvedAddress>());
+                x => _unresolved.Contains(x) ? new ResolvedAddress(null, "notResolved") : new ResolvedAddress($"id:{x.Split('/')[^1]}", "resolved")));
 
     public static ImportOptions Options(params SharedTenantOptions[] extra) => new()
     {

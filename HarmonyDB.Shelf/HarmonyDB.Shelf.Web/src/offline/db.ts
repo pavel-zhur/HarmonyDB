@@ -1,8 +1,10 @@
-// The device's copy of a person's library: one IndexedDB database per account ("shelf-offline-<account id>"), with
+// The device's copy of a person's library: one IndexedDB database per account ("shelf-device-<account id>"), with
 // one store of entries — each an answer of the API kept under its key (offline/keys.ts) with its size — and one of
 // the copy's own state. Nothing here knows what the answers mean: offline/index.ts does.
 
-const prefix = 'shelf-offline-';
+const prefix = 'shelf-device-';
+/** The copies of the earlier form (kept by a switch, chords by their id alone): deleted once. */
+const earlierPrefix = 'shelf-offline-';
 const version = 1;
 
 export interface Entry<T = unknown> {
@@ -15,8 +17,6 @@ export interface Entry<T = unknown> {
 }
 
 export interface CopyState {
-    /** the person keeps the library on this device */
-    enabled: boolean;
     /** when the library's lists were last taken whole, ms */
     downloadedAt: number | null;
     /** what the library holds, as its lists said then: its songs' keys and its chords' ids (offline/lists.ts) */
@@ -26,11 +26,14 @@ export interface CopyState {
     playlists: string[];
     /** the server's watermark of the library's chords list kept (asked "since" it), or none yet */
     watermark: number | null;
-    /** the library's chords not open to the person (not kept; asked again when the library changes or all is read) */
+    /** the library's chords not open to the person (not kept; asked again when the library changes) */
     closed: string[];
+    /** the address each library chords were read by, as the library said then ('' for none): chords whose address
+     * changed (their author edited them) are new to the device */
+    addresses: Record<string, string>;
 }
 
-export const emptyCopyState: CopyState = { enabled: false, downloadedAt: null, songs: [], chords: [], playlists: [], watermark: null, closed: [] };
+export const emptyCopyState: CopyState = { downloadedAt: null, songs: [], chords: [], playlists: [], watermark: null, closed: [], addresses: {} };
 
 const encoder = new TextEncoder();
 export const sizeOf = (value: unknown) => encoder.encode(JSON.stringify(value)).length;
@@ -129,6 +132,6 @@ export async function hasCopy(accountId: string): Promise<boolean> {
 /** Deletes the copies of every account but `keep` (none: all of them). */
 export async function deleteCopies(keep: string | null): Promise<void> {
     if (typeof indexedDB === 'undefined') return;
-    const names = (await indexedDB.databases()).map(x => x.name).filter((x): x is string => !!x && x.startsWith(prefix));
+    const names = (await indexedDB.databases()).map(x => x.name).filter((x): x is string => !!x && (x.startsWith(prefix) || x.startsWith(earlierPrefix)));
     await Promise.all(names.filter(name => name !== (keep === null ? null : prefix + keep)).map(name => request(indexedDB.deleteDatabase(name)).catch(() => undefined)));
 }

@@ -21,8 +21,8 @@ public sealed class TrackMarksTests(ShelfDatabaseFixture database) : IClassFixtu
         var closed = Track("closed");
         ChordsItem Chords(string id, Recording from, bool openToEveryone, int minutesAgo) => new()
         {
-            Id = Guid.NewGuid(), SourceId = $"{id}-{tag}", MadeFromRecordingId = from.Id, CreatedAt = now.AddMinutes(-minutesAgo),
-            SourceKey = openToEveryone ? "analyses" : null,
+            // the track chords were made from is kept only of chords that may be shown to everyone
+            Id = Guid.NewGuid(), SourceId = $"{id}-{tag}", MadeFromRecordingId = openToEveryone ? from.Id : null, CreatedAt = now.AddMinutes(-minutesAgo),
         };
 
         await using (var db = database.CreateContext())

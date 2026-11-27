@@ -8,7 +8,7 @@ import { answerList, joinPages, keys, membership } from './lists.ts';
 type SongRow = Schemas['SongRow'];
 
 const row = (title: string, artist: string, extra: Partial<SongRow> = {}): SongRow => ({
-    title, artists: [artist], myMarks: [], otherMarks: [], otherPeople: 0, sources: [], chordsCount: 1, chordsIds: [], recordingsCount: 0,
+    title, artists: [artist], myMarks: [], otherMarks: [], otherPeople: 0, chordsCount: 1, chordsIds: [], recordingsCount: 0,
     addedAt: '2026-01-01T00:00:00Z', ...extra,
 });
 

@@ -69,13 +69,20 @@ public sealed class BookPrinter(ShelfDbContext db, IndexClient index, PdfsClient
     public Task<MadePdf> PrintContentsAsync(IReadOnlyList<(PreparedItem Item, int Number)> songs, CancellationToken cancellationToken)
         => ConvertAsync(ContentsHtml(songs), cancellationToken);
 
-    public static async Task<IReadOnlyList<TResult>> ForEachAsync<TItem, TResult>(
+    public static Task<IReadOnlyList<TResult>> ForEachAsync<TItem, TResult>(
         IReadOnlyList<TItem> items, Func<TItem, CancellationToken, Task<TResult>> action, CancellationToken cancellationToken)
+        => ForEachAsync(items, action, Parallelism, cancellationToken);
+
+    /// <summary>
+    /// The action for each item, so many at once; the results in the items' order.
+    /// </summary>
+    public static async Task<IReadOnlyList<TResult>> ForEachAsync<TItem, TResult>(
+        IReadOnlyList<TItem> items, Func<TItem, CancellationToken, Task<TResult>> action, int parallelism, CancellationToken cancellationToken)
     {
         var results = new TResult[items.Count];
         await Parallel.ForEachAsync(
             Enumerable.Range(0, items.Count),
-            new ParallelOptions { MaxDegreeOfParallelism = Parallelism, CancellationToken = cancellationToken },
+            new ParallelOptions { MaxDegreeOfParallelism = parallelism, CancellationToken = cancellationToken },
             async (i, token) => results[i] = await action(items[i], token));
         return results;
     }

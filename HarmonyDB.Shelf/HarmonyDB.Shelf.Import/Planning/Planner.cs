@@ -57,22 +57,21 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
     public Scope Scope => _scope;
 
     /// <summary>
-    /// The addresses the mapping needs resolved: of the versions of the songs taken, and of the people's visits.
+    /// The addresses the mapping needs resolved: of the versions of the songs taken, and of the people's visits by an
+    /// address (a visit by an id is taken with its id).
     /// </summary>
-    public static (IReadOnlyList<string> uris, IReadOnlyList<string> visitIds) Addresses(OldShelf old, ImportOptions options)
+    public static IReadOnlyList<string> Addresses(OldShelf old, ImportOptions options)
     {
         var scope = Scope.Of(old, options);
         var songs = old.Songs.Where(x => scope.IsTakenTenant(x.TenantId) || x.TenantId == options.TemplateTenantId).Select(x => x.Id).Concat(scope.OwnSongsOnly.Values.SelectMany(x => x)).ToHashSet();
         var liked = old.Likes.Where(x => scope.IsTakenFor(x.UserId, x.SongId)).Select(x => x.SongId).ToHashSet();
-        var uris = old.Versions
+        return old.Versions
             .Where(x => songs.Contains(x.SongId) || liked.Contains(x.SongId) || x.CollectiveId != null)
             .Select(x => x.Uri)
             .Concat(old.Visits.Where(x => scope.IsTaken(x.UserId) && x.Uri != null).Select(x => x.Uri!))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToList();
-        var ids = old.Visits.Where(x => scope.IsTaken(x.UserId) && x.Uri == null).Select(x => x.ExternalId!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-        return (uris, ids);
     }
 
     public ImportPlan Plan()
@@ -311,7 +310,7 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
                 }
 
                 var at = OldRules.Time(chords.CreatedOn);
-                songs.Add(new(CollectiveKey(chords.Id), chords.Title, chords.Authors, ++i, author.Key, at, [new(id, author.Key, at)]));
+                songs.Add(new(CollectiveKey(chords.Id), chords.Title, chords.Authors, ++i, author.Key, at, [new(id, author.Key, at, version.Uri, version.CollectiveType == OldCollectiveType.Private)]));
             }
 
             yield return new()
@@ -367,7 +366,8 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
                 }
 
                 taken[id] = song.Id;
-                items.Add(new(id, Person(rows?.GetValueOrDefault(song.Id).by ?? version.UserId), OldRules.Time(rows?.GetValueOrDefault(song.Id).at ?? version.CreatedOn)));
+                items.Add(new(id, Person(rows?.GetValueOrDefault(song.Id).by ?? version.UserId), OldRules.Time(rows?.GetValueOrDefault(song.Id).at ?? version.CreatedOn),
+                    version.Uri, version.CollectiveType == OldCollectiveType.Private));
             }
 
             if (items.Count == 0)
@@ -510,26 +510,25 @@ public sealed class Planner(OldShelf old, ImportOptions options, Resolution reso
 
     private List<RecentPlan> Recent()
     {
-        var recent = new Dictionary<(long person, string id), DateTime>();
+        var recent = new Dictionary<(long person, string id), OldVisit>();
         foreach (var visit in old.Visits.Where(x => _scope.IsTaken(x.UserId)))
         {
-            var id = visit.Uri != null ? resolution.IdOf(visit.Uri) : resolution.ConfirmedId(visit.ExternalId!);
+            // a visit by its id is taken with that id as the old shelf kept it: nothing is asked of the sources for it
+            var id = visit.Uri != null ? resolution.IdOf(visit.Uri) : visit.ExternalId;
             if (id == null)
             {
-                _unmapped.Add(visit.Uri != null
-                    ? new("visit", visit.UserId, visit.Uri, UnmappedReasons.AddressNotResolved, true)
-                    : new("visit", visit.UserId, visit.ExternalId!, UnmappedReasons.IdNotOpen));
+                _unmapped.Add(new("visit", visit.UserId, visit.Uri!, UnmappedReasons.AddressNotResolved, true));
                 continue;
             }
 
-            if (!recent.TryGetValue((visit.UserId, id), out var at) || at < visit.LastViewedOn)
-                recent[(visit.UserId, id)] = visit.LastViewedOn;
+            if (!recent.TryGetValue((visit.UserId, id), out var latest) || latest.LastViewedOn < visit.LastViewedOn)
+                recent[(visit.UserId, id)] = visit;
         }
 
         return recent
-            .Where(x => OldRules.Time(x.Value) != null)
-            .OrderBy(x => x.Key.person).ThenBy(x => x.Value)
-            .Select(x => new RecentPlan(x.Key.person, x.Key.id, OldRules.Time(x.Value)!.Value))
+            .Where(x => OldRules.Time(x.Value.LastViewedOn) != null)
+            .OrderBy(x => x.Key.person).ThenBy(x => x.Value.LastViewedOn)
+            .Select(x => new RecentPlan(x.Key.person, x.Key.id, OldRules.Time(x.Value.LastViewedOn)!.Value, x.Value.Title, x.Value.Artists, x.Value.Source))
             .ToList();
     }
 

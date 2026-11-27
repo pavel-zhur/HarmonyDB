@@ -1,3 +1,5 @@
+using HarmonyDB.Shelf.Api.Areas.Chords.Services;
+using HarmonyDB.Shelf.Model.Chords;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
@@ -9,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HarmonyDB.Shelf.Api.Areas.Library.Services;
 
 /// <summary>
-/// What the person opened lately, the latest first (the browser words how long ago).
+/// What the person opened lately, the latest first (the browser words how long ago), named as the person was shown it
+/// when they opened it — kept with the row, as the old shelf kept its visits; no source is asked.
 /// </summary>
 public sealed class RecentService(ShelfDbContext db, Views views)
 {
@@ -26,27 +29,27 @@ public sealed class RecentService(ShelfDbContext db, Views views)
 
         // a song is given while it is there and the person still sees it: of their playlists, or a public one
         var songIds = rows.Where(x => x.SongId != null).Select(x => x.SongId!.Value).Distinct().ToList();
-        var songs = await db.PlaylistSongs
+        var songs = await db.PlaylistSongs.SeenBy(me)
             .Where(x => songIds.Contains(x.Id) && x.Playlist.DeletedAt == null
                         && (x.Playlist.Access == PlaylistAccess.Public || x.Playlist.Members.Any(m => m.AccountId == me && m.DeletedAt == null)))
             .AsNoTracking().ToDictionaryAsync(x => x.Id, cancellationToken);
-        var chords = await views.ChordsAsync(user, rows.Where(x => x.Chords != null).Select(x => x.Chords!.SourceId), cancellationToken);
         var people = await views.PeopleAsync(songs.Values.Where(x => x.AddedById != null).Select(x => x.AddedById!.Value), cancellationToken);
         var covers = await views.SongCoversAsync(me, songs.Keys, cancellationToken);
 
         return rows
             .Select(x =>
             {
-                var answer = x.Chords == null ? null : chords[x.Chords.SourceId];
                 var song = x.SongId is { } id && songs.TryGetValue(id, out var found) ? Views.Song(found, people) : null;
-                // seen under the chords' title as their source gives it; not open: the title the song has in its playlist
-                var named = answer?.Header != null;
+                // as shown when opened; a row from before that was kept: the chords' kept title, else the song's
+                var title = x.Title ?? x.Chords?.Title ?? song?.Title;
+                var artists = x.Title != null ? x.Artists ?? [] : x.Chords?.Title != null ? x.Chords.Artists : song?.Artists ?? [];
                 return new RecentEntry
                 {
-                    Chords = answer,
+                    Chords = x.Chords == null ? null : ChordsReader.ToRef(x.Chords, null),
                     Song = song,
-                    Title = named ? answer!.Header!.Title : song?.Title,
-                    Artists = named ? answer!.Header!.Artists : song?.Artists ?? [],
+                    Title = title,
+                    Artists = artists,
+                    Source = x.SourceTitle == null ? null : new ChordsSource { Key = x.SourceKey ?? string.Empty, Title = x.SourceTitle, IconUrl = x.SourceIconUrl },
                     Cover = song == null ? null : covers.GetValueOrDefault(song.Id),
                     OpenedAt = x.OpenedAt,
                 };

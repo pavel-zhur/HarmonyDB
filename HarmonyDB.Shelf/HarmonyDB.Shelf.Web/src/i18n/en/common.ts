@@ -110,7 +110,7 @@ export const common = {
         song_needs_playlist: 'A song needs its playlist',
         device_full: 'This device has no room for more. What was taken stays; free some space on the device (or remove other sites’ data in the browser), then go on',
         not_downloaded: 'Not on this device: it opens when there is a connection',
-        list_not_kept: 'Without a connection the list is not here: it is kept on this device with “Chords offline” switched on (in the menu).',
+        list_not_kept: 'Without a connection the list is not here: it is not part of your library on this device.',
         offline_unanswerable: 'Without a connection this filter cannot be shown',
         no_such_mcp_client: 'This assistant is not connected',
         no_such_personal_key: 'No such key',

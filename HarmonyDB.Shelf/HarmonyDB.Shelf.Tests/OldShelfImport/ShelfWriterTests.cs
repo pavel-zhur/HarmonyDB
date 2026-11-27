@@ -92,6 +92,32 @@ public sealed class ShelfWriterTests : IAsyncLifetime
     }
 
     [DatabaseFact]
+    public async Task EntriesHoldTheirVersionsAddressAndPrivacyAndVisitsTheirNames()
+    {
+        var old = new OldShelfBuilder();
+        var song = old.Song(SharedTenant, 1001, "song", "a");
+        old.Tenant(8, 1000, $"Personal {Alice}");
+        var personal = old.Song(8, 1001, "mine", "b");
+        old.Version(personal, "own", Alice, collectiveType: OldCollectiveType.Private, collectiveId: Guid.NewGuid());
+        old.Visit(Alice, "a");
+        old.VisitById(Alice, "lc-SEARCHED", "Found by search");
+
+        var plan = old.Plan();
+        // a visit by an id is taken as it is: nothing asked of the sources
+        Assert.Contains(plan.Recent, x => x.SourceId == "lc-SEARCHED" && x.Title == "Found by search" && x.Source == "Local");
+        await WriteAsync(plan);
+
+        await using var db = Context();
+        var entries = await db.PlaylistSongItems.Select(x => new { x.Chords!.SourceId, x.Address, x.Private }).ToListAsync();
+        Assert.Contains(entries, x => x.SourceId == "id:a" && x.Address == Uri("a") && !x.Private);
+        Assert.Contains(entries, x => x.SourceId == "id:own" && x.Address == Uri("own") && x.Private);
+        var recent = await db.Recent.Include(x => x.Chords).ToListAsync();
+        Assert.Contains(recent, x => x.Chords!.SourceId == "id:a" && x.Title == "Title of a" && x.SourceTitle == "A source");
+        Assert.Contains(recent, x => x.Chords!.SourceId == "lc-SEARCHED" && x.Title == "Found by search");
+        Assert.NotEqual(0, song);
+    }
+
+    [DatabaseFact]
     public async Task APersonsOwnKeyAndNoteAreNeverChangedAndTimesAreTheOldOnes()
     {
         var old = new OldShelfBuilder();

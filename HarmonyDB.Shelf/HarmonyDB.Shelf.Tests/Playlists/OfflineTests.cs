@@ -30,7 +30,8 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
         {
             var ids = operation switch
             {
-                "V2GetHeaders" or "V2GetContents" => body.GetProperty("ids").EnumerateArray().Select(x => x.GetString()!).ToList(),
+                "V2GetHeaders" => body.GetProperty("ids").EnumerateArray().Select(x => x.GetString()!).ToList(),
+                "V2GetContent" => [body.GetProperty("id").GetString()!],
                 _ => null,
             };
             bool Open(string id) => id.StartsWith("test-", StringComparison.Ordinal);
@@ -43,14 +44,12 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
                             ? new HeaderAnswer { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A source") }
                             : new HeaderAnswer { Id = id, State = ItemState.NotOpen }).ToList(),
                     });
-                case "V2GetContents":
+                case "V2GetContent":
                     lock (contentsAsked) contentsAsked.Add(ids!);
-                    return (HttpStatusCode.OK, new GetContentsResponse
-                    {
-                        Items = ids!.Select(id => Open(id)
-                            ? new GetContentResponse { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A source"), Content = new() { Sheet = new() { Root = new NodeHtml { Name = "pre" } } } }
-                            : new GetContentResponse { Id = id, State = ItemState.NotOpen }).ToList(),
-                    });
+                    var id = ids!.Single();
+                    return (HttpStatusCode.OK, Open(id)
+                        ? new GetContentResponse { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "A source"), Content = new() { Sheet = new() { Root = new NodeHtml { Name = "pre" } } } }
+                        : new GetContentResponse { Id = id, State = ItemState.NotOpen });
                 default:
                     return (HttpStatusCode.NotFound, null);
             }
@@ -80,7 +79,7 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
         // the whole list, then nothing while nothing changes, then the whole list again after a change
         var first = await Ok<OfflineChordsList>(ann, HttpMethod.Get, "/api/library/offline/chords");
         Assert.True(first.Changed);
-        Assert.Equal(new[] { a, b, marked, closed }.Order(StringComparer.Ordinal), first.Chords);
+        Assert.Equal(new[] { a, b, marked, closed }.Order(StringComparer.Ordinal), first.Chords.Select(x => x.Id));
 
         var same = await Ok<OfflineChordsList>(ann, HttpMethod.Get, $"/api/library/offline/chords?since={first.Watermark}");
         Assert.False(same.Changed);
@@ -89,7 +88,7 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
         await Ok<UndoOnly>(ann, HttpMethod.Delete, $"/api/playlists/{playlist}/songs/{songB}");
         var after = await Ok<OfflineChordsList>(ann, HttpMethod.Get, $"/api/library/offline/chords?since={same.Watermark}");
         Assert.True(after.Changed);
-        Assert.Equal(new[] { a, marked, closed }.Order(StringComparer.Ordinal), after.Chords);
+        Assert.Equal(new[] { a, marked, closed }.Order(StringComparer.Ordinal), after.Chords.Select(x => x.Id));
 
         // the content of the library's chords only, in the order asked
         var contents = await Ok<OfflineContents>(ann, HttpMethod.Post, "/api/library/offline/contents", new OfflineContentsRequest { Chords = [closed, outside, a, b] });
@@ -98,7 +97,8 @@ public sealed class OfflineTests(LibraryFixture fixture) : IClassFixture<Library
             contents.Items.Select(x => (x.Chords, x.State)));
         Assert.NotNull(contents.Items[2].Content!.Sheet);
         Assert.Equal($"Title of {a}", contents.Items[2].Header!.Title);
-        Assert.Equal([closed, a], Assert.Single(contentsAsked));
+        // each read by the address its entry keeps (a source's batch read takes none)
+        Assert.Equal(new[] { closed, a }.Order(StringComparer.Ordinal), contentsAsked.Select(x => x.Single()).Order(StringComparer.Ordinal));
 
         // too many, twice, or a recording: refused
         foreach (var bad in new[]

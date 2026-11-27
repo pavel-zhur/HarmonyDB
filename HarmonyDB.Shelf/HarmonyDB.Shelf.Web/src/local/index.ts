@@ -6,7 +6,7 @@
 //   local.note({ chords: chordsId }, 'text')         // my personal note; null or '' removes it
 //   local.note({ songId }, 'text')                   // my note in the song's playlist
 //   local.noteTyped({ chords: chordsId }, 'text')    // the same, kept as it is typed: no toast
-//   local.opened({ chords: chordsId, songId })       // opened (for "Recent"; no toast, no undo)
+//   local.opened({ chords, songId, title, artists, source })  // opened, as shown (for "Recent"; no toast, no undo)
 //
 //   const marks = useMyMarks(chordsId)               // what I see now: the server's word + what is not sent yet
 //   myMarksOn(useLocalView(), row.chordsIds)         // the same over a song's variants (a list's row)
@@ -18,6 +18,7 @@
 //
 // Each change but "opened" shows a toast with "Undo". A guest's change offers signing in and is made after it.
 
+import type { Schemas } from '../api/client';
 import { useMemo, useSyncExternalStore } from 'react';
 import { enqueue, exchange, forgetUnsent, getStatus, getView, subscribe, toastFor } from './store';
 import { keyKey, markKey, noteKey } from './state';
@@ -36,8 +37,12 @@ export const local = {
     noteTyped: (target: { chords: string } | { songId: string }, text: string | null) => {
         enqueue({ type: 'note', chords: 'chords' in target ? target.chords : null, songId: 'songId' in target ? target.songId : null, text });
     },
-    opened: (target: { chords?: string | null; songId?: string | null }) => {
-        enqueue({ type: 'opened', chords: target.chords ?? null, songId: target.songId ?? null });
+    /** kept with what the person was shown: the chords' title, artists and source (the recent list names them so) */
+    opened: (target: { chords?: string | null; songId?: string | null; title?: string | null; artists?: readonly string[]; source?: Schemas['ChordsSource'] | null }) => {
+        enqueue({
+            type: 'opened', chords: target.chords ?? null, songId: target.songId ?? null,
+            title: target.title ?? null, artists: target.artists ? [...target.artists] : null, source: target.source ?? undefined,
+        });
     },
     exchange,
     /** the person's changes not sent yet, given up (they chose so, signing out) */

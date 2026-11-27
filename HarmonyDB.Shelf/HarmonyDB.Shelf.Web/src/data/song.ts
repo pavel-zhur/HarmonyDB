@@ -5,7 +5,7 @@
 import { addressOf } from './address';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ApiError, api, call, type Schemas } from '../api/client';
-import { keys, readThrough } from '../offline';
+import { keptChords, keys, readThrough } from '../offline';
 import { i18n } from '../i18n';
 import { action } from './actions';
 import { useSession } from './session';
@@ -32,15 +32,26 @@ export function useSongPage(playlistId: string, songId: string, share?: string |
     });
 }
 
-/** Chords by id: the header, the sheet, and this person's own marks, keys and notes on them. */
-export function useChordsContent(chordsId: string | null) {
+/**
+ * Chords by id: the header, the sheet, and this person's own marks, keys and notes on them; read by the address given
+ * (a playlist's entry keeps the one its chords are read by), else the one the person came by. The device's copy first.
+ */
+export function useChordsContent(chordsId: string | null, address?: string | null) {
     return useQuery({
         queryKey: ['chords', chordsId],
-        queryFn: () => readThrough(keys.chords(chordsId!), () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet', address: addressOf(chordsId!) } } }))),
+        queryFn: () => readThrough(keys.chords(chordsId!), () => call(api.GET('/api/chords/{id}', { params: { path: { id: chordsId! }, query: { kinds: 'sheet', address: address ?? addressOf(chordsId!) } } }))),
         enabled: !!chordsId,
         staleTime: 5 * 60_000,
         networkMode: 'always',
     });
+}
+
+/**
+ * The chords as the device keeps them, or null: nothing is asked of the server (what a song's variant shows of its
+ * source's marks, when the device holds those chords).
+ */
+export function useKeptChords(chordsId: string) {
+    return useQuery({ queryKey: ['kept-chords', chordsId], queryFn: () => keptChords(chordsId), staleTime: Infinity, networkMode: 'always' });
 }
 
 /** Items with the same progression ("Am F C G"), a page of them. */

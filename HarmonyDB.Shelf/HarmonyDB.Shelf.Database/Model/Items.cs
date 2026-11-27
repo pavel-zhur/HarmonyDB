@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace HarmonyDB.Shelf.Database.Model;
 
 /// <summary>
-/// One item of chords from a source, ever referenced here: what marks, keys, notes and playlists attach to. Its header
-/// is a cache, as a caller with no keys last saw it; what a person sees is asked of the source for their keys.
+/// One item of chords from a source, ever referenced here: what marks, keys, notes and playlists attach to. It keeps
+/// the item's header as the source last gave it on a reading by its id — the same for everyone — without the source's
+/// label, which is each person's own (the device asks it of the source and keeps it).
 /// </summary>
 public class ChordsItem
 {
@@ -21,34 +22,20 @@ public class ChordsItem
     public List<string> Artists { get; set; } = [];
 
     /// <summary>
-    /// The source's label (key, title, address, icon name), as last seen; null when a caller with no keys may not open
-    /// the item.
-    /// </summary>
-    public string? SourceKey { get; set; }
-
-    public string? SourceTitle { get; set; }
-
-    public string? SourceUri { get; set; }
-
-    /// <summary>
     /// The old shelf's address of the item, as the import resolved it; never of own chords (their address may open them
     /// to whoever holds it). The only page shown to a person the item is not open to, as where it may be looked at: a
     /// page kept from a header is not, as it may open the item.
     /// </summary>
     public string? OldAddress { get; set; }
 
-    public string? SourceIcon { get; set; }
-
     /// <summary>
     /// The content kinds the item has, as the source contract's wire format writes them ("sheet", "timeline" …).
     /// </summary>
     public List<string> Kinds { get; set; } = [];
 
-    public DateTimeOffset? HeaderUpdatedAt { get; set; }
-
     /// <summary>
-    /// The music service's track the item was made from, as its header states it (kept with the header, so only when a
-    /// caller with no keys may open the item); null when it was not made from one the shelf plays.
+    /// The music service's track the item was made from, as its header states it (kept with the header); null when it
+    /// was not made from one the shelf plays.
     /// </summary>
     public Guid? MadeFromRecordingId { get; set; }
 

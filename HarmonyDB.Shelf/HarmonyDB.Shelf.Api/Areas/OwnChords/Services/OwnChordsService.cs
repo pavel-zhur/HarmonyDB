@@ -24,6 +24,12 @@ namespace HarmonyDB.Shelf.Api.Areas.OwnChords.Services;
 /// are known by (<see cref="HarmonyDB.Shelf.Database.AccountSubjects"/>) is their author. As chords (in playlists, on their page, marked …) they are the own chords'
 /// source's items: their id there is asked of the sources by their address, the shelf knows nothing of its form. New own
 /// chords go to the person's playlist of own chords, and, if asked, become a variant of a song or new songs elsewhere.
+/// <para>
+/// The author's own entries of own chords hold their current address, and are private while the chords are
+/// (<see cref="PlaylistSongItem.Private"/>): written when they are placed and at each new version, as the old shelf wrote
+/// an author's new link and type into the author's own version. So an edit reaches every device as a new thing; an entry
+/// someone else added keeps the address it was added by.
+/// </para>
 /// </summary>
 public sealed class OwnChordsService(
     ShelfDbContext db,
@@ -85,7 +91,9 @@ public sealed class OwnChordsService(
         if (chordsId == null)
             return new(Details(stored, null)) { Placed = false };
 
+        // placed as its author (who opens it by its id), then every entry given its address and privacy
         await PlaceAsync(me, chordsId, text, request, cancellationToken);
+        await MarkEntriesAsync(me, chordsId, stored, false, cancellationToken);
         return new(Details(stored, chordsId)) { Placed = true };
     }
 
@@ -101,6 +109,49 @@ public sealed class OwnChordsService(
             await UnlessThereAsync(() => songs.AddVariantAsync(me, songPlaylistId, songId, new() { Chords = chordsId }, cancellationToken));
         foreach (var playlistId in (request.AlsoInPlaylists ?? []).Distinct().Where(x => x != mine.Id))
             await UnlessThereAsync(() => songs.AddAsync(me, playlistId, NewSong(chordsId, text), cancellationToken));
+    }
+
+    /// <summary>
+    /// The author's own entries of the own chords, in every playlist, get their current address, and are private while
+    /// the chords are — as the old shelf rewrote the author's own version at an edit (an entry someone else added keeps
+    /// the address it was added by). With <paramref name="onlyWithout"/>, only entries holding no address yet (the
+    /// one-off filling).
+    /// </summary>
+    /// <returns>How many entries changed.</returns>
+    private async Task<int> MarkEntriesAsync(Guid author, string chordsId, StoredOwnChords stored, bool onlyWithout, CancellationToken cancellationToken)
+    {
+        var address = stored.Uri.ToString();
+        var isPrivate = stored.Collective.Visibility == StoredVisibility.Private;
+        var entries = db.PlaylistSongItems.Where(x => x.Chords != null && x.Chords.SourceId == chordsId && x.AddedById == author && (!onlyWithout || x.Address == null));
+        return await entries.ExecuteUpdateAsync(x => x
+            .SetProperty(i => i.Address, address)
+            .SetProperty(i => i.Private, isPrivate), cancellationToken);
+    }
+
+    /// <summary>
+    /// Once, after the entries got their address and privacy: every author's own chords give the author's entries holding
+    /// no address yet theirs and their privacy, from the store, as the import gives the moved ones.
+    /// </summary>
+    /// <returns>How many entries were filled.</returns>
+    public async Task<int> FillEntriesAsync(CancellationToken cancellationToken)
+    {
+        var filled = 0;
+        var authors = await db.PlaylistSongItems
+            .Where(x => x.Address == null && x.AddedById != null && x.Song.Playlist.SystemKind == PlaylistSystemKind.OwnChords && x.Song.Playlist.OwnerId == x.AddedById)
+            .Select(x => x.AddedById!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        foreach (var author in authors)
+        {
+            var stored = await store.ListAsync(await AuthorAsync(author, cancellationToken), cancellationToken);
+            var caller = await callers.ForAccountAsync(author, [], cancellationToken);
+            var ids = await ChordsIdsAsync(caller, stored.Select(x => x.Uri).ToList(), cancellationToken);
+            foreach (var (item, chordsId) in stored.Zip(ids))
+                if (chordsId != null)
+                    filled += await MarkEntriesAsync(author, chordsId, item, true, cancellationToken);
+        }
+
+        return filled;
     }
 
     private static async Task UnlessThereAsync(Func<Task> add)
@@ -122,7 +173,10 @@ public sealed class OwnChordsService(
         var text = Normalize(request.Text);
         var stored = await store.UpdateAsync(await AuthorAsync(user, cancellationToken), id, ToStored(text), cancellationToken)
                      ?? throw ShelfException.NotFound(OwnChordsErrorCodes.NoSuchOwnChords);
-        return await DetailsAsync(user, stored, cancellationToken);
+        var chordsId = (await ChordsIdsAsync(callers.For(user), [stored.Uri], cancellationToken)).Single();
+        if (chordsId != null)
+            await MarkEntriesAsync(user.GetAccountId()!.Value, chordsId, stored, false, cancellationToken);
+        return Details(stored, chordsId);
     }
 
     /// <summary>

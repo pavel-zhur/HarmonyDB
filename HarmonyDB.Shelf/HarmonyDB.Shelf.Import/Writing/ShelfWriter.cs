@@ -394,7 +394,18 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
                     }
 
                     items[(item.SongId, chordsId)] = item.Id;
-                    report.Count("variant", O.Unchanged);
+                    // the old version's address and privacy, into an entry made before they were carried
+                    if (item.Address != itemPlan.Address || item.Private != itemPlan.Private)
+                    {
+                        item.Address = itemPlan.Address;
+                        item.Private = itemPlan.Private;
+                        report.Count("variant", O.Updated);
+                    }
+                    else
+                    {
+                        report.Count("variant", O.Unchanged);
+                    }
+
                     continue;
                 }
 
@@ -433,6 +444,8 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
                     Position = nextItemPosition++,
                     AddedById = Account(accounts, itemPlan.AddedBy),
                     AddedAt = itemPlan.AddedAt ?? now,
+                    Address = itemPlan.Address,
+                    Private = itemPlan.Private,
                 };
                 db.PlaylistSongItems.Add(created);
                 allItems.Add(created);
@@ -753,6 +766,16 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// A recent row named as the old shelf's visit was: its title, artists and source as the person was shown them.
+    /// </summary>
+    private static void Name(RecentItem row, RecentPlan plan)
+    {
+        row.Title = plan.Title;
+        row.Artists = plan.Artists?.ToList();
+        row.SourceTitle = plan.Source;
+    }
+
     private async Task WriteRecentAsync(IReadOnlyList<RecentPlan> recent, IReadOnlyDictionary<long, Guid> accounts, IReadOnlyDictionary<string, Guid> chords, CancellationToken cancellationToken)
     {
         var accountIds = accounts.Values.ToList();
@@ -772,11 +795,12 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
             {
                 if (!byId.TryGetValue(id, out var row) || row.DeletedAt != null)
                     report.Count("recent", O.LeftByPerson);
-                else if (row.OpenedAt >= plan.OpenedAt)
+                else if (row.OpenedAt > plan.OpenedAt || (row.OpenedAt == plan.OpenedAt && row.Title != null))
                     report.Count("recent", O.Unchanged);
                 else
                 {
                     row.OpenedAt = plan.OpenedAt;
+                    Name(row, plan);
                     report.Count("recent", O.Updated);
                 }
 
@@ -786,13 +810,18 @@ public sealed class ShelfWriter(ShelfDbContext db, Ledger ledger, Report report,
             if (existing.FirstOrDefault(x => x.AccountId == account && x.ChordsId == chordsId && x.SongId == null && x.DeletedAt == null) is { } found)
             {
                 if (found.OpenedAt < plan.OpenedAt)
+                {
                     found.OpenedAt = plan.OpenedAt;
+                    Name(found, plan);
+                }
+
                 ledger.Set(key, found.Id, null, made: false);
                 report.Count("recent", O.Found);
                 continue;
             }
 
             var created = new RecentItem { Id = Guid.NewGuid(), AccountId = account, ChordsId = chordsId, OpenedAt = plan.OpenedAt };
+            Name(created, plan);
             db.Recent.Add(created);
             existing.Add(created);
             ledger.Set(key, created.Id, null);

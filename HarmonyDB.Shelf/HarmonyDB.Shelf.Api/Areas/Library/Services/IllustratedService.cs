@@ -2,15 +2,14 @@ using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Illustrations.Services;
 using HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
-using HarmonyDB.Shelf.Model.Chords;
 using M = HarmonyDB.Shelf.Model.Playlists;
 
 namespace HarmonyDB.Shelf.Api.Areas.Library.Services;
 
 /// <summary>
 /// The chords of the person's library that have an illustration. The illustrations are the illustrations service's:
-/// it is asked for the library's chords in batches (and its answers kept a few minutes, as for the covers); of those
-/// with one, the chords open to the person are given, by title.
+/// it is asked for the library's chords in batches (and its answers kept a few minutes, as for the covers); those with
+/// one are given by title, as the shelf keeps them (no source is asked).
 /// </summary>
 public sealed class IllustratedService(SongLists lists, Views views)
 {
@@ -22,12 +21,12 @@ public sealed class IllustratedService(SongLists lists, Views views)
         limit = Math.Clamp(limit, 1, MaxLimit);
 
         var chords = await lists.LibraryChordsAsync(user.GetAccountId()!.Value, cancellationToken);
-        var pictures = await views.IllustrationCoversAsync(chords.Select(x => x.SourceId).ToList(), cancellationToken);
-        var open = (await views.ChordsAsync(user, pictures.Keys, cancellationToken)).Values
-            .Where(x => x.State == ChordsState.Open)
-            .OrderBy(x => SongLists.Normalize(x.Header!.Title), StringComparer.Ordinal)
-            .ThenBy(x => SongLists.Normalize(x.Header!.Artists.FirstOrDefault()), StringComparer.Ordinal)
-            .ThenBy(x => x.Id, StringComparer.Ordinal)
+        var pictures = await views.IllustrationCoversAsync(chords.Select(x => x.Chords.SourceId).ToList(), cancellationToken);
+        var open = chords.Select(x => x.Chords)
+            .Where(x => pictures.ContainsKey(x.SourceId))
+            .OrderBy(x => SongLists.Normalize(x.Title), StringComparer.Ordinal)
+            .ThenBy(x => SongLists.Normalize(x.Artists.FirstOrDefault()), StringComparer.Ordinal)
+            .ThenBy(x => x.SourceId, StringComparer.Ordinal)
             .ToList();
 
         return new()
@@ -36,10 +35,10 @@ public sealed class IllustratedService(SongLists lists, Views views)
             Offset = offset,
             Items = open.Skip(offset).Take(limit).Select(x => new M.IllustratedChords
             {
-                Chords = x.Id,
-                Title = x.Header!.Title,
-                Artists = x.Header.Artists,
-                PictureUrl = $"{IllustrationsService.ImagesPath}/{pictures[x.Id]}/{Views.CoverSize}",
+                Chords = x.SourceId,
+                Title = x.Title,
+                Artists = x.Artists,
+                PictureUrl = $"{IllustrationsService.ImagesPath}/{pictures[x.SourceId]}/{Views.CoverSize}",
             }).ToList(),
         };
     }

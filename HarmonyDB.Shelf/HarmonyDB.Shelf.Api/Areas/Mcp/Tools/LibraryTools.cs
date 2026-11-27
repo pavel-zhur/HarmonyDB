@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using HarmonyDB.Shelf.Api.Common;
+using HarmonyDB.Shelf.Database;
 using System.ComponentModel;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
@@ -135,11 +138,13 @@ public static class LibraryTools
         new("get_my_marks_keys_notes",
             "This person's marks, keys ('mine') and personal notes on chords, by chordsIds (at most 50). Mark kinds: " + MarkKindsText + ".",
             McpToolEffect.Read,
-            async (ClaimsPrincipal user, ChordsReader reader, [Description("chordsIds.")] string[] chordsIds, CancellationToken cancellationToken = default) =>
+            async (ClaimsPrincipal user, ShelfDbContext db, ChordsAnnotations annotations, [Description("chordsIds.")] string[] chordsIds, CancellationToken cancellationToken = default) =>
             {
                 if (chordsIds is not { Length: > 0 and <= 50 })
                     throw ShelfException.BadRequest();
-                var seen = await reader.GetHeadersWithAnnotationsAsync(user, chordsIds, cancellationToken);
+                // the shelf's own: read from its database, no source asked
+                var local = await db.Chords.AsNoTracking().Where(x => chordsIds.Contains(x.SourceId)).Select(x => x.Id).ToListAsync(cancellationToken);
+                var seen = await annotations.ReadAsync(user.GetAccountId(), local, null, null, cancellationToken);
                 return new
                 {
                     marks = seen.Marks.Select(x => new { x.Chords, x.Kind }).ToList(),

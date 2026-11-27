@@ -56,7 +56,7 @@ public sealed class TrackMarks(ShelfDbContext db)
                         .Select(i => new MusicTrackSong { PlaylistId = i.Song.PlaylistId, SongId = i.SongId })
                         .ToList(),
                     MadeInto = db.Chords
-                        .Where(c => c.MadeFromRecordingId == r.Id && c.SourceKey != null)
+                        .Where(c => c.MadeFromRecordingId == r.Id)
                         .OrderByDescending(c => c.CreatedAt).ThenBy(c => c.SourceId)
                         .Select(c => c.SourceId)
                         .FirstOrDefault(),

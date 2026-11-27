@@ -2,6 +2,7 @@
 // PDF, the QR code, the link that opens without the app), adding what one sees to one's own playlist, and the variant's menu "⋯" (my main variant, linking,
 // separating, removing, editing my chords).
 
+import { useLabels } from '../../data/labels';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
@@ -225,19 +226,21 @@ export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLEl
     const navigate = useNavigate();
     const wide = useWide();
     const { data: own } = useOwnChords();
-    const header = variant.chords.header;
+    // as the shelf keeps the chords; their source as the device knows it for the person
+    const ref = variant.chords;
+    const label = useLabels([ref.id])(ref.id);
     const playlistId = page.song.playlistId, songId = page.song.id;
     const many = page.variants.length > 1;
     const main = page.myMainItemId === variant.itemId;
     const ownItem = own?.items.find(x => x.chordsId === variant.chords.id) ?? null;
-    const named = header && ((header.title ?? '').toLowerCase() !== page.song.title.toLowerCase() || header.artists.join(', ').toLowerCase() !== page.song.artists.join(', ').toLowerCase());
+    const named = ref.title != null && (ref.title.toLowerCase() !== page.song.title.toLowerCase() || ref.artists.join(', ').toLowerCase() !== page.song.artists.join(', ').toLowerCase());
     const run = (action: () => Promise<unknown>) => {
         onClose();
         void action().catch(() => undefined);
     };
     return (
         <Popover anchor={anchor} onClose={onClose} width={320} label={t('song.menu.title')}>
-            {header && <MenuTitle>{header.source.title}</MenuTitle>}
+            {label && <MenuTitle>{label.title}</MenuTitle>}
             {many && (
                 <MenuItem check on={main} sub={t('song.menu.mainSub')}
                     onClick={() => run(() => setMainVariant({ playlistId, songId, itemId: main ? null : variant.itemId }))}>
@@ -246,7 +249,7 @@ export function VariantMenu({ anchor, onClose, page, variant }: { anchor: HTMLEl
             )}
             {(named || variant.addedBy) && (
                 <p className="note">
-                    {named && <>{t('song.menu.inSource', { name: `${header!.artists.join(', ')} — ${header!.title ?? ''}` })}<br /></>}
+                    {named && <>{t('song.menu.inSource', { name: `${ref.artists.join(', ')} — ${ref.title ?? ''}` })}<br /></>}
                     {variant.addedBy && t('song.menu.addedBy', { name: personName(variant.addedBy) })}
                 </p>
             )}

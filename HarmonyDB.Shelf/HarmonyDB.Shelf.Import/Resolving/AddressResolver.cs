@@ -7,7 +7,7 @@ namespace HarmonyDB.Shelf.Import.Resolving;
 
 /// <summary>
 /// Resolves the old addresses to the sources' ids at the index's relay, as the import's internal client, with the
-/// configured caller keys; and asks whether the ids old visits were opened by are ids the relay knows as open.
+/// configured caller keys.
 /// </summary>
 public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
 {
@@ -53,23 +53,6 @@ public sealed class AddressResolver(SourceV2Client relay, RelayOptions options)
         if (item.State == ResolveState.Unavailable)
             await relay.Ping(cancellationToken);
         return new(item.State == ResolveState.Resolved ? item.Id : null, Name(item.State));
-    }
-
-    /// <summary>
-    /// Which of the ids are ids of items open at the relay (the same ids are the sources' ids, version 2).
-    /// </summary>
-    public async Task<Dictionary<string, ResolvedAddress>> ConfirmIdsAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken)
-    {
-        var result = new Dictionary<string, ResolvedAddress>(StringComparer.Ordinal);
-        foreach (var batch in ids.Chunk(options.BatchSize))
-        {
-            var response = await relay.GetHeaders(Caller([]), batch, cancellationToken);
-            await RequireAnsweredAsync(response.Headers.Select(x => x.State == ItemState.Unavailable), cancellationToken);
-            foreach (var answer in response.Headers)
-                result[answer.Id] = new(answer.State == ItemState.Open ? answer.Id : null, Name(answer.State));
-        }
-
-        return result;
     }
 
     /// <summary>

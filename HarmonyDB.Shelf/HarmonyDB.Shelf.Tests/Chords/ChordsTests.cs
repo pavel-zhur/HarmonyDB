@@ -94,7 +94,7 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
 
     // the answer of a list carries the person's own marks: it reads the database
     [DatabaseFact]
-    public async Task TheLabelIsKeptPerKeysAndPersonOnly()
+    public async Task EveryReadingAsksTheSourceForThePersonsKeys()
     {
         // the source names itself by the keys it is given
         var index = new FakeIndex
@@ -119,36 +119,28 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
             => (await ReadAsync<ChordsHeadersResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/chords/headers", account, permissions, new { ids = new[] { "item" } }))))
                 .Items.Single().Header!.Source.Title;
 
+        // nothing of a source's answer is remembered: each reading asks it, for the keys of the one who reads
         Assert.Equal($"label for [{Custom}]", await LabelAsync(first, Custom));
         Assert.Equal($"label for [{Custom}]", await LabelAsync(first, Custom));
-        Assert.Single(index.Requests);
-
-        // another person, though with the same keys, and a guest, are asked for anew
         Assert.Equal($"label for [{Custom}]", await LabelAsync(second, Custom));
         Assert.Equal("label for []", await LabelAsync(null, string.Empty));
         Assert.Equal("label for []", await LabelAsync(first, string.Empty));
-        Assert.Equal(4, index.Requests.Count);
+        Assert.Equal(5, index.Requests.Count);
     }
 
     [DatabaseFact]
-    public async Task TheRowKeepsOnlyWhatAnAnonymousCallerGets()
+    public async Task TheRowKeepsWhatAReadingByIdGivesButNoLabel()
     {
-        // the source gives the title to a caller with keys, and its own (or none) to one without
-        var anonymousTitle = (string?)null;
+        var title = (string?)"Its title";
         var index = new FakeIndex
         {
-            Answer = (_, body) =>
+            Answer = (_, _) => (HttpStatusCode.OK, new GetContentResponse
             {
-                var caller = body.GetProperty("caller");
-                var keyed = caller.GetProperty("keys").GetArrayLength() > 0 || caller.GetProperty("subjects").GetArrayLength() > 0;
-                return (HttpStatusCode.OK, new GetContentResponse
-                {
-                    Id = "secret",
-                    State = ItemState.Open,
-                    Header = FakeIndex.Header("secret", "Label") with { Title = keyed ? "Seen with keys" : anonymousTitle, Artists = keyed ? ["Someone"] : [] },
-                    Content = new(),
-                });
-            },
+                Id = "kept",
+                State = ItemState.Open,
+                Header = FakeIndex.Header("kept", "A label for this person") with { Title = title, Artists = title == null ? [] : ["Someone"] },
+                Content = new(),
+            }),
         };
         using var api = index.Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["ConnectionStrings:Shelf"] = database.ConnectionString });
         using var client = api.CreateClient();
@@ -156,145 +148,46 @@ public sealed class ChordsTests(ShelfDatabaseFixture database) : IClassFixture<S
         async Task<HarmonyDB.Shelf.Database.Model.ChordsItem> RowAsync()
         {
             await using var db = database.CreateContext();
-            return await db.Chords.AsNoTracking().SingleAsync(x => x.SourceId == "secret");
+            return await db.Chords.AsNoTracking().SingleAsync(x => x.SourceId == "kept");
         }
 
-        // a person with keys, and a signed-in person with none: what they see is theirs only
-        var seen = await ReadAsync<ChordsContentResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/chords/secret", Guid.NewGuid(), Custom)));
-        Assert.Equal("Seen with keys", seen.Header!.Title);
-        await ReadAsync<ChordsContentResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/chords/secret", Guid.NewGuid())));
+        // a person's reading by id is kept (a source gives an item by its id to everyone alike), its label is not
+        await ReadAsync<ChordsContentResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Get, "/api/chords/kept", Guid.NewGuid(), Custom)));
         var row = await RowAsync();
-        Assert.Null(row.Title);
-        Assert.Empty(row.Artists);
-        Assert.Null(row.SourceKey);
+        Assert.Equal("Its title", row.Title);
+        Assert.Equal(["Someone"], row.Artists);
+        Assert.Equal(["sheet"], row.Kinds);
 
-        // an anonymous caller's header is kept; an empty title later does not replace it
-        anonymousTitle = "Public title";
-        await ReadAsync<ChordsContentResponse>(await client.GetAsync("/api/chords/secret"));
-        Assert.Equal("Public title", (await RowAsync()).Title);
-
-        await using (var db = database.CreateContext())
-            await db.Chords.Where(x => x.SourceId == "secret").ExecuteUpdateAsync(x => x.SetProperty(c => c.HeaderUpdatedAt, DateTimeOffset.UtcNow.AddDays(-1)));
-        anonymousTitle = null;
-        await ReadAsync<ChordsContentResponse>(await client.GetAsync("/api/chords/secret"));
-        Assert.Equal("Public title", (await RowAsync()).Title);
+        // an empty title later does not replace it
+        title = null;
+        await ReadAsync<ChordsContentResponse>(await client.GetAsync("/api/chords/kept"));
+        Assert.Equal("Its title", (await RowAsync()).Title);
     }
 
-    [DatabaseFact]
-    public async Task ChordsNotOpenAreGivenOnlyTheirOldAddress()
+    [Fact]
+    public async Task LabelsAreAskedOnceForEachIdWithThePersonsKeys()
     {
-        var (kept, bare, unknown, open) = ($"kept-{Guid.NewGuid():N}", $"bare-{Guid.NewGuid():N}", $"unknown-{Guid.NewGuid():N}", $"open-{Guid.NewGuid():N}");
-        await using (var db = database.CreateContext())
-        {
-            db.Chords.Add(new() { Id = Guid.NewGuid(), SourceId = kept, OldAddress = "https://example.com/page/1", CreatedAt = DateTimeOffset.UtcNow });
-            db.Chords.Add(new() { Id = Guid.NewGuid(), SourceId = bare, CreatedAt = DateTimeOffset.UtcNow });
-            db.Chords.Add(new() { Id = Guid.NewGuid(), SourceId = open, OldAddress = "https://example.com/page/2", CreatedAt = DateTimeOffset.UtcNow });
-            await db.SaveChangesAsync();
-        }
-
-        HeaderAnswer Of(string id) => id == open
-            ? new() { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "Label") with { Address = null } }
-            : new() { Id = id, State = ItemState.NotOpen };
         var index = new FakeIndex
         {
-            Answer = (operation, body) => operation switch
+            Answer = (operation, body) =>
             {
-                "V2GetContent" => (HttpStatusCode.OK, new GetContentResponse { Id = body.GetProperty("id").GetString()!, State = Of(body.GetProperty("id").GetString()!).State }),
-                "V2GetHeaders" => (HttpStatusCode.OK, new GetHeadersResponse { Headers = body.GetProperty("ids").EnumerateArray().Select(x => Of(x.GetString()!)).ToList() }),
-                _ => (HttpStatusCode.NotFound, null),
-            },
-        };
-        using var api = index.Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["ConnectionStrings:Shelf"] = database.ConnectionString });
-        using var client = api.CreateClient();
-
-        // the page kept for the chords, to a guest and to a person alike; none where none is kept
-        Assert.Equal("https://example.com/page/1", (await ReadAsync<ChordsContentResponse>(await client.GetAsync($"/api/chords/{kept}"))).Address);
-        Assert.Null((await ReadAsync<ChordsContentResponse>(await client.GetAsync($"/api/chords/{bare}"))).Address);
-        Assert.Null((await ReadAsync<ChordsContentResponse>(await client.GetAsync($"/api/chords/{unknown}"))).Address);
-        var headers = await ReadAsync<ChordsHeadersResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/chords/headers", Guid.NewGuid(), body: new { ids = new[] { kept, bare, unknown, open } })));
-        Assert.Equal(new string?[] { "https://example.com/page/1", null, null, null }, headers.Items.Select(x => x.Address));
-        // chords open are told only what their source gives: the row's page is not added
-        Assert.Null(headers.Items[3].Header!.Address);
-    }
-
-    // a page kept from a header may open the item to whoever holds it (own chords by their link): it is never told
-    [DatabaseFact]
-    public async Task ChordsOnceOpenToAllThenClosedAreNotToldThePageKeptFromTheirHeader()
-    {
-        var id = $"once-open-{Guid.NewGuid():N}";
-        var open = true;
-        GetContentResponse Content() => open
-            ? new() { Id = id, State = ItemState.Open, Header = FakeIndex.Header(id, "Label") with { Address = new("https://example.com/the-way-in") }, Content = new() }
-            : new() { Id = id, State = ItemState.NotOpen };
-        var index = new FakeIndex
-        {
-            Answer = (operation, body) => operation switch
-            {
-                "V2GetContent" => (HttpStatusCode.OK, Content()),
-                "V2GetHeaders" => (HttpStatusCode.OK, new GetHeadersResponse { Headers = [new() { Id = id, State = open ? ItemState.Open : ItemState.NotOpen }] }),
-                _ => (HttpStatusCode.NotFound, null),
-            },
-        };
-        using var api = index.Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["ConnectionStrings:Shelf"] = database.ConnectionString });
-        using var client = api.CreateClient();
-
-        // open to all: a caller with no keys reads it, and its page is kept in the row
-        await ReadAsync<ChordsContentResponse>(await client.GetAsync($"/api/chords/{id}"));
-        await using (var db = database.CreateContext())
-            Assert.Equal("https://example.com/the-way-in", (await db.Chords.SingleAsync(x => x.SourceId == id)).SourceUri);
-
-        // made private: a member who holds only the id is told it is not open, and nothing of the way in
-        open = false;
-        var member = Guid.NewGuid();
-        var content = await ReadAsync<ChordsContentResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Get, $"/api/chords/{id}", member)));
-        Assert.Equal(ChordsState.NotOpen, content.State);
-        Assert.Null(content.Address);
-        var headers = await ReadAsync<ChordsHeadersResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/chords/headers", member, body: new { ids = new[] { id } })));
-        Assert.Equal(ChordsState.NotOpen, headers.Items.Single().State);
-        Assert.Null(headers.Items.Single().Address);
-    }
-
-    // the source says whether it fully supports an item's kind only in a header, never with its content
-    [DatabaseFact]
-    public async Task AContentReadNeverLosesAMarkOnlyAHeaderGives()
-    {
-        var (first, second) = ($"first-{Guid.NewGuid():N}", $"second-{Guid.NewGuid():N}");
-        Header Of(string id, bool? supported) => FakeIndex.Header(id, "Label") with { Type = "A type", Marks = new() { IsSupported = supported } };
-        var index = new FakeIndex
-        {
-            Answer = (operation, body) => operation switch
-            {
-                "V2GetHeaders" => (HttpStatusCode.OK, new GetHeadersResponse
+                if (operation != "V2GetLabels")
+                    return (HttpStatusCode.NotFound, null);
+                var keys = string.Join(',', body.GetProperty("caller").GetProperty("keys").EnumerateArray().Select(x => x.GetString()));
+                return (HttpStatusCode.OK, new GetLabelsResponse
                 {
-                    Headers = body.GetProperty("ids").EnumerateArray().Select(x => new HeaderAnswer { Id = x.GetString()!, State = ItemState.Open, Header = Of(x.GetString()!, false) }).ToList(),
-                }),
-                "V2GetContent" => (HttpStatusCode.OK, new GetContentResponse
-                {
-                    Id = body.GetProperty("id").GetString()!, State = ItemState.Open, Header = Of(body.GetProperty("id").GetString()!, null), Content = new(),
-                }),
-                _ => (HttpStatusCode.NotFound, null),
+                    Labels = body.GetProperty("ids").EnumerateArray().Select(x => x.GetString()!).Where(x => x != "unknown")
+                        .Select(x => new ItemLabel { Id = x, Source = new() { Key = "k", Title = $"for [{keys}]", Icon = "an icon" } })
+                        .ToList(),
+                });
             },
         };
-        using var api = index.Api(new ShelfApiFactory(), new Dictionary<string, string?> { ["ConnectionStrings:Shelf"] = database.ConnectionString });
+        using var api = index.Api(new ShelfApiFactory());
         using var client = api.CreateClient();
-        var person = Guid.NewGuid();
 
-        // a song's variants read the headers as this does (Views.ChordsAsync → ChordsReader.GetHeadersAsync)
-        async Task<bool?> VariantAsync(string id)
-            => (await ReadAsync<ChordsHeadersResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/chords/headers", person, body: new { ids = new[] { id } }))))
-                .Items.Single().Header!.Marks.IsSupported;
-        async Task<bool?> ContentAsync(string id)
-            => (await ReadAsync<ChordsContentResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Get, $"/api/chords/{id}", person)))).Header!.Marks.IsSupported;
-
-        // the header, then the content, then the variant: the mark stays, and the content is shown with it
-        Assert.False(await VariantAsync(first));
-        Assert.False(await ContentAsync(first));
-        Assert.False(await VariantAsync(first));
-        Assert.Single(index.Requests, x => x.Operation == "V2GetHeaders");
-
-        // the content first: nothing is kept of it, and the variant asks the source for its header
-        Assert.Null(await ContentAsync(second));
-        Assert.False(await VariantAsync(second));
+        var labels = await ReadAsync<ChordsLabelsResponse>(await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/chords/labels", Guid.NewGuid(), Custom, new { ids = new[] { "a", "a", "unknown" } })));
+        Assert.Equal([("a", $"for [{Custom}]", "/api/chords/icons/an%20icon")], labels.Labels.Select(x => (x.Id, x.Source.Title, x.Source.IconUrl)));
+        Assert.Equal(["a", "unknown"], index.Requests.Single().Body.GetProperty("ids").EnumerateArray().Select(x => x.GetString()));
     }
 
     [Fact]

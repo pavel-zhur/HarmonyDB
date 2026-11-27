@@ -42,6 +42,17 @@ public static class Slim
         kinds = x.Kinds.Count == 1 && x.Kinds[0] == ChordsKind.Sheet ? null : x.Kinds,
     };
 
+    /// <summary>
+    /// Chords as the shelf keeps them (a song's variant, a list's row): no source's name, which is each person's own.
+    /// </summary>
+    public static object Chords(ChordsRef x) => new
+    {
+        id = x.Id,
+        x.Title,
+        artists = string.Join(", ", x.Artists),
+        kinds = x.Kinds.Count == 1 && x.Kinds[0] == ChordsKind.Sheet ? null : x.Kinds,
+    };
+
     public static object Chords(ChordsAnswer x) => x.Header is { } header && x.State == ChordsState.Open ? Chords(header) : new { id = x.Id, state = x.State };
 
     public static object Playlist(PlaylistSummary x) => new

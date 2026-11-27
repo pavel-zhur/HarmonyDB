@@ -207,7 +207,7 @@ public sealed class Auditor(OldShelf old, ImportOptions options, ShelfDbContext 
 
             // recent
             var visits = old.Visits.Where(x => x.UserId == p && OldRules.Time(x.LastViewedOn) != null).ToList();
-            var hadRecent = visits.Select(x => x.Uri != null ? Id(x.Uri) : addresses.GetValueOrDefault(("id", x.ExternalId!))?.SourceId).OfType<string>().ToHashSet(StringComparer.Ordinal);
+            var hadRecent = visits.Select(x => x.Uri != null ? Id(x.Uri) : x.ExternalId).OfType<string>().ToHashSet(StringComparer.Ordinal);
             var hasRecent = recent[account].ToHashSet(StringComparer.Ordinal);
             line.Add($"recent {hadRecent.Intersect(hasRecent).Count()}/{hadRecent.Count}{Waiting(visits.Count(x => x.Uri != null && Id(x.Uri) == null))}");
             if (!hadRecent.IsSubsetOf(hasRecent)) Fail($"{p}: recent missing {hadRecent.Except(hasRecent).Count()}");

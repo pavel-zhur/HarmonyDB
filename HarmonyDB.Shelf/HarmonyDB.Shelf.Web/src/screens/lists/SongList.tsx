@@ -18,7 +18,6 @@ import { scrollerOf } from '../../app/layout';
 import { setLastOpened, useLastOpened } from '../../app/lastOpened';
 import { myMarksOn, useLocalView } from '../../local';
 import { serverParams, useListState, type ListSort } from './listParams';
-import { foundArtists, foundSongs, foundSorts, isCompact, type FoundSort } from './found';
 import { LinkBar, LinkPick } from '../song/linking';
 import { MusicSearch } from '../music/MusicSearch';
 import { atTheTop, updateSong } from '../../data/song';
@@ -130,9 +129,8 @@ export function SongList(p: SongListProps) {
                             return (
                                 <SongRow key={id} to={rowHref(row, p, href)} lit={lit === id} q={state.q} title={row.title} artists={row.artists}
                                     myMarks={myMarksOn(local, row.chordsIds) ?? row.myMarks} cover={row.cover} coverSlot={coverSlot} otherMarks={row.otherMarks} otherPeople={row.otherPeople}
-                                    sources={row.sources} moreSources={Math.max(0, row.chordsCount - row.sources.length)}
+                                    chordsIds={row.chordsIds}
                                     extra={notOnDevice(row) ? <span className="na muted">{t('offline.notKept')}</span>
-                                        : row.chords && row.chords.state !== 'open' ? <span className="na muted">{t(row.chords.state === 'notOpen' ? 'library.notOpen' : 'library.unavailable')}</span>
                                         : p.source.kind === 'playlist' ? (
                                             <>
                                                 <LinkPick playlistId={p.source.id} songId={row.songId} />
@@ -143,7 +141,7 @@ export function SongList(p: SongListProps) {
                             );
                         })}
                     {list.hasNextPage && <More onMore={() => { if (!list.isFetchingNextPage) void list.fetchNextPage({ cancelRefetch: false }); }} busy={list.isFetchingNextPage} />}
-                    {searching && <SearchMore q={state.q} found={state.found} onFound={found => update({ found })} rows={rows} lit={lit} p={p} href={href} />}
+                    {searching && <SearchMore q={state.q} rows={rows} lit={lit} p={p} href={href} />}
                 </div>
             )}
             {p.children}
@@ -217,10 +215,8 @@ function Compact({ rows, q, lit, href, onOpen }: { rows: Row[]; q: string; lit: 
 }
 
 /** While searching, under the list: the songs of my other playlists, the music services' artists and recordings, and
- * chords from the sources (the mock-up's order), grouped by song as the old shelf grouped them, in the order chosen. */
-function SearchMore({ q, found, onFound, rows, lit, p, href }: {
-    q: string; found: FoundSort; onFound: (found: FoundSort) => void; rows: Row[]; lit: string | null; p: SongListProps; href: (path: string) => string;
-}) {
+ * chords from the sources (the mock-up's order). */
+function SearchMore({ q, rows, lit, p, href }: { q: string; rows: Row[]; lit: string | null; p: SongListProps; href: (path: string) => string }) {
     const { t } = useTranslation();
     const { signedIn } = useSession();
     const search = useSearch(q, ['songs', 'chords']);
@@ -229,7 +225,6 @@ function SearchMore({ q, found, onFound, rows, lit, p, href }: {
     if (!search.data) return search.isError ? <p className="failed">{errorText(search.error)}</p> : <p className="loading">{t('common.loading')}</p>;
     const songs = (search.data.songs ?? []).filter(song => !shown.has(song.songId) && !(p.source.kind === 'playlist' && song.playlistId === p.source.id));
     const chords = (search.data.chords ?? []).filter(header => !shownChords.has(header.id));
-    const chordsSongs = foundSongs(chords, found);
     return (
         <>
             {songs.length > 0 && <div className="sec">{t(!signedIn ? 'library.foundInOpen' : p.source.kind === 'playlist' ? 'library.otherPlaylists' : 'library.foundInPlaylists')}</div>}
@@ -244,51 +239,14 @@ function SearchMore({ q, found, onFound, rows, lit, p, href }: {
                 <>
                     <div className="sec"><Icon name="frets" />{t('library.fromSources')} · {chords.length}</div>
                     <SourcesRibbon />
-                    {chordsSongs.length > 1 && <div className="filters"><FoundSortChip found={found} onFound={onFound} /></div>}
                 </>
             )}
-            {isCompact(found) && foundArtists(chordsSongs).map(group => (
-                <Fragment key={'a' + group.artist}>
-                    <div className="grp"><Highlight text={group.songs[0]!.versions[0]!.artists.join(', ')} q={q} /></div>
-                    <div className="cmp">
-                        {group.songs.map(song => {
-                            const first = song.versions[0]!;
-                            return (
-                                <Link key={song.key} to={href(p.chordsHref(first.id))} className={song.versions.some(x => x.id === lit) ? 'last' : undefined}>
-                                    <Highlight text={first.title ?? ''} q={q} />{song.versions.length > 1 && <small className="muted"> ×{song.versions.length}</small>}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </Fragment>
+            {chords.map(header => (
+                <SongRow noMarks key={'c' + header.id} to={href(p.chordsHref(header.id))} lit={lit === header.id} q={q}
+                    title={header.title ?? ''} artists={header.artists}
+                    extra={<ChordsMarks header={header} />}
+                    sources={[header.source]} />
             ))}
-            {!isCompact(found) && chordsSongs.map(song => {
-                const first = song.versions[0]!;
-                if (song.versions.length === 1) {
-                    return (
-                        <SongRow noMarks key={'c' + first.id} to={href(p.chordsHref(first.id))} lit={lit === first.id} q={q}
-                            title={first.title ?? ''} artists={first.artists}
-                            extra={<ChordsMarks header={first} />}
-                            sources={[first.source]} />
-                    );
-                }
-                return (
-                    <Fragment key={'g' + song.key}>
-                        <SongRow noMarks to={href(p.chordsHref(first.id))} lit={false} q={q}
-                            title={first.title ?? ''} artists={first.artists}
-                            sources={[...new Map(song.versions.map(x => [x.source.key, x.source])).values()]} />
-                        <div className="fver">
-                            {song.versions.map(version => (
-                                <Link key={version.id} to={href(p.chordsHref(version.id))} className={lit === version.id ? 'last' : undefined}>
-                                    <SourceIcon source={version.source} />
-                                    <span>{version.source.title}</span>
-                                    <ChordsMarks header={version} />
-                                </Link>
-                            ))}
-                        </div>
-                    </Fragment>
-                );
-            })}
             {chords.length === 0 && rows.length === 0 && songs.length === 0 && <p className="empty">{t('library.emptySearch')}</p>}
             {!!search.data.chordsFailures?.length && (
                 <p className="muted small" style={{ padding: '6px 8px' }}>
@@ -296,26 +254,6 @@ function SearchMore({ q, found, onFound, rows, lit, p, href }: {
                     <button type="button" className="lnk" disabled={search.isFetching} onClick={() => void search.refetch()}>{t('common.retry')}</button>
                 </p>
             )}
-        </>
-    );
-}
-
-const foundLabels: Record<FoundSort, string> = {
-    original: 'library.found.original', artist: 'library.found.artist', title: 'library.found.title',
-    compact: 'library.found.compact', compactArtist: 'library.found.compactArtist',
-};
-
-/** The order of the chords found: the old shelf's five — as found, by artist, by title, and compact as found or by artist. */
-function FoundSortChip({ found, onFound }: { found: FoundSort; onFound: (found: FoundSort) => void }) {
-    const { t } = useTranslation();
-    const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-    const label = (s: FoundSort) => t(foundLabels[s] as 'library.found.original');
-    return (
-        <>
-            <Chip onClick={e => setAnchor(anchor ? null : e.currentTarget)}>{label(found)}<Icon name="down" /></Chip>
-            <Popover anchor={anchor} onClose={() => setAnchor(null)}>
-                {foundSorts.map(s => <MenuItem key={s} on={s === found} onClick={() => { onFound(s); setAnchor(null); }}>{label(s)}</MenuItem>)}
-            </Popover>
         </>
     );
 }

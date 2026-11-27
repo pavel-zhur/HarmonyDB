@@ -39,11 +39,13 @@ public sealed class IllustrationsService(
         => new() { Presets = (await illustrations.GetPresetsAsync(cancellationToken)).Presets.Select(x => new IllustrationPreset { Key = x.Key, Mood = x.Mood }).ToList() };
 
     /// <summary>
-    /// The chords' illustrations, when the chords are open to the caller; and the batch being drawn, if one is.
+    /// The chords' illustrations, and the batch being drawn, if one is: shown as the song is (no source is asked;
+    /// drawing reads the chords, and asks).
     /// </summary>
     public async Task<ChordsIllustrations> GetAsync(ClaimsPrincipal user, string chordsId, CancellationToken cancellationToken)
     {
-        await RequireOpenAsync(callers.For(user), chordsId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(chordsId))
+            throw ShelfException.BadRequest();
 
         var presets = await illustrations.GetPresetsAsync(cancellationToken);
         var images = await illustrations.ReadAsync(chordsId, cancellationToken);

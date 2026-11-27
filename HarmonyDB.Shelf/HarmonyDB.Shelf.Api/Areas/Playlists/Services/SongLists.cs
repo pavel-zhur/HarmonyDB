@@ -1,3 +1,4 @@
+using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
@@ -36,11 +37,12 @@ public sealed record SongListQuery(string? Q, M.SongSort? Sort, string? Who, str
 /// the same chords, once), plus the chords they marked, keep a key or a personal note on, that are in none of those:
 /// joined across playlists here, then paged.</item>
 /// </list>
-/// The rows of a page carry the sources of their chords as the sources give them to the caller.
+/// A list is the shelf's own: no source is asked to show it. A row names its chords by their ids; the person's device
+/// keeps their sources' labels (<c>POST /api/chords/labels</c>). What a person sees of a playlist's entries is
+/// <see cref="PlaylistSongItemsSeen"/>.
 /// </summary>
 public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
 {
-    private const int SourcesShown = 3;
     private const int OtherMarksShown = 3;
 
     public async Task<M.SongList> PlaylistAsync(ClaimsPrincipal user, Guid playlistId, string? share, SongListQuery query, CancellationToken cancellationToken)
@@ -51,9 +53,9 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
             ? await db.PlaylistMembers.Where(x => x.PlaylistId == playlistId).Select(x => x.AccountId).ToListAsync(cancellationToken)
             : viewer is { } me ? [me] : [];
 
-        var items = db.PlaylistSongItems;
+        var items = db.PlaylistSongItems.SeenBy(viewer);
         var marks = db.Marks.Where(m => people.Contains(m.AccountId));
-        var songs = db.PlaylistSongs.Where(s => s.PlaylistId == playlistId);
+        var songs = db.PlaylistSongs.Where(s => s.PlaylistId == playlistId).SeenBy(viewer);
 
         if (Normalize(query.Q) is { Length: > 0 } q)
         {
@@ -123,7 +125,7 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
             page = await sorted.ThenBy(s => s.Id).Skip(offset).Take(limit).AsNoTracking().ToListAsync(cancellationToken);
         }
 
-        var data = await SongDataAsync(page, cancellationToken);
+        var data = await SongDataAsync(page, viewer, cancellationToken);
         var entries = data.Select(x => Entry.Of(x, people)).ToList();
         await MarksAsync(entries, people, cancellationToken);
         return new()
@@ -147,7 +149,7 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
 
         // a song held by several shown playlists (by the same chords) is one row: the first playlist's song stands for
         // the others
-        var songs = await SongDataAsync(await db.PlaylistSongs.Where(x => shown.Contains(x.PlaylistId)).AsNoTracking().ToListAsync(cancellationToken), cancellationToken);
+        var songs = await SongDataAsync(await db.PlaylistSongs.Where(x => shown.Contains(x.PlaylistId)).SeenBy(me).AsNoTracking().ToListAsync(cancellationToken), me, cancellationToken);
         var entries = new List<Entry>();
         var byChords = new Dictionary<Guid, Entry>();
         foreach (var song in songs.OrderBy(x => shown.IndexOf(x.Song.PlaylistId)).ThenBy(x => x.Song.Position).ThenBy(x => x.Song.Id))
@@ -221,18 +223,26 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
 
     /// <summary>
     /// The chords of the person's library: of the songs of the playlists shown in it, and the person's own (marked, or
-    /// with their key or note).
+    /// with their key or note); each with the address it is read by (of the latest entry that has one).
     /// </summary>
-    public async Task<IReadOnlyList<ChordsItem>> LibraryChordsAsync(Guid me, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<(ChordsItem Chords, string? Address)>> LibraryChordsAsync(Guid me, CancellationToken cancellationToken)
     {
         var (memberOf, followed) = await ShownAsync(me, cancellationToken);
         var shown = memberOf.Concat(followed).ToList();
-        var inPlaylists = db.PlaylistSongItems.Where(x => x.ChordsId != null && shown.Contains(x.Song.PlaylistId)).Select(x => x.ChordsId!.Value);
-        var own = db.Marks.Where(x => x.AccountId == me).Select(x => x.ChordsId)
+        var entries = await db.PlaylistSongItems.SeenBy(me)
+            .Where(x => x.ChordsId != null && shown.Contains(x.Song.PlaylistId) && x.Song.DeletedAt == null)
+            .Select(x => new { ChordsId = x.ChordsId!.Value, x.Address, x.AddedAt })
+            .ToListAsync(cancellationToken);
+        var addresses = entries.GroupBy(x => x.ChordsId)
+            .ToDictionary(x => x.Key, x => x.Where(e => e.Address != null).OrderByDescending(e => e.AddedAt).Select(e => e.Address).FirstOrDefault());
+        var own = await db.Marks.Where(x => x.AccountId == me).Select(x => x.ChordsId)
             .Union(db.Transpositions.Where(x => x.AccountId == me).Select(x => x.ChordsId))
-            .Union(db.Notes.Where(x => x.AccountId == me && x.ChordsId != null).Select(x => x.ChordsId!.Value));
-        var ids = inPlaylists.Union(own);
-        return await db.Chords.Where(x => ids.Contains(x.Id)).AsNoTracking().ToListAsync(cancellationToken);
+            .Union(db.Notes.Where(x => x.AccountId == me && x.ChordsId != null).Select(x => x.ChordsId!.Value))
+            .ToListAsync(cancellationToken);
+        var ids = addresses.Keys.Union(own).ToList();
+        return (await db.Chords.Where(x => ids.Contains(x.Id)).AsNoTracking().ToListAsync(cancellationToken))
+            .Select(x => (x, addresses.GetValueOrDefault(x.Id)))
+            .ToList();
     }
 
     /// <summary>
@@ -265,10 +275,10 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
     /// <summary>
     /// The songs with their variants not removed.
     /// </summary>
-    private async Task<List<SongData>> SongDataAsync(IReadOnlyList<PlaylistSong> songs, CancellationToken cancellationToken)
+    private async Task<List<SongData>> SongDataAsync(IReadOnlyList<PlaylistSong> songs, Guid? viewer, CancellationToken cancellationToken)
     {
         var ids = songs.Select(x => x.Id).ToList();
-        var items = await db.PlaylistSongItems.Where(x => ids.Contains(x.SongId))
+        var items = await db.PlaylistSongItems.SeenBy(viewer).Where(x => ids.Contains(x.SongId))
             .OrderBy(x => x.Position).ThenBy(x => x.Id)
             .Select(x => new { x.SongId, x.Chords, x.RecordingId, x.AddedAt })
             .AsNoTracking().ToListAsync(cancellationToken);
@@ -298,9 +308,8 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
 
     private async Task<List<M.SongRow>> RowsAsync(ClaimsPrincipal user, List<Entry> page, CancellationToken cancellationToken)
     {
-        var chords = await views.ChordsAsync(user, page.SelectMany(x => x.Chords.Select(c => c.SourceId)), cancellationToken);
         var covers = await views.SongCoversAsync(user.GetAccountId(), page.Where(x => x.SongId != null).Select(x => x.SongId!.Value).ToList(), cancellationToken);
-        return page.Select(x => x.Row(user.GetAccountId(), chords, covers)).ToList();
+        return page.Select(x => x.Row(user.GetAccountId(), covers)).ToList();
     }
 
     private async Task<List<M.PersonRef>> PeopleAsync(Guid? viewer, IReadOnlyList<Guid> people, CancellationToken cancellationToken)
@@ -402,24 +411,22 @@ public sealed class SongLists(ShelfDbContext db, PlaylistGate gate, Views views)
 
         /// <param name="chords">The chords as their sources give them to the caller.</param>
         /// <param name="covers">The songs' covers.</param>
-        public M.SongRow Row(Guid? viewer, IReadOnlyDictionary<string, ChordsAnswer> chords, IReadOnlyDictionary<Guid, string> covers)
+        public M.SongRow Row(Guid? viewer, IReadOnlyDictionary<Guid, string> covers)
         {
             var others = Marks.Where(x => x.AccountId != viewer).ToList();
-            var bare = BareChords == null ? null : chords[BareChords.SourceId];
             return new()
             {
                 SongId = SongId,
                 PlaylistId = PlaylistId,
                 AlsoIn = AlsoIn.Count == 0 ? null : AlsoIn,
-                Chords = bare,
-                // chords alone are named as their source gives them to the caller (nothing when not open to them)
-                Title = bare == null ? Title : bare.Header?.Title ?? string.Empty,
-                Artists = bare == null ? Artists : bare.Header?.Artists ?? [],
+                // chords alone, as the shelf keeps them
+                Chords = BareChords == null ? null : ChordsReader.ToRef(BareChords, null),
+                Title = Title,
+                Artists = Artists,
                 MyMarks = Marks.Where(x => x.AccountId == viewer).OrderByDescending(x => x.CreatedAt).Select(x => x.Kind).Distinct().ToList(),
                 OtherMarks = others.GroupBy(x => x.Kind).OrderByDescending(x => x.Select(m => m.AccountId).Distinct().Count()).ThenBy(x => x.Min(m => m.CreatedAt))
                     .Take(OtherMarksShown).Select(x => x.Key).ToList(),
                 OtherPeople = others.Select(x => x.AccountId).Distinct().Count(),
-                Sources = Chords.Select(x => chords[x.SourceId].Header?.Source).Where(x => x != null).DistinctBy(x => x!.Key).Take(SourcesShown).Select(x => x!).ToList(),
                 ChordsCount = Chords.Count,
                 ChordsIds = Chords.Select(x => x.SourceId).ToList(),
                 Cover = SongId is { } song ? covers.GetValueOrDefault(song) : null,

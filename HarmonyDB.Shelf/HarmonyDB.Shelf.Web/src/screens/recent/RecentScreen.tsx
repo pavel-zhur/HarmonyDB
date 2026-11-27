@@ -39,15 +39,15 @@ export function RecentList({ entries, limit }: { entries: Entry[]; limit?: numbe
 function RecentRow({ entry }: { entry: Entry }) {
     const { t } = useTranslation();
     if (!entry.song && !entry.chords) return null;
-    const header = entry.chords?.header;
-    const title = entry.song?.title ?? header?.title ?? '';
-    const artists = (entry.song?.artists ?? header?.artists ?? []).join(', ');
+    // the song's own name; chords alone: as the person was shown them when they opened them
+    const title = entry.song?.title ?? entry.title ?? '';
+    const artists = (entry.song?.artists ?? entry.artists).join(', ');
     const to = entry.song ? `/library/songs/${entry.song.playlistId}/${entry.song.id}` : `/library/chords/${entry.chords!.id}`;
     return (
         <Link to={to}>
             <span className="t">
-                {title ? <b>{title}</b> : <b className="muted">{t('errors.chords_not_open')}</b>}
-                <span className="muted small">{[artists, header?.source.title].filter(Boolean).join(' · ')}</span>
+                {title ? <b>{title}</b> : <b className="muted">{t('song.chords.notOpen')}</b>}
+                <span className="muted small">{[artists, entry.source?.title].filter(Boolean).join(' · ')}</span>
             </span>
             <span className="when">
                 {entry.chords && <Key chords={entry.chords.id} />}

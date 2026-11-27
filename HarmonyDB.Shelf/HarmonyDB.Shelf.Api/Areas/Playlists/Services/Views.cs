@@ -14,7 +14,7 @@ namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 /// <summary>
 /// The API's views of the rows: people, chords, recordings, playlists' summaries.
 /// </summary>
-public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup lookup, IllustrationsClient illustrations, IMemoryCache cache)
+public sealed class Views(ShelfDbContext db, ChordsReader reader, IllustrationsClient illustrations, IMemoryCache cache)
 {
     public const int FirstMembersShown = 6;
 
@@ -41,7 +41,7 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
             return [];
 
         var ids = songIds.Distinct().ToList();
-        var items = await db.PlaylistSongItems
+        var items = await db.PlaylistSongItems.SeenBy(viewer)
             .Where(x => ids.Contains(x.SongId) && x.Chords != null)
             .OrderBy(x => x.Position).ThenBy(x => x.Id)
             .Select(x => new { x.Id, x.SongId, x.Chords!.SourceId })
@@ -58,8 +58,7 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
 
     /// <summary>
     /// The chords as their sources give them to the caller now (open with the header and label for the caller, not open,
-    /// unavailable), by their ids; asked through the chords' reader, which keeps the answers a while per item, keys and
-    /// account.
+    /// unavailable), by their ids: for what is opened anew (a link shared, the public page's preview).
     /// </summary>
     public async Task<Dictionary<string, ChordsAnswer>> ChordsAsync(ClaimsPrincipal user, IEnumerable<string> ids, CancellationToken cancellationToken)
     {
@@ -205,7 +204,7 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
     /// The covers of songs for the person, illustration first:
     /// <list type="number">
     /// <item>an illustration of the person's main variant of the song, else of its first variant that has one — of
-    /// chords open to the person;</item>
+    /// the variants the person sees;</item>
     /// <item>else the cover of the recording the person chose for the song, else of its first recording that has one;</item>
     /// <item>else none.</item>
     /// </list>
@@ -217,7 +216,7 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
             return [];
 
         var ids = songIds.Distinct().ToList();
-        var items = await db.PlaylistSongItems
+        var items = await db.PlaylistSongItems.SeenBy(viewer)
             .Where(x => ids.Contains(x.SongId))
             .OrderBy(x => x.Position).ThenBy(x => x.Id)
             .Select(x => new { x.Id, x.SongId, SourceId = x.Chords == null ? null : x.Chords.SourceId, RecordingCover = x.Recording == null ? null : x.Recording.CoverUrl })
@@ -228,11 +227,9 @@ public sealed class Views(ShelfDbContext db, ChordsReader reader, ChordsLookup l
                 .Select(x => new { x.SongId, x.MainItemId, x.RecordingItemId })
                 .ToDictionaryAsync(x => x.SongId, cancellationToken);
 
-        // the illustrations of the chords open to the person
+        // the illustrations of the chords the person sees
         var sourceIds = items.Where(x => x.SourceId != null).Select(x => x.SourceId!).Distinct(StringComparer.Ordinal).ToList();
-        var person = viewer is { } id ? await lookup.PersonAsync(id, cancellationToken) : new ClaimsPrincipal(new ClaimsIdentity());
-        var open = (await ChordsAsync(person, sourceIds, cancellationToken)).Values.Where(x => x.State == ChordsState.Open).Select(x => x.Id).ToList();
-        var pictures = await IllustrationCoversAsync(open, cancellationToken);
+        var pictures = await IllustrationCoversAsync(sourceIds, cancellationToken);
 
         var result = new Dictionary<Guid, string>();
         foreach (var song in items.GroupBy(x => x.SongId))

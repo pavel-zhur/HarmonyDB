@@ -26,6 +26,13 @@ namespace HarmonyDB.Shelf.Api.Areas.Sync.Services;
 /// </summary>
 public sealed class SyncService(ShelfDbContext db, ChordsLookup chordsRows, UndoTokens undo, TimeProvider time)
 {
+    /// <summary>
+    /// The longest title, artist or source's name an opening may keep, and how many artists.
+    /// </summary>
+    private const int MaxShownText = 500;
+
+    private const int MaxShownArtists = 50;
+
     public const int MaxChanges = 500;
     public const int MaxNoteLength = 10000;
 
@@ -180,11 +187,30 @@ public sealed class SyncService(ShelfDbContext db, ChordsLookup chordsRows, Undo
                     throw ShelfException.BadRequest();
                 }
 
+                // what the person was shown, kept with the row as the device tells it (the person's own row)
+                if (change.Title is { Length: > MaxShownText } || change.Artists is { Count: > MaxShownArtists } || change.Artists?.Any(x => x.Length > MaxShownText) == true
+                    || change.Source is { } source && (source.Key.Length > MaxShownText || source.Title.Length > MaxShownText || source.IconUrl is { Length: > MaxShownText }))
+                    throw ShelfException.BadRequest();
+
                 var recent = await db.Recent.SingleOrDefaultAsync(x => x.AccountId == me && x.ChordsId == chordsId && x.SongId == change.SongId, cancellationToken);
                 if (recent == null)
-                    db.Recent.Add(new() { Id = Guid.NewGuid(), AccountId = me, ChordsId = chordsId, SongId = change.SongId, OpenedAt = at });
+                {
+                    recent = new() { Id = Guid.NewGuid(), AccountId = me, ChordsId = chordsId, SongId = change.SongId, OpenedAt = at };
+                    db.Recent.Add(recent);
+                }
                 else if (recent.OpenedAt < at)
+                {
                     recent.OpenedAt = at;
+                }
+
+                if (recent.OpenedAt == at && (change.Title != null || change.Source != null))
+                {
+                    recent.Title = change.Title;
+                    recent.Artists = change.Artists?.ToList();
+                    recent.SourceKey = change.Source?.Key;
+                    recent.SourceTitle = change.Source?.Title;
+                    recent.SourceIconUrl = change.Source?.IconUrl;
+                }
 
                 // opening is not undone
                 await db.SaveChangesAsync(cancellationToken);
@@ -286,7 +312,7 @@ public sealed class SyncService(ShelfDbContext db, ChordsLookup chordsRows, Undo
     private async Task<ChordsItem> ChordsAsync(ClaimsPrincipal user, Change change, CancellationToken cancellationToken)
         => change.Chords == null
             ? throw ShelfException.BadRequest(ErrorCodes.BadRequest)
-            : (await chordsRows.GetOrCreateAsync(user.GetAccountId()!.Value, change.Chords, false, cancellationToken)).Row;
+            : (await chordsRows.GetOrCreateAsync(user.GetAccountId()!.Value, change.Chords, null, false, cancellationToken)).Row;
 
     /// <summary>
     /// A change made before the thing's last change or removal is stale.

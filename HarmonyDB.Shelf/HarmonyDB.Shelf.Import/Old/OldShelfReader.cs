@@ -49,12 +49,15 @@ public sealed class OldShelfReader(string songsConnectionString, string ownChord
             select "Id", "UserId", "SongId", "VersionId", "Text", "CreatedOn" from songs."Comments" where "Text" is not null order by "Id"
             """, r => new OldComment(r.GetInt32(0), r.GetInt64(1), r.GetInt32(2), r.IsDBNull(3) ? null : r.GetInt32(3), r.GetString(4), r.GetDateTime(5)), cancellationToken);
 
+        // each visit once (by its address, else its id), at its latest row, with what that row was shown under
         var visits = await ListAsync(songs, songsTransaction, """
-            select "UserId", "Uri", case when "Uri" is null then "ExternalId" end, max("ViewedOn")
+            select distinct on ("UserId", "Uri", case when "Uri" is null then "ExternalId" end)
+                "UserId", "Uri", case when "Uri" is null then "ExternalId" end, "ViewedOn", "Title", "Artists", "Source"
             from songs."VisitedChords"
             where "Uri" is not null or "ExternalId" is not null
-            group by 1, 2, 3 order by 1, 4
-            """, r => new OldVisit(r.GetInt64(0), r.IsDBNull(1) ? null : r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2), r.GetDateTime(3)), cancellationToken);
+            order by "UserId", "Uri", case when "Uri" is null then "ExternalId" end, "ViewedOn" desc
+            """, r => new OldVisit(r.GetInt64(0), r.IsDBNull(1) ? null : r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2), r.GetDateTime(3),
+            r.GetString(4), [r.GetString(5)], r.IsDBNull(6) ? null : r.GetString(6)), cancellationToken);
 
         await songsTransaction.CommitAsync(cancellationToken);
 

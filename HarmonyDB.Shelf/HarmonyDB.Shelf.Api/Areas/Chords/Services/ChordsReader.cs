@@ -18,18 +18,15 @@ namespace HarmonyDB.Shelf.Api.Areas.Chords.Services;
 /// <summary>
 /// Items of chords as the sources give them to a person, through the index's relay, with the person's names and keys,
 /// and the address the person came by where there is one. What the source answers is carried through as it is: open,
-/// not open, unavailable.
-/// The answer for an item (its state, and its header with the source's label) is kept for a while per item, names, keys
-/// and address — a source decides by all of them — so it never passes from one person to another, nor from one who came
-/// by a link to one who came by the id. An item that did not answer is not kept. With the items come the person's own marks, keys and notes on
-/// them (<see cref="ChordsAnnotations"/>).
+/// not open, unavailable. Nothing of a source's answer is remembered here: the shelf asks a source only when something
+/// new is read (chords not on the person's device, chords added, a search), and the device keeps what it is given.
+/// What the source gives of an item on a reading by its id is kept in the item's row (<see cref="ItemRows"/>). With the
+/// items come the person's own marks, keys and notes on them (<see cref="ChordsAnnotations"/>).
 /// </summary>
 public sealed class ChordsReader(
-    ShelfDbContext db, IndexClient index, SourceCallers callers, ItemRows rows, ChordsAnnotations annotations, IMemoryCache cache)
+    ShelfDbContext db, IndexClient index, SourceCallers callers, ItemRows rows, ChordsAnnotations annotations)
 {
     public const int MaxIds = 200;
-
-    private static readonly TimeSpan Keep = TimeSpan.FromMinutes(10);
 
     /// <summary>
     /// The state and header of each item for the person, in the order asked.
@@ -87,17 +84,16 @@ public sealed class ChordsReader(
 
     /// <summary>
     /// The item for the person: its state, and when it is open, its local row and the header the person was given
-    /// (what the person sees of it — the row keeps only what an anonymous caller sees, <see cref="ItemRows"/>).
+    /// (with the source's label for them; the row keeps the rest of it, <see cref="ItemRows"/>).
     /// </summary>
     public async Task<(ChordsState State, ChordsItem? Row, Header? Header)> GetOpenRowAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw ShelfException.BadRequest();
 
-        var caller = callers.For(user);
-        var answer = (await GetAnswersAsync(caller, [id], cancellationToken)).Single();
+        var answer = (await GetAnswersAsync(callers.For(user), [id], cancellationToken)).Single();
         return answer.State == ItemState.Open
-            ? (ChordsState.Open, await rows.GetOrCreateChordsAsync(id, answer.Header, IsAnonymous(caller, null), cancellationToken), answer.Header)
+            ? (ChordsState.Open, await rows.GetOrCreateChordsAsync(id, answer.Header, cancellationToken), answer.Header)
             : (ToState(answer.State), null, null);
     }
 
@@ -107,32 +103,30 @@ public sealed class ChordsReader(
     public Task<IReadOnlyList<HeaderAnswer>> GetSourceHeadersAsync(ClaimsPrincipal user, IReadOnlyList<string> ids, CancellationToken cancellationToken)
         => GetAnswersAsync(callers.For(user), ids, cancellationToken);
 
-    /// <summary>
-    /// Whether the caller has no keys and no names, and came by no address: only such a caller's header is kept in a row.
-    /// </summary>
-    public static bool IsAnonymous(Caller caller, Uri? address) => caller.Keys.Count == 0 && caller.Subjects.Count == 0 && address == null;
-
     private async Task<IReadOnlyList<HeaderAnswer>> GetAnswersAsync(Caller caller, IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {
-        var known = new Dictionary<string, HeaderAnswer>(StringComparer.Ordinal);
-        foreach (var id in ids.Distinct(StringComparer.Ordinal))
-        {
-            if (cache.TryGetValue(CacheKey(caller, id, null), out HeaderAnswer? answer))
-                known[id] = answer!;
-        }
+        var distinct = ids.Distinct(StringComparer.Ordinal).ToList();
+        var answers = (await index.Sources.GetHeaders(caller, distinct, cancellationToken)).Headers.ToDictionary(x => x.Id, StringComparer.Ordinal);
+        return ids.Select(x => answers[x]).ToList();
+    }
 
-        var missing = ids.Distinct(StringComparer.Ordinal).Where(x => !known.ContainsKey(x)).ToList();
-        if (missing.Count > 0)
-        {
-            var response = await index.Sources.GetHeaders(caller, missing, cancellationToken);
-            foreach (var answer in response.Headers)
-            {
-                known[answer.Id] = answer;
-                Remember(caller, null, answer);
-            }
-        }
+    /// <summary>
+    /// The sources of the items as the person is shown them, from the ids alone (no item is read): what a device keeps
+    /// with the person's library, and asks once for chords it sees elsewhere. An id no source knows is left out.
+    /// </summary>
+    public async Task<ChordsLabelsResponse> GetLabelsAsync(ClaimsPrincipal user, IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    {
+        if (ids.Count > GetLabelsRequest.MaxIds)
+            throw ShelfException.BadRequest(ChordsErrorCodes.TooManyIds, new Dictionary<string, string> { ["max"] = GetLabelsRequest.MaxIds.ToString() });
+        if (ids.Any(string.IsNullOrWhiteSpace))
+            throw ShelfException.BadRequest();
 
-        return ids.Select(x => known[x]).ToList();
+        var distinct = ids.Distinct(StringComparer.Ordinal).ToList();
+        if (distinct.Count == 0)
+            return new() { Labels = [] };
+
+        var response = await index.Sources.GetLabels(callers.For(user), distinct, cancellationToken);
+        return new() { Labels = response.Labels.Select(x => new ChordsLabel { Id = x.Id, Source = ToSource(x.Source) }).ToList() };
     }
 
     /// <summary>
@@ -149,7 +143,7 @@ public sealed class ChordsReader(
     public async Task<ChordsContentResponse> GetContentAsync(Caller caller, Guid? viewer, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
-        var header = RememberContent(caller, address, new() { Id = id, State = response.State, Header = response.Header }).Header;
+        var header = response.Header;
         if (response.State != ItemState.Open)
         {
             var state = ToState(response.State);
@@ -157,7 +151,7 @@ public sealed class ChordsReader(
             return new() { Id = id, State = state, Address = kept, Marks = [], Keys = [], MyNotes = [] };
         }
 
-        var row = await rows.GetOrCreateChordsAsync(id, header, IsAnonymous(caller, address), cancellationToken);
+        var row = await rows.GetOrCreateChordsAsync(id, header, cancellationToken);
         var seen = await annotations.ReadAsync(viewer, [row.Id], null, null, cancellationToken);
         return new()
         {
@@ -187,7 +181,6 @@ public sealed class ChordsReader(
     public async Task<Content?> GetOpenContentAsync(Caller caller, string id, IReadOnlyList<ContentKind> kinds, Uri? address, CancellationToken cancellationToken)
     {
         var response = await index.Sources.GetContent(caller, id, kinds, address, cancellationToken);
-        RememberContent(caller, address, new() { Id = id, State = response.State, Header = response.Header });
         return response.State switch
         {
             ItemState.Open => response.Content,
@@ -250,6 +243,18 @@ public sealed class ChordsReader(
         IsPublic = header.IsPublic,
     };
 
+    /// <summary>
+    /// The chords as the shelf keeps them (<see cref="ChordsRef"/>), read by the address given.
+    /// </summary>
+    public static ChordsRef ToRef(ChordsItem row, string? address) => new()
+    {
+        Id = row.SourceId,
+        Address = address,
+        Title = row.Title,
+        Artists = row.Artists,
+        Kinds = row.Kinds.Select(x => Enum.Parse<ChordsKind>(x, true)).ToList(),
+    };
+
     public static ChordsSource ToSource(SourceLabel label) => new()
     {
         Key = label.Key,
@@ -262,32 +267,4 @@ public sealed class ChordsReader(
     public static ChordsKind ToKind(ContentKind kind) => Enum.Parse<ChordsKind>(kind.ToString());
 
     public static ContentKind ToContentKind(ChordsKind kind) => Enum.Parse<ContentKind>(kind.ToString());
-
-    private void Remember(Caller caller, Uri? address, HeaderAnswer answer)
-    {
-        if (answer.State != ItemState.Unavailable)
-            cache.Set(CacheKey(caller, answer.Id, address), answer, Keep);
-    }
-
-    /// <summary>
-    /// The answer that came with an item's content, taken into the answer kept for the item, where one is kept: the
-    /// content's header gives what it states, and what it does not state (whether the source fully supports the item's
-    /// kind: only a header says it) stays as kept. With none kept, nothing is kept: the next reading of headers asks the
-    /// source, so that an answer with less never stands for one with more.
-    /// </summary>
-    /// <returns>The answer as kept now (the content's own, where none was kept).</returns>
-    private HeaderAnswer RememberContent(Caller caller, Uri? address, HeaderAnswer answer)
-    {
-        var key = CacheKey(caller, answer.Id, address);
-        if (answer.State == ItemState.Unavailable || !cache.TryGetValue(key, out HeaderAnswer? kept))
-            return answer;
-
-        if (answer.Header is { Marks.IsSupported: null } header && kept!.Header?.Marks.IsSupported is { } supported)
-            answer = answer with { Header = header with { Marks = header.Marks with { IsSupported = supported } } };
-        cache.Set(key, answer, Keep);
-        return answer;
-    }
-
-    private static (string, string, string, string, string?) CacheKey(Caller caller, string id, Uri? address)
-        => ("chords-header", id, string.Join('\n', caller.Keys), string.Join('\n', caller.Subjects), address?.AbsoluteUri);
 }

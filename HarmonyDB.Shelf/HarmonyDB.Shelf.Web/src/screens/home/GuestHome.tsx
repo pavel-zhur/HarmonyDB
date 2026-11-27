@@ -61,7 +61,7 @@ function TryNow({ playlistId }: { playlistId: string }) {
             <div className="rows">
                 {rows.map(row => (
                     <SongRow noMarks key={rowId(row)} to={`/playlists/${playlistId}/songs/${row.songId}`} lit={false} q="" title={row.title} artists={row.artists}
-                        sources={row.sources} otherMarks={row.otherMarks} otherPeople={row.otherPeople} />
+                        chordsIds={row.chordsIds} otherMarks={row.otherMarks} otherPeople={row.otherPeople} />
                 ))}
             </div>
         </>

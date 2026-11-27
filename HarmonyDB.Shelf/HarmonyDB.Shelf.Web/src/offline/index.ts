@@ -1,41 +1,51 @@
-// The library on this device ("Chords offline"): the person's copy of their library — its lists, their playlists, the
-// songs and the chords — kept in IndexedDB (offline/db.ts), one copy per account. The one surface the app uses:
+// The library on this device: the person's copy of their library — its lists, their playlists, the songs, the chords
+// and their sources' labels — kept in IndexedDB (offline/db.ts), one copy per account, always (as the old shelf kept
+// its library on the device until the person cleared it). The app lives from it: what the copy holds is answered from
+// it at once, with no server; the server is asked only for what the copy lacks, and when the library changed.
 //
-//   readThrough(keys.chords(id), () => call(…))      // a reading: the server's answer, kept fresh in the copy when
-//                                                    // the copy holds it; with no connection, the copy's
-//   readList(keys.library, query, () => call(…))     // a page of a list: with no connection, answered from the rows kept
+//   readThrough(keys.chords(id), () => call(…))      // a reading: the copy's when it holds it; else the server's
+//                                                    // (kept when it belongs in the copy)
+//   readList(keys.library, query, () => call(…))     // a page of a list: from the rows kept, else the server's
 //   attachOffline(accountId)                         // with the local-first store: whose copy this browser has
+//   syncLibrary()                                    // the library taken anew if it changed (after the person's
+//                                                    // own changes: data/actions.ts)
 //   const offline = useOffline()                     // the copy's state, for the page /offline
-//   await download(); await download({ all: true }); await removeCopy(); await setKeeping(on)
+//   await clearCopy()                                // "Clear": the copy deleted and taken anew
 //
 // What the copy holds:
-// - the library's rows, my playlists, each playlist's (mine and followed) details and rows (the shelf's own lists);
-// - every chord of the library: its list from the server with a watermark (asked again "since" it: only a change
-//   sends the list anew), and the chords themselves read 50 at a time (two readings at most at once, a pause after
-//   "too many requests"). Only what the device lacks is read, so a taking stopped (no connection, a closed tab) goes on
-//   where it stopped. Chords are read anew when opened online, and all of them on "read everything again";
-// - the song pages, each as it is opened while the library is kept (a song not kept opens as its chords alone).
-// Not kept: recordings, separate instruments, pictures. With no connection, what is not in the copy answers
-// `not_downloaded`; a thing the server refuses (gone, not open any more) leaves the copy.
+// - the library's rows, my playlists, each playlist's (mine and followed) details and rows (the shelf's own lists),
+//   and the labels of the library's chords (data/labels.ts) — taken anew whenever the library changed (the server's
+//   watermark tells it: asked when the app opens, when the person comes back to it, after their own changes);
+// - every chord of the library, by the address its entry reads it by: what the device lacks is taken 50 at a time
+//   (two readings at most at once, a pause after "too many requests"), and never read again — chords whose address
+//   changed (their author edited them) are new, and taken. Chords opened outside the library are kept too. Only
+//   chords that opened are kept: "could not be loaded" is asked again;
+// - the song pages, each as it is opened (dropped when the library changed, and read again when opened).
+// Not kept: the recent list, recordings, separate instruments, pictures. With no connection, what is not in the copy
+// answers `not_downloaded`.
 //
 // One person, one copy: attaching another account deletes every other copy on the device; signing out and deleting
 // the profile delete them all.
 
 import { useSyncExternalStore } from 'react';
 import { ApiError, api, call, type Schemas } from '../api/client';
-import { Copy, deleteCopies, emptyCopyState, hasCopy, sizeOf, type CopyState } from './db';
+import { queryClient } from '../data/queryClient';
+import { allLabels, forgetLabels, setLabels, type Label } from '../data/labels';
+import { Copy, deleteCopies, emptyCopyState, sizeOf, type CopyState } from './db';
 import { answerList, deviceRows, joinPages, keys, membership, type KeptList, type ListQuery } from './lists';
-import { applyContents, backoff, batchSize, chunks, missing } from './plan';
+import { applyContents, backoff, batchSize, chunks, toTake } from './plan';
 
 export { keys } from './lists';
 
 type SongList = Schemas['SongList'];
 type SongRow = Schemas['SongRow'];
 
+/** The key the library's labels are kept under. */
+const labelsKey = 'labels';
+
 export interface OfflineState {
-    /** the copy is known (the account's copy opened, or none) */
+    /** the copy is known (the account's copy opened, or none: a guest) */
     ready: boolean;
-    keeping: boolean;
     downloadedAt: number | null;
     busy: boolean;
     /** what is being taken now: the lists, or the chords (so many of so many) */
@@ -45,16 +55,14 @@ export interface OfflineState {
     chords: { kept: number; all: number };
     /** chords whose source did not answer at the last taking (asked again at the next) */
     later: number;
-    /** the library's chords not open to the person: not kept */
+    /** the library's chords that could not be loaded: not kept */
     closed: number;
-    /** a taking that stopped before its end (a closed tab, a lost connection): it goes on from where it stopped */
-    unfinished: boolean;
     bytes: number;
     failed: unknown;
 }
 
 const initial: OfflineState = {
-    ready: false, keeping: false, downloadedAt: null, busy: false, progress: null, songs: { kept: 0, all: 0 }, chords: { kept: 0, all: 0 }, later: 0, closed: 0, unfinished: false, bytes: 0, failed: null,
+    ready: false, downloadedAt: null, busy: false, progress: null, songs: { kept: 0, all: 0 }, chords: { kept: 0, all: 0 }, later: 0, closed: 0, bytes: 0, failed: null,
 };
 
 let account: string | null = null;
@@ -109,7 +117,8 @@ let servedAt: number | null = null;
 const servedListeners = new Set<() => void>();
 
 function served(at: number): void {
-    if (servedAt !== null && servedAt <= at) return;
+    // told only with no connection: online, the copy is simply the app's
+    if (navigator.onLine || (servedAt !== null && servedAt <= at)) return;
     servedAt = at;
     servedListeners.forEach(listener => listener());
 }
@@ -132,7 +141,7 @@ export function forgetServed(): void {
 // The rows of a list answered from the copy that have nothing on the device (they open only with a connection).
 const rowsNotKept = new WeakSet<SongRow>();
 
-/** A row of a list answered from the copy with nothing of it on the device. */
+/** A row of a list answered from the copy with nothing of it on the device, while there is no connection. */
 export function notOnDevice(row: SongRow): boolean {
     return rowsNotKept.has(row);
 }
@@ -140,13 +149,16 @@ export function notOnDevice(row: SongRow): boolean {
 /** Whose copy this browser has: every other account's is deleted; none (signed out) deletes all. */
 export function attachOffline(accountId: string | null): Promise<void> {
     if (accountId === account && state.ready) return attaching;
-    // readings answered meanwhile wait for the copy of the person now (a song read as the page opens is kept, or
-    // forgotten, in the right copy)
+    // readings answered meanwhile wait for the copy of the person now (a song read as the page opens is answered from,
+    // or kept in, the right copy)
     attaching = attachCopy(accountId);
+    void attaching.finally(firstAttached);
     return attaching;
 }
 
-let attaching: Promise<void> = Promise.resolve();
+let firstAttached: () => void = () => undefined;
+/** Until the session is known (it is, also offline: data/session.ts), readings wait for whose copy this is. */
+let attaching: Promise<void> = new Promise(resolve => { firstAttached = resolve; });
 
 function clear(): void {
     copy?.close();
@@ -156,6 +168,7 @@ function clear(): void {
     chords = new Set();
     sizes = new Map();
     later = 0;
+    forgetLabels();
 }
 
 async function attachCopy(accountId: string | null): Promise<void> {
@@ -164,26 +177,30 @@ async function attachCopy(accountId: string | null): Promise<void> {
     set(initial);
     if (typeof indexedDB === 'undefined') return;
     await deleteCopies(accountId);
-    if (accountId === null || !(await hasCopy(accountId))) {
+    if (accountId === null) {
         set({ ready: true });
         return;
     }
+
+    // a person's copy is always kept: made when there is none
     const opened = await Copy.open(accountId);
     const kept = await opened.getState();
     const entries = await opened.sizes();
+    const labels = await opened.get<[string, Label][]>(labelsKey);
     if (account !== accountId) {
         opened.close();
         return;
     }
+
     copy = opened;
     copyState = kept;
     songs = new Set(copyState.songs);
     chords = new Set(copyState.chords);
     sizes = new Map(entries.map(x => [x.key, x.bytes]));
+    if (labels) setLabels(labels.value);
     recount();
     set({ ready: true });
-    // a taking stopped before it was done (the tab closed, the connection lost) goes on when the app opens again
-    if (state.unfinished && navigator.onLine) void download();
+    void download();
 }
 
 /** The copy's counts and size, from what is followed in memory. */
@@ -192,74 +209,75 @@ function recount(): void {
     for (const [key, size] of sizes) {
         bytes += size;
         if (key.startsWith('song:')) songsKept++;
-        else if (key.startsWith('chords:')) chordsKept++;
+        else if (key.startsWith('chords:') && chords.has(key.slice('chords:'.length))) chordsKept++;
     }
     set({
-        keeping: copyState.enabled,
         downloadedAt: copyState.downloadedAt,
         songs: { kept: songsKept, all: songs.size },
         chords: { kept: chordsKept, all: chords.size - copyState.closed.length },
         later,
         closed: copyState.closed.length,
-        unfinished: copyState.enabled && (copyState.downloadedAt === null || chordsKept + later < chords.size - copyState.closed.length),
         bytes,
     });
 }
 
-/** Whether an answer under this key belongs in the copy now. */
-function belongs(key: string): boolean {
-    if (!copyState.enabled) return false;
+/** Whether an answer under this key belongs in the copy. */
+function belongs(key: string, value: unknown): boolean {
+    // chords: whichever opened (a "could not be loaded" is asked again)
+    if (key.startsWith('chords:')) return (value as { state?: string }).state === 'open';
     if (key.startsWith('song:')) return songs.has(key);
-    if (key.startsWith('chords:')) return chords.has(key.slice('chords:'.length));
     if (key.startsWith('playlist:')) return copyState.playlists.includes(key.slice('playlist:'.length));
     return key === keys.myPlaylists;
 }
 
 /**
- * A reading through the copy: the server's answer (kept in the copy when it belongs there); with no connection, the
- * copy's answer, or `not_downloaded` when the library is kept and this is not in the copy.
+ * A reading through the copy: the copy's answer when it holds one (no server is asked); else the server's, kept when it
+ * belongs in the copy; with no connection and nothing kept, `not_downloaded`.
  */
 export async function readThrough<T>(key: string, run: () => Promise<T>): Promise<T> {
-    try {
-        const value = await run();
-        // kept once the person's copy is open; the screen does not wait for it
-        void attaching.then(() => (copy && belongs(key) ? keep(copy, [{ key, value }]) : undefined)).catch(() => undefined);
-        return value;
-    } catch (error) {
-        await attaching;
-        if (copy && isRefused(error)) await drop(copy, [key]).catch(() => undefined);
-        if (!isOffline(error) || !copy || !copyState.enabled) throw error;
-        const kept = await copy.get<T>(key);
+    await attaching;
+    const into = copy;
+    if (into && holds(key)) {
+        const kept = await into.get<T>(key);
         if (kept) {
             served(kept.at);
             return kept.value;
         }
-        throw new ApiError(0, 'not_downloaded');
+    }
+
+    try {
+        const value = await run();
+        if (into && into === copy && belongs(key, value)) await keep(into, [{ key, value }]).catch(() => undefined);
+        return value;
+    } catch (error) {
+        if (into && isRefused(error)) await drop(into, [key]).catch(() => undefined);
+        if (isOffline(error) && into) throw new ApiError(0, 'not_downloaded');
+        throw error;
     }
 }
 
 /**
- * A page of a list: the server's; with no connection, from the rows kept (or `offline_unanswerable`; with no copy kept,
- * `list_not_kept`) — a song whose
- * page is not kept opens as its chords kept, a row with nothing kept is marked (notOnDevice).
+ * A page of a list: from the rows kept when the copy holds the list (no server is asked); else the server's. A list
+ * the rows kept cannot answer (a filter by another person) is the server's.
  */
 export async function readList(key: string, query: ListQuery, run: () => Promise<SongList>): Promise<SongList> {
-    try {
-        return await run();
-    } catch (error) {
-        await attaching;
-        if (copy && isRefused(error)) await drop(copy, [key]).catch(() => undefined);
-        if (!isOffline(error)) throw error;
-        // no copy on the device: said at once, not tried again and again
-        if (!copy || !copyState.enabled) throw new ApiError(0, 'list_not_kept');
-        const kept = await copy.get<KeptList>(key);
-        if (!kept) throw new ApiError(0, 'not_downloaded');
+    await attaching;
+    const into = copy;
+    const kept = into && holds(key) ? await into.get<KeptList>(key) : undefined;
+    const answer = kept ? answerList(kept.value, query) : null;
+    if (kept && answer) {
         served(kept.at);
-        const answer = answerList(kept.value, query);
-        if (!answer) throw new ApiError(0, 'offline_unanswerable');
+        if (navigator.onLine) return answer;
         const device = deviceRows(answer.rows, holds, id => holds(keys.chords(id)));
         device.notKept.forEach(row => rowsNotKept.add(row));
         return { ...answer, rows: device.rows };
+    }
+
+    try {
+        return await run();
+    } catch (error) {
+        if (isOffline(error)) throw new ApiError(0, into ? 'offline_unanswerable' : 'list_not_kept');
+        throw error;
     }
 }
 
@@ -278,10 +296,10 @@ async function wholeList(read: (offset: number) => Promise<SongList>): Promise<K
 }
 
 /**
- * Takes the library's lists whole into the copy: the library's rows, my playlists, each playlist's details and rows.
- * The song pages no longer in the library leave the copy.
+ * Takes the library's lists whole into the copy: the library's rows, my playlists, each playlist's details and rows;
+ * then the labels of the library's chords. The song pages leave the copy: they are read again when opened.
  */
-async function takeLists(into: Copy): Promise<void> {
+async function takeLists(into: Copy, libraryChords: readonly string[]): Promise<void> {
     const playlists = await call(api.GET('/api/playlists'));
     // the playlists I am in and those I follow (each with its rows: it opens offline as online)
     const mine = playlists.filter(p => !!p.myRole || p.following);
@@ -299,11 +317,20 @@ async function takeLists(into: Copy): Promise<void> {
         lists.push(rows);
         set({ progress: { stage: 'lists', done: ++done, all } });
     }
+
+    // the labels of the library's chords, as the old shelf's library came with its sources' names
+    const ids = [...new Set([...libraryChords, ...lists.flatMap(x => x.rows.flatMap(r => r.chordsIds))])];
+    const labels: [string, Label][] = [];
+    for (const part of chunks(ids, 1000)) {
+        const answer = await call(api.POST('/api/chords/labels', { body: { ids: part } }));
+        for (const label of answer.labels) labels.push([label.id, label.source]);
+    }
+
     if (into !== copy) return;
     const held = membership(lists.map(x => x.rows));
-    await drop(into, [...sizes.keys()].filter(key => (key.startsWith('list:') || key.startsWith('playlist:')) && !entries.some(e => e.key === key)));
-    await keep(into, entries);
-    await drop(into, [...sizes.keys()].filter(key => key.startsWith('song:') && !held.songs.has(key)));
+    await drop(into, [...sizes.keys()].filter(key => key.startsWith('list:') || key.startsWith('playlist:') || key.startsWith('song:')));
+    setLabels(labels);
+    await keep(into, [...entries, { key: labelsKey, value: allLabels() }]);
     songs = held.songs;
     copyState = { ...copyState, songs: [...songs], playlists: mine.map(p => p.id) };
     await into.setState(copyState);
@@ -334,27 +361,16 @@ async function readPage(ids: string[]): Promise<Schemas['OfflineContents']> {
 }
 
 /**
- * Takes the library's chords into the copy: the list of them (anew only when the library changed since the watermark;
- * `all` reads every chord again), then what the device lacks, a page at a time, two at most at once. Each page is kept
- * as it comes: a taking stopped goes on where it stopped.
+ * Takes the library's chords the device lacks into the copy — or holds by another address than the library's now —
+ * a page at a time, two at most at once. Each page is kept as it comes: a taking stopped goes on where it stopped.
  */
-async function takeChords(into: Copy, all: boolean): Promise<void> {
-    const list = await call(api.GET('/api/library/offline/chords', { params: { query: { since: all ? undefined : copyState.watermark ?? undefined } } }));
-    if (into !== copy) return;
-    const changed = list.changed || copyState.watermark === null;
-    if (changed) {
-        chords = new Set(list.chords);
-        await drop(into, [...sizes.keys()].filter(key => key.startsWith('chords:') && !chords.has(key.slice('chords:'.length))));
-    }
-    // what was not open is asked again when the library changed, or when everything is read again
-    copyState = { ...copyState, watermark: list.watermark, chords: [...chords], closed: changed || all ? [] : copyState.closed };
-    await into.setState(copyState);
-
+async function takeChords(into: Copy, addresses: Record<string, string>): Promise<void> {
     const library = [...chords];
-    const todo = all ? library : missing(library, id => holds(keys.chords(id)), new Set(copyState.closed));
-    const pages = chunks(todo, batchSize);
     const closed = new Set(copyState.closed);
-    const progress = () => set({ progress: { stage: 'chords', done: library.filter(id => holds(keys.chords(id))).length, all: library.length - closed.size } });
+    const todo = toTake(library, id => holds(keys.chords(id)), copyState.addresses, addresses, closed);
+    const current = (id: string) => holds(keys.chords(id)) && (copyState.addresses[id] ?? '') === (addresses[id] ?? '');
+    const pages = chunks(todo, batchSize);
+    const progress = () => set({ progress: { stage: 'chords', done: library.filter(current).length, all: library.length - closed.size } });
     progress();
     later = 0;
     let next = 0;
@@ -375,7 +391,8 @@ async function takeChords(into: Copy, all: boolean): Promise<void> {
             later += result.later.length;
             result.closed.forEach(id => closed.add(id));
             result.gone.forEach(id => chords.delete(id));
-            copyState = { ...copyState, closed: [...closed], chords: [...chords] };
+            const read = Object.fromEntries(result.keep.map(x => x.key.slice('chords:'.length)).map(id => [id, addresses[id] ?? '']));
+            copyState = { ...copyState, closed: [...closed], chords: [...chords], addresses: { ...copyState.addresses, ...read } };
             try {
                 await keepPage(into, result);
             } catch (error) {
@@ -388,19 +405,73 @@ async function takeChords(into: Copy, all: boolean): Promise<void> {
     await Promise.all([worker(), worker()]);
 }
 
+let busy: Promise<void> | null = null;
+let again = false;
+/** waiting for the lists of the taking now (or the next one) to be in the copy */
+let listsWaiting: (() => void)[] = [];
+
+function listsTaken(): void {
+    const waiting = listsWaiting;
+    listsWaiting = [];
+    waiting.forEach(resolve => resolve());
+}
+
 /**
- * Takes the whole library onto the device, or brings it up to date: its lists, then its chords (only what the device
- * lacks; with `all`, every chord read again).
+ * Takes the library onto the device, or brings it up to date: when it changed since the copy's watermark (or was never
+ * taken), its lists and labels; then the chords the device lacks. One at a time: asked while one runs, it runs once
+ * more after it.
  */
-export async function download({ all = false }: { all?: boolean } = {}): Promise<void> {
-    if (!copy || state.busy) return;
+export function download(): Promise<void> {
+    if (busy) {
+        again = true;
+        return busy;
+    }
+
+    busy = (async () => {
+        do {
+            again = false;
+            await takeOnce();
+        } while (again && copy);
+        busy = null;
+    })();
+    return busy;
+}
+
+/**
+ * The library taken anew if it changed: the person's own changes (data/actions.ts) are seen at once. Resolves when its
+ * lists are in the copy (the chords go on being taken after it).
+ */
+export function syncLibrary(): Promise<void> {
+    if (!copy) return Promise.resolve();
+    const taken = new Promise<void>(resolve => listsWaiting.push(resolve));
+    void download();
+    return taken;
+}
+
+async function takeOnce(): Promise<void> {
+    if (!copy) return;
     const into = copy;
     set({ busy: true, failed: null, progress: null });
     try {
-        await takeLists(into);
-        await takeChords(into, all);
+        const list = await call(api.GET('/api/library/offline/chords', { params: { query: { since: copyState.watermark ?? undefined } } }));
         if (into !== copy) return;
-        copyState = { ...copyState, downloadedAt: Date.now() };
+        const changed = list.changed || copyState.watermark === null;
+        const addresses = changed ? Object.fromEntries(list.chords.map(x => [x.id, x.address ?? ''])) : { ...copyState.addresses };
+        if (changed) {
+            chords = new Set(list.chords.map(x => x.id));
+            await takeLists(into, [...chords]);
+            if (into !== copy) return;
+            // what was not loaded is asked again when the library changed
+            copyState = { ...copyState, chords: [...chords], closed: [] };
+            await into.setState(copyState);
+            // the screens read the lists and pages anew from the copy
+            await queryClient.invalidateQueries({ predicate: q => ['songs', 'song', 'playlists', 'playlist', 'library'].includes(String(q.queryKey[0])) });
+        }
+
+        listsTaken();
+        await takeChords(into, addresses);
+        if (into !== copy) return;
+        copyState = { ...copyState, watermark: list.watermark, downloadedAt: Date.now() };
         await into.setState(copyState);
         recount();
     } catch (error) {
@@ -409,40 +480,33 @@ export async function download({ all = false }: { all?: boolean } = {}): Promise
         // the connection lost: the taking goes on by itself when it is back, from where it stopped
         resumeWhenOnline = isOffline(error);
     } finally {
+        listsTaken();
         set({ busy: false, progress: null });
     }
 }
 
 let resumeWhenOnline = false;
+
 if (typeof addEventListener === 'function') {
     addEventListener('online', () => {
         if (!resumeWhenOnline) return;
         resumeWhenOnline = false;
         void download();
     });
+    // the person comes back to the app: the library taken anew if it changed meanwhile
+    addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine) void syncLibrary();
+    });
 }
 
-/** Keeping the library on this device, or not (then the copy is deleted). */
-export async function setKeeping(on: boolean): Promise<void> {
-    if (!account) return;
-    if (!on) {
-        await removeCopy();
-        return;
-    }
-    copy ??= await Copy.open(account);
-    copyState = { ...copyState, enabled: true };
-    await copy.setState(copyState);
-    // the browser is asked to keep the copy when space runs short
-    await navigator.storage?.persist?.().catch(() => false);
-    recount();
-    await download();
-}
-
-/** The copy deleted from this device. */
-export async function removeCopy(): Promise<void> {
+/** "Clear": the copy deleted from this device, and the library taken anew. */
+export async function clearCopy(): Promise<void> {
+    const accountId = account;
     clear();
     await deleteCopies(null);
-    set({ ...initial, ready: true });
+    set({ ...initial });
+    account = null;
+    await attachOffline(accountId);
 }
 
 /** Whether the browser has a connection (as the browser knows it). */
@@ -471,4 +535,11 @@ export async function songChordsOnDevice(playlistId: string, songId: string): Pr
         if (id) return id;
     }
     return null;
+}
+
+/** The chords as the device keeps them, or null: nothing is asked (a variant's marks, shown when the device holds them). */
+export async function keptChords(id: string): Promise<Schemas['ChordsContentResponse'] | null> {
+    await attaching;
+    if (!copy || !holds(keys.chords(id))) return null;
+    return (await copy.get<Schemas['ChordsContentResponse']>(keys.chords(id)))?.value ?? null;
 }

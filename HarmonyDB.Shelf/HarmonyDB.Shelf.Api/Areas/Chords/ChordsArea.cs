@@ -61,6 +61,13 @@ public sealed class ChordsArea : IShelfArea
             .AllowGuests()
             .WithName("GetChordsHeaders");
 
+        // The sources of many items as this person is shown them, from the ids alone: what a device keeps with the
+        // person's library (and asks once for chords it sees elsewhere). A POST for the length of the list.
+        group.MapPost("/labels", (ClaimsPrincipal user, ChordsLabelsRequest request, ChordsReader reader, CancellationToken cancellationToken)
+                => reader.GetLabelsAsync(user, request.Ids ?? [], cancellationToken))
+            .AllowGuests()
+            .WithName("GetChordsLabels");
+
         group.MapGet("/icons/{name}", async (HttpContext context, string name, SourceIcons icons, CancellationToken cancellationToken) =>
             {
                 var icon = await icons.GetAsync(name, cancellationToken);

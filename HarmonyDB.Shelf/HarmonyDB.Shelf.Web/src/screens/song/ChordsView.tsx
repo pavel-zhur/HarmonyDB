@@ -61,12 +61,19 @@ export function ChordsView({ chordsId, place, shown, onShow, onClose, onSwipe }:
     onSwipe: (direction: -1 | 1) => void;
 }) {
     const { t } = useTranslation();
-    const content = useChordsContent(chordsId);
+    // read by the address the playlist's entry keeps for them (own chords' current link), else the one come by
+    const content = useChordsContent(chordsId, place.variant?.chords.address);
     const answer = content.data;
-    const header = answer?.header ?? place.variant?.chords.header ?? null;
-    const state = answer?.state ?? place.variant?.chords.state ?? null;
+    const header = answer?.header ?? null;
+    const state = answer?.state ?? null;
     // not open: their address in the old shelf, where the shelf keeps one — where they may be looked at
-    const keptAddress = answer?.address ?? place.variant?.chords.address ?? null;
+    const keptAddress = answer?.address ?? null;
+    // "opened", for the recent, as the person was shown them: once per opening
+    const { signedIn } = useSession();
+    const songId = place.page?.song.id ?? null;
+    useEffect(() => {
+        if (signedIn && header) local.opened({ chords: chordsId, songId, title: header.title, artists: header.artists, source: header.source });
+    }, [chordsId, songId, signedIn, header !== null]);
     // "Try again", as the old shelf's «Повтор»: the source asked anew; chords that open now open in the lists too
     const queries = useQueryClient();
     const retry = () => void content.refetch().then(again => {

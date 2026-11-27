@@ -147,7 +147,7 @@ return 0;
 
 async Task<Resolution> ResolveAsync()
 {
-    var (uris, ids) = Planner.Addresses(old, options);
+    var uris = Planner.Addresses(old, options);
     // the addresses resolved after this moment (by the second pass) are not in this run: the audit counts them as waiting
     ledger.Set(Ledger.LastRunKey, null, DateTimeOffset.UtcNow.ToString("O"));
     var known = await Ledger.ReadAddressesAsync(db, cancellationToken);
@@ -171,17 +171,9 @@ async Task<Resolution> ResolveAsync()
         addresses[uri] = answer;
     await Ledger.WriteAddressesAsync(db, "uri", asked, now, cancellationToken);
 
-    var confirmed = ids.Where(x => known.GetValueOrDefault(("id", x)) is { SourceId: not null }).ToDictionary(x => x, x => known[("id", x)], StringComparer.Ordinal);
-    var confirming = await resolver.ConfirmIdsAsync(ids.Where(x => !confirmed.ContainsKey(x)).ToList(), cancellationToken);
-    foreach (var (id, answer) in confirming)
-        confirmed[id] = answer;
-    await Ledger.WriteAddressesAsync(db, "id", confirming, now, cancellationToken);
-
     Console.WriteLine($"  addresses {uris.Count}: resolved {addresses.Values.Count(x => x.SourceId != null)} ({asked.Count} asked now); "
                       + string.Join(", ", addresses.Values.Where(x => x.SourceId == null).GroupBy(x => x.State).Select(x => $"{x.Key} {x.Count()}")));
-    Console.WriteLine($"  visits' ids {ids.Count}: open {confirmed.Values.Count(x => x.SourceId != null)} ({confirming.Count} asked now); "
-                      + string.Join(", ", confirmed.Values.Where(x => x.SourceId == null).GroupBy(x => x.State).Select(x => $"{x.Key} {x.Count()}")));
-    return new Resolution(addresses, confirmed);
+    return new Resolution(addresses);
 }
 
 // one address at a time, each answer kept at once: what is tried ("live") is not asked again, except what failed
@@ -191,7 +183,7 @@ async Task<int> SecondPassAsync(CancellationToken stop)
         throw new InvalidOperationException("Relay:SecondPassCallerKeys is not set.");
 
     await db.Database.OpenConnectionAsync(cancellationToken);
-    var (uris, _) = Planner.Addresses(old, options);
+    var uris = Planner.Addresses(old, options);
     var ofVersions = old.Versions.Select(x => x.Uri).ToHashSet(StringComparer.Ordinal);
     // own chords resolve as their author, by the import itself: going out for them finds nothing
     var ownChords = old.Versions.Where(x => x.CollectiveId != null).Select(x => x.Uri).ToHashSet(StringComparer.OrdinalIgnoreCase);

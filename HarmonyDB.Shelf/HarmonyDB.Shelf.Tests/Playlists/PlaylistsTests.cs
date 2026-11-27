@@ -455,15 +455,15 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         await using (var db = fixture.CreateContext())
             Assert.False(await db.Chords.AnyAsync(x => x.SourceId == away || x.SourceId == closed));
 
-        // open: named as its source told the person, with the source's label in the list
+        // open: named as its source told the person; the list names its chords by their ids (no source is asked for it)
         var open = Id();
         var named = (await Ok<Changed<SongRef>>(ann, HttpMethod.Post, $"/api/playlists/{playlist}/songs", new AddSongRequest { Chords = open })).Value;
         Assert.Equal($"Title of {open}", named.Title);
         var song = named.Id;
-        Assert.Contains((await Ok<SongList>(ann, HttpMethod.Get, $"/api/playlists/{playlist}/songs")).Rows, x => x.Sources.Any(s => s.Key == "A source"));
+        Assert.Contains((await Ok<SongList>(ann, HttpMethod.Get, $"/api/playlists/{playlist}/songs")).Rows, x => x.ChordsIds.Contains(open));
 
-        // an item held here already (put in by an import) that is not open to the person: seen as not open, with no
-        // header, and markable
+        // an item held here already (put in by an import) that is not open to the person: a variant as the shelf keeps
+        // it, and markable
         await using (var db = fixture.CreateContext())
         {
             var held = new HarmonyDB.Shelf.Database.Model.ChordsItem { Id = Guid.NewGuid(), SourceId = closed, CreatedAt = DateTimeOffset.UtcNow };
@@ -473,18 +473,16 @@ public sealed class PlaylistsTests(LibraryFixture fixture) : IClassFixture<Libra
         }
 
         var variants = (await PageAsync(ann, playlist, song)).Variants;
-        Assert.Equal([Model.Chords.ChordsState.Open, Model.Chords.ChordsState.NotOpen], variants.Select(x => x.Chords.State));
-        Assert.Null(variants[1].Chords.Header);
+        Assert.Equal([open, closed], variants.Select(x => x.Chords.Id));
+        Assert.Equal($"Title of {open}", variants[0].Chords.Title);
+        Assert.Null(variants[1].Chords.Title);
         Assert.True((await SyncAsync(ann, null, new Change { Type = ChangeType.Mark, Chords = closed, Kind = "star", On = true })).Results.Single().Applied);
 
-        // a copy takes the variants open to the person; a song with none open is not copied
+        // a copy takes every variant the person sees: no source is asked which are open
         var bobs = await CreateAsync(bob, PlaylistAccess.Private);
         await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Patch, $"/api/playlists/{playlist}", new UpdatePlaylistRequest { Access = PlaylistAccess.Public });
         var copied = (await Ok<Changed<AddedSong>>(bob, HttpMethod.Post, $"/api/playlists/{bobs}/songs", new AddSongRequest { FromSongId = song })).Value;
-        Assert.Equal(1, copied.LeftOut);
-        Assert.Equal([open], (await PageAsync(bob, bobs, copied.Id)).Variants.Select(x => x.Chords.Id));
-        var onlyClosed = (await Ok<Changed<SongRef>>(ann, HttpMethod.Post, $"/api/playlists/{playlist}/songs/{song}/variants/{variants[1].ItemId}/unlink")).Value.Id;
-        await Browser.AssertError(await bob.SendAsync(HttpMethod.Post, $"/api/playlists/{bobs}/songs", new AddSongRequest { FromSongId = onlyClosed }), HttpStatusCode.Forbidden, PlaylistErrorCodes.ChordsNotOpen);
+        Assert.Equal([open, closed], (await PageAsync(bob, bobs, copied.Id)).Variants.Select(x => x.Chords.Id));
         await Ok<Changed<PlaylistDetails>>(ann, HttpMethod.Patch, $"/api/playlists/{playlist}", new UpdatePlaylistRequest { Access = PlaylistAccess.Private });
 
         // a note on a song of a playlist one is not in answers as for a song that is not there

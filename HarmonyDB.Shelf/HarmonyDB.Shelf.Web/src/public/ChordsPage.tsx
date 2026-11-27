@@ -97,11 +97,10 @@ function SongInPlaylist({ playlistId, songId, share }: { playlistId: string; son
     return <Song page={song.data} inApp={inApp} share={share} />;
 }
 
-/** A song: its chords that open (an analysis first), under the song's own title; a song of recordings only, them. */
+/** A song: its chords (an analysis first), under the song's own title; a song of recordings only, them. */
 function Song({ page, inApp, share }: { page: SongPage; inApp: string; share?: string }) {
     const { t } = useTranslation();
-    const open = page.variants.filter(x => x.chords.state === 'open');
-    const variant = open.find(x => isAnalysis(x.chords.header?.kinds)) ?? open[0] ?? page.variants[0];
+    const variant = page.variants.find(x => isAnalysis(x.chords.kinds)) ?? page.variants[0];
     if (!variant && page.recordings.length) return <RecordingsSong page={page} inApp={inApp} share={share} />;
     if (!variant) return <Message><Title title={page.song.title} artists={page.song.artists.join(', ')} /><p className="muted">{t('song.chords.noSheet')}</p></Message>;
     return <Chords chordsId={variant.chords.id} inApp={inApp} title={page.song.title} artists={page.song.artists} />;

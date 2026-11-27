@@ -90,8 +90,10 @@ public sealed class ShareAccessTests(LibraryFixture fixture) : IClassFixture<Lib
         await Browser.AssertError(await guest.SendAsync(HttpMethod.Get, $"/api/playlists/{playlist}/songs?share={carrying.Token}"), HttpStatusCode.NotFound, PlaylistErrorCodes.NoSuchPlaylist);
         var songLink = await Ok<ShareLinkItem>(ann, HttpMethod.Post, "/api/share", new CreateShareRequest { Kind = ShareKind.Song, SongId = song });
         await Browser.AssertError(await guest.SendAsync(HttpMethod.Get, $"/api/share/{songLink.Token}/chords"), HttpStatusCode.BadRequest, ErrorCodes.BadRequest);
+        // its variants are named by their ids; reading them is the source's to answer (not open to a guest)
         var bySong = (await Ok<ShareView>(guest, HttpMethod.Get, $"/api/share/{songLink.Token}")).Song!;
-        Assert.All(bySong.Variants, x => Assert.Equal(ChordsState.NotOpen, x.Chords.State));
+        Assert.Equal([chords], bySong.Variants.Select(x => x.Chords.Id));
+        Assert.Equal(ChordsState.NotOpen, (await Ok<ChordsContentResponse>(guest, HttpMethod.Get, $"/api/chords/{chords}")).State);
     }
 
     [DatabaseFact]

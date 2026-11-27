@@ -57,7 +57,7 @@ public sealed class ShareService(
                 link = new() { Token = string.Empty, Kind = ShareTargetKind.Playlist, PlaylistId = playlistId };
                 break;
             case ShareKind.Chords when request.Chords != null:
-                var (chords, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
+                var (chords, _, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, null, true, cancellationToken);
                 link = new() { Token = string.Empty, Kind = ShareTargetKind.Chords, ChordsId = chords.Id };
                 break;
             default:
@@ -210,7 +210,7 @@ public sealed class ShareService(
         if (request.Kind != ShareKind.Chords || request.Chords == null)
             throw ShelfException.BadRequest();
 
-        var (chords, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, true, cancellationToken);
+        var (chords, _, _) = await chordsRows.GetOrCreateAsync(me, request.Chords, null, true, cancellationToken);
         var keys = callers.For(user).Keys.ToList();
 
         // the link opens as the sharer's keys alone, with no account: one that would open nothing (the sharer's own

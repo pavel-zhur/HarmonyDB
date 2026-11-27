@@ -10,9 +10,14 @@ type ChordsContent = Schemas['ChordsContentResponse'];
 /** How many chords the server reads at once. */
 export const batchSize = 50;
 
-/** The library's chords the copy does not hold yet (and may: not those not open to the person), in the library's order. */
-export function missing(library: readonly string[], held: (id: string) => boolean, closed: ReadonlySet<string> = new Set()): string[] {
-    return library.filter(id => !held(id) && !closed.has(id));
+/**
+ * The library's chords to take, in the library's order: those the copy does not hold, and those it holds read by
+ * another address than the library's now (their author edited them: to the device they are new). Not those that could
+ * not be loaded (asked again when the library changes). What the copy holds by the library's address is never read
+ * again.
+ */
+export function toTake(library: readonly string[], held: (id: string) => boolean, keptBy: Readonly<Record<string, string>>, address: Readonly<Record<string, string>>, closed: ReadonlySet<string> = new Set()): string[] {
+    return library.filter(id => !closed.has(id) && !(held(id) && (keptBy[id] ?? '') === (address[id] ?? '')));
 }
 
 export function chunks<T>(items: readonly T[], size: number): T[][] {

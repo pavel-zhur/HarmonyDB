@@ -1,3 +1,6 @@
+using HarmonyDB.Shelf.Database.Model;
+using HarmonyDB.Shelf.Api.Foundation.Errors;
+using HarmonyDB.Shelf.Api.Areas.Chords.Services;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Common;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
@@ -8,9 +11,9 @@ using M = HarmonyDB.Shelf.Model.Playlists;
 namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 
 /// <summary>
-/// A song's page, in one call: the song, its variants with their letters (by their order among the song's chords
-/// variants not removed: the same for everyone), its recordings, the caller's choices, the marks, keys and notes the
-/// caller sees (<see cref="ChordsAnnotations"/>), and in how many of the caller's playlists each chords are.
+/// A song's page, in one call: the song, its variants the caller sees with their letters (by their order among them),
+/// each as the shelf keeps its chords (no source is asked), its recordings, the caller's choices, the marks, keys and
+/// notes the caller sees (<see cref="ChordsAnnotations"/>), and in how many of the caller's playlists each chords are.
 /// </summary>
 public sealed class SongPages(ShelfDbContext db, PlaylistGate gate, Views views, ChordsAnnotations annotations)
 {
@@ -18,14 +21,17 @@ public sealed class SongPages(ShelfDbContext db, PlaylistGate gate, Views views,
     {
         var viewer = user.GetAccountId();
         var (view, song, fromPrivate) = await gate.ReadSongAsync(viewer, playlistId, songId, share, cancellationToken);
-        var items = await db.PlaylistSongItems.Where(x => x.SongId == songId)
+        var items = await db.PlaylistSongItems.SeenBy(viewer).Where(x => x.SongId == songId)
             .Include(x => x.Chords).Include(x => x.Recording)
             .OrderBy(x => x.Position).ThenBy(x => x.Id)
             .AsNoTracking().ToListAsync(cancellationToken);
+        // a song of nothing but someone else's private own chords is not there for the caller
+        if (items.Count == 0)
+            throw ShelfException.NotFound(M.PlaylistErrorCodes.NoSuchSong);
+
         var chordsIds = items.Where(x => x.ChordsId != null).Select(x => x.ChordsId!.Value).ToList();
 
         var seen = await annotations.ReadAsync(viewer, chordsIds, playlistId, songId, !fromPrivate, cancellationToken);
-        var chords = await views.ChordsAsync(user, items.Where(x => x.Chords != null).Select(x => x.Chords!.SourceId), cancellationToken);
         var preference = viewer == null
             ? null
             : await db.PlaylistSongPreferences.AsNoTracking().SingleOrDefaultAsync(x => x.AccountId == viewer && x.SongId == songId, cancellationToken);
@@ -57,7 +63,7 @@ public sealed class SongPages(ShelfDbContext db, PlaylistGate gate, Views views,
             {
                 ItemId = x.Id,
                 Index = index++,
-                Chords = chords[x.Chords!.SourceId],
+                Chords = ChordsReader.ToRef(x.Chords!, x.Address),
                 AddedBy = x.AddedById is { } by ? people.GetValueOrDefault(by) : null,
                 AddedAt = x.AddedAt,
                 InMyPlaylists = inMine.GetValueOrDefault(x.ChordsId!.Value),

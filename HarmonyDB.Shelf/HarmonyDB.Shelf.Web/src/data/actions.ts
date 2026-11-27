@@ -7,8 +7,9 @@
 // What it does around the call:
 // - a guest (401 sign_in_required): offers signing in for `what`, remembers the action and does it after signing in;
 // - another error: says it in a toast (worded from its code) and rejects;
-// - done: refreshes the queries named by `invalidate`, and says `done` in a toast — with "Undo" when the server gave
-//   an undo token; Undo calls /api/sync/undo and refreshes the same queries.
+// - done: takes the library anew onto the device when it changed (the screens answer from it), refreshes the queries
+//   named by `invalidate`, and says `done` in a toast — with "Undo" when the server gave an undo token; Undo calls
+//   /api/sync/undo and refreshes the same.
 // In a component: useMutation({ mutationFn: leavePlaylist }) for the busy state.
 
 import type { QueryKey } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ import { errorText } from '../api/errors';
 import { i18n } from '../i18n';
 import { toast } from '../app/toasts';
 import { queryClient } from './queryClient';
+import { syncLibrary } from '../offline';
 import { offerSignIn, registerPending, rememberPending, type SignInWhat } from './signInOffer';
 
 export interface ActionOptions<A, R> {
@@ -46,6 +48,8 @@ export function action<A, R>(name: string, what: SignInWhat, run: (args: A) => P
         }
 
         (options.remove?.(result, args) ?? []).forEach(queryKey => queryClient.removeQueries({ queryKey }));
+        // the device's copy of the library first: the screens answer from it
+        await syncLibrary();
         const keys = options.invalidate?.(result, args) ?? [];
         await Promise.all(keys.map(queryKey => queryClient.invalidateQueries({ queryKey })));
         const text = options.done?.(result, args) ?? null;
@@ -62,6 +66,7 @@ export function action<A, R>(name: string, what: SignInWhat, run: (args: A) => P
 export async function undo(token: string, keys: QueryKey[], before?: () => void | Promise<void>): Promise<void> {
     try {
         await call(api.POST('/api/sync/undo', { body: { token } }));
+        await syncLibrary();
         await before?.();
         await Promise.all(keys.map(queryKey => queryClient.invalidateQueries({ queryKey })));
         toast(i18n.t('local.undone'));

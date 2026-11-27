@@ -1,6 +1,6 @@
+using HarmonyDB.Shelf.Api.Areas.Chords;
 using System.Security.Claims;
 using HarmonyDB.Shelf.Api.Areas.Chords.Services;
-using HarmonyDB.Shelf.Api.Common.Items;
 using HarmonyDB.Shelf.Api.Foundation.Errors;
 using HarmonyDB.Shelf.Api.Foundation.Permissions;
 using HarmonyDB.Shelf.Database;
@@ -14,8 +14,8 @@ namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 
 /// <summary>
 /// Chords by the id the API knows them by (the source's opaque id), as their source gives them to one person, with
-/// their local row. The source is asked for the person (with their permissions as stored: the same from a request and
-/// from a job; the answer is kept a while by the chords' reader).
+/// their local row: for putting chords into a playlist, or marking them. The source is asked for the person (with their
+/// permissions as stored: the same from a request and from a job), by the address they came by.
 /// <list type="bullet">
 /// <item>Open to the person: the row (made when there is none) and the header the person got.</item>
 /// <item>Not open to the person (or not known: the two cannot be told apart): no row is ever made for it, and a person
@@ -24,77 +24,47 @@ namespace HarmonyDB.Shelf.Api.Areas.Playlists.Services;
 /// asked at all.</item>
 /// <item>The source does not answer: nothing is made (503 <c>unavailable</c>).</item>
 /// </list>
-/// What the person is told of the chords is only what the source told them, never the row's cache.
 /// </summary>
-public sealed class ChordsLookup(ShelfDbContext db, ChordsReader reader, ItemRows rows)
+public sealed class ChordsLookup(ShelfDbContext db, ChordsReader reader)
 {
     /// <summary>
     /// The longest source id taken.
     /// </summary>
     public const int MaxSourceIdLength = 200;
 
+    /// <param name="address">The address the person came by, if any (a link): the chords are read by it.</param>
     /// <param name="requireOpen">For putting the chords into a playlist: they must be open to the person.</param>
-    /// <returns>The row, and the header the person was given when the source was asked (and the chords are open to
-    /// them).</returns>
+    /// <returns>The row; when the source was asked (and the chords are open to the person), the header the person was
+    /// given and the address the playlist keeps for them: the one the person came by, else the header's.</returns>
     /// <exception cref="ShelfException">400 <c>bad_request</c>: a text that is no id; 403 <c>chords_not_open</c>; 503
     /// <c>unavailable</c>: its source did not answer.</exception>
-    public async Task<(ChordsItem Row, ChordsHeader? Header)> GetOrCreateAsync(Guid accountId, string? sourceId, bool requireOpen, CancellationToken cancellationToken)
+    public async Task<(ChordsItem Row, ChordsHeader? Header, string? Address)> GetOrCreateAsync(Guid accountId, string? sourceId, string? address, bool requireOpen, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(sourceId) || sourceId.Length > MaxSourceIdLength || sourceId.Any(char.IsControl))
             throw ShelfException.BadRequest();
+        var by = ChordsArea.ParseAddress(address);
 
         // chords held here already, for what does not need them open (a mark, a key, a note): nothing to ask
         if (!requireOpen && await db.Chords.SingleOrDefaultAsync(x => x.SourceId == sourceId, cancellationToken) is { } known)
-            return (known, null);
+            return (known, null, null);
 
-        var answer = (await reader.GetHeadersAsync(await PersonAsync(accountId, cancellationToken), [sourceId], cancellationToken)).Single();
-        switch (answer.State)
-        {
-            case ChordsState.Open:
-                return (await db.Chords.SingleOrDefaultAsync(x => x.SourceId == sourceId, cancellationToken)
-                        ?? await rows.GetOrCreateChordsAsync(sourceId, null, false, cancellationToken), answer.Header);
-            case ChordsState.NotOpen:
-                throw ShelfException.Forbidden(PlaylistErrorCodes.ChordsNotOpen);
-            default:
-                throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
-        }
-    }
-
-    /// <summary>
-    /// The chords' header as their source gives it to the person now; null when they are not open to the person.
-    /// </summary>
-    /// <exception cref="ShelfException">503 <c>unavailable</c>: its source did not answer.</exception>
-    public async Task<ChordsHeader?> HeaderAsync(Guid accountId, string sourceId, CancellationToken cancellationToken)
-    {
-        var answer = (await reader.GetHeadersAsync(await PersonAsync(accountId, cancellationToken), [sourceId], cancellationToken)).Single();
-        return answer.State == ChordsState.Unavailable
-            ? throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable)
-            : answer.Header;
-    }
-
-    /// <summary>
-    /// Which of the chords are open to the person (by the source's ids).
-    /// </summary>
-    /// <exception cref="ShelfException">503 <c>unavailable</c>: a source did not answer for one of them.</exception>
-    public async Task<IReadOnlySet<string>> OpenAsync(Guid accountId, IReadOnlyCollection<string> sourceIds, CancellationToken cancellationToken)
-    {
-        var open = new HashSet<string>(StringComparer.Ordinal);
-        if (sourceIds.Count == 0)
-            return open;
-
+        // by the id: the source's header; by an address: the item read by it (a header takes no address)
         var person = await PersonAsync(accountId, cancellationToken);
-        foreach (var chunk in sourceIds.Distinct(StringComparer.Ordinal).Chunk(ChordsReader.MaxIds))
+        var (state, header) = by == null
+            ? await HeaderAsync(person, sourceId, cancellationToken)
+            : await reader.GetContentAsync(person, sourceId, [], by, cancellationToken) is var answer ? (answer.State, answer.Header) : default;
+        return state switch
         {
-            foreach (var answer in await reader.GetHeadersAsync(person, chunk, cancellationToken))
-            {
-                if (answer.State == ChordsState.Unavailable)
-                    throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable);
-                if (answer.State == ChordsState.Open)
-                    open.Add(answer.Id);
-            }
-        }
+            ChordsState.Open => (await db.Chords.SingleAsync(x => x.SourceId == sourceId, cancellationToken), header, by?.ToString() ?? header!.Address),
+            ChordsState.NotOpen => throw ShelfException.Forbidden(PlaylistErrorCodes.ChordsNotOpen),
+            _ => throw new ShelfException(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Unavailable),
+        };
+    }
 
-        return open;
+    private async Task<(ChordsState State, ChordsHeader? Header)> HeaderAsync(ClaimsPrincipal person, string sourceId, CancellationToken cancellationToken)
+    {
+        var (state, _, header) = await reader.GetOpenRowAsync(person, sourceId, cancellationToken);
+        return (state, header == null ? null : ChordsReader.ToHeader(header));
     }
 
     /// <summary>

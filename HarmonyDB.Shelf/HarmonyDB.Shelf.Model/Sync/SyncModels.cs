@@ -46,6 +46,15 @@ public record Change
     public string? Text { get; init; }
 
     public DateTimeOffset? At { get; init; }
+
+    /// <summary>
+    /// Opened: the chords' title, artists and source as the person was shown them, kept with their recent row.
+    /// </summary>
+    public string? Title { get; init; }
+
+    public IReadOnlyList<string>? Artists { get; init; }
+
+    public ChordsSource? Source { get; init; }
 }
 
 public record SyncRequest
@@ -166,7 +175,7 @@ public record UndoRequest
 
 public record RecentEntry
 {
-    public ChordsAnswer? Chords { get; init; }
+    public ChordsRef? Chords { get; init; }
 
     /// <summary>
     /// The song they were opened in, when it is still there and the person still sees it.
@@ -174,13 +183,14 @@ public record RecentEntry
     public SongRef? Song { get; init; }
 
     /// <summary>
-    /// What it was seen under: the chords' title as their source gives them to the person; for chords not open to
-    /// them, the title the playlist keeps for the song they were opened in; null when there is none (the app says it
-    /// is not available).
+    /// What it was seen under: the title, artists and source the person was shown when they opened it; for a row from
+    /// before these were kept, the chords' kept title, else the song's, and no source.
     /// </summary>
     public string? Title { get; init; }
 
     public required IReadOnlyList<string> Artists { get; init; }
+
+    public ChordsSource? Source { get; init; }
 
     /// <summary>
     /// The song's cover, an address the browser loads.

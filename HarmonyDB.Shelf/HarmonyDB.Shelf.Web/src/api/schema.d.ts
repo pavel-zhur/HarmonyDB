@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chords/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GetChordsLabels"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/chords/icons/{name}": {
         parameters: {
             query?: never;
@@ -1796,12 +1812,14 @@ export interface components {
             chords?: string | null;
             title?: string | null;
             artists?: string[] | null;
+            address?: string | null;
             /** Format: uuid */
             fromSongId?: string | null;
             share?: string | null;
         };
         AddVariantRequest: {
             chords: string;
+            address?: string | null;
         };
         AddedSong: {
             /** Format: uuid */
@@ -1815,8 +1833,6 @@ export interface components {
             addedBy?: components["schemas"]["PersonRef"];
             /** Format: date-time */
             addedAt: string;
-            /** Format: int32 */
-            leftOut: number;
         };
         AddedSongChanged: {
             value: components["schemas"]["AddedSong"];
@@ -1918,6 +1934,9 @@ export interface components {
             text?: string | null;
             /** Format: date-time */
             at?: string | null;
+            title?: string | null;
+            artists?: string[] | null;
+            source?: components["schemas"]["ChordsSource"];
         };
         ChangeResult: {
             applied: boolean;
@@ -2001,6 +2020,16 @@ export interface components {
         };
         /** @enum {string} */
         ChordsKind: "sheet" | "timeline" | "lyrics" | "notes" | "score" | "chart" | "recording";
+        ChordsLabel: {
+            id: string;
+            source: components["schemas"]["ChordsSource"];
+        };
+        ChordsLabelsRequest: {
+            ids: string[];
+        };
+        ChordsLabelsResponse: {
+            labels: components["schemas"]["ChordsLabel"][];
+        };
         ChordsLoop: {
             normalized: string;
             /** Format: int32 */
@@ -2058,6 +2087,13 @@ export interface components {
             complete: boolean;
             found: components["schemas"]["MusicTrack"][];
         };
+        ChordsRef: {
+            id: string;
+            address?: string | null;
+            title?: string | null;
+            artists: string[];
+            kinds: components["schemas"]["ChordsKind"][];
+        };
         ChordsSource: {
             key: string;
             title: string;
@@ -2074,7 +2110,7 @@ export interface components {
             itemId: string;
             /** Format: int32 */
             index: number;
-            chords: components["schemas"]["ChordsAnswer"];
+            chords: components["schemas"]["ChordsRef"];
             addedBy?: components["schemas"]["PersonRef"];
             /** Format: date-time */
             addedAt: string;
@@ -2662,11 +2698,15 @@ export interface components {
         };
         /** @enum {string} */
         NoteAlteration: "flat" | "sharp";
+        OfflineChords: {
+            id: string;
+            address?: string | null;
+        };
         OfflineChordsList: {
             /** Format: int64 */
             watermark: number;
             changed: boolean;
-            chords: string[];
+            chords: components["schemas"]["OfflineChords"][];
         };
         OfflineContent: {
             chords: string;
@@ -2848,10 +2888,11 @@ export interface components {
             credentials: string;
         };
         RecentEntry: {
-            chords?: components["schemas"]["ChordsAnswer"];
+            chords?: components["schemas"]["ChordsRef"];
             song?: components["schemas"]["SongRef"];
             title?: string | null;
             artists: string[];
+            source?: components["schemas"]["ChordsSource"];
             cover?: string | null;
             /** Format: date-time */
             openedAt: string;
@@ -3102,14 +3143,13 @@ export interface components {
             /** Format: uuid */
             playlistId?: string | null;
             alsoIn?: string[] | null;
-            chords?: components["schemas"]["ChordsAnswer"];
+            chords?: components["schemas"]["ChordsRef"];
             title: string;
             artists: string[];
             myMarks: string[];
             otherMarks: string[];
             /** Format: int32 */
             otherPeople: number;
-            sources: components["schemas"]["ChordsSource"][];
             /** Format: int32 */
             chordsCount: number;
             chordsIds: string[];
@@ -3931,6 +3971,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChordsHeadersResponse"];
+                };
+            };
+            /** @description An error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    GetChordsLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChordsLabelsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChordsLabelsResponse"];
                 };
             };
             /** @description An error. */

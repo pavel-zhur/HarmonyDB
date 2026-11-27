@@ -22,10 +22,18 @@ public record OfflineChordsList
     public required bool Changed { get; init; }
 
     /// <summary>
-    /// The ids of all the chords of the library (of the playlists shown in it, and the person's own marked ones or
-    /// those with their key or note), whether open to the person or not: the content read says which are.
+    /// All the chords of the library (of the playlists shown in it, and the person's own marked ones or those with their
+    /// key or note), with the address each is read by. A device keeps chords under their id and that address: chords
+    /// whose address changed (their author edited them) are taken anew.
     /// </summary>
-    public required IReadOnlyList<string> Chords { get; init; }
+    public required IReadOnlyList<OfflineChords> Chords { get; init; }
+}
+
+public record OfflineChords
+{
+    public required string Id { get; init; }
+
+    public string? Address { get; init; }
 }
 
 /// <summary>

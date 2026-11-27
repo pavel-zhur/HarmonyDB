@@ -111,7 +111,7 @@ public sealed class Ledger
     }
 
     /// <summary>
-    /// The addresses (kind "uri") and the visits' ids (kind "id") as last resolved.
+    /// The addresses (kind "uri") as last resolved.
     /// </summary>
     /// <param name="checkedBy">Only the answers kept by then; null: all.</param>
     public static async Task<Dictionary<(string kind, string address), ResolvedAddress>> ReadAddressesAsync(ShelfDbContext db, CancellationToken cancellationToken, DateTimeOffset? checkedBy = null)

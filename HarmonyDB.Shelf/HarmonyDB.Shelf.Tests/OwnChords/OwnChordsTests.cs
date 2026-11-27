@@ -144,6 +144,65 @@ public sealed class OwnChordsTests(WorkFixture fixture) : IClassFixture<WorkFixt
     }
 
     [DatabaseFact]
+    public async Task TheAuthorsEntriesHoldTheCurrentAddressAndArePrivateWhileTheChordsAre()
+    {
+        var me = await fixture.AccountAsync();
+        var collectiveId = Guid.NewGuid();
+        var chordsId = $"own-{collectiveId}";
+        StoredOwnChords Version(int number, StoredVisibility visibility) => new(collectiveId, new(["Somebody"], "A song", "words", visibility, null, null, null, null),
+            number, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Uri($"https://own.example/?id={collectiveId}&v={number}"), $"account:{me:D}", true, []);
+        fixture.Store.Answer = (operation, _) => operation switch
+        {
+            "OwnInsert" => (HttpStatusCode.OK, Version(1, StoredVisibility.Private)),
+            "OwnUpdate" => (HttpStatusCode.OK, Version(2, StoredVisibility.Club)),
+            _ => (HttpStatusCode.InternalServerError, null),
+        };
+        fixture.Index.Answer = (operation, body) => operation switch
+        {
+            "V2Resolve" => (HttpStatusCode.OK, new ResolveResponse
+            {
+                Items = body.GetProperty("uris").EnumerateArray().Select(x => new ResolvedUri { Uri = new(x.GetString()!), State = ResolveState.Resolved, Id = chordsId }).ToList(),
+            }),
+            "V2GetHeaders" => (HttpStatusCode.OK, new GetHeadersResponse
+            {
+                Headers = body.GetProperty("ids").EnumerateArray()
+                    .Select(x => new HeaderAnswer { Id = x.GetString()!, State = HarmonyDB.Source.Api.Model.V2.ItemState.Open, Header = FakeIndex.Header(x.GetString()!, "Own") })
+                    .ToList(),
+            }),
+            _ => (HttpStatusCode.InternalServerError, null),
+        };
+        using var client = fixture.Api.CreateClient();
+
+        async Task<List<(bool Mine, string? Address, bool Private)>> EntriesAsync()
+        {
+            await using var db = fixture.CreateContext();
+            return (await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                db.PlaylistSongItems.Where(x => x.Chords!.SourceId == chordsId).Select(x => new { x.AddedById, x.Address, x.Private })))
+                .Select(x => (x.AddedById == me, x.Address, x.Private)).OrderBy(x => x.Item1).ToList();
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(FakeIndex.As(HttpMethod.Post, "/api/own-chords", me, body: new CreateOwnChordsRequest { Text = Text() }))).StatusCode);
+        Assert.Equal([(true, $"https://own.example/?id={collectiveId}&v=1", true)], await EntriesAsync());
+
+        // someone else added them by the link they were given: their entry is theirs
+        var other = await fixture.AccountAsync();
+        await using (var db = fixture.CreateContext())
+        {
+            var chords = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.Chords, x => x.SourceId == chordsId);
+            var playlist = new HarmonyDB.Shelf.Database.Model.Playlist { Id = Guid.NewGuid(), OwnerId = other, Title = "Theirs", CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow };
+            var song = new HarmonyDB.Shelf.Database.Model.PlaylistSong { Id = Guid.NewGuid(), PlaylistId = playlist.Id, Title = "A song", Artists = [], Position = 1, AddedById = other, AddedAt = DateTimeOffset.UtcNow };
+            db.AddRange(playlist, song);
+            db.PlaylistSongItems.Add(new() { Id = Guid.NewGuid(), SongId = song.Id, ChordsId = chords.Id, Position = 0, AddedById = other, AddedAt = DateTimeOffset.UtcNow, Address = $"https://own.example/?id={collectiveId}&v=1" });
+            await db.SaveChangesAsync();
+        }
+
+        // a new version: the author's entries get the new address (a device takes them as new), and club chords are
+        // everyone's; the other person's entry keeps the address it was added by, as the old shelf left others' copies
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(FakeIndex.As(HttpMethod.Put, $"/api/own-chords/{collectiveId}", me, body: new UpdateOwnChordsRequest { Text = Text() }))).StatusCode);
+        Assert.Equal([(false, $"https://own.example/?id={collectiveId}&v=1", false), (true, $"https://own.example/?id={collectiveId}&v=2", false)], await EntriesAsync());
+    }
+
+    [DatabaseFact]
     public async Task NewOwnChordsArePlacedWhenTheSourcesAnswerAndOnlySavedWhenTheyDoNot()
     {
         var me = await fixture.AccountAsync();

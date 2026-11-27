@@ -277,10 +277,6 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTimeOffset?>("HeaderUpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("header_updated_at");
-
                     b.Property<List<string>>("Kinds")
                         .IsRequired()
                         .HasColumnType("text[]")
@@ -298,26 +294,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("recordings_searched_at");
 
-                    b.Property<string>("SourceIcon")
-                        .HasColumnType("text")
-                        .HasColumnName("source_icon");
-
                     b.Property<string>("SourceId")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("source_id");
-
-                    b.Property<string>("SourceKey")
-                        .HasColumnType("text")
-                        .HasColumnName("source_key");
-
-                    b.Property<string>("SourceTitle")
-                        .HasColumnType("text")
-                        .HasColumnName("source_title");
-
-                    b.Property<string>("SourceUri")
-                        .HasColumnType("text")
-                        .HasColumnName("source_uri");
 
                     b.Property<string>("Title")
                         .HasColumnType("text")
@@ -1361,6 +1341,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("added_by_id");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
                     b.Property<Guid?>("ChordsId")
                         .HasColumnType("uuid")
                         .HasColumnName("chords_id");
@@ -1372,6 +1356,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Property<double>("Position")
                         .HasColumnType("double precision")
                         .HasColumnName("position");
+
+                    b.Property<bool>("Private")
+                        .HasColumnType("boolean")
+                        .HasColumnName("private");
 
                     b.Property<Guid?>("RecordingId")
                         .HasColumnType("uuid")
@@ -1472,6 +1460,10 @@ namespace HarmonyDB.Shelf.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("account_id");
 
+                    b.Property<List<string>>("Artists")
+                        .HasColumnType("text[]")
+                        .HasColumnName("artists");
+
                     b.Property<Guid?>("ChordsId")
                         .HasColumnType("uuid")
                         .HasColumnName("chords_id");
@@ -1487,6 +1479,22 @@ namespace HarmonyDB.Shelf.Database.Migrations
                     b.Property<Guid?>("SongId")
                         .HasColumnType("uuid")
                         .HasColumnName("song_id");
+
+                    b.Property<string>("SourceIconUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("source_icon_url");
+
+                    b.Property<string>("SourceKey")
+                        .HasColumnType("text")
+                        .HasColumnName("source_key");
+
+                    b.Property<string>("SourceTitle")
+                        .HasColumnType("text")
+                        .HasColumnName("source_title");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text")
+                        .HasColumnName("title");
 
                     b.Property<long>("Version")
                         .ValueGeneratedOnAddOrUpdate()

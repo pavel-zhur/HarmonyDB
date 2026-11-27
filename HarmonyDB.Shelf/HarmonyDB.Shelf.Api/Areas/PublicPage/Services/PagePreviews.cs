@@ -166,7 +166,7 @@ public sealed class PagePreviews(
 
     private async Task<Preview> SongAsync(string path, SongPage page, CancellationToken cancellationToken)
     {
-        var open = page.Variants.Where(x => x.Chords.State == ChordsState.Open).Select(x => x.Chords.Id).Distinct(StringComparer.Ordinal).Take(MaxVariants).ToList();
+        var open = page.Variants.Select(x => x.Chords.Id).Distinct(StringComparer.Ordinal).Take(MaxVariants).ToList();
         var picture = await IllustrationAsync(path, open, cancellationToken)
                       ?? (page.Recordings.Select(x => x.Recording.CoverUrl).FirstOrDefault(x => x != null) is { } cover ? new Picture(cover, null) : null);
         return Song(page.Song.Title, page.Song.Artists, picture);

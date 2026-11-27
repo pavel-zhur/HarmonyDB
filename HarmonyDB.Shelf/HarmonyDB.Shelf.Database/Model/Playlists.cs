@@ -168,10 +168,30 @@ public class PlaylistSong : IVersioned, ITombstoned
 }
 
 /// <summary>
+/// The one rule of who sees a playlist's entries.
+/// </summary>
+public static class PlaylistSongItemsSeen
+{
+    /// <summary>
+    /// The entries the person sees: every entry but the private own chords someone else placed — the old shelf showed an
+    /// author's private own chords to whoever added them alone. Every reading of entries for a person goes through it.
+    /// </summary>
+    public static IQueryable<PlaylistSongItem> SeenBy(this IQueryable<PlaylistSongItem> items, Guid? viewer)
+        => items.Where(x => !x.Private || (viewer != null && x.AddedById == viewer));
+
+    /// <summary>
+    /// The songs the person sees: those with an entry they see (a song whose every entry is someone else's private own
+    /// chords is not there for them, as the old shelf left such a song out).
+    /// </summary>
+    public static IQueryable<PlaylistSong> SeenBy(this IQueryable<PlaylistSong> songs, Guid? viewer)
+        => songs.Where(s => s.Items.Any(x => x.DeletedAt == null && (!x.Private || (viewer != null && x.AddedById == viewer))));
+}
+
+/// <summary>
 /// A variant of a song: chords, or a recording. Exactly one of the two is set.
 /// The chords variants are lettered A, B, C … by their order among the song's chords variants that are not removed
-/// (<see cref="Position"/>, then id), so the letters are the same for everyone looking at the song, and shift when one
-/// is removed.
+/// (<see cref="Position"/>, then id) that the person sees (<see cref="PlaylistSongItemsSeen.SeenBy"/>), and shift when
+/// one is removed.
 /// </summary>
 public class PlaylistSongItem : IVersioned, ITombstoned
 {
@@ -188,6 +208,19 @@ public class PlaylistSongItem : IVersioned, ITombstoned
     public Guid? RecordingId { get; set; }
 
     public Recording? Recording { get; set; }
+
+    /// <summary>
+    /// The address the chords were added by (the link a person brought, or the address of the header they were given),
+    /// as the old shelf's version kept its address: passed on with every reading of them. Own chords' entries get their
+    /// new address when their author edits them, so a device takes them as new.
+    /// </summary>
+    public string? Address { get; set; }
+
+    /// <summary>
+    /// Private own chords placed by their author: seen only by whoever added the entry (<see cref="AddedById"/>), as the
+    /// old shelf showed an author's private own chords to them alone. Read through <c>SeenBy</c>.
+    /// </summary>
+    public bool Private { get; set; }
 
     public double Position { get; set; }
 

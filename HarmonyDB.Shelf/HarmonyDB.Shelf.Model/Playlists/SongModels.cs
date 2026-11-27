@@ -51,7 +51,7 @@ public record SongRow
     /// <summary>
     /// Chords alone: the chords.
     /// </summary>
-    public ChordsAnswer? Chords { get; init; }
+    public ChordsRef? Chords { get; init; }
 
     public required string Title { get; init; }
 
@@ -72,16 +72,11 @@ public record SongRow
     /// </summary>
     public required int OtherPeople { get; init; }
 
-    /// <summary>
-    /// The sources of the song's chords open to the caller, as their sources give them to the caller, at most three
-    /// different ones.
-    /// </summary>
-    public required IReadOnlyList<ChordsSource> Sources { get; init; }
-
     public required int ChordsCount { get; init; }
 
     /// <summary>
-    /// The ids of the chords of its variants, in their order (to show a mark made a moment ago).
+    /// The ids of the chords of its variants, in their order: to show a mark made a moment ago, and the variants'
+    /// sources as the device keeps them for the person (<c>POST /api/chords/labels</c>).
     /// </summary>
     public required IReadOnlyList<string> ChordsIds { get; init; }
 
@@ -113,7 +108,7 @@ public record SongList
 }
 
 /// <summary>
-/// A song just added; a copy of a song takes only the variants open to the person: how many were left out.
+/// A song just added.
 /// </summary>
 public record AddedSong : SongRef
 {
@@ -126,8 +121,6 @@ public record AddedSong : SongRef
         : base(song)
     {
     }
-
-    public int LeftOut { get; init; }
 }
 
 public record SongRef
@@ -148,7 +141,7 @@ public record SongRef
 }
 
 /// <summary>
-/// A chords variant of a song. Its letter is <see cref="Index"/> (0: A …): the same for everyone looking at the song.
+/// A chords variant of a song. Its letter is <see cref="Index"/> (0: A …), among the variants the person sees.
 /// </summary>
 public record ChordsVariant
 {
@@ -156,7 +149,7 @@ public record ChordsVariant
 
     public required int Index { get; init; }
 
-    public required ChordsAnswer Chords { get; init; }
+    public required ChordsRef Chords { get; init; }
 
     public PersonRef? AddedBy { get; init; }
 
@@ -320,6 +313,12 @@ public record AddSongRequest
     public IReadOnlyList<string>? Artists { get; init; }
 
     /// <summary>
+    /// The address the chords were opened by, when by one (a link): the playlist keeps it and reads them by it. Not
+    /// given: the address of the header the person is given.
+    /// </summary>
+    public string? Address { get; init; }
+
+    /// <summary>
     /// A song to copy.
     /// </summary>
     public Guid? FromSongId { get; init; }
@@ -345,6 +344,11 @@ public record UpdateSongRequest
 public record AddVariantRequest
 {
     public required string Chords { get; init; }
+
+    /// <summary>
+    /// The address the chords were opened by, when by one (<see cref="AddSongRequest.Address"/>).
+    /// </summary>
+    public string? Address { get; init; }
 }
 
 public record LinkSongsRequest
